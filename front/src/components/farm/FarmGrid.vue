@@ -1,0 +1,137 @@
+<template>
+    <div
+      class="grid-wrapper"
+      ref="gridWrapper"
+      @mousedown="startDrag"
+      @mousemove="onDrag"
+      @mouseup="endDrag"
+      @mouseleave="endDrag"
+      @wheel.prevent="onScroll"
+    >
+      <div
+        class="farm-grid"
+        :style="{
+          transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`
+        }"
+      >
+        <FarmTile
+        v-for="(tile, index) in tiles"
+        :key="index"
+        :tileStyle="getTileStyle(tile)"
+        :type="tile.type"
+        />
+
+        <Chicken
+          :x="5"
+          :y="6"
+          type="white"
+          :gridSize="gridSize"
+        />
+
+
+      </div>
+    </div>
+  </template>
+  
+<script setup>
+import { ref, computed } from 'vue'
+import FarmTile from './FarmTile.vue'
+import Chicken from './Chicken.vue'
+
+  const props = defineProps({
+    gridSize: {
+      type: Number,
+      default: 25
+    }
+  })
+  
+    const tileWidth = 64
+    const tileHeight = 32
+  
+    const margin = 5
+
+    const tiles = computed(() => {
+    const arr = []
+    for (let y = 0; y < props.gridSize; y++) {
+      for (let x = 0; x < props.gridSize; x++) {
+        let type = 'grass'
+
+        // bord de la ferme ?
+        if (
+          x === 0 || y === 0 ||
+          x === props.gridSize - 1 || y === props.gridSize - 1
+        ) {
+          type = 'beach'
+        }
+
+        arr.push({ x, y, type })
+      }
+    }
+    return arr
+  })
+
+  
+  // Centrage
+  const offset = ref({ x: 0, y: 0 })
+  const zoom = ref(1)
+  
+  const gridWrapper = ref(null)
+  
+  // Drag
+  let isDragging = false
+  let dragStart = { x: 0, y: 0 }
+  
+  function startDrag(e) {
+    isDragging = true
+    dragStart = { x: e.clientX, y: e.clientY }
+  }
+  
+  function onDrag(e) {
+    if (!isDragging) return
+    offset.value.x += e.clientX - dragStart.x
+    offset.value.y += e.clientY - dragStart.y
+    dragStart = { x: e.clientX, y: e.clientY }
+  }
+  
+function endDrag() {
+  isDragging = false
+}
+
+// Zoom
+function onScroll(e) {
+  const delta = -e.deltaY
+  zoom.value += delta * 0.001
+  zoom.value = Math.min(2, Math.max(0.5, zoom.value))
+}
+
+function getTileStyle({ x, y }) {
+  const left = (x - y) * (tileWidth / 2)
+  const top = (x + y) * (tileHeight / 2)
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+  }
+}
+</script>
+  
+<style scoped>
+.grid-wrapper {
+  width: 100%;
+  height: calc(100vh - 80px);
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  background: #6ec5ff; /* Océan clair */
+  /* OU avec image : */
+  /* background-image: url('@/assets/ocean-background.png'); */
+  /* background-size: cover; */
+}
+
+  .farm-grid {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform-origin: center center;
+  }
+  </style>
+  
