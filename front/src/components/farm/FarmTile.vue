@@ -25,10 +25,10 @@ defineProps({
 }
 
 .tile.grass {
-  background-image: url('@/assets/FarmTile.png');
+  background-image: url('@/assets/tiles/farm.png');
 }
 .tile.beach {
-  background-image: url('@/assets/BeachTile.png');
+  background-image: url('@/assets/tiles/beach.png');
 }
 
   </style>

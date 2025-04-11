@@ -7,6 +7,8 @@ export const chickenStats = {
       peckingTime: 1400,
       shakingChance: 1,
       shakingTime: 2000,
+      runningModeChance: 0.01,
+      runningModeDuration: 10000,
     },
     black: {
       speed: 1,
@@ -16,6 +18,8 @@ export const chickenStats = {
       peckingTime: 1800,
       shakingChance: 1,
       shakingTime: 2000,
+      runningModeChance: 0.005,
+      runningModeDuration: 10000,
     },
     red: {
       speed: 1.1,
@@ -25,6 +29,8 @@ export const chickenStats = {
       peckingTime: 1300,
       shakingChance: 1,
       shakingTime: 2000,
+      runningModeChance: 0.05,
+      runningModeDuration: 10000,
     }
   }
   

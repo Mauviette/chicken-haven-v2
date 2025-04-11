@@ -16,6 +16,7 @@ const visualPos = reactive({ x: props.x.value, y: props.y.value })
 const currentAnimation = ref('idle')
 const facing = ref('right')
 const stats = chickenStats[props.type] || chickenStats.white
+const isRunning = ref(false)
 
 let aiTimeout = null
 let movementInterval = null
@@ -25,9 +26,15 @@ function loopAI() {
   const willPeck = Math.random() < stats.peckingChance
   const willMove = Math.random() < stats.movementFrequency
   const willShake = Math.random() < stats.shakingChance
+  const willRun = Math.random() < stats.runningModeChance
+
 
   aiTimeout = setTimeout(() => {
-    if (willPeck && willMove) {
+    if (willRun) {
+      runAround()
+      return
+    }
+    else if (willPeck && willMove) {
       if (Math.random() < 0.5) {
         currentAnimation.value = 'pecking'
         setTimeout(() => {
@@ -53,15 +60,12 @@ function loopAI() {
   }, delay)
 }
 
-function moveRandomly() {
+function moveRandomly(skipLoop = false) {
   currentAnimation.value = 'walking'
-  const directions = [
-    { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
+  const directions = [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 },
     { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
     { dx: 1, dy: 1 }, { dx: -1, dy: -1 },
-    { dx: -1, dy: 1 }, { dx: 1, dy: -1 }
-  ].sort(() => Math.random() - 0.5)
-
+    { dx: -1, dy: 1 }, { dx: 1, dy: -1 }].sort(() => Math.random() - 0.5)
   for (const { dx, dy } of directions) {
     const newX = props.x.value + dx
     const newY = props.y.value + dy
@@ -71,20 +75,22 @@ function moveRandomly() {
       props.x.value = newX
       props.y.value = newY
       animateMovement()
-      
-      // Nouvelle logique pour la direction en vue isométrique
-      const isoX = dx - dy // Conversion en coordonnées isométriques
+
+      const isoX = dx - dy
       if (isoX > 0) facing.value = 'right'
       if (isoX < 0) facing.value = 'left'
       break
     }
   }
 
-  setTimeout(() => {
-    currentAnimation.value = 'idle'
-    loopAI()
-  }, stats.movementFrequency >= 0.8 ? 200 / stats.speed : 800 / stats.speed)
+  if (!skipLoop) {
+    setTimeout(() => {
+      currentAnimation.value = 'idle'
+      loopAI()
+    }, stats.movementFrequency >= 0.8 ? 200 / stats.speed : 800 / stats.speed)
+  }
 }
+
 
 function animateMovement() {
   clearInterval(movementInterval)
@@ -116,6 +122,33 @@ function shake() {
   }, stats.shakingTime)
 }
 
+function runAround() {
+  if (isRunning.value) return // sécurité
+  isRunning.value = true
+  if (currentAnimation.value !== 'walking') {
+    currentAnimation.value = 'walking'
+}
+
+
+  const duration = stats.runningModeDuration || 3000
+  const interval = 500 / stats.speed
+  const endTime = Date.now() + duration
+
+  function runStep() {
+    if (Date.now() > endTime) {
+      isRunning.value = false
+      currentAnimation.value = 'idle'
+      loopAI()
+      return
+    }
+    moveRandomly(true) // 🟡 true = ne pas relancer loopAI
+    setTimeout(runStep, interval)
+  }
+
+  runStep()
+}
+
+
 onMounted(() => loopAI())
 onUnmounted(() => {
   clearTimeout(aiTimeout)
@@ -129,8 +162,6 @@ const style = computed(() => {
     position: 'absolute',
     left: `${left}px`,
     top: `${top}px`,
-    width: '36px',
-    height: '36px',
     zIndex: Math.floor(visualPos.x + visualPos.y + 1),
     transform: facing.value === 'left' ? 'scaleX(-1)' : 'scaleX(1)',
     transformOrigin: 'center'
@@ -142,15 +173,55 @@ const spritePath = computed(() => {
   const key = `/src/assets/chickens/${props.type}/${currentAnimation.value}.gif`
   return sprites[key]?.default || ''
 })
+
+
 </script>
 
 <template>
-  <img class="chicken" :src="spritePath" :style="style" :alt="type" />
+  <div class="chicken-wrapper" :style="style">
+    <img class="chicken" :src="spritePath" :alt="type" />
+    <div class="chicken-trail" ref="trailContainer"></div>
+  </div>
 </template>
+
+
 
 <style scoped>
 .chicken {
+  width: 36px;
+  height: 36px;
   user-select: none;
   pointer-events: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.pouf {
+  position: absolute;
+  bottom: -2px;   /* 🟡 -8 → -2 pour le rapprocher des pattes */
+  left: 6px;      /* Ajusté pour se centrer un peu mieux */
+  width: 18px;
+  height: 18px;
+  background: radial-gradient(ellipse at center, #d8b489 0%, #a27149 100%);
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: puff 0.6s ease-out infinite;
+  z-index: 1;
+}
+
+
+@keyframes puff {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.2;
+  }
 }
 </style>
