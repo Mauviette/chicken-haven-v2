@@ -1,26 +1,20 @@
 <script setup>
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, ref, onMounted, onUnmounted, reactive } from 'vue'
 import { chickenStats } from '@/data/chicken_stats'
 
 const props = defineProps({
-  x: Number,
-  y: Number,
+  x: Object,
+  y: Object,
   type: { type: String, default: 'white' },
+  gridSize: { type: Number, default: 14 },
   tileWidth: { type: Number, default: 64 },
   tileHeight: { type: Number, default: 32 },
-  gridSize: { type: Number, default: 14 },
-  isWalkable: {
-    type: Function,
-    required: true
-  }
+  isWalkable: Function
 })
 
-const emit = defineEmits(['click'])
-
-const pos = ref({ x: props.x, y: props.y })         // position logique
-const visualPos = ref({ x: props.x, y: props.y })    // position affichée
+const visualPos = reactive({ x: props.x.value, y: props.y.value })
 const currentAnimation = ref('idle')
-const facing = ref('right') // ou 'left'
+const facing = ref('right')
 const stats = chickenStats[props.type] || chickenStats.white
 
 let aiTimeout = null
@@ -28,13 +22,11 @@ let movementInterval = null
 
 function loopAI() {
   const delay = Math.random() * (stats.idleTime[1] - stats.idleTime[0]) + stats.idleTime[0]
-
   const willPeck = Math.random() < stats.peckingChance
   const willMove = Math.random() < stats.movementFrequency
 
   aiTimeout = setTimeout(() => {
     if (willPeck && willMove) {
-      // Si les deux sont vrais, on choisit aléatoirement l'une des actions
       if (Math.random() < 0.5) {
         currentAnimation.value = 'pecking'
         setTimeout(() => {
@@ -53,104 +45,88 @@ function loopAI() {
     } else if (willMove) {
       moveRandomly()
     } else {
-      loopAI() // Si aucune action n'est choisie, on recommence directement
+      loopAI()
     }
   }, delay)
 }
 
 function moveRandomly() {
   currentAnimation.value = 'walking'
-
   const directions = [
     { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
     { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
     { dx: 1, dy: 1 }, { dx: -1, dy: -1 },
     { dx: -1, dy: 1 }, { dx: 1, dy: -1 }
-  ]
+  ].sort(() => Math.random() - 0.5)
 
-  const shuffled = directions.sort(() => Math.random() - 0.5)
-
-  for (const { dx, dy } of shuffled) {
-    const newX = pos.value.x + dx
-    const newY = pos.value.y + dy
-    const isInside =
-      newX >= 0 && newY >= 0 &&
-      newX < props.gridSize && newY < props.gridSize
+  for (const { dx, dy } of directions) {
+    const newX = props.x.value + dx
+    const newY = props.y.value + dy
+    const isInside = newX >= 0 && newY >= 0 && newX < props.gridSize && newY < props.gridSize
 
     if (isInside && props.isWalkable(newX, newY)) {
-      pos.value = { x: newX, y: newY }
+      props.x.value = newX
+      props.y.value = newY
       animateMovement()
       
-      if (dx < 0) facing.value = 'left'
-      if (dx > 0) facing.value = 'right'
+      // Nouvelle logique pour la direction en vue isométrique
+      const isoX = dx - dy // Conversion en coordonnées isométriques
+      if (isoX > 0) facing.value = 'right'
+      if (isoX < 0) facing.value = 'left'
       break
     }
   }
 
-  // Délai plus court après le mouvement si movementFrequency est élevé
-  const nextActionDelay = stats.movementFrequency >= 0.8 ? 
-    200 / stats.speed : // Délai court si très active
-    800 / stats.speed   // Délai normal sinon
-
   setTimeout(() => {
     currentAnimation.value = 'idle'
     loopAI()
-  }, nextActionDelay)
+  }, stats.movementFrequency >= 0.8 ? 200 / stats.speed : 800 / stats.speed)
 }
 
 function animateMovement() {
   clearInterval(movementInterval)
-
-  const duration = 500 / stats.speed
+  const duration = 550 / stats.speed
   const stepTime = 16
   const steps = duration / stepTime
 
-  const dx = (pos.value.x - visualPos.value.x) / steps
-  const dy = (pos.value.y - visualPos.value.y) / steps
+  const dx = (props.x.value - visualPos.x) / steps
+  const dy = (props.y.value - visualPos.y) / steps
 
   let step = 0
   movementInterval = setInterval(() => {
     step++
-    visualPos.value.x += dx
-    visualPos.value.y += dy
+    visualPos.x += dx
+    visualPos.y += dy
     if (step >= steps) {
-      visualPos.value = { ...pos.value }
+      visualPos.x = props.x.value
+      visualPos.y = props.y.value
       clearInterval(movementInterval)
     }
   }, stepTime)
 }
 
-onMounted(() => {
-  loopAI()
-})
-
+onMounted(() => loopAI())
 onUnmounted(() => {
   clearTimeout(aiTimeout)
   clearInterval(movementInterval)
 })
 
-function handleClick() {
-  emit('click')
-}
-
 const style = computed(() => {
-  const left = (visualPos.value.x - visualPos.value.y) * (props.tileWidth / 2) + 12
-  const top = (visualPos.value.x + visualPos.value.y) * (props.tileHeight / 2) - 16
+  const left = (visualPos.x - visualPos.y) * (props.tileWidth / 2) + 12
+  const top = (visualPos.x + visualPos.y) * (props.tileHeight / 2) - 16
   return {
     position: 'absolute',
     left: `${left}px`,
     top: `${top}px`,
     width: '36px',
     height: '36px',
-    cursor: 'pointer',
-    zIndex: Math.floor(visualPos.value.x + visualPos.value.y + 1),
+    zIndex: Math.floor(visualPos.x + visualPos.y + 1),
     transform: facing.value === 'left' ? 'scaleX(-1)' : 'scaleX(1)',
     transformOrigin: 'center'
   }
 })
 
 const sprites = import.meta.glob('@/assets/chickens/*/*.gif', { eager: true })
-
 const spritePath = computed(() => {
   const key = `/src/assets/chickens/${props.type}/${currentAnimation.value}.gif`
   return sprites[key]?.default || ''
@@ -158,13 +134,7 @@ const spritePath = computed(() => {
 </script>
 
 <template>
-  <img
-    class="chicken"
-    :src="spritePath"
-    :style="style"
-    @click="handleClick"
-    :alt="type"
-  />
+  <img class="chicken" :src="spritePath" :style="style" :alt="type" />
 </template>
 
 <style scoped>

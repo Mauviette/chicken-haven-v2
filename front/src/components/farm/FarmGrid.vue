@@ -10,9 +10,7 @@
   >
     <div
       class="farm-grid"
-      :style="{
-        transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`
-      }"
+      :style="{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }"
     >
       <FarmTile
         v-for="(tile, index) in tiles"
@@ -23,106 +21,55 @@
 
       <Chicken
         v-for="chicken in chickens"
-        :key="`${chicken.x}-${chicken.y}`"
+        :key="chicken.id"
         :x="chicken.x"
         :y="chicken.y"
         :type="chicken.type"
-        :gridSize="props.gridSize"
+        :gridSize="gridSize"
         :isWalkable="isWalkable"
       />
     </div>
   </div>
 </template>
-  
+
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import FarmTile from './FarmTile.vue'
 import Chicken from './Chicken.vue'
 
-  const props = defineProps({
-    gridSize: { type: Number, default: 14 },
-    tileWidth: { type: Number, default: 64 },
-    tileHeight: { type: Number, default: 32 }
-  })
+const gridSize = 14
+const tileWidth = 64
+const tileHeight = 32
 
-  // Liste des poulets
-  const chickens = ref([
-    { x: 5, y: 6, type: 'white' },
-    { x: 4, y: 6, type: 'white' },
-    { x: 3, y: 6, type: 'white' },
-    { x: 2, y: 6, type: 'white' },
-    { x: 6, y: 5, type: 'red' }
-  ])
+const chickens = [
+  { id: 1, type: 'white', x: ref(3), y: ref(4) },
+  { id: 2, type: 'red', x: ref(5), y: ref(6) }
+]
 
-  
-    const tileWidth = 64
-    const tileHeight = 32
-  
-    const margin = 5
+const offset = ref({ x: 0, y: 0 })
+const zoom = ref(1)
+const gridWrapper = ref(null)
 
-    const tiles = computed(() => {
-    const arr = []
-    for (let y = 0; y < props.gridSize; y++) {
-      for (let x = 0; x < props.gridSize; x++) {
-        let type = 'grass'
-
-        // bord de la ferme ?
-        if (
-          x === 0 || y === 0 ||
-          x === props.gridSize - 1 || y === props.gridSize - 1
-        ) {
-          type = 'beach'
-        }
-
-        arr.push({ x, y, type })
-      }
+function isWalkable(x, y) {
+  for (const chicken of chickens) {
+    if (chicken.x.value === x && chicken.y.value === y) {
+      return false
     }
-    return arr
-  })
-
-  
-  // Centrage
-  const offset = ref({ x: 0, y: 0 })
-  const zoom = ref(1)
-  
-  const gridWrapper = ref(null)
-  
-  // Drag
-  let isDragging = false
-  let dragStart = { x: 0, y: 0 }
-  
-  function isWalkable(x, y) {
-    // limites de la map
-    if (x < 0 || y < 0 || x >= props.gridSize || y >= props.gridSize) return false
-
-    // check poules déjà présentes
-    for (const chicken of chickens.value) {
-      if (chicken.x === x && chicken.y === y) return false
-    }
-
-    // check bâtiments ou arbres plus tard
-    // for (const tree of trees.value) { ... }
-
-    return true
   }
-
-  function startDrag(e) {
-    isDragging = true
-    dragStart = { x: e.clientX, y: e.clientY }
-  }
-  
-  function onDrag(e) {
-    if (!isDragging) return
-    offset.value.x += e.clientX - dragStart.x
-    offset.value.y += e.clientY - dragStart.y
-    dragStart = { x: e.clientX, y: e.clientY }
-  }
-  
-function endDrag() {
-  isDragging = false
+  return true
 }
 
-// Zoom
+function startDrag(e) {
+  isDragging = true
+  dragStart = { x: e.clientX, y: e.clientY }
+}
+function onDrag(e) {
+  if (!isDragging) return
+  offset.value.x += e.clientX - dragStart.x
+  offset.value.y += e.clientY - dragStart.y
+  dragStart = { x: e.clientX, y: e.clientY }
+}
+function endDrag() { isDragging = false }
 function onScroll(e) {
   const delta = -e.deltaY
   zoom.value += delta * 0.001
@@ -132,13 +79,20 @@ function onScroll(e) {
 function getTileStyle({ x, y }) {
   const left = (x - y) * (tileWidth / 2)
   const top = (x + y) * (tileHeight / 2)
-  return {
-    left: `${left}px`,
-    top: `${top}px`,
-  }
+  return { left: `${left}px`, top: `${top}px` }
 }
+
+let isDragging = false
+let dragStart = { x: 0, y: 0 }
+
+const tiles = Array.from({ length: gridSize * gridSize }, (_, i) => {
+  const x = i % gridSize
+  const y = Math.floor(i / gridSize)
+  const type = (x === 0 || y === 0 || x === gridSize - 1 || y === gridSize - 1) ? 'beach' : 'grass'
+  return { x, y, type }
+})
 </script>
-  
+
 <style scoped>
 .grid-wrapper {
   width: 100%;
@@ -146,17 +100,12 @@ function getTileStyle({ x, y }) {
   overflow: hidden;
   position: relative;
   cursor: grab;
-  background: #6ec5ff; /* Océan clair */
-  /* OU avec image : */
-  /* background-image: url('@/assets/ocean-background.png'); */
-  /* background-size: cover; */
+  background: #6ec5ff;
 }
-
-  .farm-grid {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform-origin: center center;
-  }
-  </style>
-  
+.farm-grid {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: center center;
+}
+</style>

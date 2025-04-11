@@ -14,11 +14,11 @@ export const chickenStats = {
       peckingTime: 1000,
     },
     red: {
-      speed: 1.5,
+      speed: 1.1,
       movementFrequency: 0.8,
       peckingChance: 0.2,
       idleTime: [2000, 4000],
-      peckingTime: 900,
+      peckingTime: 1300,
     },
     gold: {
       speed: 2,
