@@ -1,37 +1,38 @@
 <template>
+  <div
+    class="grid-wrapper"
+    ref="gridWrapper"
+    @mousedown="startDrag"
+    @mousemove="onDrag"
+    @mouseup="endDrag"
+    @mouseleave="endDrag"
+    @wheel.prevent="onScroll"
+  >
     <div
-      class="grid-wrapper"
-      ref="gridWrapper"
-      @mousedown="startDrag"
-      @mousemove="onDrag"
-      @mouseup="endDrag"
-      @mouseleave="endDrag"
-      @wheel.prevent="onScroll"
+      class="farm-grid"
+      :style="{
+        transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`
+      }"
     >
-      <div
-        class="farm-grid"
-        :style="{
-          transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`
-        }"
-      >
-        <FarmTile
+      <FarmTile
         v-for="(tile, index) in tiles"
         :key="index"
         :tileStyle="getTileStyle(tile)"
         :type="tile.type"
-        />
+      />
 
-        <Chicken
-          :x="5"
-          :y="6"
-          type="white"
-          :gridSize="gridSize"
-        />
-
-
-      </div>
+      <Chicken
+        v-for="chicken in chickens"
+        :key="`${chicken.x}-${chicken.y}`"
+        :x="chicken.x"
+        :y="chicken.y"
+        :type="chicken.type"
+        :gridSize="props.gridSize"
+        :isWalkable="isWalkable"
+      />
     </div>
-  </template>
+  </div>
+</template>
   
 <script setup>
 import { ref, computed } from 'vue'
@@ -39,11 +40,20 @@ import FarmTile from './FarmTile.vue'
 import Chicken from './Chicken.vue'
 
   const props = defineProps({
-    gridSize: {
-      type: Number,
-      default: 25
-    }
+    gridSize: { type: Number, default: 14 },
+    tileWidth: { type: Number, default: 64 },
+    tileHeight: { type: Number, default: 32 }
   })
+
+  // Liste des poulets
+  const chickens = ref([
+    { x: 5, y: 6, type: 'white' },
+    { x: 4, y: 6, type: 'white' },
+    { x: 3, y: 6, type: 'white' },
+    { x: 2, y: 6, type: 'white' },
+    { x: 6, y: 5, type: 'red' }
+  ])
+
   
     const tileWidth = 64
     const tileHeight = 32
@@ -81,6 +91,21 @@ import Chicken from './Chicken.vue'
   let isDragging = false
   let dragStart = { x: 0, y: 0 }
   
+  function isWalkable(x, y) {
+    // limites de la map
+    if (x < 0 || y < 0 || x >= props.gridSize || y >= props.gridSize) return false
+
+    // check poules déjà présentes
+    for (const chicken of chickens.value) {
+      if (chicken.x === x && chicken.y === y) return false
+    }
+
+    // check bâtiments ou arbres plus tard
+    // for (const tree of trees.value) { ... }
+
+    return true
+  }
+
   function startDrag(e) {
     isDragging = true
     dragStart = { x: e.clientX, y: e.clientY }
