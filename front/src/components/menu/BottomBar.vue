@@ -28,7 +28,10 @@
     gap: 16px;
     padding: 0 20px;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-  }
+    position: relative;
+    border-top: 4px solid #b77b3d; /* bois clair ou doré */
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
+    }
   
   .bottom-bar button {
     background-color: #7a3e10;
@@ -46,5 +49,6 @@
     background-color: #8a4a1c;
     transform: translateY(-1px);
   }
+
   </style>
   

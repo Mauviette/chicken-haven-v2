@@ -179,7 +179,7 @@ const spritePath = computed(() => {
 
 <template>
   <div class="chicken-wrapper" :style="style">
-    <img class="chicken" :src="spritePath" :alt="type" />
+    <img class="chicken" :src="spritePath" :alt="type" draggable="false" />
     <div class="chicken-trail" ref="trailContainer"></div>
   </div>
 </template>
@@ -187,6 +187,11 @@ const spritePath = computed(() => {
 
 
 <style scoped>
+.chicken-wrapper {
+  user-select: none;
+  cursor: default;
+}
+
 .chicken {
   width: 36px;
   height: 36px;
@@ -196,32 +201,4 @@ const spritePath = computed(() => {
   z-index: 2;
 }
 
-.pouf {
-  position: absolute;
-  bottom: -2px;   /* 🟡 -8 → -2 pour le rapprocher des pattes */
-  left: 6px;      /* Ajusté pour se centrer un peu mieux */
-  width: 18px;
-  height: 18px;
-  background: radial-gradient(ellipse at center, #d8b489 0%, #a27149 100%);
-  border-radius: 50%;
-  opacity: 0.7;
-  animation: puff 0.6s ease-out infinite;
-  z-index: 1;
-}
-
-
-@keyframes puff {
-  0% {
-    transform: scale(0.7);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.4;
-  }
-  100% {
-    transform: scale(0.8);
-    opacity: 0.2;
-  }
-}
 </style>

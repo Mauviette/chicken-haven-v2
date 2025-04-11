@@ -2,7 +2,6 @@
   <div class="farm-screen">
     <TopBar :eggs="eggs" @open-profile="openProfileMenu" />
 
-
     <FarmGrid :gridSize="14" @chicken-click="eggs++" />
 
     <BottomBar
@@ -10,28 +9,45 @@
       @open-market="openMarket"
       @open-collection="openCollection"
       @open-hatchery="openHatchery"
-      @open-options="openOptions"
+      @open-options="showOptions = true"
       @open-help="openHelp"
       @logout="handleLogout"
     />
 
+    <Popup v-if="showOptions && isLoaded" @close="showOptions = false">
+      <h2>⚙️ Options</h2>
+      <label class="option-line">
+        <input type="checkbox" v-model="settings.sound" />
+        Activer le son 🔈
+      </label>
+    </Popup>
 
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { useSettings } from '@/composables/useSettings'
+import { ref, onMounted } from 'vue'
 import FarmGrid from '@/components/farm/FarmGrid.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BottomBar from '@/components/menu/BottomBar.vue'
 import TopBar from '@/components/menu/TopBar.vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import Popup from '@/components/menu/Popup.vue'
 
+
+
+const { settings, fetchSettings, isLoaded } = useSettings()
 const eggs = ref(0)
 const isCollecting = ref(false)
 const router = useRouter()
 const { logout } = useAuth()
+const showOptions = ref(false)
+
+onMounted(() => {
+  fetchSettings()
+})
 
 function handleLogout() {
   logout()
@@ -39,41 +55,25 @@ function handleLogout() {
 }
 
 function openMarket() {
-  console.log("🏪 Market ouvert")
+  window.$toast("Bientôt disponible !", 'info')
 }
 
 function openCollection() {
-  console.log("📦 Collection ouverte")
+  window.$toast("Bientôt disponible !", 'info')
 }
 
 function openHatchery() {
-  console.log("🐣 Couvoir ouvert")
-}
-
-function openOptions() {
-  console.log("⚙️ Options ouvertes")
+  window.$toast("Bientôt disponible !", 'info')
 }
 
 function openHelp() {
-  console.log("❓ Aide ouverte")
-}
-
-
-function collectEggs() {
-  isCollecting.value = true
-  console.log("🧺 Œufs collectés !")
-
-  // Simuler un temps de collecte
-  setTimeout(() => {
-    isCollecting.value = false
-  }, 1000)
+  window.$toast("Bientôt disponible !", 'info')
 }
 
 function openProfileMenu() {
-  console.log("🧑‍🌾 Menu profil ouvert !");
+  window.$toast("Bientôt disponible !", 'info')
   // À remplacer plus tard par une modale ou un menu déroulant
 }
-
 </script>
 
 <style scoped>
@@ -94,5 +94,13 @@ function openProfileMenu() {
   bottom: 20px;
   right: 20px;
 }
-
+.option-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Fredoka', sans-serif;
+  color: #fff9e5;
+  margin-top: 12px;
+  font-size: 16px;
+}
 </style>

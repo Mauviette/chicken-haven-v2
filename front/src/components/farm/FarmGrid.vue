@@ -100,7 +100,6 @@ const tiles = Array.from({ length: gridSize * gridSize }, (_, i) => {
   height: calc(100vh - 80px);
   overflow: hidden;
   position: relative;
-  cursor: grab;
   background: #6ec5ff;
 }
 .farm-grid {

@@ -8,12 +8,14 @@ export function useAuth() {
   const login = (newToken) => {
     token.value = newToken
     localStorage.setItem('token', newToken)
+    useSettings().fetchSettings()
   }
 
   const logout = () => {
     token.value = null
     localStorage.removeItem('token')
   }
+
 
   return {
     token,
