@@ -12,6 +12,7 @@
       @open-hatchery="openHatchery"
       @open-options="openOptions"
       @open-help="openHelp"
+      @logout="handleLogout"
     />
 
 
@@ -24,6 +25,18 @@ import FarmGrid from '@/components/farm/FarmGrid.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BottomBar from '@/components/menu/BottomBar.vue'
 import TopBar from '@/components/menu/TopBar.vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+
+const eggs = ref(0)
+const isCollecting = ref(false)
+const router = useRouter()
+const { logout } = useAuth()
+
+function handleLogout() {
+  logout()
+  router.push('/auth')
+}
 
 function openMarket() {
   console.log("🏪 Market ouvert")
@@ -45,8 +58,6 @@ function openHelp() {
   console.log("❓ Aide ouverte")
 }
 
-const eggs = ref(0)
-const isCollecting = ref(false)
 
 function collectEggs() {
   isCollecting.value = true

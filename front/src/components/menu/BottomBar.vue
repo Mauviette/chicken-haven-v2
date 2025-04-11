@@ -5,6 +5,7 @@
       <button v-if="hasHatchery" @click="$emit('open-hatchery')">🐣 Couvoir</button>
       <button @click="$emit('open-options')">⚙️ Options</button>
       <button @click="$emit('open-help')">❓ Aide</button>
+      <button class="logout-button" @click="$emit('logout')">🚪 Déconnexion</button>
     </div>
   </template>
   

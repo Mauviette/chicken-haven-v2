@@ -5,13 +5,17 @@ export const chickenStats = {
       peckingChance: 1,
       idleTime: [3000, 6000],
       peckingTime: 1400,
+      shakingChance: 1,
+      shakingTime: 2000,
     },
     black: {
       speed: 1,
-      movementFrequency: 0.3,
+      movementFrequency: 0.45,
       peckingChance: 0.7,
       idleTime: [5000, 7000],
-      peckingTime: 1000,
+      peckingTime: 1800,
+      shakingChance: 1,
+      shakingTime: 2000,
     },
     red: {
       speed: 1.1,
@@ -19,20 +23,8 @@ export const chickenStats = {
       peckingChance: 0.2,
       idleTime: [2000, 4000],
       peckingTime: 1300,
-    },
-    gold: {
-      speed: 2,
-      movementFrequency: 1,
-      peckingChance: 0.1,
-      idleTime: [1500, 3000],
-      peckingTime: 1000,
-    },
-    sleepy: {
-      speed: 0.5,
-      movementFrequency: 0.2,
-      peckingChance: 0.5,
-      idleTime: [6000, 9000],
-      peckingTime: 1000,
-    },
+      shakingChance: 1,
+      shakingTime: 2000,
+    }
   }
   

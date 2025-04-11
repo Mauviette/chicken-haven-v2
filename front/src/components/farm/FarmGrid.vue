@@ -42,8 +42,9 @@ const tileWidth = 64
 const tileHeight = 32
 
 const chickens = [
-  { id: 1, type: 'white', x: ref(3), y: ref(4) },
-  { id: 2, type: 'red', x: ref(5), y: ref(6) }
+  { id: 1, type: 'white', x: ref(3), y: ref(2) },
+  { id: 2, type: 'red', x: ref(6), y: ref(6) },
+  { id: 3, type: 'black', x: ref(1), y: ref(3) }
 ]
 
 const offset = ref({ x: 0, y: 0 })

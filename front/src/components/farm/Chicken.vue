@@ -24,6 +24,7 @@ function loopAI() {
   const delay = Math.random() * (stats.idleTime[1] - stats.idleTime[0]) + stats.idleTime[0]
   const willPeck = Math.random() < stats.peckingChance
   const willMove = Math.random() < stats.movementFrequency
+  const willShake = Math.random() < stats.shakingChance
 
   aiTimeout = setTimeout(() => {
     if (willPeck && willMove) {
@@ -44,6 +45,8 @@ function loopAI() {
       }, stats.peckingTime)
     } else if (willMove) {
       moveRandomly()
+    } else if (willShake) {
+      shake()
     } else {
       loopAI()
     }
@@ -85,7 +88,7 @@ function moveRandomly() {
 
 function animateMovement() {
   clearInterval(movementInterval)
-  const duration = 550 / stats.speed
+  const duration = 525 / stats.speed
   const stepTime = 16
   const steps = duration / stepTime
 
@@ -103,6 +106,14 @@ function animateMovement() {
       clearInterval(movementInterval)
     }
   }, stepTime)
+}
+
+function shake() {
+  currentAnimation.value = 'shaking'
+  setTimeout(() => {
+    currentAnimation.value = 'idle'
+    loopAI()
+  }, stats.shakingTime)
 }
 
 onMounted(() => loopAI())
