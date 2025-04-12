@@ -27,7 +27,6 @@
     padding: 8px 14px;
     font-family: 'Fredoka', sans-serif;
     font-size: 15px;
-    cursor: pointer;
     box-shadow: 0 2px 0 #5c2c08;
     transition: all 0.1s ease;
     transform: translateY(0);

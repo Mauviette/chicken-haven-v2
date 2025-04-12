@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { useSettings } from './useSettings'
 
 const token = ref(localStorage.getItem('token'))
 

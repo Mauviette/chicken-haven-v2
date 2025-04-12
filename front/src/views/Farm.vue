@@ -2,7 +2,8 @@
   <div class="farm-screen">
     <TopBar :eggs="eggs" @open-profile="openProfileMenu" />
 
-    <FarmGrid :gridSize="14" @chicken-click="eggs++" />
+    
+    <FarmGrid :gridSize="14" @chicken-click="eggs++" class="farm-visual"/>
 
     <BottomBar
       :hasHatchery="true"
@@ -16,7 +17,7 @@
 
     <Popup v-if="showOptions && isLoaded" @close="showOptions = false">
       <h2>⚙️ Options</h2>
-      <label class="option-line">
+      <label class="option-line pointer">
         <input type="checkbox" v-model="settings.sound" />
         Activer le son 🔈
       </label>
@@ -83,11 +84,12 @@ function openProfileMenu() {
   align-items: center;
   height: 100vh;
   overflow: hidden;
-
 }
+
 .farm-container {
   position: relative;
 }
+
 
 .button-bottom-right {
   position: absolute;
@@ -103,4 +105,5 @@ function openProfileMenu() {
   margin-top: 12px;
   font-size: 16px;
 }
+
 </style>

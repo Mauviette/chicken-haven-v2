@@ -41,7 +41,7 @@
     padding: 8px 12px;
     font-family: 'Fredoka', sans-serif;
     font-size: 14px;
-    cursor: pointer;
+    
     transition: transform 0.1s ease;
   }
   

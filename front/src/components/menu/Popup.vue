@@ -52,7 +52,7 @@
     border: none;
     font-size: 20px;
     color: #fff9e5;
-    cursor: pointer;
+    
   }
   
 @keyframes popupEnter {

@@ -84,7 +84,7 @@ defineExpose({ showToast })
   border: none;
   color: #fff9e5;
   font-size: 16px;
-  cursor: pointer;
+  
   padding: 0 6px;
 }
 

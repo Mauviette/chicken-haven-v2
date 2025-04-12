@@ -2,6 +2,7 @@
   <div
     class="grid-wrapper"
     ref="gridWrapper"
+    :class="{ dragging: isDraggingRef }"
     @mousedown="startDrag"
     @mousemove="onDrag"
     @mouseup="endDrag"
@@ -50,6 +51,7 @@ const chickens = [
 const offset = ref({ x: 0, y: 0 })
 const zoom = ref(1)
 const gridWrapper = ref(null)
+const isDraggingRef = ref(false)
 
 function isWalkable(x, y) {
   for (const chicken of chickens) {
@@ -62,6 +64,7 @@ function isWalkable(x, y) {
 
 function startDrag(e) {
   isDragging = true
+  isDraggingRef.value = true
   dragStart = { x: e.clientX, y: e.clientY }
 }
 function onDrag(e) {
@@ -70,7 +73,11 @@ function onDrag(e) {
   offset.value.y += e.clientY - dragStart.y
   dragStart = { x: e.clientX, y: e.clientY }
 }
-function endDrag() { isDragging = false }
+function endDrag() { 
+  isDragging = false
+  isDraggingRef.value = false
+ }
+
 function onScroll(e) {
   const delta = -e.deltaY
   zoom.value += delta * 0.001
@@ -101,11 +108,16 @@ const tiles = Array.from({ length: gridSize * gridSize }, (_, i) => {
   overflow: hidden;
   position: relative;
   background: #6ec5ff;
+  cursor: url('@/assets/ui/cursor/hand_small_open.png') 16 16, auto;
 }
 .farm-grid {
   position: absolute;
   left: 50%;
   top: 50%;
   transform-origin: center center;
+}
+
+.grid-wrapper.dragging {
+  cursor: url('@/assets/ui/cursor/hand_small_closed.png') 16 16, auto;
 }
 </style>

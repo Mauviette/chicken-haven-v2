@@ -75,7 +75,6 @@
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 14px;
-  cursor: pointer;
   transition: background-color 0.2s;
 }
 

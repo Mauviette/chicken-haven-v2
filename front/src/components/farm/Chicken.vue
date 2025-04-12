@@ -189,7 +189,6 @@ const spritePath = computed(() => {
 <style scoped>
 .chicken-wrapper {
   user-select: none;
-  cursor: default;
 }
 
 .chicken {
