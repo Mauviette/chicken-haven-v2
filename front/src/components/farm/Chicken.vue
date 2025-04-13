@@ -7,8 +7,7 @@ const props = defineProps({
   y: Object,
   type: { type: String, default: 'white' },
   gridSize: { type: Number, default: 14 },
-  tileWidth: { type: Number, default: 64 },
-  tileHeight: { type: Number, default: 32 },
+  tileSize: { type: Number, default: 16 },
   isWalkable: Function
 })
 
@@ -28,22 +27,14 @@ function loopAI() {
   const willShake = Math.random() < stats.shakingChance
   const willRun = Math.random() < stats.runningModeChance
 
-
   aiTimeout = setTimeout(() => {
-    if (willRun) {
-      runAround()
-      return
-    }
-    else if (willPeck && willMove) {
-      if (Math.random() < 0.5) {
-        currentAnimation.value = 'pecking'
-        setTimeout(() => {
-          currentAnimation.value = 'idle'
-          loopAI()
-        }, stats.peckingTime)
-      } else {
-        moveRandomly()
-      }
+    if (willRun) return runAround()
+    if (willPeck && willMove && Math.random() < 0.5) {
+      currentAnimation.value = 'pecking'
+      setTimeout(() => {
+        currentAnimation.value = 'idle'
+        loopAI()
+      }, stats.peckingTime)
     } else if (willPeck) {
       currentAnimation.value = 'pecking'
       setTimeout(() => {
@@ -62,10 +53,13 @@ function loopAI() {
 
 function moveRandomly(skipLoop = false) {
   currentAnimation.value = 'walking'
-  const directions = [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 },
+  const directions = [
+    { dx: 1, dy: 0 }, { dx: -1, dy: 0 },
     { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
     { dx: 1, dy: 1 }, { dx: -1, dy: -1 },
-    { dx: -1, dy: 1 }, { dx: 1, dy: -1 }].sort(() => Math.random() - 0.5)
+    { dx: -1, dy: 1 }, { dx: 1, dy: -1 }
+  ].sort(() => Math.random() - 0.5)
+
   for (const { dx, dy } of directions) {
     const newX = props.x.value + dx
     const newY = props.y.value + dy
@@ -75,10 +69,7 @@ function moveRandomly(skipLoop = false) {
       props.x.value = newX
       props.y.value = newY
       animateMovement()
-
-      const isoX = dx - dy
-      if (isoX > 0) facing.value = 'right'
-      if (isoX < 0) facing.value = 'left'
+      facing.value = dx < 0 ? 'left' : 'right'
       break
     }
   }
@@ -90,7 +81,6 @@ function moveRandomly(skipLoop = false) {
     }, stats.movementFrequency >= 0.8 ? 200 / stats.speed : 800 / stats.speed)
   }
 }
-
 
 function animateMovement() {
   clearInterval(movementInterval)
@@ -123,15 +113,12 @@ function shake() {
 }
 
 function runAround() {
-  if (isRunning.value) return // sécurité
+  if (isRunning.value) return
   isRunning.value = true
-  if (currentAnimation.value !== 'walking') {
-    currentAnimation.value = 'walking'
-}
-
+  currentAnimation.value = 'walking'
 
   const duration = stats.runningModeDuration || 3000
-  const interval = 500 / stats.speed
+  const interval = 600 / stats.speed
   const endTime = Date.now() + duration
 
   function runStep() {
@@ -141,13 +128,11 @@ function runAround() {
       loopAI()
       return
     }
-    moveRandomly(true) // 🟡 true = ne pas relancer loopAI
+    moveRandomly(true)
     setTimeout(runStep, interval)
   }
-
   runStep()
 }
-
 
 onMounted(() => loopAI())
 onUnmounted(() => {
@@ -156,13 +141,11 @@ onUnmounted(() => {
 })
 
 const style = computed(() => {
-  const left = (visualPos.x - visualPos.y) * (props.tileWidth / 2) + 12
-  const top = (visualPos.x + visualPos.y) * (props.tileHeight / 2) - 16
   return {
     position: 'absolute',
-    left: `${left}px`,
-    top: `${top}px`,
-    zIndex: Math.floor(visualPos.x + visualPos.y + 1),
+    left: `${visualPos.x * props.tileSize + 1.5}px`,
+    top: `${visualPos.y * props.tileSize}px`,
+    zIndex: visualPos.y,
     transform: facing.value === 'left' ? 'scaleX(-1)' : 'scaleX(1)',
     transformOrigin: 'center'
   }
@@ -173,18 +156,13 @@ const spritePath = computed(() => {
   const key = `/src/assets/chickens/${props.type}/${currentAnimation.value}.gif`
   return sprites[key]?.default || ''
 })
-
-
 </script>
 
 <template>
   <div class="chicken-wrapper" :style="style">
     <img class="chicken" :src="spritePath" :alt="type" draggable="false" />
-    <div class="chicken-trail" ref="trailContainer"></div>
   </div>
 </template>
-
-
 
 <style scoped>
 .chicken-wrapper {
@@ -192,12 +170,11 @@ const spritePath = computed(() => {
 }
 
 .chicken {
-  width: 36px;
-  height: 36px;
+  width: 12px;
+  height: 12px;
   user-select: none;
   pointer-events: auto;
   position: relative;
   z-index: 2;
 }
-
 </style>

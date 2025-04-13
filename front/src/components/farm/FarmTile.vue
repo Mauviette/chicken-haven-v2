@@ -1,8 +1,11 @@
 <template>
   <div :class="['tile', type]" :style="tileStyle"></div>
+    <!--div :class="['tile', type]" :style="tileStyle">
+    <span style="color: white; font-size: 6px">{{ type[0].toUpperCase() }}</span>
+  </div-->
+
 </template>
 
-  
 <script setup>
 defineProps({
   tileStyle: Object,
@@ -12,24 +15,31 @@ defineProps({
   }
 })
 </script>
-  
-  
-  <style scoped>
+
+<style scoped>
 .tile {
   position: absolute;
-  width: 64px;
-  height: 32px;
+  width: 16px;
+  height: 16px;
   background-size: cover;
   background-repeat: no-repeat;
   user-select: none;
 }
 
 .tile.grass {
-  background-image: url('@/assets/tiles/farm.png');
+  background-image: url('@/assets/tiles/grass.png');
 }
+
 .tile.beach {
   background-image: url('@/assets/tiles/beach.png');
 }
 
-  </style>
-  
+.tile.forest {
+  background-image: url('@/assets/tiles/forest/leaves.png');
+}
+
+.tile.forest_trunk {
+  background-image: url('@/assets/tiles/forest/trunk.png');
+}
+
+</style>

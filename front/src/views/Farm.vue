@@ -3,7 +3,7 @@
     <TopBar :eggs="eggs" @open-profile="openProfileMenu" />
 
     
-    <FarmGrid :gridSize="14" @chicken-click="eggs++" class="farm-visual"/>
+    <FarmGrid @chicken-click="eggs++" class="farm-visual"/>
 
     <BottomBar
       :hasHatchery="true"
