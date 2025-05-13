@@ -1,39 +1,33 @@
 <template>
-    <div
-      class="fence-corner"
-      :class="position"
-      :style="{ left: `${x}px`, top: `${y}px` }"
-    />
-  </template>
-  
-  <script setup>
-  defineProps({
-    position: String, // 'top-left', 'top-right', etc.
-    x: Number,
-    y: Number
-  })
-  </script>
-  
-  <style scoped>
-  .fence-corner {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background-size: cover;
-    image-rendering: pixelated;
-    z-index: 20;
-  }
-  .fence-corner.top-left {
-    background-image: url('@/assets/tiles/fence/corner-top-left.png');
-  }
-  .fence-corner.top-right {
-    background-image: url('@/assets/tiles/fence/corner-top-right.png');
-  }
-  .fence-corner.bottom-left {
-    background-image: url('@/assets/tiles/fence/corner-bottom-left.png');
-  }
-  .fence-corner.bottom-right {
-    background-image: url('@/assets/tiles/fence/corner-bottom-right.png');
-  }
-  </style>
+  <div
+    class="fence-corner"
+    :class="position"
+    :style="{ left: `${x}px`, top: `${y}px` }"
+  >
+    <img src="../../assets/tiles/fence/simple.png" alt="fence" />
+  </div>
+</template>
+
+<script setup>
+defineProps({
+  position: String,
+  x: Number,
+  y: Number
+})
+</script>
+
+<style scoped>
+.fence-corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  z-index: 20;
+  image-rendering: pixelated;
+}
+
+img {
+  width: 100%;
+  height: 100%;
+}
+</style>
   
