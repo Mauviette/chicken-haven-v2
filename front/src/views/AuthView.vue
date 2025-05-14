@@ -55,7 +55,7 @@
   
   function handleLogin(token) {
     login(token)
-    router.push('/farm')
+    router.push('/production')
   }
   
   </script>

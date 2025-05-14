@@ -1,4 +1,4 @@
-/// FarmGrid.vue 
+/// FarmGrid.vue
 <template>
   <div
     class="grid-wrapper"
@@ -23,13 +23,25 @@
         :type="tile.type"
       />
 
+      <!-- Chunks bloqués mais adjacents (débloquables) -->
       <LockedChunk
         v-for="chunk in lockedChunks"
         :key="`locked-${chunk.x}-${chunk.y}`"
         :chunk="chunk"
         :chunkSize="chunkSize"
         :tileSize="tileSize"
+        :isAdjacent="true"
         @unlock="tryUnlockChunk"
+      />
+
+      <!-- Chunks bloqués hors map (non débloquables) -->
+      <LockedChunk
+        v-for="chunk in allBlockedChunks.filter(c => !isAdjacentToUnlocked(c))"
+        :key="`blocked-${chunk.x}-${chunk.y}`"
+        :chunk="chunk"
+        :chunkSize="chunkSize"
+        :tileSize="tileSize"
+        :isAdjacent="false"
       />
 
       <FenceCorner
@@ -134,8 +146,14 @@ const onlyFences = computed(() => fencesData.value.sides)
 const fenceCorners = computed(() => fencesData.value.corners)
 
 
+// Chunks adjacents débloquables
 const lockedChunks = computed(() =>
   mapChunks.value.filter(c => !c.unlocked && isAdjacentToUnlocked(c))
+)
+
+// Tous les chunks bloqués (y compris ceux hors map)
+const allBlockedChunks = computed(() =>
+  mapChunks.value.filter(c => !c.unlocked)
 )
 
 function isAdjacentToUnlocked(chunk) {
@@ -214,7 +232,6 @@ function endDrag() {
 function onScroll(e) {
   const zoomFactor = 0.001
   const delta = -e.deltaY
-  const newZoom = zoom.value + delta * zoomFactor
   const clampedZoom = Math.round((zoom.value + delta * zoomFactor) * 10) / 10
   if (clampedZoom === zoom.value) return
 

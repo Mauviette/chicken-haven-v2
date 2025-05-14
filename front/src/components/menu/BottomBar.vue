@@ -1,20 +1,49 @@
 <template>
-    <div class="bottom-bar">
-      <button @click="$emit('open-market')">🛒 Marché</button>
-      <button @click="$emit('open-collection')">🐔 Collection</button>
-      <button v-if="hasHatchery" @click="$emit('open-hatchery')">🐣 Couvoir</button>
-      <button @click="$emit('open-options')">⚙️ Options</button>
-      <button @click="$emit('open-help')">❓ Aide</button>
-      <button class="logout-button" @click="$emit('logout')">🚪 Déconnexion</button>
-    </div>
-  </template>
-  
-  <script setup>
-  defineProps({
-    hasHatchery: Boolean // débloqué ou pas
-  })
-  </script>
-  
+  <div class="bottom-bar">
+    <ActionButton
+      :onClick="() => emit('open-production')"
+      :disabled="route.path === '/production'"
+      :active="route.path === '/production'"
+    >
+      ⚒️ Production
+    </ActionButton>
+
+    <ActionButton
+      :onClick="() => emit('open-market')"
+      :disabled="route.path === '/market'"
+      :active="route.path === '/market'"
+    >
+      🛒 Marché
+    </ActionButton>
+
+    <ActionButton
+      :onClick="() => emit('open-collection')"
+      :disabled="route.path === '/collection'"
+      :active="route.path === '/collection'"
+    >
+      🐔 Collection
+    </ActionButton>
+
+    <ActionButton
+      :onClick="() => emit('open-help')"
+    >
+      ❓ Aide
+    </ActionButton>
+
+    <ActionButton
+      :onClick="() => emit('open-options')"
+    >
+      ⚙️ Options
+    </ActionButton>
+  </div>
+</template>
+<script setup>
+import { useRoute } from 'vue-router'
+const route = useRoute()
+
+const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help'])
+</script>
+
   <style scoped>
   .bottom-bar {
     width: 100%;
@@ -32,7 +61,7 @@
     border-top: 4px solid #b77b3d; /* bois clair ou doré */
     box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
     }
-  
+
   .bottom-bar button {
     background-color: #7a3e10;
     border: 2px solid #ffc66e;
@@ -41,14 +70,13 @@
     padding: 8px 12px;
     font-family: 'Fredoka', sans-serif;
     font-size: 14px;
-    
+
     transition: transform 0.1s ease;
   }
-  
+
   .bottom-bar button:hover {
     background-color: #8a4a1c;
     transform: translateY(-1px);
   }
 
   </style>
-  

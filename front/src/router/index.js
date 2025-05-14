@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Farm from '@/views/Farm.vue'
-import Market from '@/views/Market.vue'
+import Production from '@/views/Production.vue'
 import Auth from '@/views/AuthView.vue'
 import { useAuth } from '@/composables/useAuth'
 
@@ -9,7 +8,7 @@ const routes = [
     path: '/',
     redirect: () => {
       const { isLoggedIn } = useAuth()
-      return isLoggedIn() ? '/farm' : '/auth'
+      return isLoggedIn() ? '/production' : '/auth'
     }
   },
   {
@@ -18,15 +17,9 @@ const routes = [
     component: Auth
   },
   {
-    path: '/farm',
-    name: 'Farm',
-    component: Farm,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/market',
-    name: 'Market',
-    component: Market,
+    path: '/production',
+    name: 'Production',
+    component: Production,
     meta: { requiresAuth: true }
   }
 ]

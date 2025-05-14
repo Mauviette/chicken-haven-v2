@@ -1,26 +1,30 @@
 <template>
-    <div class="top-bar">
-      <div class="top-bar-inner">
-        <div class="game-title">🐔 Chicken Haven</div>
-        <div class="top-right">
-          <div class="egg-counter">
-            <span>🥚 {{ eggs }} œufs</span>
-          </div>
-          <button class="profile-btn" @click="$emit('open-profile')">
-            <img src="@/assets/ui/avatar-default.svg" class="avatar" />
-          </button>
+  <div class="top-bar">
+    <div class="top-bar-inner">
+      <div class="game-title">🐔 Chicken Haven</div>
+      <div class="top-right">
+        <div class="egg-counter">
+          <span>🥚 {{ eggs }} œufs</span>
         </div>
+        <button class="profile-btn" @click="openProfileMenu">
+          <img src="@/assets/ui/avatar-default.svg" class="avatar" />
+        </button>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  defineProps({
-    eggs: Number
-  })
-  </script>
-  
-  <style scoped>
+  </div>
+</template>
+
+<script setup>
+import { usePlayer } from '@/composables/usePlayer'
+const { eggs } = usePlayer()
+
+function openProfileMenu() {
+  window.$toast("Bientôt disponible !", 'info')
+}
+</script>
+
+
+<style scoped>
   .top-bar {
     width: 100%;
     height: 60px;
@@ -81,5 +85,5 @@
     border: 2px solid #ffc66e;
     background-color: white;
   }
-  </style>
+</style>
   
