@@ -18,8 +18,10 @@
 import { usePlayer } from '@/composables/usePlayer'
 const { eggs } = usePlayer()
 
+const emit = defineEmits(['open-profile'])
+
 function openProfileMenu() {
-  window.$toast("Bientôt disponible !", 'info')
+  emit('open-profile')
 }
 </script>
 

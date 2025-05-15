@@ -1,5 +1,5 @@
 <template>
-  <Popup v-if="visible" @close="close">
+  <Popup v-if="visible" @close="emit('close')">
     <h2>⚙️ Options</h2>
     <label class="option-line pointer">
       <input type="checkbox" v-model="settings.sound" />
@@ -17,6 +17,8 @@ defineProps({
 })
 
 const { settings } = useSettings()
+
+const emit = defineEmits(['close'])
 
 </script>
 

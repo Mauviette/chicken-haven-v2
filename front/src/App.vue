@@ -1,5 +1,7 @@
 <template>
-  <TopBar v-if="!isAuthPage" />
+  <TopBar v-if="!isAuthPage" 
+    @open-profile="toast('Bientôt disponible !')"
+  />
   <router-view />
   <ToastManager ref="toastManager" />
   <Options :visible="showOptions" @close="showOptions = false" />
@@ -9,6 +11,7 @@
     @open-market="toast('Bientôt disponible !')"
     @open-collection="toast('Bientôt disponible !')"
     @open-help="toast('Bientôt disponible !')"
+    @open-options="showOptions = true"
   />
 
 </template>

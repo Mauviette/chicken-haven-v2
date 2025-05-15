@@ -1,4 +1,3 @@
-<!-- src/components/menu/ActionButton.vue -->
 <template>
     <button
       class="action-button"
@@ -6,7 +5,7 @@
       @click="!disabled && onClick()"
       :disabled="disabled"
     >
-      <slot />
+      <slot></slot>
     </button>
   </template>
   
@@ -18,22 +17,22 @@
   })
   </script>
   
-  <style scoped>
+  <style>
   .action-button {
     background-color: #7a3e10;
     border: 2px solid #ffc66e;
     color: #fff9e5;
     border-radius: 10px;
-    padding: 8px 14px;
+    padding: 8px 12px;
     font-family: 'Fredoka', sans-serif;
-    font-size: 15px;
-    box-shadow: 0 2px 0 #5c2c08;
-    transition: all 0.1s ease;
-    transform: translateY(0);
+    font-size: 14px;
+
+    transition: transform 0.1s ease;
   }
   
   .action-button:hover:not(.disabled) {
     background-color: #8a4a1c;
+    transform: translateY(-1px);
   }
   
   .action-button:active:not(.disabled) {

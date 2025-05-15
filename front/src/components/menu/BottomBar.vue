@@ -24,11 +24,11 @@
       🐔 Collection
     </ActionButton>
 
-    <ActionButton
+    <!--ActionButton
       :onClick="() => emit('open-help')"
     >
       ❓ Aide
-    </ActionButton>
+    </ActionButton-->
 
     <ActionButton
       :onClick="() => emit('open-options')"
@@ -38,10 +38,11 @@
   </div>
 </template>
 <script setup>
+import ActionButton from '@/components/menu/ActionButton.vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 
-const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help'])
+const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help', 'open-options'])
 </script>
 
   <style scoped>

@@ -47,23 +47,23 @@ function handleLogout() {
 }
 
 function openMarket() {
-  window.$toast("Bientôt disponible !", 'info')
+  toast("Bientôt disponible !", 'info')
 }
 
 function openCollection() {
-  window.$toast("Bientôt disponible !", 'info')
+  toast("Bientôt disponible !", 'info')
 }
 
 function openHatchery() {
-  window.$toast("Bientôt disponible !", 'info')
+  toast("Bientôt disponible !", 'info')
 }
 
 function openHelp() {
-  window.$toast("Bientôt disponible !", 'info')
+  toast("Bientôt disponible !", 'info')
 }
 
 function openProfileMenu() {
-  window.$toast("Bientôt disponible !", 'info')
+  toast("Bientôt disponible !", 'info')
   // À remplacer plus tard par une modale ou un menu déroulant
 }
 </script>
