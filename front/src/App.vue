@@ -31,6 +31,11 @@ const toastManager = ref(null)
 const showOptions = ref(false)
 const { logout: performLogout } = useAuth()
 
+onMounted(() => {
+  window.$toast = toast
+})
+
+
 function logout() {
   try {
     performLogout()
@@ -42,7 +47,6 @@ function logout() {
     toast('Déconnexion échouée.', 'error')
   }
 }
-
 
 
 function toast(message, type = 'info') {
@@ -60,10 +64,12 @@ const isAuthPage = computed(() => route.name === 'Auth')
 </script>
 
 <style>
-body {
-  user-select: none;
+html, body {
   margin: 0;
+  padding: 0;
   overflow: hidden;
+  width: 100vw;
+  height: 100vh;
   cursor: url('@/assets/ui/cursor/hand_small_point.png') 16 16, auto;
 }
 
@@ -77,6 +83,13 @@ img,
 .fog,
 .chicken {
   image-rendering: pixelated;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 </style>

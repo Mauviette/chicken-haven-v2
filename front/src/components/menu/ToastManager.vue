@@ -13,37 +13,67 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
   hasBottomBar: Boolean
 })
 
 const toasts = ref([])
+const bottomOffset = ref(100)
 
 const emojiMap = {
   success: '✅',
   error: '❌',
-  info: 'ℹ️'
+  info: 'ℹ️',
+  warning: '⚠️'
 }
 
 function showToast(message, type = 'info', duration = 5000) {
   const id = Date.now() + Math.random()
   toasts.value.push({ id, message, type })
-  setTimeout(() => removeToast(id), duration)
+
+  setTimeout(() => {
+    const toastIndex = toasts.value.findIndex(t => t.id === id)
+    if (toastIndex !== -1) {
+      const toastElement = document.querySelectorAll('.toast')[toastIndex]
+      if (toastElement) {
+        toastElement.classList.add('exit')
+        setTimeout(() => removeToast(id), 300)
+      } else {
+        removeToast(id)
+      }
+    }
+  }, duration)
 }
 
 function removeToast(id) {
   toasts.value = toasts.value.filter(t => t.id !== id)
 }
 
-// expose function for outside use
 defineExpose({ showToast })
 
-// 🔁 Position calculée dynamiquement
 const containerStyle = computed(() => ({
-  bottom: props.hasBottomBar ? '100px' : '20px'
+  bottom: props.hasBottomBar ? `${bottomOffset.value}px` : '20px'
 }))
+
+// 🔁 Calcule dynamiquement la hauteur de .bottom-bar si présente
+function updateBottomOffset() {
+  const el = document.querySelector('.bottom-bar')
+  if (el) {
+    const height = el.offsetHeight
+    bottomOffset.value = height + 16 // marge au-dessus
+  }
+}
+
+onMounted(() => {
+  updateBottomOffset()
+  window.addEventListener('resize', updateBottomOffset)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateBottomOffset)
+})
 </script>
 
 
@@ -56,6 +86,7 @@ const containerStyle = computed(() => ({
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-width: min(90vw, 320px);
 }
 
 .toast {
@@ -106,4 +137,20 @@ const containerStyle = computed(() => ({
     transform: translateX(0);
   }
 }
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+.toast.exit {
+  animation: slideOut 0.3s ease forwards;
+}
+
 </style>

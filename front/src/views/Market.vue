@@ -9,10 +9,9 @@
 
 <style scoped>
 .farm-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 85vh;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
 }
 
 .farm-container {

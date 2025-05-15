@@ -14,6 +14,7 @@
   </div>
 </template>
 
+
 <script setup>
 import { usePlayer } from '@/composables/usePlayer'
 const { eggs } = usePlayer()
@@ -27,88 +28,82 @@ function openProfileMenu() {
 
 
 <style scoped>
-  @media (max-width: 600px) {
-    .top-bar-inner {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 0 16px;
-      gap: 6px;
-    }
+.top-bar {
+  width: 100%;
+  height: 60px;
+  background-color: #f6e4c3;
+  background-image: url("@/assets/bar/top-texture.png");
+  background-repeat: repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Fredoka', sans-serif;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
 
-    .game-title {
-      font-size: 16px;
-    }
+.top-bar-inner {
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    .egg-counter {
-      font-size: 13px;
-      padding: 4px 8px;
-    }
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-    .avatar {
-      width: 28px;
-      height: 28px;
-    }
-  }
+.egg-counter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #fff7dc;
+  border: 2px solid #ffc66e;
+  border-radius: 12px;
+  padding: 5px 10px;
+  font-size: 15px;
+  color: #6d3c00;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
 
-  .top-bar {
-    width: 100%;
-    height: 60px;
-    background-color: #f6e4c3;
-    background-image: url("@/assets/bar/top-texture.png");
-    background-repeat: repeat;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Fredoka', sans-serif;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  }
-  
+.profile-btn {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #ffc66e;
+  background-color: white;
+}
+
+@media (max-width: 600px) {
   .top-bar-inner {
-    width: 100%;
-    max-width: 100%;
-    padding: 0 48px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 0 10px;
   }
-  
-  .top-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+
+  .game-title {
+    font-size: 14px;
   }
-  
+
   .egg-counter {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background-color: #fff7dc;
-    border: 2px solid #ffc66e;
-    border-radius: 12px;
-    padding: 6px 10px;
-    font-size: 15px;
-    color: #6d3c00;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    font-size: 13px;
+    padding: 4px 6px;
   }
-  
-  .egg-icon {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .profile-btn {
-    background: none;
-    border: none;
-    
-    padding: 0;
-  }
-  
+
   .avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid #ffc66e;
-    background-color: white;
+    width: 26px;
+    height: 26px;
   }
+}
+
 </style>
-  

@@ -25,7 +25,7 @@
         password: password.value
       })
       emit('logged-in', res.data.token)
-      toast("Connexion réussie!", 'success')
+      //toast("Connexion réussie!", 'success')
     } catch (err) {
       console.log(err)
       message.value = err.response?.data?.error || "Erreur de connexion"

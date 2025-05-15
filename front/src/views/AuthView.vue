@@ -36,7 +36,10 @@
         span.style.setProperty('--rotation', `${rotateDeg}deg`)
 
         // Position, taille, délai
-        span.style.left = Math.random() * 100 + 'vw'
+        const offset = 32 // max taille de l’emoji (en px)
+        const maxLeft = window.innerWidth - offset
+        const leftPx = Math.random() * maxLeft
+        span.style.left = `${leftPx}px`
         span.style.fontSize = Math.random() * 16 + 16 + 'px'
         span.style.animationDelay = Math.random() * 0.5 + 's'
 
@@ -51,11 +54,13 @@
 
   function handleRegistered() {
     console.log("🎉 Inscription réussie")
+    window.$toast("Inscription réussie !", 'success')
   }
   
   function handleLogin(token) {
     login(token)
     router.push('/production')
+    window.$toast("Connexion réussie !", 'success')
   }
   
   </script>
@@ -108,6 +113,24 @@
         opacity: 0;
     }
     }
+
+    @media (max-width: 700px) {
+    .auth-header {
+      font-size: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+      padding: 0 16px;
+    }
+
+    .auth-forms {
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      padding: 0 16px;
+    }
+  }
+
 
   </style>
   

@@ -35,15 +35,17 @@
     border: 2px solid #ffc66e;
     border-radius: 16px;
     padding: 24px;
-    min-width: 300px;
-    max-width: 90%;
+    width: 360px;
+    max-width: 90vw;
     font-family: 'Fredoka', sans-serif;
     color: #fff9e5;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     position: relative;
     animation: popupEnter 0.25s ease-out;
+    box-sizing: border-box;
   }
-  
+
+
   .close-btn {
     position: absolute;
     top: 8px;
