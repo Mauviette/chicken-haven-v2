@@ -27,6 +27,29 @@ function openProfileMenu() {
 
 
 <style scoped>
+  @media (max-width: 600px) {
+    .top-bar-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0 16px;
+      gap: 6px;
+    }
+
+    .game-title {
+      font-size: 16px;
+    }
+
+    .egg-counter {
+      font-size: 13px;
+      padding: 4px 8px;
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
   .top-bar {
     width: 100%;
     height: 60px;

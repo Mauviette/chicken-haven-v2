@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Production from '@/views/Production.vue'
+import Market from '@/views/Market.vue'
+import Collection from '@/views/Collection.vue'
 import Auth from '@/views/AuthView.vue'
 import { useAuth } from '@/composables/useAuth'
 
@@ -20,6 +22,18 @@ const routes = [
     path: '/production',
     name: 'Production',
     component: Production,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/market',
+    name: 'Marché',
+    component: Market,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/collection',
+    name: 'Collection',
+    component: Collection,
     meta: { requiresAuth: true }
   }
 ]

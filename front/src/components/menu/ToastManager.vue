@@ -1,5 +1,5 @@
 <template>
-  <div class="toast-container">
+  <div class="toast-container" :style="containerStyle">
     <div
       v-for="toast in toasts"
       :key="toast.id"
@@ -13,7 +13,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+
+const props = defineProps({
+  hasBottomBar: Boolean
+})
 
 const toasts = ref([])
 
@@ -26,18 +30,22 @@ const emojiMap = {
 function showToast(message, type = 'info', duration = 5000) {
   const id = Date.now() + Math.random()
   toasts.value.push({ id, message, type })
-
-  setTimeout(() => {
-    removeToast(id)
-  }, duration)
+  setTimeout(() => removeToast(id), duration)
 }
 
 function removeToast(id) {
   toasts.value = toasts.value.filter(t => t.id !== id)
 }
 
+// expose function for outside use
 defineExpose({ showToast })
+
+// 🔁 Position calculée dynamiquement
+const containerStyle = computed(() => ({
+  bottom: props.hasBottomBar ? '100px' : '20px'
+}))
 </script>
+
 
 <style scoped>
 .toast-container {

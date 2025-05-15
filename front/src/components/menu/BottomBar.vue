@@ -80,4 +80,19 @@ const emit = defineEmits(['open-production', 'open-market', 'open-collection', '
     transform: translateY(-1px);
   }
 
+    @media (max-width: 600px) {
+    .bottom-bar {
+      flex-wrap: wrap;
+      justify-content: center;
+      height: auto;
+      padding: 12px;
+      gap: 8px;
+    }
+
+    .bottom-bar .action-button {
+      font-size: 13px;
+      padding: 6px 10px;
+    }
+  }
+
   </style>

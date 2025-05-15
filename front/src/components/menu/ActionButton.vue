@@ -49,8 +49,8 @@
   /* État désactivé */
   .action-button.disabled {
     background-color: #5c2c08;
-    color: #bbb;
-    cursor: not-allowed;
+    color: #bbb;  
+    cursor: url('@/assets/ui/cursor/disabled.png') 16 16, auto;
     opacity: 0.7;
   }
   </style>

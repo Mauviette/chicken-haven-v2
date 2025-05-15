@@ -3,13 +3,13 @@
     @open-profile="toast('Bientôt disponible !')"
   />
   <router-view />
-  <ToastManager ref="toastManager" />
-  <Options :visible="showOptions" @close="showOptions = false" />
+  <ToastManager ref="toastManager" :hasBottomBar="!isAuthPage"/>
+  <Options :visible="showOptions" @close="showOptions = false" @logout="logout" />
   <BottomBar
     v-if="!isAuthPage"
     @open-production="router.push('/production')"
-    @open-market="toast('Bientôt disponible !')"
-    @open-collection="toast('Bientôt disponible !')"
+    @open-market="router.push('/market')"
+    @open-collection="router.push('/collection')"
     @open-help="toast('Bientôt disponible !')"
     @open-options="showOptions = true"
   />
@@ -24,16 +24,32 @@ import Options from '@/components/menu/Options.vue'
 import BottomBar from '@/components/menu/BottomBar.vue'
 import TopBar from '@/components/menu/TopBar.vue'
 import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const toastManager = ref(null)
 const showOptions = ref(false)
+const { logout: performLogout } = useAuth()
+
+function logout() {
+  try {
+    performLogout()
+    toast('Déconnexion réussie.', 'success')
+    showOptions.value = false
+    router.push('/auth')
+  } catch (error) {
+    console.error('Logout failed:', error)
+    toast('Déconnexion échouée.', 'error')
+  }
+}
+
+
 
 function toast(message, type = 'info') {
   if (toastManager.value?.showToast) {
     toastManager.value.showToast(message, type)
   } else {
-    console.warn('Toast system not ready:', message)
+    console.warn('Système de pop-ups pas prêt :', message)
   }
 }
 
