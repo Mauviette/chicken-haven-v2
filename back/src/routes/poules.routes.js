@@ -1,8 +1,11 @@
 import express from 'express'
-import { getAllPoules } from '../controllers/poules.controller.js'
+import { verifyToken } from '../middleware/auth.middleware.js'
+import { getPoulesPossedees, upsertPoule, updatePoule } from '../controllers/poules.controller.js'
 
 const router = express.Router()
 
-router.get('/', getAllPoules)
+router.get('/', verifyToken, getPoulesPossedees)
+router.post('/', verifyToken, upsertPoule)
+router.put('/:especeId', verifyToken, updatePoule)
 
 export default router

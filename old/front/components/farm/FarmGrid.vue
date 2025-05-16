@@ -263,7 +263,7 @@ function getTileStyle({ x, y }) {
   overflow: hidden;
   position: relative;
   background: #72d73b;
-  cursor: url('@/assets/ui/cursor/hand_small_open.png') 16 16, auto;
+  cursor: url('@/assets/ui/cursor/hand_open.png') 0 0, auto;
 }
 
 .farm-grid {
@@ -276,6 +276,6 @@ function getTileStyle({ x, y }) {
 }
 
 .grid-wrapper.dragging {
-  cursor: url('@/assets/ui/cursor/hand_small_closed.png') 16 16, auto;
+  cursor: url('@/assets/ui/cursor/hand_closed.png') 0 0, auto;
 }
 </style>

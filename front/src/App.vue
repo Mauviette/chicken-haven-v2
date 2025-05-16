@@ -70,11 +70,11 @@ html, body {
   overflow: hidden;
   width: 100vw;
   height: 100vh;
-  cursor: url('@/assets/ui/cursor/hand_small_point.png') 16 16, auto;
+  cursor: url('@/assets/ui/cursor/hand_point.png') 0 0, auto;
 }
 
 a, button, input[type="button"], input[type="submit"], input[type="checkbox"] select, textarea, .pointer {
-  cursor: url('@/assets/ui/cursor/hand_small_point_n.png') 16 16, auto;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
 }
 
 img,

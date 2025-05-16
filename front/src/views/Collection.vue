@@ -1,21 +1,211 @@
 <template>
+  <div class="collection-view">
 
-    <div class="farm-screen"></div>
+    <div class="header-bar">
+      <h2 class="section-title" style="margin-bottom: 0;">🐔 Ma Collection</h2>
+      <div class="controls" style="margin-bottom: 0;">
+        <input v-model="searchQuery" type="text" placeholder="Rechercher une poule..." class="search-input" />
+        <select v-model="sortKey" class="sort-select">
+          <option value="rarete">Rareté</option>
+          <option value="quantite">Quantité</option>
+        </select>
+        <button @click="toggleSortOrder" class="sort-order">
+          {{ sortOrder === 'asc' ? '⬆️' : '⬇️' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="poules-grid">
+      <ChickenCard
+        v-for="poule in filteredPoules"
+        :key="poule.especeId"
+        :poule="poule"
+        :espece="especeData[poule.especeId]"
+        :image="getImage(poule.especeId)"
+        :hiddenImage="hiddenImage"
+        @click="poule.quantite > 0 && openDetail(poule)"
+      />
+    </div>
+
+    <ChickenDetail
+      v-if="selectedPoule"
+      :poule="selectedPoule"
+      :espece="especeData[selectedPoule.especeId]"
+      :image="getImage(selectedPoule.especeId)"
+      @close="closeDetail"
+    />
+
+  </div>
 </template>
 
 <script setup>
+import ChickenCard from '@/components/chicken/ChickenCard.vue'
+import ChickenDetail from '../components/chicken/ChickenDetail.vue'
+import { ref, computed } from 'vue'
+import { usePoules } from '@/composables/usePoules'
 
+const selectedPoule = ref(null)
+const searchQuery = ref('')
+const sortKey = ref('rarete')
+const sortOrder = ref('asc')
+
+const {
+  poules,
+  especeData,
+  getImage,
+  hiddenImage
+} = usePoules()
+
+function normalizeText(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+function closeDetail() {
+  selectedPoule.value = null
+}
+
+function openDetail(poule) {
+  if (poule.quantite <= 0) return
+  selectedPoule.value = poule
+}
+
+function toggleSortOrder() {
+  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+}
+
+const filteredPoules = computed(() => {
+  const query = normalizeText(searchQuery.value.trim())
+
+  // Enrichissement avec score de pertinence et infos
+  const withMeta = poules.value.map((poule) => {
+    const espece = especeData[poule.especeId]
+    const matchScore = query
+      ? [
+          espece.nom,
+          espece.talent,
+          espece.categorie,
+          espece.rarete,
+        ].some((val) => normalizeText(val).includes(query)) ? 1 : 0
+      : 0
+
+
+    return {
+      ...poule,
+      _matchScore: matchScore,
+      _isUnlocked: poule.quantite > 0,
+      _rareteIndex: rareteOrder[espece.rarete] || 0,
+    }
+  })
+
+  // Séparation débloquées vs non débloquées
+  const unlocked = withMeta.filter(p => p._isUnlocked)
+  const locked = withMeta.filter(p => !p._isUnlocked)
+
+  // Tri des poules débloquées
+  unlocked.sort((a, b) => {
+    if (b._matchScore !== a._matchScore) return b._matchScore - a._matchScore
+
+    if (sortKey.value) {
+      const valA = sortKey.value === 'rarete' ? a._rareteIndex : a[sortKey.value] ?? 0
+      const valB = sortKey.value === 'rarete' ? b._rareteIndex : b[sortKey.value] ?? 0
+      const dir = sortOrder.value === 'asc' ? 1 : -1
+      if (valA !== valB) return (valA - valB) * dir
+    }
+
+    return 0
+  })
+
+  // Optionnel : tri secondaire des non débloquées par rareté
+  locked.sort((a, b) => a._rareteIndex - b._rareteIndex)
+
+  return [...unlocked, ...locked]
+})
+
+
+
+const rareteOrder = {
+  commune: 1,
+  rare: 2,
+  epique: 3,
+  legendary: 4,
+}
 </script>
 
 <style scoped>
-.farm-screen {
+
+.collection-view {
+  padding: 24px;
+  background: #f9f3e8;
+  font-family: 'Fredoka', sans-serif;
   flex: 1;
   width: 100%;
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: 100vh;
+  box-sizing: border-box;
 }
 
-.farm-container {
-  position: relative;
+
+.section-title {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: #6d3c00;
+}
+
+.poules-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: flex-start;
+}
+
+.info {
+  text-align: center;
+  font-size: 14px;
+  color: #5c2c08;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  max-width: 60%;
+  margin-right: 50px;
+}
+
+@media (max-width: 600px) {
+  .search-input {
+    display: none;
+  }
+}
+
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #ffc66e;
+  font-family: 'Fredoka', sans-serif;
+  cursor: url('@/assets/ui/cursor/bracket_a_vertical.png') 0 0, auto;
+}
+
+.sort-select,
+.sort-order {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #ffc66e;
+  background: #fffaf1;
+  font-family: 'Fredoka', sans-serif;
+  cursor: pointer;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+}
+
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 </style>

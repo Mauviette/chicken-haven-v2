@@ -1,10 +1,16 @@
-import mongoose from 'mongoose';
+// models/Poule.js
+const mongoose = require('mongoose')
 
-const pouleSchema = new mongoose.Schema({
-  nom: String,
-  effet: String,
-  image: String
-});
+const PouleSchema = new mongoose.Schema({
+  especeId: { type: String, required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  quantite: { type: Number, default: 0 },
+  niveauTalent: { type: Number, default: 0 },
+  statutEnergie: {
+    etat: { type: String, enum: ['non_obtenue', 'disponible', 'en mission', 'fatiguee'], default: 'non_obtenue' },
+    heureDisponible: { type: Date, default: null },
+  },
+  posteOccupe: { type: String, default: null }
+}, { timestamps: true })
 
-const Poule = mongoose.model('Poule', pouleSchema);
-export default Poule;
+module.exports = mongoose.model('Poule', PouleSchema)

@@ -46,7 +46,7 @@
   }
 
   .is-adjacent {
-    cursor: url('@/assets/ui/cursor/hand_small_point_n.png') 16 16, auto;
+    cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
     background: rgba(0, 0, 0, 0.3);
   }
 
