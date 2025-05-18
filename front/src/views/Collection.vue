@@ -195,7 +195,7 @@ const rareteOrder = {
   border: 2px solid #ffc66e;
   background: #fffaf1;
   font-family: 'Fredoka', sans-serif;
-  cursor: pointer;
+    cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
 }
 

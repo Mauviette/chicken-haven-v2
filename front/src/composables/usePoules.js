@@ -5,7 +5,7 @@ const hiddenImage = chickenImages['/src/assets/chickens/hidden/basic.png']?.defa
 
 // Référentiel local (back-end stocke uniquement les IDs)
 export const especeData = {
-  'zigzag-doree': {
+  'blanchonette': {
     nom: 'Blanchonette',
     talent: 'Chanceuse',
     image: chickenImages['/src/assets/chickens/white/basic.png'].default,
@@ -14,15 +14,15 @@ export const especeData = {
     stats: { intelligence: 4, energie: 3, charisme: 3 },
   },
   'poulette-rousse': {
-    nom: 'Poulette Rousse',
+    nom: 'Poulette Roussette',
     talent: 'Énergétique',
     image: chickenImages['/src/assets/chickens/red/basic.png'].default,
     categorie: 'eclosion',
     rarete: 'commune',
     stats: { intelligence: 3, energie: 5, charisme: 2 },
   },
-  'poulette-noire': {
-    nom: 'black',
+  'noiraude': {
+    nom: 'Noiraude',
     talent: 'Persévérante',
     image: chickenImages['/src/assets/chickens/black/basic.png'].default,
     categorie: 'eclosion',

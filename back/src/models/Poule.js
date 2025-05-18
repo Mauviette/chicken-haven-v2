@@ -1,5 +1,6 @@
 // models/Poule.js
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
+
 
 const PouleSchema = new mongoose.Schema({
   especeId: { type: String, required: true },
@@ -13,4 +14,5 @@ const PouleSchema = new mongoose.Schema({
   posteOccupe: { type: String, default: null }
 }, { timestamps: true })
 
-module.exports = mongoose.model('Poule', PouleSchema)
+
+export default PouleSchema
