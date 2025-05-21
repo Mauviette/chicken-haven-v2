@@ -11,13 +11,14 @@ export default defineConfig({
     },
   },
   server: {
-    host: true, // ← permet d'écouter sur toutes les IP (dont 192.168.x.x)
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3002',
         changeOrigin: true,
         secure: false,
       }
     }
   }
 })
+
+

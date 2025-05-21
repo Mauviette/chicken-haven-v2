@@ -22,8 +22,8 @@
       <div class="section">
         <div class="label">Talent</div>
         <div class="value">
-          <Tooltip :text="getTalentDescription(espece.talent, poule.niveauTalent)" >      
-            {{ espece.talent }} {{ toRoman(poule.niveauTalent) }}
+          <Tooltip :text="getTalentEffect(poule)" >      
+            {{ getTalentDisplayName(poule) }}
           </Tooltip>
         </div>
       </div>
@@ -57,6 +57,7 @@
 <script setup>
 import Popup from '@/components/menu/Popup.vue'
 import Tooltip from '../menu/Tooltip.vue'
+import { getTalentDisplayName, getTalentEffect } from '@/composables/usePoules'
 const emit = defineEmits(['close'])
 
 defineProps({
@@ -88,19 +89,6 @@ function formatRareté(r) {
     legendary: '🔥 Légendaire',
   }
   return map[r] || r
-}
-
-function getTalentDescription(talent, niveau) {
-  const speed = 5 + 5 * niveau;
-  const chance = 25 + 25 * niveau;
-  const regen = 5 + 5 * niveau;
-  const map = {
-    'Énergétique': `Finit les missions ${speed}% plus vite.`,
-    'Chanceuse': `+${chance}% de chance d’obtenir un objet rare.`,
-    'Persévérante': `Se régénère ${regen}% plus vite entre deux missions.`,
-    // Ajoute d’autres talents ici
-  }
-  return map[talent] || 'Talent spécial de cette poule.'
 }
 
 function renderStars(n) {

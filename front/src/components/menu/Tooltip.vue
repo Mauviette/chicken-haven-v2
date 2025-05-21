@@ -1,28 +1,68 @@
 <template>
-  <div class="tooltip-container" @mouseenter="show = true" @mouseleave="show = false">
+  <div
+    class="tooltip-wrapper"
+    @mouseenter="show = true"
+    @mouseleave="show = false"
+    ref="wrapper"
+  >
     <slot />
-    <div v-if="show" class="tooltip-box">
-      {{ text }}
-    </div>
+    <Teleport to="body">
+      <div
+        v-if="show"
+        class="tooltip-box"
+        :style="{ top: `${position.top}px`, left: `${position.left}px` }"
+      >
+        {{ text }}
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
+
 defineProps({ text: String })
+
+const wrapper = ref(null)
 const show = ref(false)
+const position = ref({ top: 0, left: 0 })
+
+async function updateFixedPosition() {
+  await nextTick()
+  const el = wrapper.value
+  if (!el) return
+
+  const rect = el.getBoundingClientRect()
+  const tooltipHeight = 36 // valeur approximative
+  const margin = 8
+
+  position.value = {
+    // Décale le popup plus bas de 10px
+    top: rect.top + window.scrollY - tooltipHeight - margin + 10,
+    left: rect.left + rect.width / 2 + window.scrollX
+  }
+}
+
+onMounted(() => {
+  if (show.value) updateFixedPosition()
+})
+
+watch(show, (visible) => {
+  if (visible) updateFixedPosition()
+})
 </script>
 
 <style scoped>
-.tooltip-container {
-  position: relative;
+.tooltip-wrapper {
   display: inline-block;
+  position: relative;
+  z-index: auto;
+  cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+  font-family: 'Fredoka', sans-serif;
 }
 
 .tooltip-box {
   position: absolute;
-  bottom: 125%;
-  left: 50%;
   transform: translateX(-50%);
   background: #fff9e5;
   color: #6d3c00;
@@ -32,20 +72,9 @@ const show = ref(false)
   white-space: nowrap;
   border: 2px solid #ffc66e;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 10;
+  z-index: 999999;
+  pointer-events: none;
   max-width: 90vw;
-
-}
-@media (max-width: 600px) {
-  .tooltip-box {
-    left: auto;
-    right: 0;
-    transform: none;
-    white-space: normal;
-  }
-}
-
-.tooltip-container:hover {
-    cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+  font-family: 'Fredoka', sans-serif;
 }
 </style>

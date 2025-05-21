@@ -19,10 +19,15 @@ export function usePlayer() {
     eggs.value = n
   }
 
+  function getLevel() {
+    return 5
+  }
+
   return {
     eggs,
     addEggs,
     spendEggs,
-    setEggs
+    setEggs,
+    getLevel
   }
 }

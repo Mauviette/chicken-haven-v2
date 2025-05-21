@@ -103,6 +103,128 @@ export const especeData = {
   },
 }
 
+// Référentiel des talents et de leurs effets
+export const talentsData = {
+  'Chanceuse': {
+    description: "Augmente les chances d'obtenir des récompenses rares.",
+    effet: (niveau) => `+${25 + niveau * 25}% de chance d’obtenir un objet rare.`,
+    maxNiveau: 5,
+    icon: '🍀'
+  },
+  'Énergétique': {
+    description: "Finit les missions plus vite.",
+    effet: (niveau) => `Finit les missions ${5 + niveau * 5}% plus vite.`,
+    maxNiveau: 5,
+    icon: '⚡'
+  },
+  'Persévérante': {
+    description: "Se régénère de la fatigue plus vite.",
+    effet: (niveau) => `Se régénère ${5 + niveau * 5}% plus vite entre deux missions.`,
+    maxNiveau: 5,
+    icon: '🏋️'
+  },
+  'Vive': {
+    description: "Termine les missions plus rapidement.",
+    effet: (niveau) => `Vitesse de mission +${niveau * 8}%`,
+    maxNiveau: 5,
+    icon: '🏃'
+  },
+  'Curieuse': {
+    description: "Découvre plus d'événements spéciaux.",
+    effet: (niveau) => `+${niveau * 3}% d'événements spéciaux`,
+    maxNiveau: 5,
+    icon: '🔎'
+  },
+  'Discrète': {
+    description: "Moins de risques lors des missions risquées.",
+    effet: (niveau) => `Risque réduit de ${niveau * 6}%`,
+    maxNiveau: 5,
+    icon: '🕵️'
+  },
+  'Gourmande': {
+    description: "Consomme moins de nourriture.",
+    effet: (niveau) => `Consommation -${niveau * 5}%`,
+    maxNiveau: 5,
+    icon: '🍗'
+  },
+  'Protectrice': {
+    description: "Protège les autres poules lors d'événements.",
+    effet: (niveau) => `Protection +${niveau * 7}%`,
+    maxNiveau: 5,
+    icon: '🛡️'
+  },
+  'Maligne': {
+    description: "Résout les énigmes plus facilement.",
+    effet: (niveau) => `+${niveau * 4}% de réussite aux énigmes`,
+    maxNiveau: 5,
+    icon: '🧠'
+  },
+  'Majestueuse': {
+    description: "Attire l'attention lors des concours.",
+    effet: (niveau) => `Charisme concours +${niveau * 6}%`,
+    maxNiveau: 5,
+    icon: '👑'
+  },
+  'Rapide': {
+    description: "Se déplace plus vite.",
+    effet: (niveau) => `Vitesse +${niveau * 10}%`,
+    maxNiveau: 5,
+    icon: '💨'
+  },
+  'Joyeuse': {
+    description: "Augmente le moral du poulailler.",
+    effet: (niveau) => `Moral +${niveau * 2}`,
+    maxNiveau: 5,
+    icon: '🎉'
+  },
+  // ...ajoute d'autres talents si besoin...
+}
+
+// Méthodes pour le système de talents
+function getTalentInfo(talentName) {
+  return talentsData[talentName] || { description: '???', effet: () => '', maxNiveau: 1 }
+}
+
+function getTalentLevel(poule) {
+  return poule?.niveauTalent || 0
+}
+
+export function getTalentLevelRoman(poule) {
+  const niveau = getTalentLevel(poule)
+  const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV']
+  return romanNumerals[niveau - 1] || '???'
+}
+
+function canUpgradeTalent(poule) {
+  const talentName = especeData[poule.especeId]?.talent
+  const max = getTalentInfo(talentName).maxNiveau
+  return isTalentUnlocked(poule) && getTalentLevel(poule) < max
+}
+
+function upgradeTalent(poule) {
+  if (!canUpgradeTalent(poule)) return false
+  poule.niveauTalent = (poule.niveauTalent || 0) + 1
+  // Ici, tu peux ajouter un appel API pour sauvegarder la montée de niveau côté serveur
+  return true
+}
+
+export function getTalentEffect(poule) {
+  const talentName = especeData[poule.especeId]?.talent
+  const niveau = getTalentLevel(poule)
+  return getTalentInfo(talentName).effet(niveau)
+}
+
+// Fonction utilitaire pour récupérer l'icône d'un talent
+export function getIcon(talentName) {
+  return talentsData[talentName]?.icon || ''
+}
+
+export function getTalentDisplayName(poule) {
+  const talentName = especeData[poule.especeId]?.talent
+  const icon = getIcon(talentName)
+  return `${icon} ${talentName} ${getTalentLevelRoman(poule)}`
+}
+
 export function usePoules() {
   const rawPoules = ref([])
   const loading = ref(true)
@@ -161,11 +283,21 @@ export function usePoules() {
     poules,
     loading,
     especeData,
+    talentsData,
     getNom,
     getImage,
     getTalent,
     getCategorie,
     hiddenImage,
     fetchPoules,
+    // Ajout pour le système de talents :
+    getTalentInfo,
+    getTalentLevel,
+    canUpgradeTalent,
+    upgradeTalent,
+    getTalentEffect,
+    getIcon,
+    getTalentDisplayName,
+    getTalentLevelRoman,
   }
 }

@@ -13,7 +13,7 @@
         <div class="categorie">
           {{ espece.categorie === 'eclosion' ? '🥚 Éclosion' : '🧬 Fusion' }}
         </div>
-        <div class="talent">{{ `${espece.talent} ${toRoman(poule.niveauTalent)}` }}</div>
+        <div class="talent">{{ getTalentDisplayName(poule) }}</div>
         <div class="statut">{{ formatStatut(poule) }}</div>
       </div>
     </template>
@@ -31,6 +31,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { getTalentDisplayName } from '@/composables/usePoules'
 defineProps({
   poule: Object,
   espece: Object,

@@ -20,7 +20,7 @@
   
   async function submit() {
     try {
-      const res = await axios.post('http://localhost:3001/api/auth/register', {
+      const res = await axios.post('http://localhost:3002/api/auth/register', {
         username: username.value,
         password: password.value
       })

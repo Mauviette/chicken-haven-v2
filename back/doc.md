@@ -16,7 +16,7 @@ npm install
 Créer un fichier `.env` à la racine :
 
 ```
-PORT=3001
+PORT=3002
 MONGO_URI=mongodb://localhost:27017/chicken-haven
 JWT_SECRET=supersecretkey
 ```
@@ -27,7 +27,7 @@ JWT_SECRET=supersecretkey
 npm run dev
 ```
 
-> Le serveur tourne par défaut sur [http://localhost:3001/](http://localhost:3001/)
+> Le serveur tourne par défaut sur [http://localhost:3002/](http://localhost:3002/)
 
 ---
 
