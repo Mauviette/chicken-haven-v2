@@ -40,7 +40,18 @@ const UserSchema = new mongoose.Schema({
         }
       ]
     }
-  ]
+  ],
+
+  clickableEgg: {
+    lastClick: { type: Date, default: Date.now },
+    income: { type: Number, default: 1 },
+    maxIncome: { type: Number, default: 30 },
+    currentStocked: { type: Number, default: 0 }
+  },
+
+  resources : {
+    eggs : { type : Number, default: 0}
+  }
 
 })
 

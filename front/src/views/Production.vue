@@ -1,143 +1,268 @@
 <template>
-  <div class="production-view">
-    <div class="production-posts">
-      <ProductionPost
-  v-for="poste in postesAffiches"
-  :key="poste.id"
-  :poste="poste"
-  :placeholder="poste.placeholder"
-  @ouvrir="!poste.placeholder ? ouvrirPopup(poste) : null"
-/>
+  <div class="production-screen">
+    <div class="production-content">
+      <!-- Affichage des ressources -->
+      <div class="resources-display">
+        <div class="resource-counter">
+          <span class="resource-icon">🥚</span>
+          <span class="resource-amount">{{ eggState.totalEggs }}</span>
+        </div>
+      </div>
 
+      <!-- Œuf cliquable principal -->
+      <div class="egg-container">
+        <div 
+          class="clickable-egg"
+          :class="{ 
+            'clickable': isClickable, 
+            'loading': eggState.isLoading 
+          }"
+          @click="handleEggClick"
+        >
+          <div class="egg-sprite">🥚</div>
+          <div class="egg-glow" v-if="isClickable"></div>
+        </div>
 
-      <AssignPopup
-        v-if="posteActif"
-        :poste="posteActif"
-        @close="posteActif = null"
-        @assign="poule => assignerPouleAuPoste(poule, posteActif)"
-      />
+        <!-- Barre de progression des gains -->
+        <div class="gains-display">
+          <div class="gains-bar-container">
+            <div class="gains-bar">
+              <div 
+                class="gains-progress" 
+                :style="{ width: progressPercentage + '%' }"
+              ></div>
+            </div>
+            <div class="gains-text">
+              {{ currentGains }} / {{ eggState.maxIncome }}
+            </div>
+          </div>
+          
+          <div class="income-info">
+            <span class="income-rate">{{ eggState.income }}/s</span>
+          </div>
+        </div>
+
+        <!-- Message d'aide -->
+        <div class="help-text" v-if="!isClickable && currentGains < 1">
+          Attendez que l'œuf accumule des gains...
+        </div>
+        <div class="help-text clickable-text" v-else-if="isClickable">
+          Cliquez pour collecter !
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import ProductionPost from '@/components/production/ProductionPost.vue'
-import AssignPopup from '@/components/production/AssignPopup.vue'
-import { usePost } from '@/composables/usePost'
-import { useAuth } from '@/composables/useAuth'
-import { ref, computed } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
+import { useEgg } from '@/composables/useEgg'
 
-const { token } = useAuth()
-const {
-  postes,
-  postesDuJoueur
-} = usePost()
+const { 
+  eggState, 
+  currentGains, 
+  isClickable, 
+  progressPercentage,
+  fetchEggStatus, 
+  clickEgg, 
+  startUpdates, 
+  stopUpdates 
+} = useEgg()
 
-const posteActif = ref(null)
-
-function ouvrirPopup(poste) {
-  posteActif.value = poste
-}
-
-async function assignerPouleAuPoste(poule, poste) {
-  try {
-    const res = await fetch('/api/production/start', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token.value}`
-      },
-      body: JSON.stringify({
-        especeId: poule.especeId,
-        posteId: poste.id,
-        dureeMinutes: 120 // à adapter
-      })
-    })
-
-    if (!res.ok) throw new Error('Erreur assignation')
-    const result = await res.json()
-    window.$toast?.success(`${poule.nom} travaille sur ${poste.nom} !`)
-  } catch (err) {
-    console.error(err)
-    window.$toast('Erreur lors de l’assignation.', 'error')
+const handleEggClick = () => {
+  if (isClickable.value) {
+    clickEgg()
   }
 }
 
-
-// Liste unique des types de postes débloqués par le joueur
-const typesDebloques = computed(() => {
-  // Dans postesDuJoueur, le type correspond à l'id du poste dans postes
-  const types = postesDuJoueur.value.map(p => p.type)
-  return [...new Set(types)]
+onMounted(async () => {
+  await fetchEggStatus()
+  startUpdates()
 })
 
-// On génère une liste de postes avec `placeholder: true` si non débloqué
-const postesAffiches = computed(() => {
-  return postes.value.map(p => {
-    // Vérifie si le poste est débloqué en comparant son id avec les types dans postesDuJoueur
-    // Ou si le poste a debloque: true dans sa définition
-    const estDebloque = typesDebloques.value.includes(p.id) || p.debloque === true
-    return {
-      ...p,
-      placeholder: !estDebloque
-    }
-  })
+onUnmounted(() => {
+  stopUpdates()
 })
 </script>
 
 <style scoped>
-.production-view {
-  padding: 24px;
-  background: #f9f3e8;
-  font-family: 'Fredoka', sans-serif;
+.production-screen {
   flex: 1;
   width: 100%;
-  overflow-y: auto;
-  max-height: 100vh;
-  box-sizing: border-box;
+  background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+  overflow: hidden;
+  position: relative;
 }
 
-.production-posts {
-  width: 100%;
+.production-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
 }
 
-/* Style pour le placeholder ??? */
-.poste-locked {
+.resources-display {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 3px solid #8B4513;
+  border-radius: 12px;
+  padding: 10px 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.resource-counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 18px;
+  color: #8B4513;
+}
+
+.resource-icon {
+  font-size: 24px;
+}
+
+.egg-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.clickable-egg {
+  position: relative;
+  width: 120px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 120px;
-  background: #f3e9d6;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  filter: grayscale(0.5);
+}
+
+.clickable-egg.clickable {
+  filter: grayscale(0);
+  animation: pulse 2s infinite;
+}
+
+.clickable-egg.clickable:hover {
+  transform: scale(1.1);
+}
+
+.clickable-egg.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.egg-sprite {
+  font-size: 80px;
+  z-index: 2;
+  position: relative;
+}
+
+.egg-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: glow 2s infinite alternate;
+  z-index: 1;
+}
+
+.gains-display {
+  background: rgba(255, 255, 255, 0.95);
+  border: 3px solid #8B4513;
   border-radius: 12px;
-  border: 2px dashed #c2c2c2;
-  margin-bottom: 18px;
-}
-.poste-locked-title {
-  font-size: 2rem;
-  color: #c2c2c2;
-  font-family: 'Fredoka', sans-serif;
-  letter-spacing: 2px;
+  padding: 15px;
+  min-width: 200px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.section-title {
-  font-size: 20px;
-  margin-bottom: 20px;
-  color: #6d3c00;
+.gains-bar-container {
+  margin-bottom: 10px;
 }
 
-.posts-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: flex-start;
+.gains-bar {
+  width: 100%;
+  height: 20px;
+  background: #E0E0E0;
+  border: 2px solid #8B4513;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
 }
 
-.header-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 20px;
+.gains-progress {
+  height: 100%;
+  background: linear-gradient(to right, #FFD700, #FFA500);
+  transition: width 0.3s ease;
+  border-radius: 8px;
+}
+
+.gains-text {
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 16px;
+  color: #8B4513;
+  margin-top: 5px;
+}
+
+.income-info {
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  color: #666;
+  font-size: 14px;
+}
+
+.income-rate {
+  background: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.help-text {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #8B4513;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #8B4513;
+}
+
+.help-text.clickable-text {
+  background: rgba(255, 215, 0, 0.2);
+  animation: blink 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes glow {
+  0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 </style>

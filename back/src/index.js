@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import pouleRoutes from './routes/poules.routes.js'
 import authRoutes from './routes/auth.routes.js'
 import productionRoutes from './routes/production.routes.js'
+import eggRoutes from './routes/egg.routes.js'
 
 dotenv.config()
 const app = express()
@@ -20,6 +21,7 @@ app.use(express.json())
 app.use('/api/poules', pouleRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/production', productionRoutes)
+app.use('/api/egg', eggRoutes)
 
 app.get('/', (req, res) => {
   res.send('API Chicken Haven OK 🐔')
