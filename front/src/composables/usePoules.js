@@ -12,6 +12,7 @@ export const especeData = {
     categorie: 'fusion',
     rarete: 'commune',
     stats: { intelligence: 4, energie: 3, charisme: 3 },
+    groupe: 'fondamental'
   },
   'poulette-rousse': {
     nom: 'Poulette Roussette',
@@ -20,6 +21,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'commune',
     stats: { intelligence: 3, energie: 5, charisme: 2 },
+    groupe: 'fondamental',
   },
   'noiraude': {
     nom: 'Noiraude',
@@ -28,6 +30,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'commune',
     stats: { intelligence: 3, energie: 3, charisme: 4 },
+    groupe: 'fondamental',
   },
   'argentine': {
     nom: 'Argentine',
@@ -36,6 +39,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'rare',
     stats: { intelligence: 3, energie: 4, charisme: 3 },
+    groupe: 'brillant',
   },
   'aubepine': {
     nom: 'Aubépine',
@@ -44,6 +48,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'rare',
     stats: { intelligence: 4, energie: 3, charisme: 3 },
+    groupe: 'brillant',
   },
   'cendree': {
     nom: 'Cendrée',
@@ -52,6 +57,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'commune',
     stats: { intelligence: 3, energie: 3, charisme: 4 },
+    groupe: 'brillant',
   },
   'choco': {
     nom: 'Poulette choco',
@@ -60,6 +66,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'commune',
     stats: { intelligence: 2, energie: 4, charisme: 4 },
+    groupe: 'discret',
   },
   'ecailleuse': {
     nom: 'Écailleuse',
@@ -68,6 +75,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'rare',
     stats: { intelligence: 3, energie: 4, charisme: 3 },
+    groupe: 'discret',
   },
   'grisette': {
     nom: 'Grisette',
@@ -76,6 +84,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'commune',
     stats: { intelligence: 4, energie: 3, charisme: 3 },
+    groupe: 'discret',
   },
   'queuedepaon': {
     nom: 'Queue de Paon',
@@ -84,6 +93,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'rare',
     stats: { intelligence: 3, energie: 3, charisme: 4 },
+    groupe: 'chic',
   },
   'rayee': {
     nom: 'Rayée',
@@ -92,6 +102,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'commune',
     stats: { intelligence: 4, energie: 5, charisme: 1 },
+    groupe: 'chic',
   },
   'tachetee': {
     nom: 'Tachetée',
@@ -100,6 +111,7 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'commune',
     stats: { intelligence: 3, energie: 2, charisme: 5 },
+    groupe: 'chic',
   },
 }
 
