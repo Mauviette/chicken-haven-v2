@@ -54,7 +54,9 @@ const UserSchema = new mongoose.Schema({
   },
 
   resources : {
-    eggs : { type : Number, default: 0}
+    eggs : { type : Number, default: 0},
+    stock_token : { type : Number, default: 0},
+    production_token : { type : Number, default: 0}
   }
 
 })

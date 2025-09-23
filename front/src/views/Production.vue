@@ -89,7 +89,7 @@ let effectId = 0
 
 // Fonction pour créer l'effet d'œufs qui sautent
 const createEggEffect = (eggsGained) => {
-  const numEggs = Math.min(eggsGained, 15) // Limiter à 15 œufs max pour la performance
+  const numEggs = Math.min(eggsGained, 8)
   
   for (let i = 0; i < numEggs; i++) {
     // Position de départ plus proche du centre (rayon plus petit)
