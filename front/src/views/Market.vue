@@ -1,3 +1,13 @@
+/*
+TODO : CONCERNANT LES BOITES dans Market.vue :
+
+Retire les poules fondamentales des poules débloquéees par défaut.
+
+Retire l'affichage de base des poules disponibles dans une boite déjà en place.
+
+Dans la case, en haut à gauche ajoute un "X/Y", qui affiche le nombre de poules obtenues dans la boite sur le nombre de poules disponibles dedans. Lorsque survolé fait apparaitre un composant ToolTip qui informe des poules obtenues et non.
+*/
+
 <template>
   <div class="market-view">
     <div class="header-bar">

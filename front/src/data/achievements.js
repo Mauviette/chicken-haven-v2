@@ -11,7 +11,7 @@ export const achievementsData = {
       type: 'eggs',
       quantite: 5
     },
-    completed: false
+    completed: true
   },
   'egg_collector': {
     id: 'egg_collector',

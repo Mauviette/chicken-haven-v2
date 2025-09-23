@@ -36,7 +36,7 @@ export async function getEggStatus(req, res) {
 
     // Calculer les gains actuels basés sur le temps écoulé
     const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
-    const currentStocked = Math.min(timeDiffSeconds * income, maxIncome)
+    const currentStocked = Math.min((timeDiffSeconds - 1) * income, maxIncome)
     
     console.log('  timeDiffSeconds:', timeDiffSeconds)
     console.log('  currentStocked:', currentStocked)
@@ -69,12 +69,12 @@ export async function clickEgg(req, res) {
     
     // Calculer les gains actuels
     const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
-    const currentStocked = Math.min(timeDiffSeconds * income, maxIncome)
+    const currentStocked = Math.min((timeDiffSeconds - 1) * income, maxIncome)
 
     // Vérifier si l'œuf est cliquable (income >= 1)
-    if (income < 1) {
-      return res.status(400).json({ error: 'Income insuffisant pour cliquer' })
-    }
+    //if (income < 1) {
+    //  return res.status(400).json({ error: 'Income insuffisant pour cliquer' })
+    //}
 
     // Vérifier s'il y a des gains à collecter
     if (currentStocked < 1) {

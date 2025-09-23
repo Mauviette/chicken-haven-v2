@@ -17,14 +17,10 @@ const UserSchema = new mongoose.Schema({
 
   poulesPossedees: [
     {
-      especeId: { type: String, required: true },
-      quantite: { type: Number, default: 0 },
-      niveauTalent: { type: Number, default: 0 },
-      statutEnergie: {
-        etat: { type: String, default: 'non_obtenue' },
-        heureDisponible: { type: Date, default: null },
-      },
-      posteOccupe: { type: String, default: null },
+      especeId: { type: String, required: true, unique: true },
+      quantite: { type: Number, default: 1 },
+      niveauTalent: { type: Number, default: 1 },
+      new: {type: Boolean, default: true}
     }
   ],
 

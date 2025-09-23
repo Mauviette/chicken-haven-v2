@@ -47,7 +47,7 @@
             </div>
             <div class="achievement-reward" v-if="achievement.completed">
               <div class="reward-icon">🎁</div>
-              <div class="reward-text">+{{ achievement.recompense.quantite }} œufs</div>
+              <div class="reward-text">{{ achievement.reward.quantite }} œufs</div>
             </div>
           </div>
         </div>
@@ -132,7 +132,6 @@ const closeMenu = () => {
   display: flex;
   flex-direction: column;
   font-family: 'Fredoka', sans-serif;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
   transform: translateX(100%);
   transition: transform 0.3s ease;
 }
