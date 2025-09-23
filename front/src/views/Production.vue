@@ -158,10 +158,12 @@ onUnmounted(() => {
 .production-screen {
   flex: 1;
   width: 100%;
-  background: #f9f3e8;
+  background-image: url('@/assets/background/main/1.png');
   overflow: hidden;
   position: relative;
   font-family: 'Fredoka', sans-serif;
+  background-size: cover;
+  background-position: center;
 }
 
 .production-content {
@@ -195,11 +197,11 @@ onUnmounted(() => {
 
 .clickable-egg.clickable {
   filter: grayscale(0);
-  animation: pulse 2s infinite;
+  animation: pulse 5s infinite;
 }
 
 .clickable-egg.max-gains {
-  animation: pulse 2s infinite, max-glow 2s infinite alternate;
+  animation: pulse 5s infinite, max-glow 5s infinite alternate;
 }
 
 .clickable-egg.clickable:hover {
@@ -286,11 +288,15 @@ onUnmounted(() => {
 
 .gains-text {
   text-align: center;
-  font-family: 'Courier New', monospace;
+  font-family: 'Fredoka', sans-serif;
   font-weight: bold;
   font-size: 16px;
   color: #8B4513;
   margin-top: 5px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .income-info {
@@ -298,6 +304,10 @@ onUnmounted(() => {
   font-family: 'Courier New', monospace;
   color: #666;
   font-size: 14px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .income-rate {
@@ -305,19 +315,24 @@ onUnmounted(() => {
   padding: 4px 8px;
   border-radius: 6px;
   border: 1px solid #ccc;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .egg-clicker {
   background-color: #421d00;
-  background-image: url('@/assets/bar/bg.png');
+  background-color: #ffeecd;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23fab862' fill-opacity='0.39' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: repeat;
-  width: 350px;
-  height: 290px;
+  width: 400px;
+  height: 300px;
   padding-top: 20px;
   border-radius: 10px;
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   position: relative;
-  border: 4px solid #b77b3d;
+  border: 4px solid #cfa881;
   box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
 }
 

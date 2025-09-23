@@ -1,12 +1,3 @@
-/*
-TODO : CONCERNANT LES BOITES dans Market.vue :
-
-Retire les poules fondamentales des poules débloquéees par défaut.
-
-Retire l'affichage de base des poules disponibles dans une boite déjà en place.
-
-Dans la case, en haut à gauche ajoute un "X/Y", qui affiche le nombre de poules obtenues dans la boite sur le nombre de poules disponibles dedans. Lorsque survolé fait apparaitre un composant ToolTip qui informe des poules obtenues et non.
-*/
 
 <template>
   <div class="market-view">
@@ -55,6 +46,20 @@ Dans la case, en haut à gauche ajoute un "X/Y", qui affiche le nombre de poules
             :key="box.id"
             class="market-item box-item"
           >
+            <div class="box-counter">
+              <Tooltip :text="getBoxTooltipText(box)">
+                <div class="counter-badge">
+                  {{ getBoxChickenStats(box).ownedCount }}/{{ getBoxChickenStats(box).totalCount }}
+                </div>
+              </Tooltip>
+            </div>
+            <div class="dice-counter">
+              <Tooltip :text="getDiceTooltipText(box)">
+                <div class="dice-badge">
+                  🎲
+                </div>
+              </Tooltip>
+            </div>
             <div class="box-icon-container">
               <div class="box-icon">{{ box.icon }}</div>
               <div class="rarity-badge" :class="box.rarity">{{ box.rarity }}</div>
@@ -65,14 +70,9 @@ Dans la case, en haut à gauche ajoute un "X/Y", qui affiche le nombre de poules
               <div class="box-contents">
                 <div class="drop-groups">
                   <div v-for="group in box.dropGroups" :key="group.name" class="drop-group">
-                    <span class="group-label">{{ group.description }} ({{ group.chance }}%)</span>
+                    <span class="group-label">{{ getGroupDescription(group.name) }} ({{ group.chance }}%)</span>
                     <span class="group-quantity" v-if="group.quantity > 1">x{{ group.quantity }}</span>
                   </div>
-                </div>
-                <div class="available-chickens">
-                  <span class="chickens-preview">
-                    {{ getChickenPreview(box) }}
-                  </span>
                 </div>
               </div>
             </div>
@@ -155,7 +155,8 @@ import { usePlayer } from '@/composables/usePlayer'
 import { usePoules, especeData } from '@/composables/usePoules'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
-import { boxesData, getPossibleChickensFromBox, openBoxSimulation } from '@/data/boxes.js'
+import Tooltip from '@/components/menu/Tooltip.vue'
+import { boxesData, getPossibleChickensFromBox, openBoxSimulation, groupes } from '@/data/boxes.js'
 import { getUpgradesWithCalculatedData, upgradeLevel } from '@/data/upgrades.js'
 
 const { eggs: playerEggs, stockTokens, productionTokens, canAfford } = usePlayer()
@@ -181,20 +182,17 @@ const tabs = [
 // Données des boîtes depuis le fichier dédié
 const boxOffers = computed(() => boxesData)
 
-// Poules débloquées (pour l'instant on considère que toutes les poules obtenues + fondamentales sont débloquées)
+// Poules débloquées (uniquement les poules obtenues par le joueur)
 const unlockedChickens = computed(() => {
   const ownedChickens = poules.value
     .filter(poule => poule.quantite > 0)
     .map(poule => poule.especeId)
   
-  // Les poules fondamentales sont toujours débloquées
-  const fundamentalChickens = Object.keys(especeData).filter(id => especeData[id].groupe === 'fondamental')
-  
-  return [...new Set([...ownedChickens, ...fundamentalChickens])]
+  return ownedChickens
 })
 
-// Fonction pour générer l'aperçu des poules dans les boîtes
-function getChickenPreview(box) {
+// Fonction pour calculer les statistiques des poules d'une boîte
+function getBoxChickenStats(box) {
   const allPossibleChickens = []
   
   // Récupérer toutes les poules possibles de tous les groupes
@@ -207,18 +205,111 @@ function getChickenPreview(box) {
   // Supprimer les doublons
   const uniqueChickens = [...new Set(allPossibleChickens)]
   
-  // Afficher les 3 premiers avec ??? pour les non débloquées
-  const preview = uniqueChickens.slice(0, 3).map(id => {
-    const isUnlocked = unlockedChickens.value.includes(id) || especeData[id].groupe === 'fondamental'
-    return isUnlocked ? especeData[id]?.nom : '???'
+  // Séparer les poules obtenues et non obtenues
+  const ownedChickens = uniqueChickens.filter(id => unlockedChickens.value.includes(id))
+  const notOwnedChickens = uniqueChickens.filter(id => !unlockedChickens.value.includes(id))
+  
+  return {
+    owned: ownedChickens,
+    notOwned: notOwnedChickens,
+    ownedCount: ownedChickens.length,
+    totalCount: uniqueChickens.length
+  }
+}
+
+// Fonction pour obtenir la couleur CSS basée sur la rareté
+function getRarityColor(rarity) {
+  switch(rarity) {
+    case 'commune': return '#95a5a6'
+    case 'rare': return '#3498db'
+    case 'epique': return '#9b59b6'
+    case 'legendaire': return '#f39c12'
+    default: return '#6d3c00'
+  }
+}
+
+// Fonction pour récupérer la description d'un groupe depuis boxes.js
+function getGroupDescription(groupName) {
+  const group = groupes.find(g => g.name === groupName)
+  return group ? group.description : groupName
+}
+
+// Fonction pour trier par rareté
+function getRarityOrder(rarity) {
+  const order = { 'commune': 1, 'rare': 2, 'epique': 3, 'legendaire': 4 }
+  return order[rarity] || 0
+}
+
+// Fonction pour générer le texte du tooltip des boîtes
+function getBoxTooltipText(box) {
+  const allPossibleChickens = []
+  
+  // Récupérer toutes les poules possibles de tous les groupes
+  box.dropGroups.forEach(group => {
+    const groupChickens = Object.keys(especeData)
+      .filter(id => especeData[id].groupe === group.name)
+    allPossibleChickens.push(...groupChickens)
   })
   
-  let result = preview.join(', ')
-  if (uniqueChickens.length > 3) {
-    result += '...'
-  }
+  // Supprimer les doublons
+  const uniqueChickens = [...new Set(allPossibleChickens)]
   
-  return result
+  // Trier par rareté puis par nom
+  const sortedChickens = uniqueChickens.sort((a, b) => {
+    const rarityA = especeData[a]?.rarete || 'commune'
+    const rarityB = especeData[b]?.rarete || 'commune'
+    const orderDiff = getRarityOrder(rarityA) - getRarityOrder(rarityB)
+    if (orderDiff !== 0) return orderDiff
+    return (especeData[a]?.nom || '').localeCompare(especeData[b]?.nom || '')
+  })
+  
+  // Créer la liste avec les noms colorés ou ??? pour les non obtenues
+  const chickenList = sortedChickens.map(id => {
+    const chicken = especeData[id]
+    const color = getRarityColor(chicken?.rarete)
+    
+    if (unlockedChickens.value.includes(id)) {
+      return `<span style="color: ${color}; font-weight: bold;">${chicken?.nom}</span>`
+    } else {
+      return `<span style="color: ${color};">???</span>`
+    }
+  })
+  
+  return chickenList.join(', ')
+}
+
+// Fonction pour calculer les probabilités moyennes de drop par rareté
+function getBoxRarityProbabilities(box) {
+  const totalChance = box.dropGroups.reduce((sum, group) => sum + group.chance, 0)
+  let avgProbabilities = [0, 0, 0, 0] // [commune, rare, épique, légendaire]
+  
+  box.dropGroups.forEach(group => {
+    const groupData = groupes.find(g => g.name === group.name)
+    if (groupData && groupData.rarityDropChance) {
+      const weight = group.chance / totalChance
+      groupData.rarityDropChance.forEach((prob, index) => {
+        avgProbabilities[index] += prob * weight
+      })
+    }
+  })
+  
+  return avgProbabilities.map(prob => Math.round(prob))
+}
+
+// Fonction pour générer le texte du tooltip du dé
+function getDiceTooltipText(box) {
+  const probs = getBoxRarityProbabilities(box)
+  const rarities = ['Commune', 'Rare', 'Épique', 'Légendaire']
+  const colors = ['#95a5a6', '#3498db', '#9b59b6', '#f39c12']
+  
+  return rarities
+    .map((rarity, index) => 
+      probs[index] > 0 
+        ? `<span style="color: ${colors[index]}; font-weight: bold;">${rarity}: ${probs[index]}%</span>`
+        : null
+    )
+    .filter(Boolean)
+    .join('<br>')
 }
 
 // Données des améliorations avec progression
@@ -418,8 +509,11 @@ function closeConfirmation() {
 /* Grille des éléments */
 .market-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  justify-content: center;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 
@@ -456,6 +550,43 @@ function closeConfirmation() {
   position: relative;
   text-align: center;
   margin-bottom: 12px;
+}
+
+.box-counter {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  z-index: 10;
+}
+
+.counter-badge {
+  background: #6d3c00;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 8px;
+  border: 2px solid #ffc66e;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  min-width: 20px;
+  text-align: center;
+}
+
+.dice-counter {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 10;
+}
+
+.dice-badge {
+  background: #6d3c00;
+  color: white;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 2px solid #ffc66e;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .box-icon {
@@ -507,16 +638,6 @@ function closeConfirmation() {
 
 .guaranteed-group {
   margin-bottom: 6px;
-}
-
-.available-chickens {
-  font-size: 10px;
-  color: #6d3c00;
-  line-height: 1.3;
-}
-
-.chickens-preview {
-  opacity: 0.8;
 }
 
 /* Éléments poules (maintenant inutilisé mais gardé pour compatibilité) */
@@ -726,6 +847,7 @@ function closeConfirmation() {
   
   .market-grid {
     grid-template-columns: 1fr;
+    max-width: 100%;
   }
   
   .header-bar {
@@ -742,6 +864,13 @@ function closeConfirmation() {
   .upgrade-item {
     flex-direction: column;
     text-align: center;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .market-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 800px;
   }
 }
 </style>

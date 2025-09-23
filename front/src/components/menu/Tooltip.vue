@@ -11,8 +11,8 @@
         v-if="show"
         class="tooltip-box"
         :style="{ top: `${position.top}px`, left: `${position.left}px` }"
+        v-html="text"
       >
-        {{ text }}
       </div>
     </Teleport>
   </div>

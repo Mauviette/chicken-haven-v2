@@ -10,35 +10,31 @@ export const boxesData = [
       {
         name: 'fondamental',
         chance: 100,
-        quantity: 1,
-        description: 'Groupe fondamental'
+        quantity: 1
       }
-    ]
+    ],
   },
   {
     id: 2,
     name: 'Boîte Brillante',
-    description: 'Contient une poule du groupe brillant',
+    description: 'Contient une poule du groupe fondamental, brillant ou discret',
     icon: '✨',
     price: 75,
     dropGroups: [
       {
         name: 'fondamental',
         chance: 40,
-        quantity: 1,
-        description: 'Groupe fondamental'
+        quantity: 1
       },
       {
         name: 'brillant',
         chance: 30,
-        quantity: 1,
-        description: 'Groupe brillant'
+        quantity: 1
       },
       {
-        name: 'brillant',
+        name: 'discret',
         chance: 30,
-        quantity: 1,
-        description: 'Groupe discret'
+        quantity: 1
       }
     ],
     unlock_level : 3
@@ -53,12 +49,18 @@ export const boxesData = [
       {
         name: 'chic',
         chance: 100,
-        quantity: 1,
-        description: 'Groupe chic'
+        quantity: 1
       }
     ],
     unlock_level : 5
   }
+]
+
+export const groupes = [
+  { name: 'fondamental', description: 'Groupe fondamental', rarityDropChance: [75, 25, 0, 0]},
+  { name: 'brillant', description: 'Groupe brillant', rarityDropChance: [75, 25, 0, 0] },
+  { name: 'discret', description: 'Groupe discret', rarityDropChance: [75, 25, 0, 0] },
+  { name: 'chic', description: 'Groupe chic', rarityDropChance: [75, 20, 5, 0] },
 ]
 
 // Fonction utilitaire pour obtenir toutes les poules possibles d'une boîte
