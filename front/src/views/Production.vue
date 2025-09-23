@@ -1,54 +1,43 @@
 <template>
   <div class="production-screen">
     <div class="production-content">
-      <!-- Affichage des ressources -->
-      <div class="resources-display">
-        <div class="resource-counter">
-          <span class="resource-icon">🥚</span>
-          <span class="resource-amount">{{ eggState.totalEggs }}</span>
-        </div>
-      </div>
 
-      <!-- Œuf cliquable principal -->
-      <div class="egg-container">
-        <div 
-          class="clickable-egg"
-          :class="{ 
-            'clickable': isClickable, 
-            'loading': eggState.isLoading 
-          }"
-          @click="handleEggClick"
-        >
-          <div class="egg-sprite">🥚</div>
-          <div class="egg-glow" v-if="isClickable"></div>
-        </div>
+      <div class="egg-clicker">
+        <!-- Œuf cliquable principal -->
+        <div class="egg-container">
+          <div 
+            class="clickable-egg"
+            :class="{ 
+              'clickable': isClickable, 
+              'loading': eggState.isLoading 
+            }"
+            @click="handleEggClick"
+          >
+            <div class="egg-sprite">🥚</div>
+            <div class="egg-glow" v-if="isClickable"></div>
+          </div>
 
-        <!-- Barre de progression des gains -->
-        <div class="gains-display">
-          <div class="gains-bar-container">
-            <div class="gains-bar">
-              <div 
-                class="gains-progress" 
-                :style="{ width: progressPercentage + '%' }"
-              ></div>
+          <!-- Barre de progression des gains -->
+          <div class="gains-display">
+            <div class="gains-bar-container">
+              <div class="gains-bar">
+                <div 
+                  class="gains-progress" 
+                  :style="{ width: progressPercentage + '%' }"
+                ></div>
+              </div>
+              <div class="gains-text">
+                {{ currentGains }} / {{ eggState.maxIncome }}
+              </div>
             </div>
-            <div class="gains-text">
-              {{ currentGains }} / {{ eggState.maxIncome }}
+            
+            <div class="income-info">
+              <span class="income-rate">{{ eggState.income }}/s</span>
             </div>
           </div>
-          
-          <div class="income-info">
-            <span class="income-rate">{{ eggState.income }}/s</span>
-          </div>
+
         </div>
 
-        <!-- Message d'aide -->
-        <div class="help-text" v-if="!isClickable && currentGains < 1">
-          Attendez que l'œuf accumule des gains...
-        </div>
-        <div class="help-text clickable-text" v-else-if="isClickable">
-          Cliquez pour collecter !
-        </div>
       </div>
     </div>
   </div>
@@ -89,9 +78,10 @@ onUnmounted(() => {
 .production-screen {
   flex: 1;
   width: 100%;
-  background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+  background: #f9f3e8;
   overflow: hidden;
   position: relative;
+  font-family: 'Fredoka', sans-serif;
 }
 
 .production-content {
@@ -102,31 +92,6 @@ onUnmounted(() => {
   justify-content: center;
   padding: 20px;
   position: relative;
-}
-
-.resources-display {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 3px solid #8B4513;
-  border-radius: 12px;
-  padding: 10px 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.resource-counter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
-  font-size: 18px;
-  color: #8B4513;
-}
-
-.resource-icon {
-  font-size: 24px;
 }
 
 .egg-container {
@@ -206,9 +171,9 @@ onUnmounted(() => {
 
 .gains-progress {
   height: 100%;
-  background: linear-gradient(to right, #FFD700, #FFA500);
+  background: #FFA500;
   transition: width 0.3s ease;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .gains-text {
@@ -234,20 +199,10 @@ onUnmounted(() => {
   border: 1px solid #ccc;
 }
 
-.help-text {
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  color: #8B4513;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 2px solid #8B4513;
-}
-
-.help-text.clickable-text {
-  background: rgba(255, 215, 0, 0.2);
-  animation: blink 1.5s infinite;
+.egg-clicker {
+  background-color: #421d00;
+  background-image: url('@/assets/bar/bg.png');
+  background-repeat: repeat;
 }
 
 @keyframes pulse {

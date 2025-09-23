@@ -1,7 +1,7 @@
 <template>
   <div class="top-bar">
     <div class="top-bar-inner">
-      <div class="game-title">🐔 Chicken Haven</div>
+      <div class="game-title">Chicken Haven</div>
       <div class="top-right">
         <div class="egg-counter">
           <span>🥚 {{ eggs }} œufs</span>

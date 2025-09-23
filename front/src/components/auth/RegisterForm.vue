@@ -3,7 +3,7 @@
       <h2>Créer un compte</h2>
       <input v-model="username" placeholder="Nom d'utilisateur" required />
       <input v-model="password" type="password" placeholder="Mot de passe" required />
-      <button type="submit">S'inscrire</button>
+      <button type="submit" class="register-btn">S'inscrire</button>
       <p v-if="message">{{ message }}</p>
     </form>
   </template>
@@ -19,16 +19,23 @@
   const emit = defineEmits(['registered'])
   
   async function submit() {
+    const registerBtn = document.querySelector('.register-btn');
+    registerBtn.disabled = true;
+    registerBtn.textContent = "Inscription...";
+
     try {
       const res = await axios.post('http://localhost:3002/api/auth/register', {
         username: username.value,
         password: password.value
       })
-      message.value = "✅ Inscription réussie !"
+      message.value = "Inscription réussie !"
       emit('registered')
     } catch (err) {
       message.value = err.response?.data?.error || "Erreur lors de l'inscription"
     }
+    
+    registerBtn.disabled = false;
+    registerBtn.textContent = "S'inscrire";
   }
   </script>
   
@@ -88,5 +95,11 @@
   color: #ffcc8a;
 }
 
+  .auth-form button:disabled {
+    background-color: #5c2c08;
+    color: #bbb;  
+    cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+    opacity: 0.7;
+  }
   </style>
   

@@ -54,9 +54,11 @@ export function useEgg() {
           lastClick: new Date(data.lastClick),
           totalEggs: data.totalEggs
         }
+        window.$toast("Succès")
       }
     } catch (error) {
       console.error('Erreur lors de la récupération du statut de l\'œuf:', error)
+      window.$toast("Erreur")
     }
   }
 

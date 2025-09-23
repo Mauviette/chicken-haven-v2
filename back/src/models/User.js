@@ -4,8 +4,12 @@ import mongoose from 'mongoose'
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  level : { type: Number, default: 1 },
-  experience: { type: Number, default: 0 },
+
+  experience : {
+    level : { type: Number, default: 1 },
+    points: { type: Number, default: 0 },
+    required_points: { type: Number, default: 2 },
+  },
 
   settings: {
     sound: { type: Boolean, default: true }
@@ -24,7 +28,7 @@ const UserSchema = new mongoose.Schema({
     }
   ],
 
-  postesActifs: [
+  /*postesActifs: [
     {
       type: { type: String, required: true }, // ex: "poulailler", "incubateur", etc.
       slotId: { type: Number, required: true }, // ex: 0, 1, 2 pour les slots disponibles
@@ -40,7 +44,7 @@ const UserSchema = new mongoose.Schema({
         }
       ]
     }
-  ],
+  ],*/
 
   clickableEgg: {
     lastClick: { type: Date, default: Date.now },

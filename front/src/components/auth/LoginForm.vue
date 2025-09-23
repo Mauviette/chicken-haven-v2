@@ -3,7 +3,7 @@
       <h2>Connexion</h2>
       <input v-model="username" placeholder="Nom d'utilisateur" required />
       <input v-model="password" type="password" placeholder="Mot de passe" required />
-      <button type="submit">Se connecter</button>
+      <button type="submit" class="login-btn">Se connecter</button>
       <p v-if="message">{{ message }}</p>
     </form>
   </template>
@@ -19,6 +19,10 @@
   const emit = defineEmits(['logged-in'])
   
   async function submit() {
+    const loginBtn = document.querySelector('.login-btn');
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Connexion...";
+    
     try {
       const res = await axios.post('http://localhost:3002/api/auth/login', {
         username: username.value,
@@ -30,6 +34,9 @@
       console.log(err)
       message.value = err.response?.data?.error || "Erreur de connexion"
     }
+
+    loginBtn.disabled = false;
+    loginBtn.textContent = "Se connecter";
   }
   </script>
   
@@ -82,6 +89,14 @@
 .auth-form button:hover {
   background-color: #8a4a1c;
 }
+
+  /* État désactivé */
+  .auth-form button:disabled {
+    background-color: #5c2c08;
+    color: #bbb;  
+    cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+    opacity: 0.7;
+  }
 
 .auth-form p {
   text-align: center;
