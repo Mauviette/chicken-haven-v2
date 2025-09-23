@@ -1,19 +1,22 @@
 <template>
-  <TopBar v-if="!isAuthPage" 
-    @open-profile="toast('Bientôt disponible !')"
-  />
-  <router-view />
-  <ToastManager ref="toastManager" :hasBottomBar="!isAuthPage"/>
-  <Options :visible="showOptions" @close="showOptions = false" @logout="logout" />
-  <BottomBar
-    v-if="!isAuthPage"
-    @open-production="router.push('/production')"
-    @open-market="router.push('/market')"
-    @open-collection="router.push('/collection')"
-    @open-help="toast('Bientôt disponible !')"
-    @open-options="showOptions = true"
-  />
-
+  <div id="app">
+    <TopBar v-if="!isAuthPage" 
+      @open-profile="toast('Bientôt disponible !')"
+    />
+    <router-view />
+    <ToastManager ref="toastManager" :hasBottomBar="!isAuthPage"/>
+    <Options :visible="showOptions" @close="showOptions = false" @logout="logout" />
+    <AchievementsMenu :visible="showAchievements" @close="showAchievements = false" />
+    <BottomBar
+      v-if="!isAuthPage"
+      @open-production="router.push('/production')"
+      @open-market="router.push('/market')"
+      @open-collection="router.push('/collection')"
+      @open-help="toast('Bientôt disponible !')"
+      @open-options="showOptions = true"
+      @open-achievements="toggleAchievements"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -23,16 +26,24 @@ import ToastManager from '@/components/menu/ToastManager.vue'
 import Options from '@/components/menu/Options.vue'
 import BottomBar from '@/components/menu/BottomBar.vue'
 import TopBar from '@/components/menu/TopBar.vue'
+import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { usePlayer } from '@/composables/usePlayer'
 
 const router = useRouter()
 const toastManager = ref(null)
 const showOptions = ref(false)
+const showAchievements = ref(false)
 const { logout: performLogout } = useAuth()
+const { refreshPlayer } = usePlayer()
 
-onMounted(() => {
+onMounted(async () => {
   window.$toast = toast
+  // Charger les données du joueur si connecté
+  if (localStorage.getItem('token')) {
+    await refreshPlayer()
+  }
 })
 
 
@@ -46,6 +57,10 @@ function logout() {
     console.error('Logout failed:', error)
     toast('Déconnexion échouée.', 'error')
   }
+}
+
+function toggleAchievements() {
+  showAchievements.value = !showAchievements.value
 }
 
 

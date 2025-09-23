@@ -54,7 +54,6 @@ export function useEgg() {
           lastClick: new Date(data.lastClick),
           totalEggs: data.totalEggs
         }
-        window.$toast("Succès")
       }
     } catch (error) {
       console.error('Erreur lors de la récupération du statut de l\'œuf:', error)
@@ -87,7 +86,7 @@ export function useEgg() {
 
         // Afficher un message de succès si disponible
         if (window.$toast) {
-          window.$toast(`+${data.eggsGained} œufs collectés !`, 'success')
+          //window.$toast(`+${data.eggsGained} œufs collectés !`, 'success')
         }
       } else {
         const error = await response.json()

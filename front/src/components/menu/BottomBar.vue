@@ -1,40 +1,50 @@
 <template>
   <div class="bottom-bar">
-    <ActionButton
-      :onClick="() => emit('open-production')"
-      :disabled="route.path === '/production'"
-      :active="route.path === '/production'"
-    >
-      ⚒️ Production
-    </ActionButton>
+    <div class="main-buttons">
+      <ActionButton
+        :onClick="() => emit('open-production')"
+        :disabled="route.path === '/production'"
+        :active="route.path === '/production'"
+      >
+        ⚒️ Production
+      </ActionButton>
 
-    <ActionButton
-      :onClick="() => emit('open-market')"
-      :disabled="route.path === '/market'"
-      :active="route.path === '/market'"
-    >
-      🛒 Marché
-    </ActionButton>
+      <ActionButton
+        :onClick="() => emit('open-market')"
+        :disabled="route.path === '/market'"
+        :active="route.path === '/market'"
+      >
+        🛒 Marché
+      </ActionButton>
 
-    <ActionButton
-      :onClick="() => emit('open-collection')"
-      :disabled="route.path === '/collection'"
-      :active="route.path === '/collection'"
-    >
-      🐔 Collection
-    </ActionButton>
+      <ActionButton
+        :onClick="() => emit('open-collection')"
+        :disabled="route.path === '/collection'"
+        :active="route.path === '/collection'"
+      >
+        🐔 Collection
+      </ActionButton>
 
-    <!--ActionButton
-      :onClick="() => emit('open-help')"
-    >
-      ❓ Aide
-    </ActionButton-->
+      <!--ActionButton
+        :onClick="() => emit('open-help')"
+      >
+        ❓ Aide
+      </ActionButton-->
 
-    <ActionButton
-      :onClick="() => emit('open-options')"
-    >
-      ⚙️ Options
-    </ActionButton>
+      <ActionButton
+        :onClick="() => emit('open-options')"
+      >
+        ⚙️ Options
+      </ActionButton>
+    </div>
+
+    <div class="achievements-button">
+      <ActionButton
+        :onClick="() => emit('open-achievements')"
+      >
+        🏆
+      </ActionButton>
+    </div>
   </div>
 </template>
 <script setup>
@@ -42,7 +52,7 @@ import ActionButton from '@/components/menu/ActionButton.vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 
-const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help', 'open-options'])
+const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help', 'open-options', 'open-achievements'])
 </script>
 
   <style scoped>
@@ -54,14 +64,25 @@ const emit = defineEmits(['open-production', 'open-market', 'open-collection', '
     background-repeat: repeat;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 16px;
+    justify-content: space-between;
     padding: 0 20px;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
     position: relative;
-    border-top: 4px solid #b77b3d; /* bois clair ou doré */
+    border-top: 4px solid #b77b3d;
     box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
-    }
+  }
+
+  .main-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .achievements-button {
+    margin-right: 32px;
+  }
 
   .bottom-bar button {
     background-color: #7a3e10;
@@ -82,11 +103,22 @@ const emit = defineEmits(['open-production', 'open-market', 'open-collection', '
 
     @media (max-width: 600px) {
     .bottom-bar {
-      flex-wrap: wrap;
+      flex-direction: column;
       justify-content: center;
       height: auto;
       padding: 12px;
       gap: 8px;
+    }
+
+    .main-buttons {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .achievements-button {
+      margin-right: 0;
+      margin-top: 8px;
     }
 
     .bottom-bar .action-button {

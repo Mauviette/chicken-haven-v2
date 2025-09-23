@@ -6,16 +6,40 @@ export async function getEggStatus(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
+    // Initialiser clickableEgg si nécessaire
+    if (!user.clickableEgg) {
+      user.clickableEgg = {
+        lastClick: new Date(),
+        income: 1,
+        maxIncome: 30,
+        currentStocked: 0
+      }
+      await user.save()
+    }
+
+    // Si lastClick n'est pas défini ou est une fonction, l'initialiser
+    if (!user.clickableEgg.lastClick || typeof user.clickableEgg.lastClick === 'function') {
+      user.clickableEgg.lastClick = new Date()
+      await user.save()
+    }
+
     const now = new Date()
-    const lastClick = user.clickableEgg?.lastClick
-    const income = user.clickableEgg?.income
-    const maxIncome = user.clickableEgg?.maxIncome
+    const lastClick = user.clickableEgg.lastClick
+    const income = user.clickableEgg.income || 1
+    const maxIncome = user.clickableEgg.maxIncome || 30
     
-    if (lastClick == null || income == null || maxIncome == null) return res.status(404).json({ error: 'Données incomplètes' })
+    console.log('DEBUG - getEggStatus:')
+    console.log('  now:', now)
+    console.log('  lastClick:', lastClick)
+    console.log('  income:', income)
+    console.log('  maxIncome:', maxIncome)
 
     // Calculer les gains actuels basés sur le temps écoulé
     const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
     const currentStocked = Math.min(timeDiffSeconds * income, maxIncome)
+    
+    console.log('  timeDiffSeconds:', timeDiffSeconds)
+    console.log('  currentStocked:', currentStocked)
 
     res.json({
       income,
