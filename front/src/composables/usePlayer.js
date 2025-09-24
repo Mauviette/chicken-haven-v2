@@ -10,7 +10,7 @@ export function usePlayer() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch('/api/egg/status', {
+      const response = await fetch('http://localhost:3002/api/egg/status', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -95,6 +95,7 @@ export function usePlayer() {
     spendTokens,
     canAfford,
     getLevel,
-    refreshPlayer
+    refreshPlayer,
+    refreshPlayerData: refreshPlayer // Alias pour compatibilité
   }
 }

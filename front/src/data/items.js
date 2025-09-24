@@ -26,4 +26,26 @@ export const achievementsData = {
   }
 }
 
-//TODO : Une méthode qui prend une quantité et un id et qui retourne un string
+// Fonction pour formater un prix avec la bonne unité
+export function formatPrice(price) {
+  if (typeof price === 'number') {
+    // Prix simple en œufs
+    const itemData = achievementsData['eggs']
+    return `${price} ${price === 1 ? itemData.nom_singulier : itemData.nom}`
+  }
+  
+  if (typeof price === 'object' && price.type && price.count) {
+    const itemData = achievementsData[price.type]
+    if (itemData) {
+      return `${price.count} ${price.count === 1 ? itemData.nom_singulier : itemData.nom}`
+    }
+  }
+  
+  return 'Prix invalide'
+}
+
+// Fonction pour obtenir l'icône d'un type de ressource
+export function getResourceIcon(resourceType) {
+  const itemData = achievementsData[resourceType]
+  return itemData ? itemData.icon : '❓'
+}

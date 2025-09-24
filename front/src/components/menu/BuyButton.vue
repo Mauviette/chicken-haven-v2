@@ -18,6 +18,8 @@
 </template>
 
 <script setup>
+import { getResourceIcon } from '@/data/items.js'
+
 const props = defineProps({
   onClick: Function,
   disabled: Boolean,
@@ -26,19 +28,10 @@ const props = defineProps({
 
 function getPriceIcon() {
   if (typeof props.price === 'number') {
-    return '🥚'
+    return getResourceIcon('eggs')
   }
   
-  switch (props.price.type) {
-    case 'eggs':
-      return '🥚'
-    case 'stock_token':
-      return '📦'
-    case 'production_token':
-      return '⚡'
-    default:
-      return '🥚'
-  }
+  return getResourceIcon(props.price.type) || getResourceIcon('eggs')
 }
 </script>
 

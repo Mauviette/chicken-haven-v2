@@ -131,47 +131,43 @@
 
     </div>
 
-    <!-- Popup de confirmation -->
-    <div v-if="showConfirmation" class="confirmation-overlay" @click="closeConfirmation">
-      <div class="confirmation-popup" @click.stop>
-        <h3>{{ confirmation.title }}</h3>
-        <p>{{ confirmation.message }}</p>
-        <div class="confirmation-buttons">
-          <ActionButton :onClick="confirmPurchase">
-            Confirmer
-          </ActionButton>
-          <ActionButton :onClick="closeConfirmation">
-            Annuler
-          </ActionButton>
-        </div>
-      </div>
-    </div>
+    <!-- Popup des résultats de boîte -->
+    <BoxResults
+      :showResults="showBoxResults"
+      :results="boxResults"
+      :boxName="lastOpenedBoxName"
+      @close="closeBoxResults"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { usePlayer } from '@/composables/usePlayer'
 import { usePoules, especeData } from '@/composables/usePoules'
+import { useBoxes } from '@/composables/useBoxes'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
+import BoxResults from '@/components/menu/BoxResults.vue'
 import { boxesData, getPossibleChickensFromBox, openBoxSimulation, groupes } from '@/data/boxes.js'
 import { getUpgradesWithCalculatedData, upgradeLevel } from '@/data/upgrades.js'
+import { formatPrice } from '@/data/items.js'
 
-const { eggs: playerEggs, stockTokens, productionTokens, canAfford } = usePlayer()
-const { poules } = usePoules()
+const { eggs: playerEggs, stockTokens, productionTokens, canAfford, refreshPlayerData } = usePlayer()
+const { poules, refreshPoules } = usePoules()
+const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
 
 // État des onglets
 const activeTab = ref('boxes')
 
 // État des popups
-const showConfirmation = ref(false)
-const confirmation = ref({
-  title: '',
-  message: '',
-  action: null
-})
+const showBoxResults = ref(false)
+const boxResults = ref([])
+const lastOpenedBoxName = ref('')
+
+// Boîtes disponibles depuis l'API
+const availableBoxes = ref([])
 
 // Configuration des onglets
 const tabs = [
@@ -179,8 +175,8 @@ const tabs = [
   { id: 'upgrades', name: 'Améliorations', icon: '⚡' }
 ]
 
-// Données des boîtes depuis le fichier dédié
-const boxOffers = computed(() => boxesData)
+// Données des boîtes depuis l'API
+const boxOffers = computed(() => availableBoxes.value)
 
 // Poules débloquées (uniquement les poules obtenues par le joueur)
 const unlockedChickens = computed(() => {
@@ -316,34 +312,44 @@ function getDiceTooltipText(box) {
 const upgradeOffers = computed(() => getUpgradesWithCalculatedData())
 
 // Fonctions d'achat
-function openBox(box) {
-  showPurchaseConfirmation(
-    'Ouvrir une boîte',
-    `Voulez-vous acheter et ouvrir ${box.name} pour ${box.price} œufs ?`,
-    () => {
-      console.log('Achat boîte:', box)
+async function openBox(box) {
+  try {
+    console.log('Achat boîte:', box)
+    const result = await openBoxAPI(box.id)
+    
+    // Afficher les résultats
+    boxResults.value = result.results || []
+    lastOpenedBoxName.value = box.name
+    showBoxResults.value = true
+    
+    // Rafraîchir les données du joueur
+    await Promise.all([
+      refreshPlayerData(),
+      refreshPoules()
+    ])
+    
+    // Toast de succès
+    if (result.results && result.results.length > 0) {
+      const newChickens = result.results.filter(r => r.isNew).length
+      const totalChickens = result.results.length
       
-      // Simuler l'ouverture de boîte avec le nouveau système
-      const results = openBoxSimulation(box, especeData, unlockedChickens.value)
-      
-      if (results.length > 0) {
-        const messages = results.map(result => 
-          `${especeData[result.chickenId]?.nom || 'une poule'} (${result.groupDescription})`
-        )
-        
-        if (window.$toast) {
-          window.$toast(`🎉 Vous avez obtenu : ${messages.join(', ')} !`, 'success')
-        }
-        
-        // TODO: Implémenter l'ajout des poules au joueur via API
-        console.log('Poules obtenues:', results)
-      } else {
-        if (window.$toast) {
-          window.$toast('😢 Aucune poule obtenue cette fois-ci...', 'warning')
-        }
+      let message = `🎉 Boîte ouverte ! ${totalChickens} poule${totalChickens > 1 ? 's' : ''} obtenue${totalChickens > 1 ? 's' : ''}`
+      if (newChickens > 0) {
+        message += ` (${newChickens} nouvelle${newChickens > 1 ? 's' : ''})`
       }
+      
+      window.$toast && window.$toast(message, 'success')
+    } else {
+      window.$toast && window.$toast('Aucune poule obtenue cette fois... 😢', 'warning')
     }
-  )
+    
+  } catch (error) {
+    console.error('Erreur lors de l\'ouverture de la boîte:', error)
+    window.$toast && window.$toast(
+      error.message || 'Erreur lors de l\'ouverture de la boîte',
+      'error'
+    )
+  }
 }
 
 function buyChicken(offer) {
@@ -359,41 +365,33 @@ function buyUpgrade(upgrade) {
     return
   }
   
-  const priceText = `${upgrade.price.count} ${upgrade.price.type === 'stock_token' ? 'jetons de stockage' : 'jetons de production'}`
-    
-  showPurchaseConfirmation(
-    'Acheter une amélioration',
-    `Voulez-vous acheter ${upgrade.name} (${upgrade.displayLevel}) pour ${priceText} ?\n\nEffet: ${upgrade.effect}`,
-    () => {
-      console.log('Achat amélioration:', upgrade)
-      
-      // Augmenter le niveau de l'amélioration
-      upgradeLevel(upgrade)
-      
-      // TODO: Implémenter l'achat d'amélioration côté serveur
-      if (window.$toast) {
-        window.$toast(`Vous avez acheté ${upgrade.name} ${upgrade.displayLevel} !`, 'success')
-      }
-    }
-  )
-}
-
-function showPurchaseConfirmation(title, message, action) {
-  confirmation.value = { title, message, action }
-  showConfirmation.value = true
-}
-
-function confirmPurchase() {
-  if (confirmation.value.action) {
-    confirmation.value.action()
+  console.log('Achat amélioration:', upgrade)
+  
+  // Augmenter le niveau de l'amélioration
+  upgradeLevel(upgrade)
+  
+  // TODO: Implémenter l'achat d'amélioration côté serveur
+  if (window.$toast) {
+    window.$toast(`Vous avez acheté ${upgrade.name} ${upgrade.displayLevel} !`, 'success')
   }
-  closeConfirmation()
 }
 
-function closeConfirmation() {
-  showConfirmation.value = false
-  confirmation.value = { title: '', message: '', action: null }
+function closeBoxResults() {
+  showBoxResults.value = false
+  boxResults.value = []
+  lastOpenedBoxName.value = ''
 }
+
+// Charger les données au montage du composant
+onMounted(async () => {
+  try {
+    availableBoxes.value = await getAvailableBoxes()
+  } catch (error) {
+    console.error('Erreur lors du chargement des boîtes:', error)
+    // Fallback sur les données locales en cas d'erreur
+    availableBoxes.value = boxesData
+  }
+})
 </script>
 
 <style scoped>
@@ -789,57 +787,6 @@ function closeConfirmation() {
 
 .confirmation-buttons .action-button {
   min-width: 100px;
-}
-
-/* Popup de confirmation */
-.confirmation-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.confirmation-popup {
-  background: #fff;
-  border: 3px solid #ffc66e;
-  border-radius: 16px;
-  padding: 24px;
-  max-width: 400px;
-  text-align: center;
-  font-family: 'Fredoka', sans-serif;
-}
-
-.confirmation-popup h3 {
-  margin: 0 0 12px 0;
-  color: #6d3c00;
-}
-
-.confirmation-popup p {
-  margin: 0 0 20px 0;
-  color: #8b4513;
-}
-
-.confirmation-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
-/* Styles spécifiques pour les ActionButton de confirmation */
-.confirmation-buttons .action-button.confirm {
-  background: #27ae60;
-  border-color: #229954;
-}
-
-.confirmation-buttons .action-button.cancel {
-  background: #e74c3c;
-  border-color: #c0392b;
 }
 
 /* Responsive */

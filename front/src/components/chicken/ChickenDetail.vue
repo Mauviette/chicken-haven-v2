@@ -42,11 +42,6 @@
           <span class="stars">{{ renderStars(espece.stats.charisme) }}</span>
         </div>
       </div>
-
-      <div class="section">
-        <div class="label">Statut</div>
-        <div class="value">{{ formatStatut(poule) }}</div>
-      </div>
       
 
       <!-- À venir : stats, actions, amélioration, etc. -->
@@ -68,6 +63,7 @@ defineProps({
 })
 
 function formatStatut(poule) {
+  if (!poule.statutEnergie) return '❓ Inconnue'
   if (poule.statutEnergie.etat === 'non_obtenue') return '❓ Inconnue'
   if (poule.statutEnergie.etat === 'disponible') return '✅ Disponible'
   if (poule.statutEnergie.etat === 'en mission') return `🔄 En mission (${poule.posteOccupe})`

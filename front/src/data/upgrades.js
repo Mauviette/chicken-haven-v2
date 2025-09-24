@@ -6,8 +6,8 @@ export const upgradesData = [
     description: 'Augmente la capacité de stockage des œufs',
     icon: '🏠',
     priceType: 'stock_token',
-    costs: [1, 1, 1, 2, 2, 3, 4, 5], // Coûts progressifs
-    rewards: [10, 10, 15, 15, 20, 25, 30, 40], // Récompenses progressives
+    costs: [1, 1, 1, 2, 2, 3, 4, 5],
+    rewards: [10, 10, 15, 15, 20, 25, 30, 40],
     effectTemplate: '+{reward} œufs de stockage maximum',
     currentLevel: 0,
     maxLevel: null // null = illimité après le dernier coût défini

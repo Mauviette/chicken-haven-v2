@@ -26,7 +26,8 @@ const emojiMap = {
   success: '✅',
   error: '❌',
   info: 'ℹ️',
-  warning: '⚠️'
+  warning: '⚠️',
+  chicken: '🐔'
 }
 
 function showToast(message, type = 'info', duration = 5000) {

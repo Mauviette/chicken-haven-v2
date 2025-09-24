@@ -330,6 +330,7 @@ export function usePoules() {
     getCategorie,
     hiddenImage,
     fetchPoules,
+    refreshPoules: fetchPoules, // Alias pour compatibilité
     // Ajout pour le système de talents :
     getTalentInfo,
     getTalentLevel,

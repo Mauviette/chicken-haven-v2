@@ -19,7 +19,7 @@ export async function upsertPoule(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
-    const { especeId, quantite, niveauTalent, statutEnergie, posteOccupe } = req.body
+    const { especeId, quantite, niveauTalent } = req.body
     if (!especeId) return res.status(400).json({ error: 'especeId requis' })
 
     const poules = user.poulesPossedees || []
@@ -29,16 +29,12 @@ export async function upsertPoule(req, res) {
       // Mettre à jour
       existing.quantite = quantite ?? existing.quantite
       existing.niveauTalent = niveauTalent ?? existing.niveauTalent
-      existing.statutEnergie = statutEnergie ?? existing.statutEnergie
-      existing.posteOccupe = posteOccupe ?? existing.posteOccupe
     } else {
       // Ajouter
       poules.push({
         especeId,
         quantite: quantite ?? 1,
-        niveauTalent: niveauTalent ?? 0,
-        statutEnergie: statutEnergie ?? { etat: 'disponible' },
-        posteOccupe: posteOccupe ?? null
+        niveauTalent: niveauTalent ?? 1
       })
     }
 
@@ -84,5 +80,45 @@ export async function updatePoule(req, res) {
   } catch (err) {
     console.error('Erreur updatePoule :', err)
     res.status(500).json({ error: 'Erreur serveur lors de la mise à jour' })
+  }
+}
+
+// POST /api/poules/add - Ajouter une poule (utilisé par le système de boîtes)
+export async function addPoule(req, res) {
+  try {
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    const { especeId, quantite = 1 } = req.body
+    if (!especeId) return res.status(400).json({ error: 'especeId requis' })
+
+    const poules = user.poulesPossedees || []
+
+    const existing = poules.find(p => p.especeId === especeId)
+    if (existing) {
+      // Mettre à jour la quantité
+      existing.quantite += quantite
+      existing.new = true // Marquer comme nouvelle
+    } else {
+      // Ajouter nouvelle poule
+      poules.push({
+        especeId,
+        quantite,
+        niveauTalent: 1,
+        new: true
+      })
+    }
+
+    user.poulesPossedees = poules
+    await user.save()
+
+    res.json({ 
+      message: 'Poule ajoutée avec succès', 
+      poulesPossedees: user.poulesPossedees,
+      added: { especeId, quantite }
+    })
+  } catch (err) {
+    console.error('Erreur addPoule:', err)
+    res.status(500).json({ error: 'Erreur serveur' })
   }
 }

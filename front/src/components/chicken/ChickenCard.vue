@@ -14,7 +14,6 @@
           {{ espece.categorie === 'eclosion' ? '🥚 Éclosion' : '🧬 Fusion' }}
         </div>
         <div class="talent">{{ getTalentDisplayName(poule) }}</div>
-        <div class="statut">{{ formatStatut(poule) }}</div>
       </div>
     </template>
     <template v-else>
@@ -41,6 +40,7 @@ defineProps({
 })
 
 function formatStatut(poule) {
+  if (!poule.statutEnergie) return '❓ Inconnue'
   if (poule.statutEnergie.etat === 'non_obtenue') return '❓ Inconnue'
   if (poule.statutEnergie.etat === 'disponible') return '✅ Disponible'
   if (poule.statutEnergie.etat === 'en mission') return `🔄 En mission (${poule.posteOccupe})`
@@ -144,23 +144,6 @@ function formatRareté(r) {
   color: #b8860b;
 }
 
-.statut {
-  margin-top: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 3px 8px;
-  border-radius: 8px;
-  display: inline-block;
-  background: #f5e9d7;
-  color: #7c4a00;
-  width: 90%;
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
 @media (max-width: 600px) {
   .poule-card {
     width: 100%;
@@ -185,15 +168,6 @@ function formatRareté(r) {
     display: flex;
     flex-direction: column;
     gap: 2px;
-  }
-
-  .statut {
-    font-size: 12px;
-    min-height: auto;
-    padding: 4px 6px;
-    display: inline-block;
-    max-width: 90%;
-    white-space: normal;
   }
 
   .rarete {

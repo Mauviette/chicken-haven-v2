@@ -5,7 +5,7 @@ export const boxesData = [
     name: 'Carton de Base',
     description: 'Contient une poule de base garantie',
     icon: '📦',
-    price: 25,
+    price: {type: 'eggs', count: 25},
     dropGroups: [
       {
         name: 'fondamental',
@@ -19,7 +19,7 @@ export const boxesData = [
     name: 'Boîte Brillante',
     description: 'Contient une poule du groupe fondamental, brillant ou discret',
     icon: '✨',
-    price: 75,
+    price: {type: 'eggs', count: 75},
     dropGroups: [
       {
         name: 'fondamental',
@@ -44,7 +44,7 @@ export const boxesData = [
     name: 'Coffret Chic',
     description: 'Contient une poule du groupe chic',
     icon: '💎',
-    price: 150,
+    price: {type: 'eggs', count: 150},
     dropGroups: [
       {
         name: 'chic',
@@ -56,12 +56,8 @@ export const boxesData = [
   }
 ]
 
-export const groupes = [
-  { name: 'fondamental', description: 'Groupe fondamental', rarityDropChance: [75, 25, 0, 0]},
-  { name: 'brillant', description: 'Groupe brillant', rarityDropChance: [75, 25, 0, 0] },
-  { name: 'discret', description: 'Groupe discret', rarityDropChance: [75, 25, 0, 0] },
-  { name: 'chic', description: 'Groupe chic', rarityDropChance: [75, 20, 5, 0] },
-]
+// Import des groupes depuis le fichier chickens.js pour harmonisation
+export { groupes } from './chickens.js'
 
 // Fonction utilitaire pour obtenir toutes les poules possibles d'une boîte
 export function getPossibleChickensFromBox(box, especeData, unlockedChickens) {
