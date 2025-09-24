@@ -11,7 +11,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/white/basic.png'].default,
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 4, energie: 3, charisme: 3 },
+    stats: { intelligence: 4, energie: 2, charisme: 3 },
     groupe: 'fondamental'
   },
   'poulette-rousse': {
@@ -20,7 +20,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/red/basic.png'].default,
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 3, energie: 5, charisme: 2 },
+    stats: { intelligence: 2, energie: 5, charisme: 2 },
     groupe: 'fondamental',
   },
   'noiraude': {
@@ -29,7 +29,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/black/basic.png'].default,
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 3, energie: 3, charisme: 4 },
+    stats: { intelligence: 2, energie: 3, charisme: 4 },
     groupe: 'fondamental',
   },
   'argentine': {
@@ -38,7 +38,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/argentine/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 3, energie: 4, charisme: 3 },
+    stats: { intelligence: 3, energie: 3, charisme: 3 },
     groupe: 'brillant',
   },
   'aubepine': {
@@ -47,7 +47,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/aubepine/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 4, energie: 3, charisme: 3 },
+    stats: { intelligence: 4, energie: 3, charisme: 2 },
     groupe: 'brillant',
   },
   'cendree': {
@@ -56,7 +56,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/cendree/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 3, energie: 3, charisme: 4 },
+    stats: { intelligence: 3, energie: 2, charisme: 4 },
     groupe: 'brillant',
   },
   'choco': {
@@ -65,7 +65,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/choco/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 2, energie: 4, charisme: 4 },
+    stats: { intelligence: 1, energie: 4, charisme: 4 },
     groupe: 'discret',
   },
   'ecailleuse': {
@@ -74,7 +74,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/ecailleuse/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 3, energie: 4, charisme: 3 },
+    stats: { intelligence: 3, energie: 4, charisme: 2 },
     groupe: 'discret',
   },
   'grisette': {
@@ -83,7 +83,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/grisette/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 4, energie: 3, charisme: 3 },
+    stats: { intelligence: 5, energie: 1, charisme: 3 },
     groupe: 'discret',
   },
   'queuedepaon': {
@@ -92,7 +92,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/queuedepaon/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'epique',
-    stats: { intelligence: 3, energie: 2, charisme: 5 },
+    stats: { intelligence: 3, energie: 1, charisme: 5 },
     groupe: 'chic',
   },
   'rayee': {
@@ -101,7 +101,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/rayee/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 4, energie: 5, charisme: 1 },
+    stats: { intelligence: 4, energie: 4, charisme: 1 },
     groupe: 'chic',
   },
   'tachetee': {
@@ -110,7 +110,7 @@ export const especeData = {
     image: chickenImages['/src/assets/chickens/tachetee/basic.png']?.default || hiddenImage,
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 3, energie: 3, charisme: 4 },
+    stats: { intelligence: 4, energie: 1, charisme: 4 },
     groupe: 'chic',
   },
 }
@@ -118,21 +118,48 @@ export const especeData = {
 // Référentiel des talents et de leurs effets
 export const talentsData = {
   'Chanceuse': {
-    description: "Augmente les chances d'obtenir des récompenses rares.",
-    effet: (niveau) => `+${25 + niveau * 25}% de chance d’obtenir un objet rare.`,
-    maxNiveau: 5,
+    description: "Lors des récoltes, a une petite chance de fait pleuvoir des oeufs.",
+    effet: (niveau) => `Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x${niveau} en oeufs.`,
+    calc: { req: [ niveau, maxStockage ],
+            calcul: (niveau, maxStockage) => niveau * maxStockage,
+            print: (niveau, maxStockage) => `Pour chaque oeuf récolté, 1% de chance de gagner ${niveau * maxStockage} oeufs`,
+            type: {
+              trigger : 'harvest',
+              chance : true,
+              reward: 'egg_rain'
+            }
+    },
+    maxNiveau: 10,
     icon: '🍀'
   },
   'Énergétique': {
-    description: "Finit les missions plus vite.",
-    effet: (niveau) => `Finit les missions ${5 + niveau * 5}% plus vite.`,
-    maxNiveau: 5,
+    description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
+    effet: (niveau) => `+${niveau * 0.25} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
+    calc: { req: [ energieEquipe, niveau ],
+            calcul: (energieEquipe, niveau) => energieEquipe * 0.25 * niveau,
+            print: (revenu) => `+${revenu}/s`,
+            type: {
+              trigger : 'always',
+              chance : false,
+              reward: 'income'
+            }
+    },
+    maxNiveau: 10,
     icon: '⚡'
   },
   'Persévérante': {
-    description: "Se régénère de la fatigue plus vite.",
-    effet: (niveau) => `Se régénère ${5 + niveau * 5}% plus vite entre deux missions.`,
-    maxNiveau: 5,
+    description: "Augmente l'énergie et l'intelligence de l'équipe.",
+    effet: (niveau) => `+${niveau} énergie et intelligence à toutes les poules de l'équipe.`,
+    calc: { req: [ niveau ],
+            calcul: (niveau) => energieEquipe * 0.25 * niveau,
+            print: (revenu) => `+${revenu}/s`,
+            type: {
+              trigger : 'always',
+              chance : false,
+              reward: 'team_buff'
+            }
+    },
+    maxNiveau: 10,
     icon: '🏋️'
   },
   'Vive': {
@@ -189,7 +216,6 @@ export const talentsData = {
     maxNiveau: 5,
     icon: '🎉'
   },
-  // ...ajoute d'autres talents si besoin...
 }
 
 // Méthodes pour le système de talents

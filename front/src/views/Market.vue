@@ -36,7 +36,7 @@
       <!-- Onglet Boîtes -->
       <div v-if="activeTab === 'boxes'" class="market-section">
         <div class="section-header">
-          <h3>📦 Boîtes de Poules</h3>
+          <h3>🧰 Boîtes de Poules</h3>
           <p class="section-description">Obtenez de nouvelles poules en ouvrant des boîtes mystères !</p>
         </div>
         
@@ -76,7 +76,7 @@
                 </div>
               </div>
             </div>
-            <div class="item-purchase">
+            <div class="item-purchase item-purchase-big">
               <BuyButton
                 :price="box.price"
                 :onClick="() => openBox(box)"
@@ -175,7 +175,7 @@ const confirmation = ref({
 
 // Configuration des onglets
 const tabs = [
-  { id: 'boxes', name: 'Boîtes', icon: '📦' },
+  { id: 'boxes', name: 'Boîtes', icon: '🧰' },
   { id: 'upgrades', name: 'Améliorations', icon: '⚡' }
 ]
 
@@ -747,6 +747,9 @@ function closeConfirmation() {
   align-items: center;
   justify-content: center;
   gap: 12px;
+}
+
+.item-purchase-big {
   padding-top: 12px;
   border-top: 1px solid #e0d0b0;
 }

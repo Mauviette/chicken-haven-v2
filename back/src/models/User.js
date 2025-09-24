@@ -53,6 +53,13 @@ const UserSchema = new mongoose.Schema({
     eggs : { type : Number, default: 0},
     stock_token : { type : Number, default: 0},
     production_token : { type : Number, default: 0}
+  },
+
+  team: {
+    maxSlots: { type : Number, default: 3, unique: true, required: true},
+    slot: { 
+      especeId : {type : String}
+    }
   }
 
 })
