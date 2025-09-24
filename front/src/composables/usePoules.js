@@ -120,13 +120,13 @@ export const talentsData = {
   'Chanceuse': {
     description: "Lors des récoltes, a une petite chance de fait pleuvoir des oeufs.",
     effet: (niveau) => `Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x${niveau} en oeufs.`,
-    calc: { req: [ niveau, maxStockage ],
-            calcul: (niveau, maxStockage) => niveau * maxStockage,
-            print: (niveau, maxStockage) => `Pour chaque oeuf récolté, 1% de chance de gagner ${niveau * maxStockage} oeufs`,
+    calc: { req: [ 'niveau', 'maxStockage' ],
+            print: (calcul) => `Pour chaque oeuf récolté, 1% de chance de gagner ${calcul} oeufs`,
             type: {
               trigger : 'harvest',
               chance : true,
-              reward: 'egg_rain'
+              reward: 'egg_rain',
+              calcul: (niveau, maxStockage) => niveau * maxStockage,
             }
     },
     maxNiveau: 10,
@@ -135,13 +135,13 @@ export const talentsData = {
   'Énergétique': {
     description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
     effet: (niveau) => `+${niveau * 0.25} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
-    calc: { req: [ energieEquipe, niveau ],
-            calcul: (energieEquipe, niveau) => energieEquipe * 0.25 * niveau,
+    calc: { req: [ 'energieEquipe', 'niveau' ],
             print: (revenu) => `+${revenu}/s`,
             type: {
               trigger : 'always',
               chance : false,
-              reward: 'income'
+              reward: 'income',
+              calcul: (niveau, energieEquipe) => energieEquipe * 0.25 * niveau,
             }
     },
     maxNiveau: 10,
@@ -150,13 +150,15 @@ export const talentsData = {
   'Persévérante': {
     description: "Augmente l'énergie et l'intelligence de l'équipe.",
     effet: (niveau) => `+${niveau} énergie et intelligence à toutes les poules de l'équipe.`,
-    calc: { req: [ niveau ],
-            calcul: (niveau) => energieEquipe * 0.25 * niveau,
-            print: (revenu) => `+${revenu}/s`,
+    calc: { req: [ 'niveau' ],
+            calcul: (niveau) => niveau,
             type: {
               trigger : 'always',
               chance : false,
-              reward: 'team_buff'
+              reward: 'buff',
+              target: 'team',
+              stats : ['intelligence', 'charisme'],
+              print: (niveau) => `+${niveau} énergie et intelligence à toutes les poules de l'équipe.`,
             }
     },
     maxNiveau: 10,
