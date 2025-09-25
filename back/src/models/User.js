@@ -17,7 +17,7 @@ const UserSchema = new mongoose.Schema({
 
   poulesPossedees: [
     {
-      especeId: { type: String, required: true, unique: true },
+      especeId: { type: String, required: true },
       quantite: { type: Number, default: 1 },
       niveauTalent: { type: Number, default: 1 },
       new: {type: Boolean, default: true}

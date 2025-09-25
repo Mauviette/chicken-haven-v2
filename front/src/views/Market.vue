@@ -159,6 +159,7 @@ import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
 import { useBoxes } from '@/composables/useBoxes'
+import { useAchievements } from '@/composables/useAchievements'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
 
@@ -171,6 +172,7 @@ import Tooltip from '@/components/menu/Tooltip.vue'
 const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, canAfford, refreshPlayerData } = usePlayer()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
+const { checkAchievements } = useAchievements()
 const { especies: especeData } = useGameData()
 
 // État des onglets
@@ -342,8 +344,17 @@ async function openBox(box) {
       refreshPlayerData(),
       refreshPoules()
     ])
+
+    // Émettre des événements pour que les succès se rafraîchissent immédiatement
+    try {
+      if (result?.results) {
+        for (const r of result.results) {
+          window.dispatchEvent(new CustomEvent('chicken-bought', { detail: { especeId: r.especeId, isNew: r.isNew } }))
+        }
+      }
+    } catch (_) {}
     
-    // Toast de succès
+  // Toast de succès
     if (result.results && result.results.length > 0) {
       const newChickens = result.results.filter(r => r.isNew).length
       const totalChickens = result.results.length
@@ -357,6 +368,14 @@ async function openBox(box) {
     } else {
       window.$toast && window.$toast('Aucune poule obtenue cette fois... 😢', 'warning')
     }
+
+    // Vérifier immédiatement les succès liés aux boîtes et aux poules
+    try {
+      const newAch = await checkAchievements()
+      if (newAch && newAch.length) {
+        window.$toast && window.$toast(`🎉 ${newAch.length} succès débloqué(s)`, 'success')
+      }
+    } catch (_) {}
     
   } catch (error) {
     console.error('Erreur lors de l\'ouverture de la boîte:', error)

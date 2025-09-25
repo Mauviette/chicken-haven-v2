@@ -12,6 +12,8 @@ const eggState = ref({
 
 let updateInterval = null
 let onTeamUpdated = null
+let onAuthLogin = null
+let onAuthLogout = null
 
 export function useEgg() {
   const { token } = useAuth()
@@ -92,6 +94,9 @@ export function useEgg() {
           //window.$toast(`+${data.eggsGained} œufs collectés !`, 'success')
         }
 
+        // Notifier le système de succès
+        try { window.dispatchEvent(new CustomEvent('egg-clicked', { detail: { eggsGained: data.eggsGained } })) } catch (_) {}
+
         // Retourner la réponse complète (incl. chanceuse)
         return data
       } else {
@@ -128,6 +133,25 @@ export function useEgg() {
       }
       window.addEventListener('team-updated', onTeamUpdated)
     }
+
+    // Réagir à la connexion/déconnexion
+    if (typeof window !== 'undefined' && !onAuthLogin) {
+      onAuthLogin = async () => { try { await fetchEggStatus() } catch (_) {} }
+      window.addEventListener('auth-login', onAuthLogin)
+    }
+    if (typeof window !== 'undefined' && !onAuthLogout) {
+      onAuthLogout = () => {
+        eggState.value = {
+          income: 1,
+          maxIncome: 30,
+          currentStocked: 0,
+          lastClick: new Date(),
+          totalEggs: 0,
+          isLoading: false
+        }
+      }
+      window.addEventListener('auth-logout', onAuthLogout)
+    }
   }
 
   // Arrêter les mises à jour automatiques
@@ -139,6 +163,14 @@ export function useEgg() {
     if (typeof window !== 'undefined' && onTeamUpdated) {
       window.removeEventListener('team-updated', onTeamUpdated)
       onTeamUpdated = null
+    }
+    if (typeof window !== 'undefined' && onAuthLogin) {
+      window.removeEventListener('auth-login', onAuthLogin)
+      onAuthLogin = null
+    }
+    if (typeof window !== 'undefined' && onAuthLogout) {
+      window.removeEventListener('auth-logout', onAuthLogout)
+      onAuthLogout = null
     }
   }
 

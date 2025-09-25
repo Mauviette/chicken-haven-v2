@@ -59,8 +59,9 @@ onMounted(() => {
 
 const selectedPoule = ref(null)
 const searchQuery = ref('')
-const sortKey = ref('rarete')
-const sortOrder = ref('asc')
+// Tri par défaut: quantité décroissante
+const sortKey = ref('quantite')
+const sortOrder = ref('desc')
 
 const {
   poules,
@@ -129,6 +130,7 @@ const filteredPoules = computed(() => {
       ...poule,
       _matchScore: matchScore,
       _isUnlocked: poule.quantite > 0,
+      _inTeam: (team.value?.slots || []).some(s => s?.especeId === poule.especeId),
       _rareteIndex: rareteOrder[espece?.rarete] || 0,
     }
   })
@@ -141,9 +143,12 @@ const filteredPoules = computed(() => {
   unlocked.sort((a, b) => {
     if (b._matchScore !== a._matchScore) return b._matchScore - a._matchScore
 
+    // Prioriser les poules en équipe
+    if (a._inTeam !== b._inTeam) return a._inTeam ? -1 : 1
+
     if (sortKey.value) {
-      const valA = sortKey.value === 'rarete' ? a._rareteIndex : a[sortKey.value] ?? 0
-      const valB = sortKey.value === 'rarete' ? b._rareteIndex : b[sortKey.value] ?? 0
+      const valA = sortKey.value === 'rarete' ? a._rareteIndex : (a[sortKey.value] ?? 0)
+      const valB = sortKey.value === 'rarete' ? b._rareteIndex : (b[sortKey.value] ?? 0)
       const dir = sortOrder.value === 'asc' ? 1 : -1
       if (valA !== valB) return (valA - valB) * dir
     }

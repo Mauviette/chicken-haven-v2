@@ -3,9 +3,11 @@
     <div class="top-bar-inner">
       <div class="game-title">Chicken Haven</div>
       <div class="top-right">
-        <div class="egg-counter">
-          <span>🥚 {{ eggs }} œufs</span>
-        </div>
+        <Tooltip :text="eggTooltipHtml" position="bottom">
+          <div class="egg-counter">
+            <span>🥚 {{ eggs }} œufs</span>
+          </div>
+        </Tooltip>
         <button class="profile-btn" @click="openProfileMenu">
           <img src="@/assets/ui/avatar-default.svg" class="avatar" />
         </button>
@@ -17,6 +19,8 @@
 
 <script setup>
 import { usePlayer } from '@/composables/usePlayer'
+import Tooltip from '@/components/menu/Tooltip.vue'
+import { achievementsData } from '@/data/items.js'
 const { eggs } = usePlayer()
 
 const emit = defineEmits(['open-profile'])
@@ -24,6 +28,8 @@ const emit = defineEmits(['open-profile'])
 function openProfileMenu() {
   emit('open-profile')
 }
+
+const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`
 </script>
 
 

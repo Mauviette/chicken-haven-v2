@@ -4,7 +4,7 @@
   >
     <template v-if="espece && poule.quantite > 0">
       <div class="image-wrapper">
-        <img :src="image" alt="poule" class="poule-image" />
+  <img :src="image" alt="poule" class="poule-image" draggable="false" />
         <div v-if="inTeam" class="badge-team">Équipe</div>
       </div>
       <div class="info">
@@ -20,7 +20,7 @@
       </div>
     </template>
     <template v-else-if="espece">
-      <img :src="hiddenImage" alt="hidden chicken" class="poule-image" />
+  <img :src="hiddenImage" alt="hidden chicken" class="poule-image" draggable="false" />
       <div class="info">
         <div class="name">???</div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
@@ -99,6 +99,7 @@ function formatRareté(r) {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.1s ease;
   position: relative;
+  user-select: none;
 }
 
 .poule-card.grisee {
@@ -115,6 +116,7 @@ function formatRareté(r) {
   width: 100%;
   border-radius: 10px;
   margin-bottom: 8px;
+  -webkit-user-drag: none;
 }
 
 .image-wrapper { position: relative; }
@@ -134,6 +136,7 @@ function formatRareté(r) {
   text-align: center;
   font-size: 14px;
   color: #5c2c08;
+  user-select: none;
 }
 
 .poule-card.commune {

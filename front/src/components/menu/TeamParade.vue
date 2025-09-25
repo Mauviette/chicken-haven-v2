@@ -38,7 +38,7 @@ import { useEgg } from '@/composables/useEgg'
 import TeamParadeChicken from '@/components/menu/TeamParadeChicken.vue'
 
 const { team } = usePlayer()
-const { especies, getImage, poules, getTalentEffectSync } = usePoules()
+const { especies, getImage, poules, getTalentEffectSync, getTalentLevel } = usePoules()
 const { especies: especeData, talents } = useGameData()
 const { eggState, fetchEggStatus } = useEgg()
 
@@ -137,13 +137,13 @@ const entries = computed(() => {
     // Effet du talent : pour Chanceuse, afficher “niveau * stock”
     let talentEffect = ''
     if (poule && info?.talent === 'Chanceuse') {
-      const niveau = poule.niveauTalent || 0
+      const niveau = getTalentLevel(poule)
       const stock = eggState.value?.maxIncome || 0
       const amount = Math.max(0, Math.floor(niveau * stock))
       talentEffect = `Pour chaque oeuf récolté, 1% de chance de gagner ${amount} oeufs.`
     } else if (poule && (info?.talent === 'Énergétique' || info?.talent === 'Energetique')) {
-      // Effet du talent : pour Énergétique, afficher le bonus exact en œufs/s
-      const niveau = poule.niveauTalent || 0
+      // Effet du talent : pour Énergétique, afficher le bonus exact en œufs/s via le DSL
+      const niveau = getTalentLevel(poule)
       const teamSlots = team.value?.slots || []
       let teamEnergyBase = 0
       for (const ts of teamSlots) {
@@ -153,7 +153,16 @@ const entries = computed(() => {
         teamEnergyBase += Number(species?.stats?.energie) || 0
       }
       const teamEnergy = teamEnergyBase + ((buffsPerMember.energie || 0) * Math.max(0, memberCount))
-      const amount = teamEnergy * (niveau * 0.25)
+      // Lire l'effet depuis le DSL pour éviter tout hardcode (0.2, etc.)
+      const calc = talents.value?.[info?.talent]?.calculation
+      const eff = Array.isArray(calc?.effects) ? calc.effects.find(e => e?.type === 'income_bonus_per_second') : null
+      let amount = 0
+      if (eff?.amount != null) {
+        amount = Number(evalExpr(eff.amount, { niveau, teamEnergy })) || 0
+      } else {
+        // Fallback théorique
+        amount = teamEnergy * (niveau * 0.2)
+      }
       const fmt = Number.isInteger(amount) ? amount.toString() : amount.toFixed(2)
       talentEffect = `Augmente vos revenus de ${fmt} œufs/s (⚡${teamEnergy}).`
     } else if (poule) {

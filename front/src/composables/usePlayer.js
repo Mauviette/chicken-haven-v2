@@ -41,6 +41,7 @@ export function usePlayer() {
       if (res.ok) {
         const data = await res.json()
         team.value = data
+        try { window.__teamSlotsCached = Array.isArray(team.value?.slots) ? [...team.value.slots] : [] } catch (_) {}
       }
     } catch (err) {
       console.error('Erreur fetchTeam:', err)
@@ -61,6 +62,7 @@ export function usePlayer() {
       })
       if (res.ok) {
         team.value = await res.json()
+        try { window.__teamSlotsCached = Array.isArray(team.value?.slots) ? [...team.value.slots] : [] } catch (_) {}
         // Notifier globalement que l'équipe a changé (ex: pour rafraîchir l'income)
         try {
           window.dispatchEvent(new CustomEvent('team-updated', { detail: { team: team.value } }))

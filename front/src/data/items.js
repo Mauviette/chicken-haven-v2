@@ -5,7 +5,7 @@ export const achievementsData = {
     nom: 'œufs',
     nom_singulier: 'œuf',
     icon: '🥚',
-    description: 'La monnaie principale de votre ferme. Les poules les pondent naturellement et vous pouvez les utiliser pour acheter des boîtes et des améliorations.'
+    description: 'La monnaie principale de votre ferme. Récoltez-les sur la page de production et utilisez-les pour acheter des boîtes et des améliorations.'
   },
   'stock_token': {
     id: 'stock_token',

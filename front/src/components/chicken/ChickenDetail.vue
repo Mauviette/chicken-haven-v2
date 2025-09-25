@@ -125,6 +125,8 @@ async function onEquip() {
   if (ok) {
     const name = props.espece?.nom || props.poule.especeId
     window.$toast?.(`${name} équipée`, 'team-add')
+    // Certains flux d'achat équipent immédiatement : rafraîchir succès
+    try { window.dispatchEvent(new CustomEvent('chicken-bought', { detail: { especeId: props.poule.especeId } })) } catch (_) {}
   } else {
     window.$toast?.("Impossible d'équiper.", 'error')
   }

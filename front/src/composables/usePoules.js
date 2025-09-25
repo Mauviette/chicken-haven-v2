@@ -135,14 +135,14 @@ export const talentsDataLocal = {
   },
   'Énergétique': {
     description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
-    effet: (niveau) => `+${niveau * 0.25} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
+    effet: (niveau) => `+${niveau * 0.2} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
     calc: { req: [ 'energieEquipe', 'niveau' ],
             print: (revenu) => `+${revenu}/s`,
             type: {
               trigger : 'always',
               chance : false,
               reward: 'income',
-              calcul: (niveau, energieEquipe) => energieEquipe * 0.25 * niveau,
+              calcul: (niveau, energieEquipe) => energieEquipe * 0.2 * niveau,
             }
     },
     maxNiveau: 10,
@@ -223,7 +223,19 @@ export const talentsDataLocal = {
 
 // Méthodes pour le système de talents (utilise les données synchronisées)
 function getTalentLevel(poule) {
-  return poule?.niveauTalent || 0
+  if (!poule) return 0
+  // Si la poule est possédée mais que le niveau n'est pas encore connu côté client, assumer niveau 1
+  const missingOrZero = (poule.niveauTalent == null || poule.niveauTalent === 0)
+  if (missingOrZero) {
+    // 1) possédée: niveau 1 par défaut
+    if (poule.quantite > 0) return 1
+    // 2) ou bien déjà équipée dans l'équipe (juste après un equip avant refresh poules)
+    try {
+      const slots = Array.isArray(window.__teamSlotsCached) ? window.__teamSlotsCached : []
+      if (slots.some(s => s?.especeId === poule.especeId)) return 1
+    } catch (_) {}
+  }
+  return poule.niveauTalent || 0
 }
 
 function isTalentUnlocked(poule) {
@@ -408,7 +420,17 @@ export function usePoules() {
         return 0
       }
 
-      // Essayer d'interpréter un stat_buff générique
+      // 1) Essayer d'interpréter un bonus de revenu passif (Énergétique) via le DSL
+      if (calc && Array.isArray(calc.effects)) {
+        const incomeEff = calc.effects.find(e => e?.type === 'income_bonus_per_second')
+        if (incomeEff?.amount != null) {
+          const perEnergy = evalExpr(incomeEff.amount, { niveau, teamEnergy: 1 })
+          const fmt = Number.isInteger(perEnergy) ? `${perEnergy}` : perEnergy.toFixed(1)
+          return `+${fmt} de revenu par seconde pour chaque point d'énergie dans l'équipe.`
+        }
+      }
+
+      // 2) Essayer d'interpréter un stat_buff générique
       if (calc && Array.isArray(calc.effects)) {
         const ctx = { niveau }
         const deltas = { intelligence: 0, energie: 0, charisme: 0 }
@@ -431,8 +453,19 @@ export function usePoules() {
         }
       }
 
-      // Fallback: utiliser la description fournie par les données
-      return talentsData[talentName]?.description || '???'
+      // 3) Sinon, préférer un texte d'effet plutôt que la description
+      //    a) Fallback local (fonctions non sérialisables côté backend)
+      const localInfo = talentsDataLocal[talentName]
+      if (localInfo && typeof localInfo.effet === 'function') {
+        return localInfo.effet(niveau)
+      }
+      //    b) Si par exception le backend expose une fonction effet, l'utiliser
+      const tInfo = talentsData[talentName]
+      if (tInfo && typeof tInfo.effet === 'function') {
+        return tInfo.effet(niveau)
+      }
+      //    c) Dernier recours: description (locale ou backend)
+      return (localInfo?.description || tInfo?.description || '???')
     } catch (error) {
       console.error('Erreur getTalentEffectSync:', error)
       return '???'

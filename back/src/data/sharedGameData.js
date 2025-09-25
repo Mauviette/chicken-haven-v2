@@ -159,7 +159,7 @@ export const talentsData = {
   },
   'Énergétique': {
     description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
-    effet: (niveau) => `+${niveau * 0.25} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
+    effet: (niveau) => `+${niveau * 0.2} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
     maxNiveau: 10,
     icon: '⚡',
     calculation: {
@@ -172,7 +172,7 @@ export const talentsData = {
             op: 'mul',
             args: [
               { var: 'teamEnergy' },
-              { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] }
+              { op: 'mul', args: [ { var: 'niveau' }, 0.2 ] }
             ]
           }
         }

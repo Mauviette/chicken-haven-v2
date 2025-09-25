@@ -215,12 +215,77 @@ export function useAchievements() {
         setTimeout(checkAchievements, 1000) // Petite attente pour éviter spam
       }
     })
+
+    // Rafraîchir lors d'événements clés (achat poule, clic œuf)
+    if (typeof window !== 'undefined') {
+      const onChickenBought = () => setTimeout(checkAchievements, 250)
+      const onEggClicked = () => setTimeout(checkAchievements, 250)
+      const onAuthLogin = async () => {
+        // Réinitialiser puis recharger les succès pour le nouveau compte
+        userAchievements.value = {
+          progress: {
+            totalEggsCollected: 0,
+            totalChickensOwned: 0,
+            totalProductionCompleted: 0,
+            totalBoxesOpened: 0,
+            maxEggsInOneClick: 0
+          },
+          completed: [],
+          lastChecked: new Date()
+        }
+        try {
+          await fetchAchievements()
+          await checkAchievements()
+        } catch (_) {}
+      }
+      const onAuthLogout = () => {
+        // Nettoyer l'état local pour éviter un affichage d'un autre compte
+        userAchievements.value = {
+          progress: {
+            totalEggsCollected: 0,
+            totalChickensOwned: 0,
+            totalProductionCompleted: 0,
+            totalBoxesOpened: 0,
+            maxEggsInOneClick: 0
+          },
+          completed: [],
+          lastChecked: new Date()
+        }
+      }
+      window.addEventListener('chicken-bought', onChickenBought)
+      window.addEventListener('egg-clicked', onEggClicked)
+      window.addEventListener('auth-login', onAuthLogin)
+      window.addEventListener('auth-logout', onAuthLogout)
+      // Stocker les handlers pour pouvoir les retirer si besoin
+      startAutoCheck._onChickenBought = onChickenBought
+      startAutoCheck._onEggClicked = onEggClicked
+      startAutoCheck._onAuthLogin = onAuthLogin
+      startAutoCheck._onAuthLogout = onAuthLogout
+    }
   }
 
   function stopAutoCheck() {
     if (updateInterval) {
       clearInterval(updateInterval)
       updateInterval = null
+    }
+    if (typeof window !== 'undefined') {
+      if (startAutoCheck._onChickenBought) {
+        window.removeEventListener('chicken-bought', startAutoCheck._onChickenBought)
+        startAutoCheck._onChickenBought = null
+      }
+      if (startAutoCheck._onEggClicked) {
+        window.removeEventListener('egg-clicked', startAutoCheck._onEggClicked)
+        startAutoCheck._onEggClicked = null
+      }
+      if (startAutoCheck._onAuthLogin) {
+        window.removeEventListener('auth-login', startAutoCheck._onAuthLogin)
+        startAutoCheck._onAuthLogin = null
+      }
+      if (startAutoCheck._onAuthLogout) {
+        window.removeEventListener('auth-logout', startAutoCheck._onAuthLogout)
+        startAutoCheck._onAuthLogout = null
+      }
     }
   }
 

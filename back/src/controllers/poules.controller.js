@@ -115,7 +115,8 @@ export async function addPoule(req, res) {
     res.json({ 
       message: 'Poule ajoutée avec succès', 
       poulesPossedees: user.poulesPossedees,
-      added: { especeId, quantite }
+      added: { especeId, quantite },
+      trigger: { achievementsRefresh: true }
     })
   } catch (err) {
     console.error('Erreur addPoule:', err)
