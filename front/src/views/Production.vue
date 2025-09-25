@@ -66,7 +66,9 @@
             </div>
             
             <div class="income-info">
-              <span class="income-rate">{{ eggState.income }}/s</span>
+              <Tooltip :text="incomeTooltipHtml">
+                <span class="income-rate">{{ formatIncome(eggState.income) }}/s</span>
+              </Tooltip>
             </div>
           </div>
 
@@ -128,6 +130,16 @@ function evalExpr(expr, ctx) {
   return 0
 }
 
+// Formatters
+const formatIncome = (n) => {
+  const x = Number(n || 0)
+  return Number.isInteger(x) ? x : x.toFixed(1)
+}
+const roman = (n) => {
+  const arr = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV']
+  return arr[(Number(n)||0)-1] || `${n}`
+}
+
 // Stats d'équipe (somme des stats des poules équipées) + buffs du DSL (stat_buff target: team)
 const teamStats = computed(() => {
   const slots = team.value?.slots || []
@@ -172,6 +184,62 @@ const teamStats = computed(() => {
     energie: base.energie + (buffsPerMember.energie || 0) * memberCount,
     charisme: base.charisme + (buffsPerMember.charisme || 0) * memberCount,
   }
+})
+
+// Décomposition du bonus Énergétique (miroir de runTalentEnergetique côté serveur)
+const energeticDetails = computed(() => {
+  try {
+    const slots = team.value?.slots || []
+    const speciesMap = especies.value || {}
+    const talentsMap = talents.value || {}
+    const owned = poules.value || []
+    const teamEnergy = Number(teamStats.value?.energie || 0)
+
+    let total = 0
+    const entries = []
+    for (const s of slots) {
+      const id = s?.especeId
+      if (!id) continue
+      const sp = speciesMap[id]
+      const tName = sp?.talent
+      if (!tName || !['Énergétique', 'Energetique'].includes(tName)) continue
+      const calc = talentsMap[tName]?.calculation
+      if (!calc || !Array.isArray(calc.effects)) continue
+      const eff = calc.effects.find(e => e?.type === 'income_bonus_per_second' && (e?.resource === 'eggs' || e?.resource == null))
+      if (!eff) continue
+      const own = owned.find(p => p.especeId === id)
+      const niveau = Math.max(1, Number(own?.niveauTalent) || 1)
+      const amount = Number(evalExpr(eff.amount, { teamEnergy, niveau })) || 0
+      total += amount
+      entries.push({ especeId: id, name: sp?.nom || id, level: niveau, amount, teamEnergy })
+    }
+    return { total, entries }
+  } catch (_) {
+    return { total: 0, entries: [] }
+  }
+})
+
+// HTML du tooltip de l'income
+const incomeTooltipHtml = computed(() => {
+  const effective = Number(eggState.value.income || 0)
+  const energetic = energeticDetails.value
+  const base = Math.max(0, effective - Number(energetic.total || 0))
+
+  let html = `<div>`
+  html += `<div style="font-weight:bold;margin-bottom:4px;">Revenu par seconde</div>`
+  html += `<div>Base (incl. améliorations): <strong>${formatIncome(base)}</strong></div>`
+
+  if (energetic.entries.length) {
+    for (const e of energetic.entries) {
+      html += `<div>Énergétique — ${e.name} (niv ${roman(e.level)}): <strong>+${formatIncome(e.amount)}</strong></div>`
+    }
+  } else {
+    html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
+  }
+
+  html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">Total: <strong>${formatIncome(effective)}</strong>/s</div>`
+  html += `</div>`
+  return html
 })
 
 // Effets visuels
