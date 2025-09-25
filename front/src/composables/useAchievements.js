@@ -17,10 +17,12 @@ const userAchievements = ref({
 })
 
 let updateInterval = null
+// Dédoublonnage des notifications d'unlock pendant la session
+const notifiedAchievements = new Set()
 
 export function useAchievements() {
   const { token } = useAuth()
-  const { eggs } = usePlayer()
+  const { eggs, refreshPlayerData } = usePlayer()
   const { achievements: gameAchievements } = useGameData()
   
   const API_BASE = 'http://localhost:3002/api/achievements'
@@ -164,6 +166,8 @@ export function useAchievements() {
           }
         }
 
+        // Rafraîchir les ressources du joueur (œufs, jetons, niveau)
+        try { await refreshPlayerData() } catch (_) {}
         return data.reward
       }
     } catch (error) {
@@ -176,6 +180,10 @@ export function useAchievements() {
   // Gestion des nouveaux succès
   function handleNewAchievements(newAchievements) {
     newAchievements.forEach(achievement => {
+      // Éviter les doubles toasts pour le même succès dans la session
+      if (notifiedAchievements.has(achievement.achievementId)) return
+      notifiedAchievements.add(achievement.achievementId)
+
       const achievementData = gameAchievements.value[achievement.achievementId]
       if (achievementData) {
         // Ici vous pouvez ajouter des notifications, animations, etc.
@@ -185,9 +193,9 @@ export function useAchievements() {
         try {
           const reward = achievementData.reward
           const rewardText = reward ? ` — Récompense: ${formatString(reward.type, reward.quantite)}` : ''
-          const message = `🏆 Succès débloqué: ${achievementData.nom}`
+          const message = `Succès débloqué: ${achievementData.nom}`
           if (typeof window !== 'undefined' && window.$toast) {
-            window.$toast(message, 'success')
+            window.$toast(message, 'achievement')
           }
         } catch (_) { /* noop */ }
         
@@ -240,6 +248,7 @@ export function useAchievements() {
       const onEggClicked = () => setTimeout(checkAchievements, 250)
       const onAuthLogin = async () => {
         // Réinitialiser puis recharger les succès pour le nouveau compte
+        try { notifiedAchievements.clear() } catch (_) {}
         userAchievements.value = {
           progress: {
             totalEggsCollected: 0,
@@ -258,6 +267,7 @@ export function useAchievements() {
       }
       const onAuthLogout = () => {
         // Nettoyer l'état local pour éviter un affichage d'un autre compte
+        try { notifiedAchievements.clear() } catch (_) {}
         userAchievements.value = {
           progress: {
             totalEggsCollected: 0,

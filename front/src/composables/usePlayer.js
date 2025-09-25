@@ -35,9 +35,23 @@ export function usePlayer() {
         const res2 = await fetch('/api/user/me', { headers: { Authorization: `Bearer ${token}` } })
         if (res2.ok) {
           const u = await res2.json()
-          level.value = u?.experience?.level ?? 1
+          const prevLevel = level.value || 1
+          const newLevel = u?.experience?.level ?? 1
+          level.value = newLevel
           xp.value = u?.experience?.points ?? 0
           xpRequired.value = u?.experience?.required_points ?? 2
+          // Synchroniser aussi les ressources centrales (incluant tokens)
+          if (u?.resources) {
+            eggs.value = Number(u.resources.eggs ?? eggs.value)
+            stockTokens.value = Number(u.resources.stock_token ?? stockTokens.value)
+            productionTokens.value = Number(u.resources.production_token ?? productionTokens.value)
+            wildTokens.value = Number(u.resources.wild_token ?? wildTokens.value)
+          }
+          try {
+            if (newLevel > prevLevel && typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('level-up', { detail: { from: prevLevel, to: newLevel } }))
+            }
+          } catch (_) {}
           // Si on veut manter resources aussi depuis cette route, on pourrait synchroniser ici.
         }
       } catch (_) {}

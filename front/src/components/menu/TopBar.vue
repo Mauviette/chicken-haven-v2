@@ -26,7 +26,9 @@
 import { usePlayer } from '@/composables/usePlayer'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { achievementsData } from '@/data/items.js'
-const { eggs, level, xp, xpRequired } = usePlayer()
+import { useGameData } from '@/composables/useGameData'
+const { eggs, level } = usePlayer()
+const { levelUnlocks, getLevelRewardsBetween } = useGameData()
 
 const emit = defineEmits(['open-profile'])
 
@@ -35,7 +37,28 @@ function openProfileMenu() {
 }
 
 const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`
-const levelTooltipHtml = () => `<strong>Niveau ${level.value}</strong> (${xp.value}/${xpRequired.value}🫐)`
+
+const levelTooltipHtml = () => {
+  const l = level.value
+  const current = `<strong>Niveau ${l}</strong>`
+  const nextLevel = l + 1
+  const unlocks = (levelUnlocks?.value && levelUnlocks.value[nextLevel]) ? levelUnlocks.value[nextLevel] : []
+  const rewards = getLevelRewardsBetween ? getLevelRewardsBetween(l, nextLevel) : []
+
+  const unlocksHtml = unlocks.length
+    ? unlocks.map(u => `${u.icon || '✨'} ${u.label}`).join('<br>')
+    : ''
+
+  const rewardsHtml = rewards.length
+    ? rewards.map(r => `${r.icon} ${r.label}`).join('<br>')
+    : 'Aucune récompense'
+
+  let html = `${current}<br><em>À venir au niveau ${nextLevel} :</em>`
+  if (unlocksHtml) html += `<br>${unlocksHtml}`
+  html += `<br>${rewardsHtml}`
+
+  return html
+}
 </script>
 
 

@@ -61,7 +61,7 @@
                 ></div>
               </div>
               <div class="gains-text">
-                {{ currentGains }} / {{ eggState.maxIncome }}
+                {{ Math.floor(currentGains) }} / {{ eggState.maxIncome }}
               </div>
             </div>
             

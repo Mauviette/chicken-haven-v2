@@ -6,7 +6,7 @@ export async function getMe(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
-    const { experience, username, resources } = user
+    const { experience, username, resources, upgrades } = user
     res.json({
       username,
       experience: {
@@ -19,7 +19,8 @@ export async function getMe(req, res) {
         stock_token: resources?.stock_token ?? 0,
         production_token: resources?.production_token ?? 0,
         wild_token: resources?.wild_token ?? 0,
-      }
+      },
+      upgrades: upgrades || {}
     })
   } catch (err) {
     console.error(err)

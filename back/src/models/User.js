@@ -55,6 +55,12 @@ const UserSchema = new mongoose.Schema({
     production_token : { type : Number, default: 0}
   },
 
+  // Niveaux d'améliorations par ID (ex: { '1': 2, '2': 5 })
+  upgrades: {
+    type: mongoose.Schema.Types.Mixed,
+    default: function () { return {} }
+  },
+
   // Système de succès - schéma flexible pour gérer les migrations
   achievements: {
     type: mongoose.Schema.Types.Mixed,

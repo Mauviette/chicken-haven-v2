@@ -29,7 +29,8 @@ const emojiMap = {
   warning: '⚠️',
   chicken: '🐔',
   'team-add': '➕🐔',
-  'team-remove': '➖🐔'
+  'team-remove': '➖🐔',
+  achievement : '🏆'
 }
 
 function showToast(message, type = 'info', duration = 5000) {

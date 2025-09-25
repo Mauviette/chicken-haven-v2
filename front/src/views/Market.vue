@@ -51,15 +51,19 @@
             v-for="box in boxOffers" 
             :key="box.id"
             class="market-item box-item"
+            :class="{ 'locked': (box.unlock_level && getLevel() < box.unlock_level) }"
           >
-            <div class="box-counter">
+            <div v-if="box.unlock_level && getLevel() < box.unlock_level" class="locked-overlay">
+              <div class="locked-content">🔒 Débloqué au niveau {{ box.unlock_level }}</div>
+            </div>
+            <div class="box-counter" v-if="!isBoxLocked(box)">
               <Tooltip :text="getBoxTooltipText(box)">
                 <div class="counter-badge">
                   {{ getBoxChickenStats(box).ownedCount }}/{{ getBoxChickenStats(box).totalCount }}
                 </div>
               </Tooltip>
             </div>
-            <div class="dice-counter">
+            <div class="dice-counter" v-if="!isBoxLocked(box)">
               <Tooltip :text="getDiceTooltipText(box)">
                 <div class="dice-badge">
                   🎲
@@ -67,13 +71,11 @@
               </Tooltip>
             </div>
             <div class="box-icon-container">
-              <div class="box-icon">{{ box.icon }}</div>
-              <div class="rarity-badge" :class="box.rarity">{{ box.rarity }}</div>
+              <div class="box-icon">{{ isBoxLocked(box) ? '❓' : box.icon }}</div>
             </div>
             <div class="item-info">
-              <h4 class="item-name">{{ box.name }}</h4>
-              <p class="item-description">{{ box.description }}</p>
-              <div class="box-contents">
+              <h4 class="item-name">{{ isBoxLocked(box) ? 'Boîte mystère' : box.name }}</h4>
+              <div class="box-contents" v-if="!isBoxLocked(box)">
                 <div class="drop-groups">
                   <div v-for="group in box.dropGroups" :key="group.name" class="drop-group">
                     <span class="group-label">{{ getGroupDescription(group.name) }} ({{ group.chance }}%)</span>
@@ -86,7 +88,7 @@
               <BuyButton
                 :price="box.price"
                 :onClick="() => openBox(box)"
-                :disabled="!canAfford(box.price)"
+                :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(box.price)"
               >
                 Ouvrir
               </BuyButton>
@@ -150,6 +152,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
@@ -160,16 +163,16 @@ import BuyButton from '@/components/menu/BuyButton.vue'
 
 import BoxResults from '@/components/menu/BoxResults.vue'
 import { boxesData, getPossibleChickensFromBox, openBoxSimulation, groupes } from '@/data/boxes.js'
-import { getUpgradesWithCalculatedData, upgradeLevel } from '@/data/upgrades.js'
 import { formatPrice, achievementsData } from '@/data/items.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
 
-const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, canAfford, refreshPlayerData } = usePlayer()
+const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
 const { checkAchievements } = useAchievements()
-const { especies: especeData } = useGameData()
+const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades } = useGameData()
+const router = useRouter()
 
 // État des onglets
 const activeTab = ref('boxes')
@@ -190,8 +193,19 @@ const tabs = [
   { id: 'upgrades', name: 'Améliorations', icon: '⚡' }
 ]
 
-// Données des boîtes depuis l'API
-const boxOffers = computed(() => availableBoxes.value)
+// Données des boîtes: fusionne la source jeu (toutes les boîtes) avec l'API (celles dispo)
+const boxOffers = computed(() => {
+  const all = (gameBoxes?.value && gameBoxes.value.length) ? gameBoxes.value : boxesData
+  const avail = Array.isArray(availableBoxes.value) ? availableBoxes.value : []
+  if (avail.length === 0) return all
+  const map = new Map(avail.map(b => [b.id, b]))
+  const merged = all.map(b => ({ ...b, ...(map.get(b.id) || {}) }))
+  // Ajoute toute box inconnue côté jeu remontée par l'API (par sécurité)
+  for (const b of avail) {
+    if (!merged.find(x => x.id === b.id)) merged.push(b)
+  }
+  return merged
+})
 
 // Poules débloquées (uniquement les poules obtenues par le joueur)
 const unlockedChickens = computed(() => {
@@ -201,6 +215,11 @@ const unlockedChickens = computed(() => {
   
   return ownedChickens
 })
+
+// Helper: savoir si une boîte est verrouillée au niveau actuel
+function isBoxLocked(box) {
+  return !!(box.unlock_level && getLevel() < box.unlock_level)
+}
 
 // Fonction pour calculer les statistiques des poules d'une boîte
 function getBoxChickenStats(box) {
@@ -323,8 +342,49 @@ function getDiceTooltipText(box) {
     .join('<br>')
 }
 
-// Données des améliorations avec progression
-const upgradeOffers = computed(() => getUpgradesWithCalculatedData())
+// Données des améliorations avec progression (forcer recalcul via une version)
+const upgradesVersion = ref(0)
+const upgradeLevels = ref({}) // { [id]: level }
+
+// Helpers calcul côté front à partir des données serveur
+function getCurrentCostForLevel(costs, level) {
+  if (!Array.isArray(costs) || costs.length === 0) return Infinity
+  if (level >= costs.length) return costs[costs.length - 1]
+  return costs[level]
+}
+function getCurrentRewardForLevel(rewards, level) {
+  if (!Array.isArray(rewards) || rewards.length === 0) return 0
+  if (level >= rewards.length) return rewards[rewards.length - 1]
+  return rewards[level]
+}
+function getDisplayLevel(currentLevel, maxLevel) {
+  if (maxLevel !== null && typeof maxLevel === 'number' && currentLevel >= maxLevel) return 'MAX'
+  return `Niveau ${currentLevel + 1}`
+}
+
+const upgradeOffers = computed(() => {
+  void upgradesVersion.value
+  const list = serverUpgrades?.value || []
+  return list.map(u => {
+    const currentLevel = Number(upgradeLevels.value?.[u.id] || 0)
+    const canBuy = !(u.maxLevel !== null && typeof u.maxLevel === 'number' && currentLevel >= u.maxLevel)
+    const nextCost = canBuy ? getCurrentCostForLevel(u.costs, currentLevel) : null
+    const nextReward = canBuy ? getCurrentRewardForLevel(u.rewards, currentLevel) : null
+    const effect = typeof u.effectTemplate === 'string'
+      ? u.effectTemplate.replace('{reward}', nextReward ?? 0)
+      : ''
+    return {
+      ...u,
+      currentLevel,
+      canBuy,
+      nextCost,
+      nextReward,
+      displayLevel: getDisplayLevel(currentLevel, u.maxLevel ?? null),
+      price: canBuy ? { type: u.priceType, count: nextCost } : { type: u.priceType, count: 0 },
+      effect
+    }
+  })
+})
 
 // Fonctions d'achat
 async function openBox(box) {
@@ -390,22 +450,37 @@ function buyChicken(offer) {
   console.log('Achat direct de poule désactivé - utilisez les boîtes')
 }
 
-function buyUpgrade(upgrade) {
-  if (!upgrade.canBuy) {
-    if (window.$toast) {
-      window.$toast('Cette amélioration est au niveau maximum !', 'warning')
+async function buyUpgrade(upgrade) {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      window.$toast && window.$toast('Vous devez être connecté(e)', 'error')
+      return
     }
-    return
-  }
-  
-  console.log('Achat amélioration:', upgrade)
-  
-  // Augmenter le niveau de l'amélioration
-  upgradeLevel(upgrade)
-  
-  // TODO: Implémenter l'achat d'amélioration côté serveur
-  if (window.$toast) {
-    window.$toast(`Vous avez acheté ${upgrade.name} ${upgrade.displayLevel} !`, 'success')
+    const res = await fetch('/api/upgrades/buy', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ upgradeId: upgrade.id })
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      window.$toast && window.$toast(err?.error || 'Achat impossible', 'error')
+      return
+    }
+    const data = await res.json()
+    // Mettre à jour le niveau courant localement
+    upgradeLevels.value = { ...upgradeLevels.value, [upgrade.id]: Number(data?.newLevel || 0) }
+    // Forcer le recalcul des offres
+    upgradesVersion.value++
+    // Rafraîchir les soldes (tokens)
+    try { await refreshPlayerData() } catch (_) {}
+    window.$toast && window.$toast(`Vous avez acheté ${upgrade.name} !`, 'success')
+  } catch (e) {
+    console.error('buyUpgrade error:', e)
+    window.$toast && window.$toast('Erreur lors de l\'achat', 'error')
   }
 }
 
@@ -418,6 +493,37 @@ function closeBoxResults() {
 // Charger les données au montage du composant
 onMounted(async () => {
   try {
+    // Redirection si le marché n'est pas encore débloqué
+    const lvl = getLevel()
+    // Recherche du niveau où 'market' est débloqué dans les données centralisées
+    let requiredLevel = 2
+    try {
+      const entries = Object.entries(levelUnlocks?.value || {})
+      const entry = entries.find(([n, arr]) => (arr || []).some(u => u.id === 'market'))
+      if (entry) requiredLevel = parseInt(entry[0], 10)
+    } catch (_) {}
+    if (lvl < requiredLevel) {
+      router.replace('/production')
+      return
+    }
+    // Rafraîchir d'abord les ressources/tokens pour refléter d'éventuelles récompenses de level-up
+    try { await refreshPlayerData() } catch (_) {}
+    // Charger les niveaux d'améliorations depuis l'API et les appliquer
+    try {
+      const token = localStorage.getItem('token')
+      if (token) {
+        const upRes = await fetch('/api/upgrades', { headers: { 'Authorization': `Bearer ${token}` } })
+        if (upRes.ok) {
+          const { upgrades: levels } = await upRes.json()
+          if (levels && typeof levels === 'object') {
+            upgradeLevels.value = Object.fromEntries(
+              Object.entries(levels).map(([k, v]) => [Number(k), Number(v) || 0])
+            )
+            upgradesVersion.value++
+          }
+        }
+      }
+    } catch (e) { console.warn('Chargement upgrades échoué:', e) }
     availableBoxes.value = await getAvailableBoxes()
   } catch (error) {
     console.error('Erreur lors du chargement des boîtes:', error)
@@ -575,6 +681,32 @@ onMounted(async () => {
 .box-item:hover {
   border-color: #ffb347;
   background: linear-gradient(135deg, #fff7dc 0%, #f0e6d2 100%);
+}
+
+.box-item.locked {
+  filter: grayscale(0.8) brightness(0.9);
+}
+
+.box-item .locked-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.box-item .locked-content {
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.35);
+  border: 2px solid #ffc66e;
+  border-radius: 10px;
 }
 
 .box-icon-container {

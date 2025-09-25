@@ -1,5 +1,5 @@
 import User from '../models/User.js'
-import { achievementsData } from '../data/sharedGameData.js'
+import { achievementsData, levelRewards as LEVEL_REWARDS } from '../data/sharedGameData.js'
 
 // Configuration des succès basée sur les données centralisées
 const achievementsConfig = {}
@@ -200,9 +200,43 @@ export async function claimReward(req, res) {
     } else if (reward.type === 'production_token') {
       user.resources.production_token = (user.resources.production_token || 0) + reward.quantite
     } else if (reward.type === 'blueberry') {
-      // Les myrtilles sont converties en points d'expérience; pas de level up auto ici
+      // Les myrtilles donnent de l'XP et déclenchent le level up selon la règle: myrtilles nécessaires = level * 2
       user.experience = user.experience || { level: 1, points: 0, required_points: 2 }
-      user.experience.points = (Number(user.experience.points) || 0) + Number(reward.quantite || 0)
+      const gained = Number(reward.quantite || 0)
+      user.experience.points = (Number(user.experience.points) || 0) + gained
+
+      // Calcul du level-up en boucle si plusieurs niveaux sont franchis
+      let lvl = Number(user.experience.level) || 1
+      let pts = Number(user.experience.points) || 0
+      // Collecter les récompenses de level-up (depuis la source centralisée)
+      const appliedLevelRewards = []
+      while (pts >= lvl * 2) {
+        pts -= lvl * 2
+        lvl += 1
+        // Appliquer les récompenses configurées pour ce niveau
+        const rewardsForLevel = Array.isArray(LEVEL_REWARDS?.[lvl]) ? LEVEL_REWARDS[lvl] : []
+        for (const r of rewardsForLevel) {
+          const qty = Number(r.count || r.quantite || 0)
+          if (!qty) continue
+          if (r.type === 'eggs') {
+            user.resources.eggs = (user.resources.eggs || 0) + qty
+          } else if (r.type === 'stock_token') {
+            user.resources.stock_token = (user.resources.stock_token || 0) + qty
+          } else if (r.type === 'production_token') {
+            user.resources.production_token = (user.resources.production_token || 0) + qty
+          } else if (r.type === 'wild_token') {
+            user.resources.wild_token = (user.resources.wild_token || 0) + qty
+          }
+          appliedLevelRewards.push({ type: r.type, quantite: qty, level: lvl })
+        }
+      }
+      user.experience.level = lvl
+      user.experience.points = pts
+      user.experience.required_points = lvl * 2
+      // Attacher temporairement au retour
+      if (appliedLevelRewards.length) {
+        try { req._levelRewards = appliedLevelRewards } catch (_) {}
+      }
     }
 
     // Marquer comme réclamé et persister (Mixed schema)
@@ -210,12 +244,17 @@ export async function claimReward(req, res) {
     try { user.markModified && user.markModified('achievements') } catch (_) {}
     await user.save()
 
-    res.json({
+    const responseBody = {
       success: true,
       reward,
       newResources: user.resources,
       achievements: user.achievements
-    })
+    }
+    if (req._levelRewards && Array.isArray(req._levelRewards)) {
+      responseBody.levelRewards = req._levelRewards
+    }
+
+    res.json(responseBody)
   } catch (error) {
     console.error('Erreur claimReward:', error)
     res.status(500).json({ error: 'Erreur serveur' })

@@ -36,6 +36,15 @@ const routes = [
     component: Collection,
     meta: { requiresAuth: true }
   }
+  ,
+  // Catch-all: redirige toute route invalide vers une page valide selon l'état d'auth
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: () => {
+      const { isLoggedIn } = useAuth()
+      return isLoggedIn() ? '/production' : '/auth'
+    }
+  }
 ]
 
 const router = createRouter({

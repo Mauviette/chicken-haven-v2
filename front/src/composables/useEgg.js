@@ -24,16 +24,16 @@ export function useEgg() {
   const currentGains = computed(() => {
     const now = new Date()
     const timeDiff = Math.floor((now - new Date(eggState.value.lastClick)) / 1000)
-    const calculated = Math.min(timeDiff * eggState.value.income, eggState.value.maxIncome)
-    return Math.floor(calculated)
+    // Garder la valeur exacte (non floored) pour éviter un décalage avec le serveur
+    return Math.min(timeDiff * eggState.value.income, eggState.value.maxIncome)
   })
 
   const isClickable = computed(() => {
-    return eggState.value.income >= 1 && currentGains.value >= 1
+    return eggState.value.income >= 1 && Math.floor(currentGains.value) >= 1
   })
 
   const progressPercentage = computed(() => {
-    return Math.min((currentGains.value / eggState.value.maxIncome) * 100, 100)
+    return Math.min((Math.floor(currentGains.value) / eggState.value.maxIncome) * 100, 100)
   })
 
   // Récupérer le statut de l'œuf depuis l'API

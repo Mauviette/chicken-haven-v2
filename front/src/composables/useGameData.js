@@ -93,10 +93,13 @@ export function useGameData() {
   const especies = computed(() => gameData.value?.especies || {})
   const talents = computed(() => gameData.value?.talents || {})
   const boxes = computed(() => gameData.value?.boxes || [])
+  const upgrades = computed(() => gameData.value?.upgrades || [])
+  const levelUnlocks = computed(() => gameData.value?.levelUnlocks || {})
   const achievements = computed(() => gameData.value?.achievements || {})
   const items = computed(() => gameData.value?.items || {})
   const categories = computed(() => gameData.value?.categories || {})
   const groupes = computed(() => gameData.value?.groupes || [])
+  const levelRewards = computed(() => gameData.value?.levelRewards || {})
 
   // Fonctions utilitaires
   function getEspeceInfo(especeId) {
@@ -140,6 +143,40 @@ export function useGameData() {
     return itemData ? itemData.icon : '❓'
   }
 
+  // Formate une quantité d'item selon singulier/pluriel
+  function formatString(type, count) {
+    const itemData = items.value[type]
+    if (!itemData || typeof count !== 'number') return 'Valeur invalide'
+    return `${count} ${count === 1 ? itemData.nom_singulier : itemData.nom}`
+  }
+
+  // Récompenses de level-up: lecture depuis la source centralisée (sans génération auto)
+  function getLevelRewardsBetween(from, to) {
+    const rewards = {}
+    for (let lvl = Math.max(1, from + 1); lvl <= to; lvl++) {
+      const arr = levelRewards.value[lvl] || []
+      for (const r of arr) {
+        rewards[r.type] = (rewards[r.type] || 0) + (r.count || 0)
+      }
+    }
+    // Normaliser vers un tableau avec icône/libellé
+    return Object.entries(rewards).map(([type, count]) => ({
+      type,
+      count,
+      icon: getResourceIcon(type),
+      label: formatString(type, count)
+    }))
+  }
+
+  // Déverrouillages entre deux niveaux (exclut le niveau "from")
+  function getUnlocksBetween(from, to) {
+    const unlocked = []
+    for (let lvl = Math.max(1, from + 1); lvl <= to; lvl++) {
+      if (levelUnlocks.value[lvl]) unlocked.push(...levelUnlocks.value[lvl])
+    }
+    return unlocked
+  }
+
   // Initialiser les données au montage
   onMounted(async () => {
     try {
@@ -161,10 +198,13 @@ export function useGameData() {
     especies,
     talents,
     boxes,
+  upgrades,
     achievements,
     items,
     categories,
     groupes,
+  levelUnlocks,
+    levelRewards,
     
     // Actions
     fetchGameData,
@@ -178,6 +218,11 @@ export function useGameData() {
     getItemInfo,
     formatPrice,
     getResourceIcon
+    ,
+    formatString,
+    getLevelRewardsBetween
+    ,
+    getUnlocksBetween
   }
 }
 

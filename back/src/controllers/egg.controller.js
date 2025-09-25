@@ -230,8 +230,8 @@ export async function getEggStatus(req, res) {
     console.log(`  energetic: teamBonus=${energetic.bonusPerSecond} -> effectiveIncome=${effectiveIncome}`)
 
     // Calculer les gains actuels basés sur le temps écoulé
-    const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
-    const currentStocked = Math.min((timeDiffSeconds - 1) * effectiveIncome, maxIncome)
+  const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
+  const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, maxIncome)
     
     console.log('  timeDiffSeconds:', timeDiffSeconds)
     console.log('  currentStocked:', currentStocked)
@@ -265,11 +265,11 @@ export async function clickEgg(req, res) {
     if (lastClick == null || baseIncome == null || maxIncome == null) return res.status(404).json({ error: 'Données incomplètes' })
     
     // Calculer les gains actuels
-    const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
+  const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
     // Talent Énergétique
     const energetic = runTalentEnergetique(user)
     const effectiveIncome = Math.max(0, baseIncome + energetic.bonusPerSecond)
-    const currentStocked = Math.min((timeDiffSeconds - 1) * effectiveIncome, maxIncome)
+  const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, maxIncome)
 
     // Log d'entrée côté serveur pour faciliter le debug
     try {

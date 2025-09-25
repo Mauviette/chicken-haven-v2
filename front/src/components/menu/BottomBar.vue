@@ -19,8 +19,9 @@
 
       <ActionButton
         :onClick="() => emit('open-market')"
-        :disabled="route.path === '/market'"
+        :disabled="route.path === '/market' || !isMarketUnlocked"
         :active="route.path === '/market'"
+        :title="!isMarketUnlocked ? 'Débloqué au niveau 2' : ''"
       >
         🛒 Marché
       </ActionButton>
@@ -59,6 +60,8 @@ import ActionButton from '@/components/menu/ActionButton.vue'
 import { useRoute } from 'vue-router'
 import { onMounted, onUnmounted, computed } from 'vue'
 import { useAchievements } from '@/composables/useAchievements'
+import { usePlayer } from '@/composables/usePlayer'
+import { useGameData } from '@/composables/useGameData'
 const route = useRoute()
 
 const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help', 'open-options', 'open-achievements'])
@@ -86,6 +89,21 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopAutoCheck?.()
+})
+
+// Marché déverrouillé à partir du niveau défini dans les données centralisées
+const { level } = usePlayer()
+const { levelUnlocks } = useGameData()
+const isMarketUnlocked = computed(() => {
+  // Cherche si le marché est présent dans les unlocks du niveau courant
+  // Si le joueur est au niveau N, on considère qu'il a déjà franchi les niveaux < = N
+  // Donc marché est dispo si présent dans levelUnlocks[n] pour n <= level
+  const l = level.value || 1
+  for (let n = 1; n <= l; n++) {
+    const arr = (levelUnlocks?.value && levelUnlocks.value[n]) ? levelUnlocks.value[n] : []
+    if (arr.some(u => u.id === 'market')) return true
+  }
+  return false
 })
 </script>
 

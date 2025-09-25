@@ -5,9 +5,15 @@
     />
     <router-view />
   <TeamParade v-if="!isAuthPage" />
+  <LevelUpPopup
+    v-if="levelUpVisible"
+    :from="levelUpFrom"
+    :to="levelUpTo"
+    @close="levelUpVisible = false"
+  />
     <ToastManager ref="toastManager" :hasBottomBar="!isAuthPage"/>
     <Options :visible="showOptions" @close="showOptions = false" @logout="logout" />
-    <AchievementsMenu :visible="showAchievements" @close="showAchievements = false" />
+  <AchievementsMenu v-if="!isAuthPage" :visible="showAchievements" @close="showAchievements = false" />
     <BottomBar
       v-if="!isAuthPage"
       @open-production="router.push('/production')"
@@ -21,7 +27,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import ToastManager from '@/components/menu/ToastManager.vue'
 import Options from '@/components/menu/Options.vue'
@@ -29,6 +35,8 @@ import BottomBar from '@/components/menu/BottomBar.vue'
 import TopBar from '@/components/menu/TopBar.vue'
 import TeamParade from '@/components/menu/TeamParade.vue'
 import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
+import LevelUpPopup from '@/components/menu/LevelUpPopup.vue'
+import { getUnlocksBetween } from '@/data/unlocks.js'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
@@ -38,6 +46,9 @@ const router = useRouter()
 const toastManager = ref(null)
 const showOptions = ref(false)
 const showAchievements = ref(false)
+const levelUpVisible = ref(false)
+const levelUpFrom = ref(1)
+const levelUpTo = ref(1)
 const { logout: performLogout } = useAuth()
 const { refreshPlayer, fetchTeam } = usePlayer()
 const { syncStatus } = useDataSync()
@@ -53,6 +64,15 @@ onMounted(async () => {
     await refreshPlayer()
     await fetchTeam()
   }
+
+  // Écoute de l'événement global level-up
+  try {
+    window.addEventListener('level-up', onLevelUp)
+  } catch (_) {}
+})
+
+onBeforeUnmount(() => {
+  try { window.removeEventListener('level-up', onLevelUp) } catch (_) {}
 })
 
 
@@ -70,6 +90,16 @@ function logout() {
 
 function toggleAchievements() {
   showAchievements.value = !showAchievements.value
+}
+
+function onLevelUp(e) {
+  const { from, to } = e?.detail || {}
+  if (typeof from === 'number' && typeof to === 'number' && to > from) {
+    levelUpFrom.value = from
+    levelUpTo.value = to
+    levelUpVisible.value = true
+    // Pas de toast ici (demandé)
+  }
 }
 
 

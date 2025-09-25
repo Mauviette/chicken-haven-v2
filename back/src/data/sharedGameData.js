@@ -341,6 +341,65 @@ export const boxesData = [
 ]
 
 // ========================
+// AMÉLIORATIONS (UPGRADES)
+// ========================
+// Source de vérité centrale pour les améliorations, coûts et effets appliqués côté serveur
+export const upgradesData = [
+  {
+    id: 1,
+    name: 'Améliorer le stockage',
+    description: 'Augmente la capacité de stockage des œufs',
+    icon: '🏠',
+    priceType: 'stock_token',
+    costs: [1, 1, 1, 2, 2, 3, 4, 5],
+    rewards: [10, 10, 15, 15, 20, 25, 30, 40],
+    effectTemplate: '+{reward} œufs de stockage maximum',
+    maxLevel: null,
+    // Effet appliqué côté serveur à l'achat: ajoute reward au maxIncome
+    effect: { target: 'clickableEgg.maxIncome', op: 'add' }
+  },
+  {
+    id: 2,
+    name: 'Production Premium',
+    description: 'Améliore la productivité des œufs par seconde',
+    icon: '🌾',
+    priceType: 'production_token',
+    costs: [1, 1, 2, 2, 3, 4, 5, 8],
+    rewards: [0.5, 0.5, 1, 1, 1.5, 2, 2.5, 4],
+    effectTemplate: '+{reward} œuf(s) produit(s) par seconde',
+    maxLevel: null,
+    // Effet appliqué côté serveur à l'achat: ajoute reward à income de base
+    effect: { target: 'clickableEgg.income', op: 'add' }
+  }
+]
+
+// ========================
+// DÉBLOCAGES PAR NIVEAU
+// ========================
+// Centralise ce qui se débloque à chaque niveau (ex: fonctionnalités UI)
+export const levelUnlocks = {
+  2: [
+    { id: 'market', label: 'Marché débloqué', icon: '🛒' }
+  ],
+  3: [
+    // Ajouter ici d'autres déblocages de niveau si besoin
+  ]
+}
+
+// ========================
+// RÉCOMPENSES PAR NIVEAU
+// ========================
+// Définition explicite des récompenses par niveau (au lieu de les générer dynamiquement)
+// Exemple basé sur les règles précédentes: pair → production_token, impair (>1) → stock_token
+export const levelRewards = {
+  3: [ { type: 'production_token', count: 1 } ],
+  4: [ { type: 'stock_token', count: 1 } ],
+  5: [ { type: 'production_token', count: 1 } ],
+  6: [ { type: 'stock_token', count: 1 } ]
+  // Ajoutez d'autres niveaux selon la progression désirée
+}
+
+// ========================
 // DONNÉES DES SUCCÈS
 // ========================
 export const achievementsData = {
@@ -353,7 +412,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 2
     }
   },
   'egg_collector': {
@@ -401,7 +460,7 @@ export const achievementsData = {
     type: 'chickens',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 4
     }
   },
   'chicken_collector': {
@@ -497,6 +556,9 @@ export function getAllGameData() {
     talents: talentsData,
     groupes,
     boxes: boxesData,
+    upgrades: upgradesData,
+    levelUnlocks,
+    levelRewards,
     achievements: achievementsData,
     items: itemsData,
     categories: achievementCategories
