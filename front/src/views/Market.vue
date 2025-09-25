@@ -4,12 +4,6 @@
     <div class="header-bar">
       <h2 class="section-title">🛒 Marché</h2>
       <div class="player-balance">
-        <Tooltip :text="`<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`" position="bottom">
-        <div class="balance-item">
-          <span class="balance-icon">🥚</span>
-          <span class="balance-amount">{{ playerEggs }}</span>
-        </div>
-      </Tooltip>
       <Tooltip :text="`<strong>${achievementsData.stock_token.nom.charAt(0).toUpperCase() + achievementsData.stock_token.nom.slice(1)}</strong><br>${achievementsData.stock_token.description}`" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">📦</span>
@@ -380,14 +374,6 @@ async function openBox(box) {
     } else {
       window.$toast && window.$toast('Aucune poule obtenue cette fois... 😢', 'warning')
     }
-
-    // Vérifier immédiatement les succès liés aux boîtes et aux poules
-    try {
-      const newAch = await checkAchievements()
-      if (newAch && newAch.length) {
-        window.$toast && window.$toast(`🎉 ${newAch.length} succès débloqué(s)`, 'success')
-      }
-    } catch (_) {}
     
   } catch (error) {
     console.error('Erreur lors de l\'ouverture de la boîte:', error)

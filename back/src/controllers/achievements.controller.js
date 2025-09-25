@@ -173,7 +173,22 @@ export async function claimReward(req, res) {
     }
 
     if (completedAchievement.rewardClaimed) {
-      return res.status(400).json({ error: 'Récompense déjà réclamée' })
+      return res.status(409).json({ error: 'Récompense déjà réclamée' })
+    }
+
+    // Rafraîchir un minimum le progrès avec l'état courant pour éviter des exploits
+    try {
+      const currentEggs = Number(user.resources?.eggs) || 0
+      const currentChickens = Number(user.poulesPossedees?.length) || 0
+      const prog = user.achievements.progress || {}
+      prog.totalEggsCollected = Math.max(Number(prog.totalEggsCollected) || 0, currentEggs)
+      prog.totalChickensOwned = Math.max(Number(prog.totalChickensOwned) || 0, currentChickens)
+      user.achievements.progress = prog
+    } catch (_) {}
+
+    // Vérifier que les conditions sont toujours remplies au moment de la réclamation
+    if (!config.check(user.achievements.progress)) {
+      return res.status(400).json({ error: 'Conditions du succès non remplies' })
     }
 
     // Appliquer la récompense
@@ -184,16 +199,22 @@ export async function claimReward(req, res) {
       user.resources.stock_token = (user.resources.stock_token || 0) + reward.quantite
     } else if (reward.type === 'production_token') {
       user.resources.production_token = (user.resources.production_token || 0) + reward.quantite
+    } else if (reward.type === 'blueberry') {
+      // Les myrtilles sont converties en points d'expérience; pas de level up auto ici
+      user.experience = user.experience || { level: 1, points: 0, required_points: 2 }
+      user.experience.points = (Number(user.experience.points) || 0) + Number(reward.quantite || 0)
     }
 
-    // Marquer comme réclamé
+    // Marquer comme réclamé et persister (Mixed schema)
     completedAchievement.rewardClaimed = true
+    try { user.markModified && user.markModified('achievements') } catch (_) {}
     await user.save()
 
     res.json({
       success: true,
       reward,
-      newResources: user.resources
+      newResources: user.resources,
+      achievements: user.achievements
     })
   } catch (error) {
     console.error('Erreur claimReward:', error)

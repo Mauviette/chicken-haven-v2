@@ -57,21 +57,18 @@
                 </div>
               </div>
             </div>
-            <div class="achievement-reward">
+            <div v-if="!achievement.rewardClaimed" class="achievement-reward">
               <button 
-                v-if="achievement.completed && !achievement.rewardClaimed"
+                v-if="achievement.completed"
                 class="claim-reward-btn"
-                @click="handleClaimReward(achievement)"
+                @click="(e) => handleClaimReward(achievement, e)"
               >
                 <div class="reward-icon">{{ getRewardIcon(achievement.reward) }}</div>
                 <div class="reward-amount">{{ formatReward(achievement.reward) }}</div>
               </button>
-              <div v-else-if="achievement.completed && achievement.rewardClaimed" class="reward-claimed">
-                <div class="reward-icon">✅</div>
-                <div class="reward-amount">{{ formatReward(achievement.reward) }}</div>
-              </div>
+              <!-- Aperçu uniquement tant que non complété -->
               <Tooltip 
-                v-else 
+                v-else
                 :text="getRewardDescription(achievement.reward)" 
                 position="left"
               >
@@ -93,6 +90,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAchievements } from '@/composables/useAchievements'
 import { formatString, achievementsData } from '@/data/items.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
+import { flyBlueberriesToAvatar } from '@/utils/blueberryAnimation.js'
+import { usePlayer } from '@/composables/usePlayer'
 
 const props = defineProps({
   visible: {
@@ -114,6 +113,8 @@ const {
   startAutoCheck,
   stopAutoCheck
 } = useAchievements()
+
+const { eggs, addEggs, addTokens, refreshPlayer } = usePlayer()
 
 const refreshing = ref(false)
 
@@ -140,13 +141,41 @@ const closeMenu = () => {
   emit('close')
 }
 
-const handleClaimReward = async (achievement) => {
+const claiming = ref({})
+
+const handleClaimReward = async (achievement, event) => {
   if (achievement.completed && !achievement.rewardClaimed) {
+    // Anti double-clic sur ce succès
+    if (claiming.value[achievement.id]) return
+    claiming.value[achievement.id] = true
+    // Obtenir le rect de départ pour l'animation (bouton cliqué)
+    let startRect
+    try {
+      const el = event?.currentTarget || event?.target
+      startRect = el?.getBoundingClientRect?.()
+    } catch (_) {}
+
     const reward = await claimReward(achievement.id)
     if (reward) {
-      // Optionnel: afficher une notification de récompense
+      // Appliquer localement une mise à jour UI rapide
+      if (reward.type === 'eggs') {
+        addEggs?.(reward.quantite || 0)
+      } else if (reward.type === 'stock_token' || reward.type === 'production_token' || reward.type === 'wild_token') {
+        addTokens?.(reward.type, reward.quantite || 0)
+      } else if (reward.type === 'blueberry') {
+        // Animation de myrtilles -> avatar
+        flyBlueberriesToAvatar({ count: Math.min(6, reward.quantite || 1), startRect })
+      }
+
+      // Rafraîchir les données joueur pour refléter les changements serveur (œufs/XP)
+      try { await refreshPlayer() } catch (_) {}
+
+      // Optionnel: afficher une notification
       console.log(`Récompense réclamée: ${reward.quantite} ${reward.type}`)
+      // Recharger l'état des succès pour refléter rewardClaimed
+      try { await fetchAchievements(); await checkAchievements() } catch (_) {}
     }
+    claiming.value[achievement.id] = false
   }
 }
 

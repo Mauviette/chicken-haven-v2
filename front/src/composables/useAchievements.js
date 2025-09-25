@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { useGameData } from '@/composables/useGameData'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
+import { formatString } from '@/data/items.js'
 
 const userAchievements = ref({
   progress: {
@@ -27,13 +28,16 @@ export function useAchievements() {
   // Computed properties pour l'affichage
   const achievements = computed(() => {
     return Object.values(gameAchievements.value || {}).map(achievement => {
-      const isCompleted = userAchievements.value.completed.some(
+      const completedEntry = userAchievements.value.completed.find(
         c => c.achievementId === achievement.id
       )
+      const isCompleted = !!completedEntry
+      const isRewardClaimed = completedEntry?.rewardClaimed === true
       
       return {
         ...achievement,
         completed: isCompleted,
+        rewardClaimed: isRewardClaimed,
         currentProgress: getCurrentProgress(achievement),
         progressWidth: getProgressWidth(achievement)
       }
@@ -149,11 +153,15 @@ export function useAchievements() {
         const data = await response.json()
         
         // Marquer la récompense comme réclamée
-        const completedAchievement = userAchievements.value.completed.find(
-          a => a.achievementId === achievementId
-        )
-        if (completedAchievement) {
-          completedAchievement.rewardClaimed = true
+        if (data.achievements) {
+          userAchievements.value = data.achievements
+        } else {
+          const completedAchievement = userAchievements.value.completed.find(
+            a => a.achievementId === achievementId
+          )
+          if (completedAchievement) {
+            completedAchievement.rewardClaimed = true
+          }
         }
 
         return data.reward
@@ -172,6 +180,16 @@ export function useAchievements() {
       if (achievementData) {
         // Ici vous pouvez ajouter des notifications, animations, etc.
         console.log(`🎉 Nouveau succès débloqué: ${achievementData.nom}`)
+
+        // Afficher un toast global si disponible
+        try {
+          const reward = achievementData.reward
+          const rewardText = reward ? ` — Récompense: ${formatString(reward.type, reward.quantite)}` : ''
+          const message = `🏆 Succès débloqué: ${achievementData.nom}`
+          if (typeof window !== 'undefined' && window.$toast) {
+            window.$toast(message, 'success')
+          }
+        } catch (_) { /* noop */ }
         
         // Déclencher un événement personnalisé pour les notifications
         window.dispatchEvent(new CustomEvent('achievement-unlocked', {

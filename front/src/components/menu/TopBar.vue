@@ -11,7 +11,7 @@
         <Tooltip :text="levelTooltipHtml()">
           <button class="profile-btn" @click="openProfileMenu">
             <div class="avatar-wrap">
-              <img src="@/assets/ui/avatar-default.svg" class="avatar" />
+              <img id="avatar-anchor" src="@/assets/ui/avatar-default.svg" class="avatar" />
               <span class="level-badge">{{ level }}</span>
             </div>
           </button>

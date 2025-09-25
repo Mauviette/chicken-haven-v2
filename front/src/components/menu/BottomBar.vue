@@ -40,21 +40,53 @@
       </ActionButton-->
     </div>
 
-    <div class="achievements-button">
+    <div class="achievements-button badge-wrapper">
       <ActionButton
         :onClick="() => emit('open-achievements')"
       >
         🏆
       </ActionButton>
+      <span
+        v-if="hasUnclaimedRewards"
+        class="badge-dot"
+        title="Récompense de succès disponible"
+      ></span>
     </div>
   </div>
 </template>
 <script setup>
 import ActionButton from '@/components/menu/ActionButton.vue'
 import { useRoute } from 'vue-router'
+import { onMounted, onUnmounted, computed } from 'vue'
+import { useAchievements } from '@/composables/useAchievements'
 const route = useRoute()
 
 const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help', 'open-options', 'open-achievements'])
+
+// Succès non réclamés -> badge sur le bouton
+const {
+  achievements,
+  fetchAchievements,
+  checkAchievements,
+  startAutoCheck,
+  stopAutoCheck
+} = useAchievements()
+
+const hasUnclaimedRewards = computed(() =>
+  (achievements?.value || []).some(a => a.completed && !a.rewardClaimed)
+)
+
+onMounted(async () => {
+  try {
+    await fetchAchievements()
+    await checkAchievements()
+  } catch (_) {}
+  startAutoCheck?.()
+})
+
+onUnmounted(() => {
+  stopAutoCheck?.()
+})
 </script>
 
   <style scoped>
@@ -88,6 +120,26 @@ const emit = defineEmits(['open-production', 'open-market', 'open-collection', '
 
   .achievements-button {
     margin-right: 32px;
+  }
+
+  /* Badge de notification pour succès à réclamer */
+  .badge-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  .badge-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    background-color: #FFD700; /* or */
+    border: 2px solid #8B4513;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+    pointer-events: none;
+    z-index: 2;
   }
 
   .bottom-bar button {
