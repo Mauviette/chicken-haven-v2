@@ -1,4 +1,5 @@
 import User from '../models/User.js'
+import { updateAchievementProgress } from './achievements.controller.js'
 
 // GET /api/egg/status - Récupère le statut actuel de l'œuf cliquable
 export async function getEggStatus(req, res) {
@@ -83,8 +84,9 @@ export async function clickEgg(req, res) {
 
     // Mettre à jour les ressources et réinitialiser le timer
     const currentEggs = user.resources?.eggs || 0
+    const eggsGained = Math.floor(currentStocked)
     user.resources = user.resources || {}
-    user.resources.eggs = currentEggs + Math.floor(currentStocked)
+    user.resources.eggs = currentEggs + eggsGained
     
     user.clickableEgg = user.clickableEgg || {}
     user.clickableEgg.lastClick = now
@@ -93,6 +95,14 @@ export async function clickEgg(req, res) {
     user.clickableEgg.currentStocked = 0
 
     await user.save()
+
+    // Mettre à jour le progrès des succès
+    await updateAchievementProgress(req.userId, 'increment', {
+      totalEggsCollected: eggsGained
+    })
+    await updateAchievementProgress(req.userId, 'max', {
+      maxEggsInOneClick: eggsGained
+    })
 
     res.json({
       message: 'Œuf cliqué avec succès',

@@ -7,6 +7,8 @@ import authRoutes from './routes/auth.routes.js'
 import productionRoutes from './routes/production.routes.js'
 import eggRoutes from './routes/egg.routes.js'
 import boxRoutes from './routes/box.routes.js'
+import achievementsRoutes from './routes/achievements.routes.js'
+import gameDataRoutes from './routes/gameData.routes.js'
 
 dotenv.config()
 const app = express()
@@ -24,6 +26,8 @@ app.use('/api/auth', authRoutes)
 app.use('/api/production', productionRoutes)
 app.use('/api/egg', eggRoutes)
 app.use('/api/boxes', boxRoutes)
+app.use('/api/achievements', achievementsRoutes)
+app.use('/api/game-data', gameDataRoutes)
 
 app.get('/', (req, res) => {
   res.send('API Chicken Haven OK 🐔')

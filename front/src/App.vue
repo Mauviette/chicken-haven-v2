@@ -30,6 +30,7 @@ import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
+import { useDataSync } from '@/composables/useDataSync'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -37,9 +38,14 @@ const showOptions = ref(false)
 const showAchievements = ref(false)
 const { logout: performLogout } = useAuth()
 const { refreshPlayer } = usePlayer()
+const { syncStatus } = useDataSync()
 
 onMounted(async () => {
   window.$toast = toast
+  
+  // Initialiser la synchronisation des données de jeu
+  console.log('🔄 Initialisation de la synchronisation des données...')
+  
   // Charger les données du joueur si connecté
   if (localStorage.getItem('token')) {
     await refreshPlayer()

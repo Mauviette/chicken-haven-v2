@@ -56,10 +56,13 @@ export const boxesData = [
   }
 ]
 
-// Import des groupes depuis le fichier chickens.js pour harmonisation
+// DEPRECATED - Utilisez useGameData() pour les données synchronisées
+import { useGameData } from '@/composables/useGameData.js'
+
+// Import des groupes depuis le fichier chickens.js pour harmonisation (DEPRECATED)
 export { groupes } from './chickens.js'
 
-// Fonction utilitaire pour obtenir toutes les poules possibles d'une boîte
+// Fonction utilitaire pour obtenir toutes les poules possibles d'une boîte (DEPRECATED - utilisez les données synchronisées)
 export function getPossibleChickensFromBox(box, especeData, unlockedChickens) {
   const possibleChickens = []
   
@@ -76,7 +79,13 @@ export function getPossibleChickensFromBox(box, especeData, unlockedChickens) {
   return [...new Set(possibleChickens)]
 }
 
-// Fonction pour simuler l'ouverture d'une boîte
+// Nouvelle fonction utilisant les données synchronisées
+export function getPossibleChickensFromBoxSync(box, unlockedChickens) {
+  const { especies } = useGameData()
+  return getPossibleChickensFromBox(box, especies.value, unlockedChickens)
+}
+
+// Fonction pour simuler l'ouverture d'une boîte (DEPRECATED - utilisez les données synchronisées)
 export function openBoxSimulation(box, especeData, unlockedChickens) {
   const results = []
   
@@ -104,4 +113,10 @@ export function openBoxSimulation(box, especeData, unlockedChickens) {
   }
   
   return results
+}
+
+// Nouvelle fonction utilisant les données synchronisées
+export function openBoxSimulationSync(box, unlockedChickens) {
+  const { especies } = useGameData()
+  return openBoxSimulation(box, especies.value, unlockedChickens)
 }

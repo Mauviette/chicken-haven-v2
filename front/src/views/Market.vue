@@ -4,18 +4,30 @@
     <div class="header-bar">
       <h2 class="section-title">🛒 Marché</h2>
       <div class="player-balance">
+        <Tooltip :text="`<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">🥚</span>
           <span class="balance-amount">{{ playerEggs }}</span>
         </div>
+      </Tooltip>
+      <Tooltip :text="`<strong>${achievementsData.stock_token.nom.charAt(0).toUpperCase() + achievementsData.stock_token.nom.slice(1)}</strong><br>${achievementsData.stock_token.description}`" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">📦</span>
           <span class="balance-amount">{{ stockTokens }}</span>
         </div>
+      </Tooltip>
+      <Tooltip :text="`<strong>${achievementsData.production_token.nom.charAt(0).toUpperCase() + achievementsData.production_token.nom.slice(1)}</strong><br>${achievementsData.production_token.description}`" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">⚡</span>
           <span class="balance-amount">{{ productionTokens }}</span>
         </div>
+      </Tooltip>
+      <Tooltip :text="`<strong>${achievementsData.wild_token.nom.charAt(0).toUpperCase() + achievementsData.wild_token.nom.slice(1)}</strong><br>${achievementsData.wild_token.description}`" position="bottom">
+        <div class="balance-item">
+          <span class="balance-icon">🃏</span>
+          <span class="balance-amount">{{ wildTokens }}</span>
+        </div>
+      </Tooltip>
       </div>
     </div>
 
@@ -144,19 +156,22 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { usePlayer } from '@/composables/usePlayer'
-import { usePoules, especeData } from '@/composables/usePoules'
+import { usePoules } from '@/composables/usePoules'
+import { useGameData } from '@/composables/useGameData'
 import { useBoxes } from '@/composables/useBoxes'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
-import Tooltip from '@/components/menu/Tooltip.vue'
+
 import BoxResults from '@/components/menu/BoxResults.vue'
 import { boxesData, getPossibleChickensFromBox, openBoxSimulation, groupes } from '@/data/boxes.js'
 import { getUpgradesWithCalculatedData, upgradeLevel } from '@/data/upgrades.js'
-import { formatPrice } from '@/data/items.js'
+import { formatPrice, achievementsData } from '@/data/items.js'
+import Tooltip from '@/components/menu/Tooltip.vue'
 
-const { eggs: playerEggs, stockTokens, productionTokens, canAfford, refreshPlayerData } = usePlayer()
+const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, canAfford, refreshPlayerData } = usePlayer()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
+const { especies: especeData } = useGameData()
 
 // État des onglets
 const activeTab = ref('boxes')
@@ -193,8 +208,8 @@ function getBoxChickenStats(box) {
   
   // Récupérer toutes les poules possibles de tous les groupes
   box.dropGroups.forEach(group => {
-    const groupChickens = Object.keys(especeData)
-      .filter(id => especeData[id].groupe === group.name)
+    const groupChickens = Object.keys(especeData.value)
+      .filter(id => especeData.value[id].groupe === group.name)
     allPossibleChickens.push(...groupChickens)
   })
   
@@ -242,8 +257,8 @@ function getBoxTooltipText(box) {
   
   // Récupérer toutes les poules possibles de tous les groupes
   box.dropGroups.forEach(group => {
-    const groupChickens = Object.keys(especeData)
-      .filter(id => especeData[id].groupe === group.name)
+    const groupChickens = Object.keys(especeData.value)
+      .filter(id => especeData.value[id].groupe === group.name)
     allPossibleChickens.push(...groupChickens)
   })
   
@@ -252,16 +267,16 @@ function getBoxTooltipText(box) {
   
   // Trier par rareté puis par nom
   const sortedChickens = uniqueChickens.sort((a, b) => {
-    const rarityA = especeData[a]?.rarete || 'commune'
-    const rarityB = especeData[b]?.rarete || 'commune'
+    const rarityA = especeData.value[a]?.rarete || 'commune'
+    const rarityB = especeData.value[b]?.rarete || 'commune'
     const orderDiff = getRarityOrder(rarityA) - getRarityOrder(rarityB)
     if (orderDiff !== 0) return orderDiff
-    return (especeData[a]?.nom || '').localeCompare(especeData[b]?.nom || '')
+    return (especeData.value[a]?.nom || '').localeCompare(especeData.value[b]?.nom || '')
   })
   
   // Créer la liste avec les noms colorés ou ??? pour les non obtenues
   const chickenList = sortedChickens.map(id => {
-    const chicken = especeData[id]
+    const chicken = especeData.value[id]
     const color = getRarityColor(chicken?.rarete)
     
     if (unlockedChickens.value.includes(id)) {

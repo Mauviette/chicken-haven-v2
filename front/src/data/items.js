@@ -4,25 +4,36 @@ export const achievementsData = {
     id: 'eggs',
     nom: 'œufs',
     nom_singulier: 'œuf',
-    icon: '🥚'
+    icon: '🥚',
+    description: 'La monnaie principale de votre ferme. Les poules les pondent naturellement et vous pouvez les utiliser pour acheter des boîtes et des améliorations.'
   },
   'stock_token': {
     id: 'stock_token',
     nom: 'jeton de stock',
     nom_singulier: 'jeton de stock',
-    icon: '📦'
+    icon: '📦',
+    description: 'Jetons spéciaux permettant d\'acheter des améliorations de stockage.'
   },
   'production_token': {
     id: 'production_token',
     nom: 'jetons de production',
     nom_singulier: 'jeton de production',
-    icon: '⚡'
+    icon: '⚡',
+    description: 'Jetons précieux pour améliorer vos installations de production.'
   },
   'wild_token': {
     id: 'wild_token',
     nom: 'jetons joker',
     nom_singulier: 'jeton joker',
-    icon: '🃏'
+    icon: '🃏',
+    description: 'Jetons universels pouvant être utilisés à la place de n\'importe quelle autre jeton.'
+  },
+  'blueberry': {
+    id: 'blueberry',
+    nom: 'myrtilles',
+    nom_singulier: 'myrtille',
+    icon: '🫐',
+    description: 'Fruits délicieux qui augmentent votre niveau! Survolez votre icone de profil pour plus d\'infos.'
   }
 }
 
@@ -48,4 +59,10 @@ export function formatPrice(price) {
 export function getResourceIcon(resourceType) {
   const itemData = achievementsData[resourceType]
   return itemData ? itemData.icon : '❓'
+}
+
+export function formatString(type, count) {
+  const itemData = achievementsData[type];
+  if (!itemData || typeof count !== 'number') return 'Valeur invalide';
+  return `${count} ${count === 1 ? itemData.nom_singulier : itemData.nom}`;
 }

@@ -1,17 +1,21 @@
-// Données des succès
-export const achievementsData = {
+// DEPRECATED - Utilisez useGameData() pour les données synchronisées
+// Ce fichier est conservé pour compatibilité
+
+import { useGameData } from '../composables/useGameData.js'
+
+// Données locales (DEPRECATED)
+export const achievementsDataLocal = {
   'first_eggs': {
     id: 'first_eggs',
     nom: 'Premiers Œufs',
-    description: 'Récoltez vos 10 premiers œufs',
+    description: 'Récoltez vos 15 premiers œufs',
     icon: '🥚',
-    objectif: 10,
+    objectif: 15,
     type: 'eggs',
     reward: {
-      type: 'eggs',
-      quantite: 5
-    },
-    completed: true
+      type: 'blueberry',
+      quantite: 1
+    }
   },
   'egg_collector': {
     id: 'egg_collector',
@@ -23,38 +27,23 @@ export const achievementsData = {
     reward: {
       type: 'eggs',
       quantite: 25
-    },
-    completed: false
-  },
-  'egg_master': {
-    id: 'egg_master',
-    nom: 'Maître des Œufs',
-    description: 'Récoltez 1000 œufs au total',
-    icon: '👑',
-    objectif: 1000,
-    type: 'eggs',
-    reward: {
-      type: 'eggs',
-      quantite: 100
-    },
-    completed: false
-  },
-  'egg_king': {
-    id: 'egg_king',
-    nom: 'Maître des Œufs',
-    description: 'Récoltez 10000 œufs au total',
-    icon: 'zizi',
-    objectif: 10000,
-    type: 'eggs',
-    reward: {
-      type: 'eggs',
-      quantite: 1000
-    },
-    completed: false
+    }
   }
 }
 
-// Types de succès pour organiser l'affichage
+// Fonction pour obtenir les données synchronisées
+export function getAchievementsData() {
+  const { achievements } = useGameData()
+  return achievements.value
+}
+
+export function getAchievementCategories() {
+  const { categories } = useGameData()
+  return categories.value
+}
+
+// Export pour compatibilité (DEPRECATED)
+export const achievementsData = achievementsDataLocal
 export const achievementCategories = {
   'eggs': {
     nom: 'Œufs',

@@ -55,6 +55,24 @@ const UserSchema = new mongoose.Schema({
     production_token : { type : Number, default: 0}
   },
 
+  // Système de succès - schéma flexible pour gérer les migrations
+  achievements: {
+    type: mongoose.Schema.Types.Mixed,
+    default: function() {
+      return {
+        progress: {
+          totalEggsCollected: 0,
+          totalChickensOwned: 0,
+          totalProductionCompleted: 0,
+          totalBoxesOpened: 0,
+          maxEggsInOneClick: 0
+        },
+        completed: [],
+        lastChecked: new Date()
+      }
+    }
+  },
+
   team: {
     maxSlots: { type : Number, default: 3, unique: true, required: true},
     slot: { 

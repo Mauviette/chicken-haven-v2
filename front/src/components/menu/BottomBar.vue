@@ -1,5 +1,13 @@
 <template>
   <div class="bottom-bar">
+    <div class="options-button">
+      <ActionButton
+        :onClick="() => emit('open-options')"
+      >
+        ⚙️
+      </ActionButton>
+    </div>
+
     <div class="main-buttons">
       <ActionButton
         :onClick="() => emit('open-production')"
@@ -30,12 +38,6 @@
       >
         ❓ Aide
       </ActionButton-->
-
-      <ActionButton
-        :onClick="() => emit('open-options')"
-      >
-        ⚙️ Options
-      </ActionButton>
     </div>
 
     <div class="achievements-button">
@@ -80,6 +82,10 @@ const emit = defineEmits(['open-production', 'open-market', 'open-collection', '
     flex: 1;
   }
 
+  .options-button {
+    margin-left: 0px;
+  }
+
   .achievements-button {
     margin-right: 32px;
   }
@@ -114,6 +120,11 @@ const emit = defineEmits(['open-production', 'open-market', 'open-collection', '
       flex-wrap: wrap;
       justify-content: center;
       gap: 8px;
+    }
+
+    .options-button {
+      margin-left: 0;
+      margin-bottom: 8px;
     }
 
     .achievements-button {

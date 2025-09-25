@@ -1,8 +1,8 @@
 <template>
   <div
-    :class="['poule-card', espece.rarete, { grisee: poule.quantite === 0 }]"
+    :class="['poule-card', espece?.rarete || 'commune', { grisee: poule.quantite === 0 }]"
   >
-    <template v-if="poule.quantite > 0">
+    <template v-if="espece && poule.quantite > 0">
       <img :src="image" alt="poule" class="poule-image" />
       <div class="info">
         <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
@@ -16,7 +16,7 @@
         <div class="talent">{{ getTalentDisplayName(poule) }}</div>
       </div>
     </template>
-    <template v-else>
+    <template v-else-if="espece">
       <img :src="hiddenImage" alt="hidden chicken" class="poule-image" />
       <div class="info">
         <div class="name">???</div>
@@ -26,18 +26,36 @@
         </div>
       </div>
     </template>
+    <template v-else>
+      <!-- Cas où espece n'est pas encore chargée -->
+      <div class="loading-card">
+        <div class="loading-placeholder"></div>
+        <div class="info">
+          <div class="name">Chargement...</div>
+          <div class="rarete">-</div>
+          <div class="categorie">-</div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { getTalentDisplayName } from '@/composables/usePoules'
-defineProps({
+import { usePoules } from '@/composables/usePoules'
+
+const props = defineProps({
   poule: Object,
   espece: Object,
   image: String,
   hiddenImage: String,
 })
+
+const { getTalentDisplayNameSync } = usePoules()
+
+function getTalentDisplayName(poule) {
+  return getTalentDisplayNameSync(poule)
+}
 
 function formatStatut(poule) {
   if (!poule.statutEnergie) return '❓ Inconnue'
@@ -142,6 +160,33 @@ function formatRareté(r) {
 .poule-card.legendary .rarete {
   background: #fffbe6;
   color: #b8860b;
+}
+
+.loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+}
+
+.loading-placeholder {
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @media (max-width: 600px) {

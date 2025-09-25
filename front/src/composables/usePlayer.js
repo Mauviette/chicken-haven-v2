@@ -3,6 +3,7 @@ import { ref } from 'vue'
 const eggs = ref(0)
 const stockTokens = ref(0)
 const productionTokens = ref(0)
+const wildTokens = ref(0)
 
 export function usePlayer() {
   async function refreshPlayer() {
@@ -22,6 +23,7 @@ export function usePlayer() {
         eggs.value = data.totalEggs || 0
         stockTokens.value = data.stockTokens || 0
         productionTokens.value = data.productionTokens || 0
+        wildTokens.value = data.wildTokens || 0
       }
     } catch (error) {
       console.error('Erreur lors de la récupération des données du joueur:', error)
@@ -49,6 +51,8 @@ export function usePlayer() {
       stockTokens.value += amount
     } else if (type === 'production_token') {
       productionTokens.value += amount
+    } else if (type === 'wild_token') {
+      wildTokens.value += amount
     }
   }
 
@@ -58,6 +62,9 @@ export function usePlayer() {
       return true
     } else if (type === 'production_token' && productionTokens.value >= amount) {
       productionTokens.value -= amount
+      return true
+    } else if (type === 'wild_token' && wildTokens.value >= amount) {
+      wildTokens.value -= amount
       return true
     }
     return false
@@ -75,6 +82,8 @@ export function usePlayer() {
         return stockTokens.value >= price.count
       case 'production_token':
         return productionTokens.value >= price.count
+      case 'wild_token':
+        return wildTokens.value >= price.count
       default:
         return false
     }
@@ -88,6 +97,7 @@ export function usePlayer() {
     eggs,
     stockTokens,
     productionTokens,
+    wildTokens,
     addEggs,
     spendEggs,
     setEggs,

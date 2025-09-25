@@ -1,6 +1,7 @@
 // controllers/box.controller.js
 import User from '../models/User.js'
 import { especeData, groupes, boxesData } from '../data/gameData.js'
+import { updateAchievementProgress } from './achievements.controller.js'
 
 // GET /api/boxes - Récupérer les boîtes disponibles
 export async function getBoxes(req, res) {
@@ -100,6 +101,14 @@ export async function openBox(req, res) {
 
     // Sauvegarder les changements
     await user.save()
+
+    // Mettre à jour le progrès des succès
+    await updateAchievementProgress(req.userId, 'increment', {
+      totalBoxesOpened: 1
+    })
+    await updateAchievementProgress(req.userId, 'max', {
+      totalChickensOwned: user.poulesPossedees.length
+    })
 
     res.json({
       success: true,

@@ -1,7 +1,26 @@
-// Export des données des poules depuis le composable usePoules
-export { especeData, talentsData } from '@/composables/usePoules.js'
+// DEPRECATED - Utilisez useGameData() pour les données synchronisées
+import { useGameData } from '@/composables/useGameData.js'
 
-// Export des groupes harmonisés avec le back-end
+// Export pour compatibilité (DEPRECATED)
+export { especeDataLocal as especeData, talentsDataLocal as talentsData } from '@/composables/usePoules.js'
+
+// Fonction pour obtenir les données synchronisées
+export function getEspeceData() {
+  const { especies } = useGameData()
+  return especies.value
+}
+
+export function getTalentsData() {
+  const { talents } = useGameData()
+  return talents.value
+}
+
+export function getGroupes() {
+  const { groupes } = useGameData()
+  return groupes.value
+}
+
+// Export des groupes harmonisés avec le back-end (DEPRECATED - utilisez getGroupes())
 export const groupes = [
   { name: 'fondamental', description: 'Groupe fondamental', rarityDropChance: [75, 25, 0, 0]},
   { name: 'brillant', description: 'Groupe brillant', rarityDropChance: [75, 25, 0, 0] },
@@ -9,8 +28,17 @@ export const groupes = [
   { name: 'chic', description: 'Groupe chic', rarityDropChance: [75, 20, 5, 0] },
 ]
 
-// Fonctions utilitaires pour les statistiques de production
+// Fonctions utilitaires pour les statistiques de production (utilise les données synchronisées)
 export function getProductionStats(especeId) {
+  const { getEspeceInfo } = useGameData()
+  const espece = getEspeceInfo(especeId)
+  
+  // Utiliser les statistiques des données synchronisées si disponibles
+  if (espece?.statistiques) {
+    return espece.statistiques
+  }
+  
+  // Fallback vers les données statiques
   const baseStats = {
     'blanchonette': { ponte: 4, incubation: 4, energie: 5 },
     'poulette-rousse': { ponte: 6, incubation: 3, energie: 4 },
@@ -29,12 +57,15 @@ export function getProductionStats(especeId) {
   return baseStats[especeId] || { ponte: 1, incubation: 5, energie: 3 }
 }
 
-// Fonction pour obtenir le groupe d'une poule
+// Fonctions utilisant les données synchronisées
 export function getChickenGroup(especeId) {
-  return especeData[especeId]?.groupe || 'fondamental'
+  const { getEspeceInfo } = useGameData()
+  const espece = getEspeceInfo(especeId)
+  return espece?.groupe || 'fondamental'
 }
 
-// Fonction pour obtenir la rareté d'une poule
 export function getChickenRarity(especeId) {
-  return especeData[especeId]?.rarete || 'commune'
+  const { getEspeceInfo } = useGameData()
+  const espece = getEspeceInfo(especeId)
+  return espece?.rarete || 'commune'
 }

@@ -3,7 +3,19 @@
     <div class="achievements-menu">
       <div class="achievements-header">
         <h2>🏆 Succès</h2>
-        <button class="close-btn" @click="closeMenu">✕</button>
+        <div class="header-actions">
+          <button 
+            class="refresh-btn" 
+            @click="handleRefresh" 
+            :disabled="refreshing"
+            :title="refreshing ? 'Actualisation...' : 'Actualiser les succès'"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="refresh-icon" :class="{ 'spinning': refreshing }">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+          </button>
+          <button class="close-btn" @click="closeMenu">✕</button>
+        </div>
       </div>
       
       <div class="achievements-content">
@@ -45,9 +57,29 @@
                 </div>
               </div>
             </div>
-            <div class="achievement-reward" v-if="achievement.completed">
-              <div class="reward-icon">🎁</div>
-              <div class="reward-text">{{ achievement.reward.quantite }} œufs</div>
+            <div class="achievement-reward">
+              <button 
+                v-if="achievement.completed && !achievement.rewardClaimed"
+                class="claim-reward-btn"
+                @click="handleClaimReward(achievement)"
+              >
+                <div class="reward-icon">{{ getRewardIcon(achievement.reward) }}</div>
+                <div class="reward-amount">{{ formatReward(achievement.reward) }}</div>
+              </button>
+              <div v-else-if="achievement.completed && achievement.rewardClaimed" class="reward-claimed">
+                <div class="reward-icon">✅</div>
+                <div class="reward-amount">{{ formatReward(achievement.reward) }}</div>
+              </div>
+              <Tooltip 
+                v-else 
+                :text="getRewardDescription(achievement.reward)" 
+                position="left"
+              >
+                <div class="reward-preview">
+                  <div class="reward-icon">{{ getRewardIcon(achievement.reward) }}</div>
+                  <div class="reward-amount">{{ formatReward(achievement.reward) }}</div>
+                </div>
+              </Tooltip>
             </div>
           </div>
         </div>
@@ -57,9 +89,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { achievementsData } from '@/data/achievements.js'
-import { usePlayer } from '@/composables/usePlayer'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useAchievements } from '@/composables/useAchievements'
+import { formatString, achievementsData } from '@/data/items.js'
+import Tooltip from '@/components/menu/Tooltip.vue'
 
 const props = defineProps({
   visible: {
@@ -70,39 +103,93 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const { eggs } = usePlayer()
+const { 
+  achievements, 
+  completedCount, 
+  totalCount, 
+  progressPercentage,
+  fetchAchievements,
+  checkAchievements,
+  claimReward,
+  startAutoCheck,
+  stopAutoCheck
+} = useAchievements()
 
-const achievements = computed(() => {
-  return Object.values(achievementsData)
+const refreshing = ref(false)
+
+// Charger les succès au montage du composant
+onMounted(async () => {
+  await fetchAchievements()
+  await checkAchievements()
+  startAutoCheck()
 })
 
-const completedCount = computed(() => {
-  return achievements.value.filter(a => a.completed).length
-})
-
-const totalCount = computed(() => {
-  return achievements.value.length
-})
-
-const progressPercentage = computed(() => {
-  if (totalCount.value === 0) return 0
-  return Math.round((completedCount.value / totalCount.value) * 100)
+onUnmounted(() => {
+  stopAutoCheck()
 })
 
 const getCurrentProgress = (achievement) => {
-  if (achievement.type === 'eggs') {
-    return Math.min(eggs.value, achievement.objectif)
-  }
-  return 0
+  return achievement.currentProgress || 0
 }
 
 const getProgressWidth = (achievement) => {
-  const current = getCurrentProgress(achievement)
-  return Math.min((current / achievement.objectif) * 100, 100)
+  return achievement.progressWidth || 0
 }
 
 const closeMenu = () => {
   emit('close')
+}
+
+const handleClaimReward = async (achievement) => {
+  if (achievement.completed && !achievement.rewardClaimed) {
+    const reward = await claimReward(achievement.id)
+    if (reward) {
+      // Optionnel: afficher une notification de récompense
+      console.log(`Récompense réclamée: ${reward.quantite} ${reward.type}`)
+    }
+  }
+}
+
+const handleRefresh = async () => {
+  if (refreshing.value) return
+  
+  refreshing.value = true
+  try {
+    await fetchAchievements()
+    const newAchievements = await checkAchievements()
+    
+    if (newAchievements && newAchievements.length > 0) {
+      console.log(`🎉 ${newAchievements.length} nouveau(x) succès débloqué(s) !`)
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'actualisation des succès:', error)
+  } finally {
+    // Garder le bouton désactivé pendant 1 seconde
+    setTimeout(() => {
+      refreshing.value = false
+    }, 1000)
+  }
+}
+
+const formatReward = (reward) => {
+  if (!reward) return ''
+  return formatString(reward.type, reward.quantite)
+}
+
+const getRewardIcon = (reward) => {
+  if (!reward) return '❓'
+  
+  const itemData = achievementsData[reward.type]
+  return itemData ? itemData.icon : '❓'
+}
+
+const getRewardDescription = (reward) => {
+  if (!reward) return 'Aucune récompense'
+  
+  const itemData = achievementsData[reward.type]
+  if (!itemData) return 'Récompense inconnue'
+  
+  return `<strong>${formatReward(reward)}</strong><br>${itemData.description}`
 }
 </script>
 
@@ -111,7 +198,7 @@ const closeMenu = () => {
   position: fixed;
   top: 60px;
   right: 0;
-  width: 350px;
+  width: 420px;
   height: calc(100vh - 140px);
   z-index: 50;
   opacity: 0;
@@ -151,6 +238,12 @@ const closeMenu = () => {
   border-bottom: 2px solid #8B4513;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .achievements-header h2 {
   margin: 0;
   color: #fff9e5;
@@ -161,7 +254,7 @@ const closeMenu = () => {
   background: #8B4513;
   border: 2px solid #ffc66e;
   color: #fff9e5;
-  border-radius: 50%;
+  border-radius: 4px;
   width: 28px;
   height: 28px;
   display: flex;
@@ -176,6 +269,46 @@ const closeMenu = () => {
 .close-btn:hover {
   background: #a0592a;
   transform: scale(1.1);
+}
+
+.refresh-btn {
+  background: #8B4513;
+  border: 2px solid #ffc66e;
+  color: #fff9e5;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  transition: all 0.2s ease;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #a0592a;
+  transform: scale(1.1);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refresh-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.refresh-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .achievements-content {
@@ -227,8 +360,9 @@ const closeMenu = () => {
   padding: 12px;
   background: rgba(255, 255, 255, 0.9);
   border: 3px solid #ddd;
-  border-radius: 10px;
+  border-radius: 4px;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(139, 69, 19, 0.1);
 }
 
 .achievement-item.completed {
@@ -272,10 +406,11 @@ const closeMenu = () => {
 
 .progress-bar {
   flex: 1;
-  height: 6px;
+  height: 8px;
   background: #e0e0e0;
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
+  border: 1px solid #ccc;
 }
 
 .progress-fill {
@@ -296,14 +431,70 @@ const closeMenu = () => {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 6px;
+  padding: 4px;
   background: rgba(255, 215, 0, 0.2);
   border: 2px solid #FFD700;
-  border-radius: 6px;
+  border-radius: 3px;
+}
+
+.claim-reward-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(145deg, #FFD700, #FFA500);
+  border: 2px solid #8B4513;
+  border-radius: 3px;
+  padding: 8px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  min-width: 80px;
+  box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
+}
+
+.claim-reward-btn:hover {
+  background: linear-gradient(145deg, #FFA500, #FF8C00);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+
+
+.reward-claimed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.7;
+  min-width: 80px;
+  padding: 8px;
+  background: rgba(76, 175, 80, 0.2);
+  border: 2px solid #4CAF50;
+  border-radius: 3px;
+}
+
+.reward-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid #ddd;
+  border-radius: 3px;
+  opacity: 0.6;
+}
+
+.reward-amount {
+  font-size: 10px;
+  color: #8B4513;
+  font-weight: bold;
+  text-align: center;
 }
 
 .reward-icon {
-  font-size: 16px;
+  font-size: 18px;
+  min-width: 20px;
+  text-align: center;
 }
 
 .reward-text {

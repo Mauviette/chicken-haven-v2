@@ -1,6 +1,6 @@
 <template>
   <Popup @close="emit('close')">
-    <div class="chicken-detail">
+    <div class="chicken-detail" v-if="espece">
       <div class="header">
         <img :src="image" class="chicken-img" />
         <div class="header-text">
@@ -31,20 +31,25 @@
       <div class="section stats-section">
         <div class="stat-line">
           <span>🧠 Intelligence</span>
-          <span class="stars">{{ renderStars(espece.stats.intelligence) }}</span>
+          <span class="stars">{{ renderStars(espece.stats?.intelligence || 0) }}</span>
         </div>
         <div class="stat-line">
           <span>⚡ Énergie</span>
-          <span class="stars">{{ renderStars(espece.stats.energie) }}</span>
+          <span class="stars">{{ renderStars(espece.stats?.energie || 0) }}</span>
         </div>
         <div class="stat-line">
           <span>✨ Charisme</span>
-          <span class="stars">{{ renderStars(espece.stats.charisme) }}</span>
+          <span class="stars">{{ renderStars(espece.stats?.charisme || 0) }}</span>
         </div>
       </div>
       
 
       <!-- À venir : stats, actions, amélioration, etc. -->
+    </div>
+    <div v-else class="loading-detail">
+      <div class="loading-content">
+        Chargement des détails...
+      </div>
     </div>
   </Popup>
 </template>
@@ -52,15 +57,26 @@
 <script setup>
 import Popup from '@/components/menu/Popup.vue'
 import Tooltip from '../menu/Tooltip.vue'
-import { getTalentDisplayName, getTalentEffect } from '@/composables/usePoules'
+import { usePoules } from '@/composables/usePoules'
+
 const emit = defineEmits(['close'])
 
-defineProps({
+const props = defineProps({
   poule: Object,
   espece: Object,
   image: String,
   quantite: Number
 })
+
+const { getTalentDisplayNameSync, getTalentEffectSync } = usePoules()
+
+function getTalentDisplayName(poule) {
+  return getTalentDisplayNameSync(poule)
+}
+
+function getTalentEffect(poule) {
+  return getTalentEffectSync(poule)
+}
 
 function formatStatut(poule) {
   if (!poule.statutEnergie) return '❓ Inconnue'
@@ -202,6 +218,20 @@ function renderStars(n) {
   min-width: 90px;
   text-align: right;
   display: block;
+}
+
+.loading-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  font-family: 'Fredoka', sans-serif;
+}
+
+.loading-content {
+  font-size: 16px;
+  color: #fff9e5;
+  text-align: center;
 }
 
 </style>

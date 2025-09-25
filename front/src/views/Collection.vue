@@ -16,7 +16,11 @@
     </div>
 
     <div class="poules-grid">
+      <div v-if="gameDataLoading" class="loading-message">
+        Chargement des données...
+      </div>
       <ChickenCard
+        v-else
         v-for="poule in filteredPoules"
         :key="poule.especeId"
         :poule="poule"
@@ -28,7 +32,7 @@
     </div>
 
     <ChickenDetail
-      v-if="selectedPoule"
+      v-if="selectedPoule && especeData"
       :poule="selectedPoule"
       :espece="especeData[selectedPoule.especeId]"
       :image="getImage(selectedPoule.especeId)"
@@ -41,8 +45,13 @@
 <script setup>
 import ChickenCard from '@/components/chicken/ChickenCard.vue'
 import ChickenDetail from '../components/chicken/ChickenDetail.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { usePoules } from '@/composables/usePoules'
+import { useGameData } from '@/composables/useGameData'
+
+onMounted(() => {
+  // Collection initialisée
+})
 
 const selectedPoule = ref(null)
 const searchQuery = ref('')
@@ -51,10 +60,13 @@ const sortOrder = ref('asc')
 
 const {
   poules,
-  especeData,
   getImage,
   hiddenImage
 } = usePoules()
+
+const { especies: especeData, loading: gameDataLoading } = useGameData()
+
+// Les données sont gérées par les composables useGameData et usePoules
 
 function normalizeText(str) {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -74,12 +86,17 @@ function toggleSortOrder() {
 }
 
 const filteredPoules = computed(() => {
+  // Attendre que les données soient chargées
+  if (gameDataLoading.value || !especeData || !poules.value) {
+    return []
+  }
+
   const query = normalizeText(searchQuery.value.trim())
 
   // Enrichissement avec score de pertinence et infos
   const withMeta = poules.value.map((poule) => {
     const espece = especeData[poule.especeId]
-    const matchScore = query
+    const matchScore = query && espece
       ? [
           espece.nom,
           espece.talent,
@@ -93,7 +110,7 @@ const filteredPoules = computed(() => {
       ...poule,
       _matchScore: matchScore,
       _isUnlocked: poule.quantite > 0,
-      _rareteIndex: rareteOrder[espece.rarete] || 0,
+      _rareteIndex: rareteOrder[espece?.rarete] || 0,
     }
   })
 
@@ -206,6 +223,14 @@ const rareteOrder = {
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.loading-message {
+  text-align: center;
+  font-size: 16px;
+  color: #6d3c00;
+  padding: 40px;
+  width: 100%;
 }
 
 </style>
