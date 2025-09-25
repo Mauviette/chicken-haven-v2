@@ -131,24 +131,72 @@ export const especeData = {
 // ========================
 // DONNÉES DES TALENTS
 // ========================
+
+//POUR L'INSTANT NE FAIRE QUE LES 3 PREMIERS
 export const talentsData = {
   'Chanceuse': {
     description: "Lors des récoltes, a une petite chance de fait pleuvoir des oeufs.",
     effet: (niveau) => `Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x${niveau} en oeufs.`,
     maxNiveau: 10,
-    icon: '🍀'
+    icon: '🍀',
+    calculation: {
+      combine: 'linear',
+      triggers: [
+        { type: 'on_egg_harvest' }
+      ],
+      conditions: [
+        { type: 'random_chance', value: 0.01 }
+      ],
+      effects: [
+        { type: 'visual_effect', effect: 'egg_rain', amount: 15 },
+        {
+          type: 'resource',
+          resource: 'eggs',
+          amount: { op: 'mul', args: [ { var: 'niveau' }, { var: 'stockageMax' } ] }
+        }
+      ]
+    }
   },
   'Énergétique': {
     description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
     effet: (niveau) => `+${niveau * 0.25} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
     maxNiveau: 10,
-    icon: '⚡'
+    icon: '⚡',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'income_bonus_per_second',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { var: 'teamEnergy' },
+              { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] }
+            ]
+          }
+        }
+      ]
+    }
   },
   'Persévérante': {
     description: "Augmente l'énergie et l'intelligence de l'équipe.",
     effet: (niveau) => `+${niveau} énergie et intelligence à toutes les poules de l'équipe.`,
     maxNiveau: 10,
-    icon: '🏋️'
+    icon: '🏋️',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'stat_buff',
+          target: 'team',
+          stats: {
+            energie: { op: 'add', args: [ { var: 'niveau' } ] },
+            intelligence: { op: 'add', args: [ { var: 'niveau' } ] }
+          }
+        }
+      ]
+    }
   },
   'Vive': {
     description: "Termine les missions plus rapidement.",

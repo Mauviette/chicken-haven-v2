@@ -42,7 +42,12 @@
           <span class="stars">{{ renderStars(espece.stats?.charisme || 0) }}</span>
         </div>
       </div>
-      
+
+      <div class="actions">
+        <button v-if="!inTeam" class="btn equip" @click="onEquip">Équiper dans l'équipe</button>
+        <button v-else class="btn unequip" @click="onUnequip">Retirer de l'équipe</button>
+      </div>
+
 
       <!-- À venir : stats, actions, amélioration, etc. -->
     </div>
@@ -58,6 +63,8 @@
 import Popup from '@/components/menu/Popup.vue'
 import Tooltip from '../menu/Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
+import { usePlayer } from '@/composables/usePlayer'
+import { computed } from 'vue'
 
 const emit = defineEmits(['close'])
 
@@ -69,6 +76,7 @@ const props = defineProps({
 })
 
 const { getTalentDisplayNameSync, getTalentEffectSync } = usePoules()
+const { isInTeam, equipChicken, unequipChicken } = usePlayer()
 
 function getTalentDisplayName(poule) {
   return getTalentDisplayNameSync(poule)
@@ -107,6 +115,30 @@ function renderStars(n) {
   const full = '★'.repeat(n)
   const empty = '☆'.repeat(5 - n)
   return full + empty
+}
+
+const inTeam = computed(() => isInTeam(props.poule?.especeId))
+
+async function onEquip() {
+  if (!props.poule || props.poule.quantite <= 0) return
+  const ok = await equipChicken(props.poule.especeId)
+  if (ok) {
+    const name = props.espece?.nom || props.poule.especeId
+    window.$toast?.(`${name} équipée`, 'team-add')
+  } else {
+    window.$toast?.("Impossible d'équiper.", 'error')
+  }
+}
+
+async function onUnequip() {
+  if (!props.poule) return
+  const ok = await unequipChicken(props.poule.especeId)
+  if (ok) {
+    const name = props.espece?.nom || props.poule.especeId
+    window.$toast?.(`${name} retirée de l'équipe`, 'team-remove')
+  } else {
+    window.$toast?.('Action impossible.', 'error')
+  }
 }
 
 </script>
@@ -219,6 +251,24 @@ function renderStars(n) {
   text-align: right;
   display: block;
 }
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #ffc66e;
+  background: #fffaf1;
+  font-family: 'Fredoka', sans-serif;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+}
+
+.btn.equip { background: #e9ffe6; border-color: #8ed68b; }
+.btn.unequip { background: #fff1f1; border-color: #ffb3b3; }
 
 .loading-detail {
   display: flex;

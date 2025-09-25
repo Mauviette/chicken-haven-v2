@@ -4,6 +4,7 @@ const eggs = ref(0)
 const stockTokens = ref(0)
 const productionTokens = ref(0)
 const wildTokens = ref(0)
+const team = ref({ maxSlots: 3, slots: [] })
 
 export function usePlayer() {
   async function refreshPlayer() {
@@ -28,6 +29,84 @@ export function usePlayer() {
     } catch (error) {
       console.error('Erreur lors de la récupération des données du joueur:', error)
     }
+  }
+
+  async function fetchTeam() {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      const res = await fetch('/api/team', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        team.value = data
+      }
+    } catch (err) {
+      console.error('Erreur fetchTeam:', err)
+    }
+  }
+
+  async function updateTeam(newSlots) {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      const res = await fetch('/api/team', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ slots: newSlots })
+      })
+      if (res.ok) {
+        team.value = await res.json()
+        // Notifier globalement que l'équipe a changé (ex: pour rafraîchir l'income)
+        try {
+          window.dispatchEvent(new CustomEvent('team-updated', { detail: { team: team.value } }))
+        } catch (_) { /* no-op */ }
+        return true
+      }
+    } catch (err) {
+      console.error('Erreur updateTeam:', err)
+    }
+    return false
+  }
+
+  function isInTeam(especeId) {
+    return Array.isArray(team.value?.slots) && team.value.slots.some(s => s?.especeId === especeId)
+  }
+
+  async function equipChicken(especeId) {
+    await fetchTeam()
+    const max = team.value.maxSlots || 3
+    const slots = Array.isArray(team.value.slots) ? [...team.value.slots] : []
+    // trouver un slot libre
+    let placed = false
+    for (let i = 0; i < max; i++) {
+      if (!slots[i] || !slots[i].especeId) {
+        slots[i] = { especeId }
+        placed = true
+        break
+      }
+    }
+    if (!placed) {
+      // Remplacer le premier slot par défaut
+      slots[0] = { especeId }
+    }
+    return updateTeam(slots)
+  }
+
+  async function unequipChicken(especeId) {
+    await fetchTeam()
+    const max = team.value.maxSlots || 3
+    const slots = Array.isArray(team.value.slots) ? [...team.value.slots] : []
+    for (let i = 0; i < Math.min(max, slots.length); i++) {
+      if (slots[i]?.especeId === especeId) {
+        slots[i] = { especeId: null }
+      }
+    }
+    return updateTeam(slots)
   }
 
   function addEggs(n) {
@@ -98,6 +177,7 @@ export function usePlayer() {
     stockTokens,
     productionTokens,
     wildTokens,
+    team,
     addEggs,
     spendEggs,
     setEggs,
@@ -106,6 +186,12 @@ export function usePlayer() {
     canAfford,
     getLevel,
     refreshPlayer,
-    refreshPlayerData: refreshPlayer // Alias pour compatibilité
+    refreshPlayerData: refreshPlayer, // Alias pour compatibilité
+    // Team
+    fetchTeam,
+    updateTeam,
+    isInTeam,
+    equipChicken,
+    unequipChicken
   }
 }

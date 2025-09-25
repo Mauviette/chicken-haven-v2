@@ -4,6 +4,7 @@
       @open-profile="toast('Bientôt disponible !')"
     />
     <router-view />
+  <TeamParade v-if="!isAuthPage" />
     <ToastManager ref="toastManager" :hasBottomBar="!isAuthPage"/>
     <Options :visible="showOptions" @close="showOptions = false" @logout="logout" />
     <AchievementsMenu :visible="showAchievements" @close="showAchievements = false" />
@@ -26,6 +27,7 @@ import ToastManager from '@/components/menu/ToastManager.vue'
 import Options from '@/components/menu/Options.vue'
 import BottomBar from '@/components/menu/BottomBar.vue'
 import TopBar from '@/components/menu/TopBar.vue'
+import TeamParade from '@/components/menu/TeamParade.vue'
 import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -37,7 +39,7 @@ const toastManager = ref(null)
 const showOptions = ref(false)
 const showAchievements = ref(false)
 const { logout: performLogout } = useAuth()
-const { refreshPlayer } = usePlayer()
+const { refreshPlayer, fetchTeam } = usePlayer()
 const { syncStatus } = useDataSync()
 
 onMounted(async () => {
@@ -49,6 +51,7 @@ onMounted(async () => {
   // Charger les données du joueur si connecté
   if (localStorage.getItem('token')) {
     await refreshPlayer()
+    await fetchTeam()
   }
 })
 

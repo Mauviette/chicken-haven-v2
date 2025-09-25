@@ -11,6 +11,7 @@ const eggState = ref({
 })
 
 let updateInterval = null
+let onTeamUpdated = null
 
 export function useEgg() {
   const { token } = useAuth()
@@ -80,6 +81,8 @@ export function useEgg() {
         const data = await response.json()
         eggState.value = {
           ...eggState.value,
+          income: data.income ?? eggState.value.income,
+          maxIncome: data.maxIncome ?? eggState.value.maxIncome,
           totalEggs: data.totalEggs,
           lastClick: new Date(data.lastClick)
         }
@@ -88,17 +91,22 @@ export function useEgg() {
         if (window.$toast) {
           //window.$toast(`+${data.eggsGained} œufs collectés !`, 'success')
         }
+
+        // Retourner la réponse complète (incl. chanceuse)
+        return data
       } else {
         const error = await response.json()
         if (window.$toast) {
           window.$toast(error.error || 'Erreur lors du clic', 'error')
         }
+        return null
       }
     } catch (error) {
       console.error('Erreur lors du clic sur l\'œuf:', error)
       if (window.$toast) {
         window.$toast('Erreur de connexion', 'error')
       }
+      return null
     } finally {
       eggState.value.isLoading = false
     }
@@ -112,6 +120,14 @@ export function useEgg() {
       // Force la réactivité en mettant à jour une référence
       eggState.value = { ...eggState.value }
     }, 1000)
+
+    // Écouter les changements d'équipe pour rafraîchir l'income immédiatement
+    if (typeof window !== 'undefined' && !onTeamUpdated) {
+      onTeamUpdated = async () => {
+        try { await fetchEggStatus() } catch (_) {}
+      }
+      window.addEventListener('team-updated', onTeamUpdated)
+    }
   }
 
   // Arrêter les mises à jour automatiques
@@ -119,6 +135,10 @@ export function useEgg() {
     if (updateInterval) {
       clearInterval(updateInterval)
       updateInterval = null
+    }
+    if (typeof window !== 'undefined' && onTeamUpdated) {
+      window.removeEventListener('team-updated', onTeamUpdated)
+      onTeamUpdated = null
     }
   }
 

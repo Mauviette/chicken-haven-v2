@@ -2,7 +2,9 @@
   <div class="collection-view">
 
     <div class="header-bar">
-      <h2 class="section-title" style="margin-bottom: 0;">🐔 Ma Collection</h2>
+      <h2 class="section-title" style="margin-bottom: 0;">🐔 Ma Collection
+        <span class="team-indicator" v-if="team">— Équipe: {{ usedSlots }}/{{ team.maxSlots }}</span>
+      </h2>
       <div class="controls" style="margin-bottom: 0;">
         <input v-model="searchQuery" type="text" placeholder="Rechercher une poule..." class="search-input" />
         <select v-model="sortKey" class="sort-select">
@@ -46,8 +48,10 @@
 import ChickenCard from '@/components/chicken/ChickenCard.vue'
 import ChickenDetail from '../components/chicken/ChickenDetail.vue'
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
+import { usePlayer } from '@/composables/usePlayer'
 
 onMounted(() => {
   // Collection initialisée
@@ -65,6 +69,15 @@ const {
 } = usePoules()
 
 const { especies: especeData, loading: gameDataLoading } = useGameData()
+const { team, fetchTeam } = usePlayer()
+const route = useRoute()
+const router = useRouter()
+
+onMounted(async () => {
+  if (localStorage.getItem('token')) {
+    await fetchTeam()
+  }
+})
 
 // Les données sont gérées par les composables useGameData et usePoules
 
@@ -74,6 +87,12 @@ function normalizeText(str) {
 
 function closeDetail() {
   selectedPoule.value = null
+  // Nettoyer le paramètre detail dans l'URL
+  if (route.query.detail) {
+    const q = { ...route.query }
+    delete q.detail
+    router.replace({ query: q })
+  }
 }
 
 function openDetail(poule) {
@@ -146,6 +165,23 @@ const rareteOrder = {
   epique: 3,
   legendary: 4,
 }
+
+const usedSlots = computed(() => (team.value?.slots || []).filter(s => s?.especeId).length)
+
+// Ouvrir automatiquement la fiche si ?detail=especeId est présent
+watch(
+  () => [route.query.detail, poules.value, especeData, gameDataLoading.value],
+  () => {
+    const id = route.query.detail
+    if (!id) return
+    if (gameDataLoading.value) return
+    const p = (poules.value || []).find(p => p.especeId === id)
+    if (p) {
+      openDetail(p)
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
@@ -166,6 +202,12 @@ const rareteOrder = {
   font-size: 20px;
   margin-bottom: 20px;
   color: #6d3c00;
+}
+
+.team-indicator {
+  font-size: 14px;
+  color: #8B4513;
+  margin-left: 10px;
 }
 
 .poules-grid {

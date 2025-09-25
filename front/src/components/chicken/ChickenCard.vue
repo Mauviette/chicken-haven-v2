@@ -3,7 +3,10 @@
     :class="['poule-card', espece?.rarete || 'commune', { grisee: poule.quantite === 0 }]"
   >
     <template v-if="espece && poule.quantite > 0">
-      <img :src="image" alt="poule" class="poule-image" />
+      <div class="image-wrapper">
+        <img :src="image" alt="poule" class="poule-image" />
+        <div v-if="inTeam" class="badge-team">Équipe</div>
+      </div>
       <div class="info">
         <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
           <span class="name">{{ espece.nom }}</span>
@@ -42,6 +45,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
 
 const props = defineProps({
@@ -52,6 +56,8 @@ const props = defineProps({
 })
 
 const { getTalentDisplayNameSync } = usePoules()
+const { isInTeam } = usePlayer()
+const inTeam = computed(() => isInTeam(props.poule?.especeId))
 
 function getTalentDisplayName(poule) {
   return getTalentDisplayNameSync(poule)
@@ -109,6 +115,19 @@ function formatRareté(r) {
   width: 100%;
   border-radius: 10px;
   margin-bottom: 8px;
+}
+
+.image-wrapper { position: relative; }
+.badge-team {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: #e9ffe6;
+  border: 2px solid #8ed68b;
+  color: #2f6b2d;
+  border-radius: 8px;
+  padding: 2px 6px;
+  font-size: 12px;
 }
 
 .info {

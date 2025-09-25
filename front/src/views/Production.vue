@@ -1,5 +1,17 @@
 <template>
   <div class="production-screen">
+    <!-- Bandeau des stats d'équipe -->
+    <div class="team-stats-banner">
+      <Tooltip text="Somme de l'intelligence des poules équipées.">
+        <span class="stat-chip">🧠 {{ teamStats.intelligence }}</span>
+      </Tooltip>
+      <Tooltip text="Somme de l'énergie de l'équipe.">
+        <span class="stat-chip">⚡ {{ teamStats.energie }}</span>
+      </Tooltip>
+      <Tooltip text="Somme du charisme des poules équipées.">
+        <span class="stat-chip">✨ {{ teamStats.charisme }}</span>
+      </Tooltip>
+    </div>
     <div class="production-content">
 
       <div class="egg-clicker">
@@ -62,13 +74,18 @@
 
       </div>
     </div>
+    <!-- Overlay pour la pluie d'œufs -->
+    <div ref="eggContainer" class="falling-eggs-container"></div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useEgg } from '@/composables/useEgg'
 import { usePlayer } from '@/composables/usePlayer'
+import { usePoules } from '@/composables/usePoules'
+import { useGameData } from '@/composables/useGameData'
+import Tooltip from '@/components/menu/Tooltip.vue'
 
 const { 
   eggState, 
@@ -81,11 +98,114 @@ const {
   stopUpdates 
 } = useEgg()
 
-const { refreshPlayer } = usePlayer()
+const { refreshPlayer, fetchTeam, team } = usePlayer()
+const { especies, poules } = usePoules()
+const { talents } = useGameData()
+
+// Mini évaluateur d'expressions (miroir minimal du serveur)
+function evalExpr(expr, ctx) {
+  if (expr == null) return 0
+  if (typeof expr === 'number') return expr
+  if (typeof expr === 'string') return Number.isFinite(ctx[expr]) ? ctx[expr] : (ctx[expr] ?? 0)
+  if (typeof expr === 'object') {
+    if (Object.prototype.hasOwnProperty.call(expr, 'var')) {
+      const v = expr.var
+      return Number.isFinite(ctx[v]) ? ctx[v] : (ctx[v] ?? 0)
+    }
+    const op = expr.op
+    const args = Array.isArray(expr.args) ? expr.args : []
+    const vals = args.map(a => evalExpr(a, ctx))
+    switch (op) {
+      case 'add': return vals.reduce((a, b) => a + b, 0)
+      case 'sub': return vals.slice(1).reduce((a, b) => a - b, vals[0] || 0)
+      case 'mul': return vals.reduce((a, b) => a * b, 1)
+      case 'div': return vals.slice(1).reduce((a, b) => (b === 0 ? a : a / b), vals[0] || 0)
+      case 'min': return Math.min(...vals)
+      case 'max': return Math.max(...vals)
+      default: return 0
+    }
+  }
+  return 0
+}
+
+// Stats d'équipe (somme des stats des poules équipées) + buffs du DSL (stat_buff target: team)
+const teamStats = computed(() => {
+  const slots = team.value?.slots || []
+  let base = { intelligence: 0, energie: 0, charisme: 0 }
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const sp = especies.value?.[id]
+    if (sp?.stats) {
+      base.intelligence += Number(sp.stats.intelligence) || 0
+      base.energie += Number(sp.stats.energie) || 0
+      base.charisme += Number(sp.stats.charisme) || 0
+    }
+  }
+  // Buffs par membre agrégés
+  const buffsPerMember = { intelligence: 0, energie: 0, charisme: 0 }
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const info = especies.value?.[id]
+    const talentName = info?.talent
+    if (!talentName) continue
+    const calc = talents.value?.[talentName]?.calculation
+    if (!calc || !Array.isArray(calc.effects)) continue
+    const p = poules.value?.find(pp => pp.especeId === id)
+    const niveau = Math.max(1, Number(p?.niveauTalent) || 1)
+    const ctx = { niveau }
+    for (const eff of calc.effects) {
+      if (!eff || eff.type !== 'stat_buff') continue
+      if (eff.target && eff.target !== 'team') continue
+      const st = eff.stats || {}
+      for (const key of ['intelligence', 'energie', 'charisme']) {
+        if (st[key] != null) {
+          buffsPerMember[key] += Number(evalExpr(st[key], ctx)) || 0
+        }
+      }
+    }
+  }
+  const memberCount = slots.filter(s => s?.especeId).length
+  return {
+    intelligence: base.intelligence + (buffsPerMember.intelligence || 0) * memberCount,
+    energie: base.energie + (buffsPerMember.energie || 0) * memberCount,
+    charisme: base.charisme + (buffsPerMember.charisme || 0) * memberCount,
+  }
+})
 
 // Effets visuels
 const eggEffects = ref([])
 let effectId = 0
+
+// Pluie d'œufs (même logique que dans AuthView)
+const eggContainer = ref(null)
+function dropEggs(count = 20) {
+  if (!eggContainer.value) return
+  for (let i = 0; i < count; i++) {
+    const span = document.createElement('span')
+    span.textContent = '🥚'
+    span.classList.add('falling-egg')
+
+    // Rotation aléatoire entre -360° et +720°
+    const rotateDeg = Math.floor(Math.random() * 1080 - 360) // -360 à 720
+    span.style.setProperty('--rotation', `${rotateDeg}deg`)
+
+    // Position, taille, délai
+    const offset = 32 // max taille de l’emoji (en px)
+    const maxLeft = window.innerWidth - offset
+    const leftPx = Math.random() * maxLeft
+    span.style.left = `${leftPx}px`
+    span.style.fontSize = Math.random() * 16 + 16 + 'px'
+    span.style.animationDelay = Math.random() * 0.5 + 's'
+
+    eggContainer.value.appendChild(span)
+
+    setTimeout(() => {
+      span.remove()
+    }, 3000)
+  }
+}
 
 // Fonction pour créer l'effet d'œufs qui sautent
 const createEggEffect = (eggsGained) => {
@@ -134,10 +254,20 @@ const createEggEffect = (eggsGained) => {
 const handleEggClick = async () => {
   if (isClickable.value) {
     const eggsGained = Math.floor(currentGains.value)
-    await clickEgg()
+    const result = await clickEgg()
     // Créer l'effet visuel
     if (eggsGained > 0) {
       createEggEffect(eggsGained)
+    }
+    // Effet visuel/Toast si Chanceuse a proc
+    if (result?.chanceuse?.active && result.chanceuse.proc) {
+      const bonus = result.chanceuse.bonusEggs || 0
+      if (window.$toast) {
+        window.$toast(`Chanceuse ! +${bonus} œufs bonus 🍀`, 'success')
+      }
+      // Effet identique à AuthView (pluie d'œufs) avec l'amount défini dans le DSL si présent
+      const rainAmount = (result.chanceuse.effects || []).find(e => e?.type === 'visual_effect' && e?.effect === 'egg_rain')?.amount
+      dropEggs(Math.max(1, Number(rainAmount) || 20))
     }
     // Actualiser l'affichage des œufs dans la TopBar
     await refreshPlayer()
@@ -145,6 +275,8 @@ const handleEggClick = async () => {
 }
 
 onMounted(async () => {
+  // S'assurer que l'équipe est à jour pour les stats
+  await fetchTeam()
   await fetchEggStatus()
   startUpdates()
 })
@@ -164,6 +296,29 @@ onUnmounted(() => {
   font-family: 'Fredoka', sans-serif;
   background-size: cover;
   background-position: center;
+}
+
+.team-stats-banner {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #3a2b1a;
+  text-shadow: 0 1px 0 #fff;
+  pointer-events: auto;
+  z-index: 5;
+}
+
+.team-stats-banner .stat-chip {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #c8ab86;
+  padding: 2px 6px;
+  border-radius: 8px;
 }
 
 .production-content {
@@ -370,5 +525,26 @@ onUnmounted(() => {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+</style>
+
+<style>
+/* Styles globaux pour reproduire exactement l'effet d'AuthView */
+.falling-egg {
+  position: absolute;
+  top: -40px;
+  animation: egg-drop 2.5s linear forwards;
+  user-select: none;
+  pointer-events: none;
+  z-index: 9999;
+  transform: rotate(0deg);
+}
+
+@keyframes egg-drop {
+  to {
+    top: 100vh;
+    transform: rotate(var(--rotation));
+    opacity: 0;
+  }
 }
 </style>

@@ -74,10 +74,12 @@ const UserSchema = new mongoose.Schema({
   },
 
   team: {
-    maxSlots: { type : Number, default: 3, unique: true, required: true},
-    slot: { 
-      especeId : {type : String}
-    }
+    maxSlots: { type: Number, default: 3, required: true },
+    slots: [
+      {
+        especeId: { type: String, default: null }
+      }
+    ]
   }
 
 })

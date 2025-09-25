@@ -376,33 +376,63 @@ export function usePoules() {
   function getTalentEffectSync(poule) {
     try {
       const especiesData = especies.value || {}
+      const talentsData = talents.value || {}
       const espece = especiesData[poule.especeId]
       const niveau = getTalentLevel(poule)
       const talentName = espece?.talent
-      
-      // Les fonctions effet sont perdues lors de la sérialisation JSON
-      // Nous devons les recréer côté frontend en fonction du nom du talent
-      const effetFunctions = {
-        'Chanceuse': (n) => `Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x${n} en oeufs.`,
-        'Énergétique': (n) => `+${n * 0.25} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
-        'Persévérante': (n) => `+${n} énergie et intelligence à toutes les poules de l'équipe.`,
-        'Vive': (n) => `Vitesse de mission +${n * 8}%`,
-        'Curieuse': (n) => `+${n * 3}% d'événements spéciaux`,
-        'Discrète': (n) => `Risque réduit de ${n * 6}%`,
-        'Gourmande': (n) => `Consommation -${n * 5}%`,
-        'Protectrice': (n) => `Protection +${n * 7}%`,
-        'Maligne': (n) => `+${n * 4}% de réussite aux énigmes`,
-        'Majestueuse': (n) => `Charisme concours +${n * 6}%`,
-        'Rapide': (n) => `Vitesse +${n * 10}%`,
-        'Joyeuse': (n) => `Moral +${n * 2}`
+      const calc = talentsData[talentName]?.calculation
+
+      // Petit évaluateur d'expressions (miroir minimal du serveur)
+      function evalExpr(expr, ctx) {
+        if (expr == null) return 0
+        if (typeof expr === 'number') return expr
+        if (typeof expr === 'string') return Number.isFinite(ctx[expr]) ? ctx[expr] : (ctx[expr] ?? 0)
+        if (typeof expr === 'object') {
+          if (Object.prototype.hasOwnProperty.call(expr, 'var')) {
+            const v = expr.var
+            return Number.isFinite(ctx[v]) ? ctx[v] : (ctx[v] ?? 0)
+          }
+          const op = expr.op
+          const args = Array.isArray(expr.args) ? expr.args : []
+          const vals = args.map(a => evalExpr(a, ctx))
+          switch (op) {
+            case 'add': return vals.reduce((a, b) => a + b, 0)
+            case 'sub': return vals.slice(1).reduce((a, b) => a - b, vals[0] || 0)
+            case 'mul': return vals.reduce((a, b) => a * b, 1)
+            case 'div': return vals.slice(1).reduce((a, b) => (b === 0 ? a : a / b), vals[0] || 0)
+            case 'min': return Math.min(...vals)
+            case 'max': return Math.max(...vals)
+            default: return 0
+          }
+        }
+        return 0
       }
-      
-      const effetFunction = effetFunctions[talentName]
-      if (effetFunction) {
-        return effetFunction(niveau)
+
+      // Essayer d'interpréter un stat_buff générique
+      if (calc && Array.isArray(calc.effects)) {
+        const ctx = { niveau }
+        const deltas = { intelligence: 0, energie: 0, charisme: 0 }
+        for (const eff of calc.effects) {
+          if (!eff || eff.type !== 'stat_buff') continue
+          if (eff.target && eff.target !== 'team') continue
+          const stats = eff.stats || {}
+          for (const key of ['intelligence', 'energie', 'charisme']) {
+            if (stats[key] != null) {
+              deltas[key] += Number(evalExpr(stats[key], ctx)) || 0
+            }
+          }
+        }
+        const parts = []
+        if (deltas.intelligence) parts.push(`+${deltas.intelligence} intelligence`)
+        if (deltas.energie) parts.push(`+${deltas.energie} énergie`)
+        if (deltas.charisme) parts.push(`+${deltas.charisme} charisme`)
+        if (parts.length) {
+          return `${parts.join(' et ')} à toutes les poules de l'équipe.`
+        }
       }
-      
-      return '???'
+
+      // Fallback: utiliser la description fournie par les données
+      return talentsData[talentName]?.description || '???'
     } catch (error) {
       console.error('Erreur getTalentEffectSync:', error)
       return '???'
