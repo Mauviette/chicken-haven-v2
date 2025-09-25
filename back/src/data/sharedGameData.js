@@ -14,12 +14,7 @@ export const especeData = {
     groupe: 'fondamental',
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 4, energie: 2, charisme: 3 },
-    statistiques: {
-      ponte: 4,
-      incubation: 4,
-      energie: 5
-    }
+    stats: { intelligence: 4, energie: 2, charisme: 3 }
   },
   'poulette-rousse': {
     nom: 'Poulette Roussette',
@@ -29,12 +24,7 @@ export const especeData = {
     groupe: 'fondamental',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 2, energie: 5, charisme: 2 },
-    statistiques: {
-      ponte: 6,
-      incubation: 3,
-      energie: 4
-    }
+    stats: { intelligence: 2, energie: 5, charisme: 2 }
   },
   'noiraude': {
     nom: 'Noiraude',
@@ -44,12 +34,7 @@ export const especeData = {
     groupe: 'fondamental',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 2, energie: 3, charisme: 4 },
-    statistiques: {
-      ponte: 5,
-      incubation: 3,
-      energie: 4
-    }
+    stats: { intelligence: 2, energie: 3, charisme: 4 }
   },
   'argentine': {
     nom: 'Argentine',
@@ -59,12 +44,7 @@ export const especeData = {
     groupe: 'brillant',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 3, energie: 3, charisme: 3 },
-    statistiques: {
-      ponte: 8,
-      incubation: 2,
-      energie: 4
-    }
+    stats: { intelligence: 3, energie: 3, charisme: 3 }
   },
   'aubepine': {
     nom: 'Aubépine',
@@ -74,12 +54,7 @@ export const especeData = {
     groupe: 'brillant',
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 4, energie: 3, charisme: 2 },
-    statistiques: {
-      ponte: 7,
-      incubation: 4,
-      energie: 3
-    }
+    stats: { intelligence: 4, energie: 3, charisme: 2 }
   },
   'cendree': {
     nom: 'Cendrée',
@@ -89,12 +64,7 @@ export const especeData = {
     groupe: 'brillant',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 3, energie: 2, charisme: 4 },
-    statistiques: {
-      ponte: 5,
-      incubation: 5,
-      energie: 3
-    }
+    stats: { intelligence: 3, energie: 2, charisme: 4 }
   },
   'choco': {
     nom: 'Poulette choco',
@@ -104,12 +74,7 @@ export const especeData = {
     groupe: 'discret',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 1, energie: 4, charisme: 4 },
-    statistiques: {
-      ponte: 9,
-      incubation: 3,
-      energie: 2
-    }
+    stats: { intelligence: 1, energie: 4, charisme: 4 }
   },
   'ecailleuse': {
     nom: 'Écailleuse',
@@ -119,12 +84,7 @@ export const especeData = {
     groupe: 'discret',
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 3, energie: 4, charisme: 2 },
-    statistiques: {
-      ponte: 12,
-      incubation: 2,
-      energie: 1
-    }
+    stats: { intelligence: 3, energie: 4, charisme: 2 }
   },
   'grisette': {
     nom: 'Grisette',
@@ -134,12 +94,7 @@ export const especeData = {
     groupe: 'discret',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 5, energie: 1, charisme: 3 },
-    statistiques: {
-      ponte: 6,
-      incubation: 4,
-      energie: 4
-    }
+    stats: { intelligence: 5, energie: 1, charisme: 3 }
   },
   'queuedepaon': {
     nom: 'Queue de Paon',
@@ -149,12 +104,7 @@ export const especeData = {
     groupe: 'chic',
     categorie: 'eclosion',
     rarete: 'epique',
-    stats: { intelligence: 3, energie: 1, charisme: 5 },
-    statistiques: {
-      ponte: 15,
-      incubation: 1,
-      energie: 1
-    }
+    stats: { intelligence: 3, energie: 1, charisme: 5 }
   },
   'rayee': {
     nom: 'Rayée',
@@ -164,12 +114,7 @@ export const especeData = {
     groupe: 'chic',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 4, energie: 4, charisme: 1 },
-    statistiques: {
-      ponte: 10,
-      incubation: 2,
-      energie: 2
-    }
+    stats: { intelligence: 4, energie: 4, charisme: 1 }
   },
   'tachetee': {
     nom: 'Tachetée',
@@ -179,12 +124,7 @@ export const especeData = {
     groupe: 'chic',
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 4, energie: 1, charisme: 4 },
-    statistiques: {
-      ponte: 7,
-      incubation: 3,
-      energie: 3
-    }
+    stats: { intelligence: 4, energie: 1, charisme: 4 }
   }
 }
 
