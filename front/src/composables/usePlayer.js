@@ -5,6 +5,9 @@ const stockTokens = ref(0)
 const productionTokens = ref(0)
 const wildTokens = ref(0)
 const team = ref({ maxSlots: 3, slots: [] })
+const level = ref(1)
+const xp = ref(0)
+const xpRequired = ref(2)
 
 export function usePlayer() {
   async function refreshPlayer() {
@@ -26,6 +29,18 @@ export function usePlayer() {
         productionTokens.value = data.productionTokens || 0
         wildTokens.value = data.wildTokens || 0
       }
+
+      // Récupérer l'XP / level (API unifiée /api/user/me)
+      try {
+        const res2 = await fetch('/api/user/me', { headers: { Authorization: `Bearer ${token}` } })
+        if (res2.ok) {
+          const u = await res2.json()
+          level.value = u?.experience?.level ?? 1
+          xp.value = u?.experience?.points ?? 0
+          xpRequired.value = u?.experience?.required_points ?? 2
+          // Si on veut manter resources aussi depuis cette route, on pourrait synchroniser ici.
+        }
+      } catch (_) {}
     } catch (error) {
       console.error('Erreur lors de la récupération des données du joueur:', error)
     }
@@ -170,9 +185,7 @@ export function usePlayer() {
     }
   }
 
-  function getLevel() {
-    return 5
-  }
+  function getLevel() { return level.value }
 
   return {
     eggs,
@@ -180,6 +193,9 @@ export function usePlayer() {
     productionTokens,
     wildTokens,
     team,
+    level,
+    xp,
+    xpRequired,
     addEggs,
     spendEggs,
     setEggs,

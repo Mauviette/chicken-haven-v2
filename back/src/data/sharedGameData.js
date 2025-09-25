@@ -364,8 +364,8 @@ export const achievementsData = {
     objectif: 100,
     type: 'eggs',
     reward: {
-      type: 'eggs',
-      quantite: 25
+      type: 'blueberry',
+      quantite: 2
     }
   },
   'egg_master': {
@@ -376,8 +376,8 @@ export const achievementsData = {
     objectif: 1000,
     type: 'eggs',
     reward: {
-      type: 'eggs',
-      quantite: 100
+      type: 'blueberry',
+      quantite: 3
     }
   },
   'egg_king': {
@@ -388,8 +388,8 @@ export const achievementsData = {
     objectif: 10000,
     type: 'eggs',
     reward: {
-      type: 'eggs',
-      quantite: 1000
+      type: 'blueberry',
+      quantite: 4
     }
   },
   'first_chicken': {
@@ -400,8 +400,8 @@ export const achievementsData = {
     objectif: 1,
     type: 'chickens',
     reward: {
-      type: 'eggs',
-      quantite: 10
+      type: 'blueberry',
+      quantite: 1
     }
   },
   'chicken_collector': {
@@ -412,8 +412,8 @@ export const achievementsData = {
     objectif: 5,
     type: 'chickens',
     reward: {
-      type: 'stock_token',
-      quantite: 1
+      type: 'blueberry',
+      quantite: 2
     }
   }
 }

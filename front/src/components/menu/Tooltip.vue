@@ -11,6 +11,7 @@
       <div
         v-if="show"
         class="tooltip-box"
+        ref="tooltipEl"
         :style="{ top: `${position.top}px`, left: `${position.left}px` }"
         v-html="text"
       >
@@ -20,56 +21,99 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 
-defineProps({ text: String })
+const props = defineProps({
+  text: String,
+  position: { type: String, default: 'top' }, // 'top' | 'bottom' | 'left' | 'right'
+  followMouse: { type: Boolean, default: true },
+})
 
 const wrapper = ref(null)
 const show = ref(false)
 const position = ref({ top: 0, left: 0 })
+const tooltipEl = ref(null)
 
-const tooltipOffset = { x: 15, y: -10 } // Offset par rapport au curseur
+const tooltipOffset = { x: 15, y: 12 } // Offset par rapport au curseur (plus bas)
+
+function getTooltipSize() {
+  const rect = tooltipEl.value?.getBoundingClientRect?.()
+  if (rect) return { width: rect.width, height: rect.height }
+  // fallback si pas encore monté
+  return { width: 300, height: 100 }
+}
 
 function updateMousePosition(event) {
   if (!show.value) return
   
-  const tooltipHeight = 100 // estimation plus réaliste pour des descriptions longues
-  const tooltipWidth = 300 // estimation plus réaliste pour des descriptions
-  
-  let top = event.clientY + window.scrollY + tooltipOffset.y
-  let left = event.clientX + window.scrollX + tooltipOffset.x
-  
-  // Vérifier si le tooltip dépasse la fenêtre à droite
-  if (left + tooltipWidth > window.innerWidth + window.scrollX) {
-    left = event.clientX + window.scrollX - tooltipWidth - Math.abs(tooltipOffset.x)
+  const { width: tooltipWidth, height: tooltipHeight } = getTooltipSize()
+
+  let top
+  let left
+  const margin = 8
+
+  if (props.followMouse) {
+    // Suivi de la souris (coordonnées viewport)
+    top = event.clientY + tooltipOffset.y
+    left = event.clientX + tooltipOffset.x
+
+    // Clamp doux à l'écran sans "flip" brutal
+    if (left + tooltipWidth > window.innerWidth - margin) {
+      left = window.innerWidth - tooltipWidth - margin
+    }
+    if (left < margin) left = margin
+
+    if (top + tooltipHeight > window.innerHeight - margin) {
+      top = window.innerHeight - tooltipHeight - margin
+    }
+    if (top < margin) top = margin
+  } else {
+    // Ancré à l'élément: centré, selon props.position
+    const rect = wrapper.value?.getBoundingClientRect?.()
+    if (rect) {
+      const centerX = rect.left + rect.width / 2
+      const centerY = rect.top + rect.height / 2
+      switch ((props.position || 'top').toLowerCase()) {
+        case 'bottom':
+          top = rect.bottom + 8
+          left = centerX - tooltipWidth / 2
+          break
+        case 'left':
+          top = centerY - tooltipHeight / 2
+          left = rect.left - tooltipWidth - 8
+          break
+        case 'right':
+          top = centerY - tooltipHeight / 2
+          left = rect.right + 8
+          break
+        case 'top':
+        default:
+          top = rect.top - tooltipHeight - 8
+          left = centerX - tooltipWidth / 2
+      }
+      // Clamp à l'écran
+      if (left + tooltipWidth > window.innerWidth - margin) {
+        left = window.innerWidth - tooltipWidth - margin
+      }
+      if (left < margin) left = margin
+      if (top + tooltipHeight > window.innerHeight - margin) {
+        top = window.innerHeight - tooltipHeight - margin
+      }
+      if (top < margin) top = margin
+    } else {
+      // fallback: similaire à suivi souris
+      top = event.clientY + tooltipOffset.y
+      left = event.clientX + tooltipOffset.x
+    }
   }
-  
-  // Vérifier si le tooltip dépasse encore à gauche après correction
-  if (left < window.scrollX) {
-    left = window.scrollX + 10
-  }
-  
-  // Vérifier si le tooltip dépasse la fenêtre en haut
-  if (top < window.scrollY) {
-    top = event.clientY + window.scrollY + Math.abs(tooltipOffset.y) + 20
-  }
-  
-  // Vérifier si le tooltip dépasse la fenêtre en bas
-  if (top + tooltipHeight > window.innerHeight + window.scrollY) {
-    top = event.clientY + window.scrollY - tooltipHeight - Math.abs(tooltipOffset.y)
-  }
-  
-  // S'assurer que le tooltip reste visible même en cas de problème
-  if (top < window.scrollY) {
-    top = window.scrollY + 10
-  }
-  
+
   position.value = { top, left }
 }
 
 function handleMouseEnter(event) {
   show.value = true
-  updateMousePosition(event)
+  // Attendre que la tooltip soit montée pour mesurer sa taille réelle
+  nextTick(() => updateMousePosition(event))
 }
 
 function handleMouseLeave() {
@@ -77,14 +121,14 @@ function handleMouseLeave() {
 }
 
 function handleMouseMove(event) {
-  if (show.value) {
+  if (show.value && props.followMouse) {
     updateMousePosition(event)
   }
 }
 
 // Écouter les mouvements de souris globaux pour un suivi plus fluide
 function handleGlobalMouseMove(event) {
-  if (show.value) {
+  if (show.value && props.followMouse) {
     updateMousePosition(event)
   }
 }
@@ -108,7 +152,7 @@ onUnmounted(() => {
 }
 
 .tooltip-box {
-  position: absolute;
+  position: fixed;
   background: #fff9e5;
   color: #6d3c00;
   padding: 8px 12px;

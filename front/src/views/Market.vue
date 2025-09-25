@@ -144,6 +144,7 @@
     </div>
 
     <!-- Popup des résultats de boîte -->
+    <BoxOpenAnimation :show="showOpenAnim" :icon="currentBoxIcon" label="Ouverture de la boîte…" />
     <BoxResults
       :showResults="showBoxResults"
       :results="boxResults"
@@ -168,6 +169,7 @@ import { boxesData, getPossibleChickensFromBox, openBoxSimulation, groupes } fro
 import { getUpgradesWithCalculatedData, upgradeLevel } from '@/data/upgrades.js'
 import { formatPrice, achievementsData } from '@/data/items.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
+import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
 
 const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, canAfford, refreshPlayerData } = usePlayer()
 const { poules, refreshPoules } = usePoules()
@@ -185,6 +187,8 @@ const lastOpenedBoxName = ref('')
 
 // Boîtes disponibles depuis l'API
 const availableBoxes = ref([])
+const showOpenAnim = ref(false)
+const currentBoxIcon = ref('📦')
 
 // Configuration des onglets
 const tabs = [
@@ -332,9 +336,17 @@ const upgradeOffers = computed(() => getUpgradesWithCalculatedData())
 async function openBox(box) {
   try {
     console.log('Achat boîte:', box)
-    const result = await openBoxAPI(box.id)
+    // Lancer l'animation d'ouverture
+    currentBoxIcon.value = box.icon || '📦'
+    showOpenAnim.value = true
+
+    // Simuler un court délai pour laisser l'anim démarrer (si réseau ultra-rapide)
+    const minAnim = new Promise(res => setTimeout(res, 600))
+    const apiCall = openBoxAPI(box.id)
+    const result = await Promise.all([minAnim, apiCall]).then(([, r]) => r)
     
-    // Afficher les résultats
+  // Arrêter l'animation et afficher les résultats
+  showOpenAnim.value = false
     boxResults.value = result.results || []
     lastOpenedBoxName.value = box.name
     showBoxResults.value = true
@@ -359,12 +371,12 @@ async function openBox(box) {
       const newChickens = result.results.filter(r => r.isNew).length
       const totalChickens = result.results.length
       
-      let message = `🎉 Boîte ouverte ! ${totalChickens} poule${totalChickens > 1 ? 's' : ''} obtenue${totalChickens > 1 ? 's' : ''}`
-      if (newChickens > 0) {
-        message += ` (${newChickens} nouvelle${newChickens > 1 ? 's' : ''})`
-      }
-      
-      window.$toast && window.$toast(message, 'success')
+      //let message = `🎉 Boîte ouverte ! ${totalChickens} poule${totalChickens > 1 ? 's' : ''} obtenue${totalChickens > 1 ? 's' : ''}`
+      //if (newChickens > 0) {
+      //  message += ` (${newChickens} nouvelle${newChickens > 1 ? 's' : ''})`
+      //}
+      //
+      //window.$toast && window.$toast(message, 'success')
     } else {
       window.$toast && window.$toast('Aucune poule obtenue cette fois... 😢', 'warning')
     }
@@ -379,6 +391,7 @@ async function openBox(box) {
     
   } catch (error) {
     console.error('Erreur lors de l\'ouverture de la boîte:', error)
+    showOpenAnim.value = false
     window.$toast && window.$toast(
       error.message || 'Erreur lors de l\'ouverture de la boîte',
       'error'

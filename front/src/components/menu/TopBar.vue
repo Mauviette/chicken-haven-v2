@@ -8,9 +8,14 @@
             <span>🥚 {{ eggs }} œufs</span>
           </div>
         </Tooltip>
-        <button class="profile-btn" @click="openProfileMenu">
-          <img src="@/assets/ui/avatar-default.svg" class="avatar" />
-        </button>
+        <Tooltip :text="levelTooltipHtml()">
+          <button class="profile-btn" @click="openProfileMenu">
+            <div class="avatar-wrap">
+              <img src="@/assets/ui/avatar-default.svg" class="avatar" />
+              <span class="level-badge">{{ level }}</span>
+            </div>
+          </button>
+        </Tooltip>
       </div>
     </div>
   </div>
@@ -21,7 +26,7 @@
 import { usePlayer } from '@/composables/usePlayer'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { achievementsData } from '@/data/items.js'
-const { eggs } = usePlayer()
+const { eggs, level, xp, xpRequired } = usePlayer()
 
 const emit = defineEmits(['open-profile'])
 
@@ -30,6 +35,7 @@ function openProfileMenu() {
 }
 
 const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`
+const levelTooltipHtml = () => `<strong>Niveau ${level.value}</strong> (${xp.value}/${xpRequired.value}🫐)`
 </script>
 
 
@@ -92,6 +98,22 @@ const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCas
   background-color: white;
 }
 
+.avatar-wrap { position: relative; display: inline-block; }
+.level-badge {
+  position: absolute;
+  right: -4px;
+  bottom: 2px;
+  background: #7b61ff; /* violet myrtille */
+  color: white;
+  font-weight: bold;
+  border: 2px solid #fff;
+  font-size: 12px;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px; /* plus rond */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
 @media (max-width: 600px) {
   .top-bar-inner {
     padding: 0 10px;
@@ -109,6 +131,11 @@ const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCas
   .avatar {
     width: 26px;
     height: 26px;
+  }
+  .level-badge {
+    font-size: 10px;
+    right: -4px;
+    bottom: 2px;
   }
 }
 
