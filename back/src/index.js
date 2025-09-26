@@ -12,6 +12,7 @@ import gameDataRoutes from './routes/gameData.routes.js'
 import teamRoutes from './routes/team.routes.js'
 import userRoutes from './routes/user.routes.js'
 import upgradesRoutes from './routes/upgrades.routes.js'
+import talentRoutes from './routes/talent.routes.js'
 
 dotenv.config()
 const app = express()
@@ -34,6 +35,7 @@ app.use('/api/game-data', gameDataRoutes)
 app.use('/api/team', teamRoutes)
 app.use('/api/user', userRoutes)
 app.use('/api/upgrades', upgradesRoutes)
+app.use('/api/talent', talentRoutes)
 
 app.get('/', (req, res) => {
   res.send('API Chicken Haven OK 🐔')

@@ -16,12 +16,12 @@
   <AchievementsMenu v-if="!isAuthPage" :visible="showAchievements" @close="showAchievements = false" />
     <BottomBar
       v-if="!isAuthPage"
-      @open-production="router.push('/production')"
-      @open-market="router.push('/market')"
-      @open-collection="router.push('/collection')"
+      @open-production="goProduction"
+      @open-market="goMarket"
+      @open-collection="goCollection"
       @open-help="toast('Bientôt disponible !')"
-      @open-options="showOptions = true"
-      @open-achievements="toggleAchievements"
+      @open-options="openOptions"
+      @open-achievements="toggleAchievementsWithSound"
     />
   </div>
 </template>
@@ -41,6 +41,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
 import { useDataSync } from '@/composables/useDataSync'
+import { useSound } from '@/composables/useSound'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -52,6 +53,7 @@ const levelUpTo = ref(1)
 const { logout: performLogout } = useAuth()
 const { refreshPlayer, fetchTeam } = usePlayer()
 const { syncStatus } = useDataSync()
+const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = useSound()
 
 onMounted(async () => {
   window.$toast = toast
@@ -98,6 +100,8 @@ function onLevelUp(e) {
     levelUpFrom.value = from
     levelUpTo.value = to
     levelUpVisible.value = true
+    // Son de level up
+    sndAchievement()
     // Pas de toast ici (demandé)
   }
 }
@@ -105,6 +109,7 @@ function onLevelUp(e) {
 
 function toast(message, type = 'info') {
   if (toastManager.value?.showToast) {
+    toastSound(type)
     toastManager.value.showToast(message, type)
   } else {
     console.warn('Système de pop-ups pas prêt :', message)
@@ -115,6 +120,25 @@ const route = useRoute()
 
 // Vérifie si la route actuelle est la page de connexion
 const isAuthPage = computed(() => route.name === 'Auth')
+
+// Handlers avec sons
+function goProduction() {
+  click(); router.push('/production')
+}
+function goMarket() {
+  click(); router.push('/market')
+}
+function goCollection() {
+  click(); router.push('/collection')
+}
+function openOptions() {
+  sndOpen(); showOptions.value = true
+}
+function toggleAchievementsWithSound() {
+  const opening = !showAchievements.value
+  showAchievements.value = !showAchievements.value
+  opening ? sndOpen() : sndClose()
+}
 </script>
 
 <style>

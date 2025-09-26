@@ -1,7 +1,7 @@
 <template>
   <!-- Conteneur acteur positionné relativement à la scène (parent .stage) -->
   <div class="actor" :style="{ left: x + 'px' }">
-    <Tooltip :text="tooltipHtml">
+    <Tooltip :text="tooltipHtml" :key="tooltipHtml">
       <img
         v-if="currentImg"
         :src="currentImg"
@@ -102,10 +102,12 @@ function emitOpenDetail() {
 }
 
 // Tooltip combinant nom en gras + effet du talent
-const { especies } = usePoules()
+const { especies, poules, getTalentEffectSync } = usePoules()
 
 const tooltipHtml = computed(() => {
-  const effect = props.talentEffect || ''
+  // Toujours recalculer l'effet avec le niveau courant depuis le store
+  const p = (poules.value || []).find(pp => pp.especeId === props.especeId)
+  const effect = p ? (getTalentEffectSync(p) || '') : (props.talentEffect || '')
   const title = props.name ? `<strong>${props.name}</strong>` : ''
   const st = especies.value?.[props.especeId]?.stats || {}
 

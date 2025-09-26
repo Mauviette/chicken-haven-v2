@@ -14,6 +14,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useSound } from '@/composables/useSound'
 
 const props = defineProps({
   hasBottomBar: Boolean
@@ -21,6 +22,7 @@ const props = defineProps({
 
 const toasts = ref([])
 const bottomOffset = ref(100)
+const { toast: toastSound, close: sndClose } = useSound()
 
 const emojiMap = {
   success: '✅',
@@ -30,12 +32,15 @@ const emojiMap = {
   chicken: '🐔',
   'team-add': '➕🐔',
   'team-remove': '➖🐔',
-  achievement : '🏆'
+  achievement : '🏆',
+  lucky : '🍀',
 }
 
 function showToast(message, type = 'info', duration = 5000) {
   const id = Date.now() + Math.random()
   toasts.value.push({ id, message, type })
+  // Son de toast à l'apparition
+  toastSound(type)
 
   setTimeout(() => {
     const toastIndex = toasts.value.findIndex(t => t.id === id)
@@ -52,6 +57,8 @@ function showToast(message, type = 'info', duration = 5000) {
 }
 
 function removeToast(id) {
+  // Son de fermeture
+  sndClose()
   toasts.value = toasts.value.filter(t => t.id !== id)
 }
 

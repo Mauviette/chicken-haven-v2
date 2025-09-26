@@ -2,7 +2,7 @@
     <button
       class="action-button"
       :class="{ active, disabled }"
-      @click="!disabled && onClick()"
+      @click="handleClick"
       :disabled="disabled"
     >
       <slot></slot>
@@ -10,11 +10,19 @@
   </template>
   
   <script setup>
-  defineProps({
+  import { useSound } from '@/composables/useSound'
+  const props = defineProps({
     onClick: Function,
     disabled: Boolean,
     active: Boolean
   })
+  const { click } = useSound()
+  function handleClick() {
+    if (props.disabled) return
+    // Jouer un clic avant d'exécuter le callback
+    click()
+    props.onClick && props.onClick()
+  }
   </script>
   
   <style>

@@ -1,0 +1,69 @@
+import User from '../models/User.js'
+import { especeData, talentsData, talentLevelUpgradeCost } from '../data/sharedGameData.js'
+
+function getTalentForEspece(especeId) {
+  const e = especeData[especeId]
+  return e?.talent || null
+}
+
+function getCostForNextLevel(poule) {
+  const talentName = getTalentForEspece(poule.especeId)
+  if (!talentName) return null
+  const tInfo = talentsData[talentName] || {}
+  const nivType = tInfo.nivType || 'basic'
+  const rules = talentLevelUpgradeCost[nivType]
+  if (!rules) return null
+  const current = Number(poule.niveauTalent || 1)
+  const nextLevel = current + 1
+  if (rules.limit && nextLevel > rules.limit) return { maxed: true }
+  const egg = rules.egg_cost?.[current - 1] ?? null
+  const chicken = rules.chicken_cost?.[current - 1] ?? null
+  if (egg == null || chicken == null) return null
+  return { egg_cost: Number(egg), chicken_cost: Number(chicken) }
+}
+
+export async function upgradeTalent(req, res) {
+  try {
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    const { especeId } = req.body || {}
+    if (!especeId) return res.status(400).json({ error: 'especeId requis' })
+
+    const poule = (user.poulesPossedees || []).find(p => p.especeId === especeId)
+    if (!poule) return res.status(404).json({ error: 'Poule non trouvée' })
+
+    // Règles de coûts selon le type de talent
+    const cost = getCostForNextLevel(poule)
+    if (!cost) return res.status(400).json({ error: 'Coût indisponible' })
+    if (cost.maxed) return res.status(400).json({ error: 'Niveau de talent maximum atteint' })
+
+    // Vérifs ressources: oeufs et poules
+    const eggs = Number(user.resources?.eggs || 0)
+    const qty = Number(poule.quantite || 0)
+    const neededChickens = Number(cost.chicken_cost || 0) + 1
+    if (eggs < cost.egg_cost) return res.status(400).json({ error: 'Œufs insuffisants' })
+    if (qty < neededChickens) return res.status(400).json({ error: 'Poules insuffisantes' })
+
+    // Déductions et upgrade
+    user.resources.eggs = eggs - Number(cost.egg_cost)
+    poule.quantite = qty - neededChickens
+    poule.niveauTalent = Number(poule.niveauTalent || 1) + 1
+
+    await user.save()
+
+    // Calculer prochain coût pour l'UI
+    const nextCost = getCostForNextLevel(poule)
+
+    return res.json({
+      success: true,
+      poule: { especeId: poule.especeId, quantite: poule.quantite, niveauTalent: poule.niveauTalent },
+      resources: user.resources,
+      nextCost: nextCost && !nextCost.maxed ? nextCost : null,
+      maxed: !!(nextCost && nextCost.maxed)
+    })
+  } catch (err) {
+    console.error('upgradeTalent error:', err)
+    return res.status(500).json({ error: 'Erreur serveur' })
+  }
+}

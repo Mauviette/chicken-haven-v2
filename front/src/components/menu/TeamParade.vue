@@ -3,7 +3,7 @@
     <div class="stage">
       <TeamParadeChicken
         v-for="(e, i) in entries"
-        :key="i"
+        :key="e.especeId + '-' + e.level"
         :especeId="e.especeId"
         :name="e.name"
         :talentEffect="e.talentEffect"
@@ -21,7 +21,8 @@
         :poule="selectedPoule"
         :espece="especeData[selectedPoule.especeId]"
         :image="getImage(selectedPoule.especeId)"
-        @close="selectedPoule = null"
+        @close="handleCloseDetail"
+        @updated="handleDetailUpdated"
       />
     </Teleport>
   </div>
@@ -173,6 +174,7 @@ const entries = computed(() => {
       especeId: s.especeId,
       name: info?.nom || s.especeId,
       talentEffect,
+      level: getTalentLevel(poule) || 0,
       // Buffs par membre agrégés (utilisés par le tooltip enfant)
       statBuffs: { ...buffsPerMember },
       images: findAnim(s.especeId),
@@ -215,6 +217,22 @@ function handleOpenDetail(especeId) {
     // fallback précédent: navigation vers la Collection si la donnée n'est pas encore dispo
     router.push({ path: '/collection', query: { detail: especeId } })
   }
+}
+
+function handleDetailUpdated() {
+  // Rechercher la poule fraîche dans la source (poules.value est réactif et mis à jour par upgradeTalent)
+  if (!selectedPoule.value) return
+  const id = selectedPoule.value.especeId
+  const fresh = (poules.value || []).find(pp => pp.especeId === id)
+  if (fresh) {
+    // Remplacer la référence pour forcer le rerender du composant enfant
+    selectedPoule.value = { ...fresh }
+  }
+}
+
+function handleCloseDetail() {
+  // En fermant, on nettoie la sélection
+  selectedPoule.value = null
 }
 </script>
 

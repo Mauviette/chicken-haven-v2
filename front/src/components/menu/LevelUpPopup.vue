@@ -39,6 +39,7 @@
 
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
 import Tooltip from '@/components/menu/Tooltip.vue'
 const props = defineProps({
@@ -47,8 +48,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
+const { achievement: sndAchievement, close: sndClose } = useSound()
 
 function close() {
+  sndClose()
   emit('close')
 }
 
@@ -81,6 +84,8 @@ function launchConfetti() {
 
 onMounted(() => {
   launchConfetti()
+  // Son de réussite/level-up à l'ouverture
+  sndAchievement()
 })
 
 onBeforeUnmount(() => {

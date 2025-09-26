@@ -2,15 +2,24 @@
   <button
     class="buy-button"
     :class="{ disabled }"
-    @click="!disabled && onClick()"
+    @click="handleClick"
     :disabled="disabled"
+    :title="title || ''"
   >
     <div class="button-content">
       <span class="button-text">
         <slot></slot>
       </span>
-      <div class="price-display" v-if="price">
-        <span class="price-icon">{{ getPriceIcon() }}</span>
+      <template v-if="Array.isArray(price)">
+        <div class="price-list">
+          <div v-for="(p, idx) in price" :key="idx" class="price-display">
+            <span class="price-icon">{{ p._iconOverride || getPriceIcon(p) }}</span>
+            <span class="price-amount">{{ p.count || p }}</span>
+          </div>
+        </div>
+      </template>
+      <div class="price-display" v-else-if="price">
+        <span class="price-icon">{{ getPriceIcon(price) }}</span>
         <span class="price-amount">{{ price.count || price }}</span>
       </div>
     </div>
@@ -19,19 +28,31 @@
 
 <script setup>
 import { getResourceIcon } from '@/data/items.js'
+import { useSound } from '@/composables/useSound'
 
 const props = defineProps({
   onClick: Function,
   disabled: Boolean,
-  price: [Object, Number] // Peut être un nombre (œufs) ou un objet { type: 'eggs|stock_token|production_token', count: number }
+  price: [Object, Number, Array], // Peut être un nombre, un objet { type, count } ou un tableau de prix
+  title: String
 })
 
-function getPriceIcon() {
-  if (typeof props.price === 'number') {
+const { click } = useSound()
+
+function handleClick() {
+  if (props.disabled) return
+  click()
+  props.onClick && props.onClick()
+}
+
+function getPriceIcon(price = props.price) {
+  if (typeof price === 'number') {
     return getResourceIcon('eggs')
   }
-  
-  return getResourceIcon(props.price.type) || getResourceIcon('eggs')
+  if (price && typeof price === 'object' && price.type) {
+    return getResourceIcon(price.type) || getResourceIcon('eggs')
+  }
+  return getResourceIcon('eggs')
 }
 </script>
 
@@ -66,12 +87,8 @@ function getPriceIcon() {
   opacity: 0.7;
 }
 
-.button-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
+.button-content { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.price-list { display: flex; flex-direction: row; align-items: center; gap: 6px; }
 
 .button-text {
   font-weight: bold;

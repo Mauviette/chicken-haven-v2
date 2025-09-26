@@ -8,8 +8,17 @@
   </template>
   
   <script setup>
+  import { onMounted } from 'vue'
+  import { useSound } from '@/composables/useSound'
   const emit = defineEmits(['close'])
+  const { open, close } = useSound()
+  onMounted(() => {
+    // Son d'ouverture du popup
+    open()
+  })
   function emitClose() {
+    // Son de fermeture du popup
+    close()
     emit('close')
   }
   </script>

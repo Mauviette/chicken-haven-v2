@@ -9,7 +9,7 @@
               {{ espece.nom }}
             </h2>
             <div style="font-size:16px; color:#ffd58f; margin-left:8px; margin-top: 1px;">
-              ×{{ poule.quantite }}
+              ×{{ currentPoule?.quantite ?? poule?.quantite }}
             </div>
             </div>
 
@@ -22,11 +22,13 @@
       <div class="section">
         <div class="label">Talent</div>
         <div class="value">
-          <Tooltip :text="getTalentEffect(poule)" >      
-            {{ getTalentDisplayName(poule) }}
+          <Tooltip :text="getTalentEffect(currentPoule || poule)" >      
+            {{ getTalentDisplayName(currentPoule || poule) }}
           </Tooltip>
         </div>
       </div>
+
+      <!-- La section coûts intégrée dans le bouton d'action plus bas -->
 
       <div class="section stats-section">
         <div class="stat-line">
@@ -43,9 +45,23 @@
         </div>
       </div>
 
-      <div class="actions">
-        <button v-if="!inTeam" class="btn equip" @click="onEquip">Équiper dans l'équipe</button>
-        <button v-else class="btn unequip" @click="onUnequip">Retirer de l'équipe</button>
+      <div class="actions" style="justify-content: space-between; align-items:center;">
+            <div>
+              <!-- Toujours utiliser la Tooltip custom: affiche ressources manquantes et/ou effet du prochain niveau -->
+              <Tooltip v-if="nextCost && !maxed" :text="upgradeTooltipText" :followMouse="true">
+                <BuyButton
+                  :onClick="onUpgrade"
+                  :disabled="!canUpgrade || upgrading"
+                  :price="upgradePrices"
+                >
+                  {{ upgrading ? '...' : 'Améliorer' }}
+                </BuyButton>
+              </Tooltip>
+            </div>
+        <div>
+          <button v-if="!inTeam" class="btn equip" @click="onEquip">Équiper dans l'équipe</button>
+          <button v-else class="btn unequip" @click="onUnequip">Retirer de l'équipe</button>
+        </div>
       </div>
 
 
@@ -61,12 +77,14 @@
 
 <script setup>
 import Popup from '@/components/menu/Popup.vue'
+import BuyButton from '@/components/menu/BuyButton.vue'
 import Tooltip from '../menu/Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
 import { usePlayer } from '@/composables/usePlayer'
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useSound } from '@/composables/useSound'
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'updated'])
 
 const props = defineProps({
   poule: Object,
@@ -75,8 +93,9 @@ const props = defineProps({
   quantite: Number
 })
 
-const { getTalentDisplayNameSync, getTalentEffectSync } = usePoules()
-const { isInTeam, equipChicken, unequipChicken } = usePlayer()
+const { getTalentDisplayNameSync, getTalentEffectSync, getTalentNextCost, upgradeTalent, poules } = usePoules()
+const { isInTeam, equipChicken, unequipChicken, eggs } = usePlayer()
+const { click, confirm, close: sndClose } = useSound()
 
 function getTalentDisplayName(poule) {
   return getTalentDisplayNameSync(poule)
@@ -117,29 +136,113 @@ function renderStars(n) {
   return full + empty
 }
 
-const inTeam = computed(() => isInTeam(props.poule?.especeId))
+// Toujours récupérer une version fraîche de la poule depuis le store pour refléter les upgrades
+const currentPoule = computed(() => {
+  const id = props.poule?.especeId
+  if (!id) return props.poule
+  const found = (poules.value || []).find(p => p.especeId === id)
+  return found || props.poule
+})
+
+const inTeam = computed(() => isInTeam(currentPoule.value?.especeId))
+
+const upgrading = ref(false)
+const nextCost = computed(() => getTalentNextCost(currentPoule.value))
+const maxed = computed(() => !nextCost.value)
+const upgradePrices = computed(() => {
+  if (!nextCost.value) return null
+  return [
+    { type: 'eggs', count: nextCost.value.egg_cost },
+    // On utilise un faux type pour l'icône poule; BuyButton s'attend à un type connu
+    // On affichera l'icône via eggs si inconnu; mais mieux: remap vers un montant textuel avec poule
+    { type: 'eggs', count: nextCost.value.chicken_cost + 1, _iconOverride: '🐔' }
+  ]
+})
+const canUpgrade = computed(() => {
+  const cost = nextCost.value
+  const p = currentPoule.value
+  if (!cost || !p) return false
+  const needChickens = Number(cost.chicken_cost || 0) + 1
+  const hasEggs = Number(eggs?.value ?? 0) >= Number(cost.egg_cost || 0)
+  const hasChickens = Number(p.quantite || 0) >= needChickens
+  return hasEggs && hasChickens
+})
+
+const missingTooltip = computed(() => {
+  const cost = nextCost.value
+  const p = currentPoule.value
+  if (!cost || !p) return ''
+  const needChickens = Number(cost.chicken_cost || 0) + 1
+  const haveEggs = Number(eggs?.value ?? 0)
+  const haveChickens = Number(p.quantite || 0)
+  const missing = []
+  if (haveEggs < Number(cost.egg_cost || 0)) missing.push(`🥚 Il manque ${Number(cost.egg_cost) - haveEggs} œufs`)
+  if (haveChickens < needChickens) missing.push(`🐔 Il manque ${needChickens - haveChickens} poule(s) de cette espèce`)
+  return missing.length ? missing.join('<br/>') : ''
+})
+
+// Effet du prochain niveau (hover)
+const nextEffectText = computed(() => {
+  try {
+    if (!nextCost.value) return ''
+    const base = currentPoule.value
+    if (!base) return ''
+    const clone = { ...base, niveauTalent: (base?.niveauTalent || 1) + 1 }
+    return getTalentEffectSync(clone)
+  } catch (_) { return '' }
+})
+
+// Texte de tooltip pour le bouton d'upgrade (fusion: manquants + prochain niveau)
+const upgradeTooltipText = computed(() => {
+  if (maxed.value || !nextCost.value) return ''
+  const parts = []
+  if (!canUpgrade.value) {
+    const miss = missingTooltip.value
+    if (miss) parts.push(miss)
+  }
+  const next = nextEffectText.value
+  if (next) parts.push(`<em>Prochain niveau</em> : ${next}`)
+  return parts.join('<br/>')
+})
 
 async function onEquip() {
-  if (!props.poule || props.poule.quantite <= 0) return
-  const ok = await equipChicken(props.poule.especeId)
+  if (!currentPoule.value || currentPoule.value.quantite <= 0) return
+  const ok = await equipChicken(currentPoule.value.especeId)
   if (ok) {
-    const name = props.espece?.nom || props.poule.especeId
+    const name = props.espece?.nom || currentPoule.value.especeId
     window.$toast?.(`${name} équipée`, 'team-add')
     // Certains flux d'achat équipent immédiatement : rafraîchir succès
-    try { window.dispatchEvent(new CustomEvent('chicken-bought', { detail: { especeId: props.poule.especeId } })) } catch (_) {}
+    try { window.dispatchEvent(new CustomEvent('chicken-bought', { detail: { especeId: currentPoule.value.especeId } })) } catch (_) {}
   } else {
     window.$toast?.("Impossible d'équiper.", 'error')
   }
 }
 
 async function onUnequip() {
-  if (!props.poule) return
-  const ok = await unequipChicken(props.poule.especeId)
+  if (!currentPoule.value) return
+  const ok = await unequipChicken(currentPoule.value.especeId)
   if (ok) {
-    const name = props.espece?.nom || props.poule.especeId
+    const name = props.espece?.nom || currentPoule.value.especeId
     window.$toast?.(`${name} retirée de l'équipe`, 'team-remove')
   } else {
     window.$toast?.('Action impossible.', 'error')
+  }
+}
+
+async function onUpgrade() {
+  if (!canUpgrade.value || upgrading.value) return
+  upgrading.value = true
+  try {
+    click()
+  const ok = await upgradeTalent(currentPoule.value || props.poule)
+    if (ok) {
+      confirm()
+      // Notifier le parent pour resynchroniser la poule (si la référence a changé)
+      emit('updated')
+    }
+    else sndClose()
+  } finally {
+    upgrading.value = false
   }
 }
 
@@ -271,6 +374,7 @@ async function onUnequip() {
 
 .btn.equip { background: #e9ffe6; border-color: #8ed68b; }
 .btn.unequip { background: #fff1f1; border-color: #ffb3b3; }
+.btn.upgrade { background: #e6f3ff; border-color: #8bb4d6; }
 
 .loading-detail {
   display: flex;

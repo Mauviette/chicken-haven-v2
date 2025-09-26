@@ -1,5 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useGameData } from './useGameData.js'
+import { usePlayer } from './usePlayer.js'
 
 const chickenImages = import.meta.glob('@/assets/chickens/**/basic.png', { eager: true })
 const hiddenImage = chickenImages['/src/assets/chickens/hidden/basic.png']?.default || ''
@@ -288,33 +289,36 @@ export function getTalentDisplayName(poule) {
   }
 }
 
-export function usePoules() {
-  const rawPoules = ref([])
-  const loading = ref(true)
-  
-  // Utiliser les données synchronisées
-  const { especies, talents, getEspeceInfo, getTalentInfo } = useGameData()
+// Singleton d'état partagé entre tous les appels à usePoules()
+const rawPoules = ref([])
+const loading = ref(true)
 
-  async function fetchPoules() {
-    try {
-      const token = localStorage.getItem('token')
-      
-      const res = await fetch('/api/poules', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      
-      const data = await res.json()
-      rawPoules.value = data
-    } catch (err) {
-      console.error('Erreur chargement poules:', err)
-    } finally {
-      loading.value = false
-    }
+async function fetchPoulesSingleton() {
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch('/api/poules', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const data = await res.json()
+    rawPoules.value = Array.isArray(data) ? data : []
+  } catch (err) {
+    console.error('Erreur chargement poules:', err)
+  } finally {
+    loading.value = false
   }
+}
 
-  onMounted(fetchPoules)
+export function usePoules() {
+  // Utiliser les données synchronisées
+  const { especies, talents, getEspeceInfo, getTalentInfo, talentLevelUpgradeCost } = useGameData()
+  const { refreshPlayer } = usePlayer()
+
+  // Charger une seule fois (les montages suivants ne rechargeront pas si déjà fait)
+  onMounted(() => {
+    if (!rawPoules.value || rawPoules.value.length === 0) {
+      fetchPoulesSingleton()
+    }
+  })
 
   const poules = computed(() => {
     // Accéder correctement aux données d'espèces
@@ -369,19 +373,79 @@ export function usePoules() {
   }
 
   function canUpgradeTalent(poule) {
-    const especiesData = especies.value || {}
-    const talentsData = talents.value || {}
-    const espece = especiesData[poule.especeId]
-    const talentInfo = talentsData[espece?.talent]
-    const max = talentInfo?.maxNiveau || 1
-    return isTalentUnlocked(poule) && getTalentLevel(poule) < max
+    if (!isTalentUnlocked(poule)) return false
+    const cost = getTalentNextCost(poule)
+    if (!cost || cost.maxed) return false
+    return true
   }
 
-  function upgradeTalent(poule) {
-    if (!canUpgradeTalent(poule)) return false
-    poule.niveauTalent = (poule.niveauTalent || 0) + 1
-    // Ici, tu peux ajouter un appel API pour sauvegarder la montée de niveau côté serveur
-    return true
+  // Calcule le coût courant côté client selon gameData (pour affichage)
+  function getTalentNextCost(poule) {
+    try {
+      const tName = (especies.value?.[poule.especeId]?.talent) || null
+      const tInfo = talents.value?.[tName] || {}
+      const nivType = tInfo?.nivType || 'basic'
+      const table = talentLevelUpgradeCost.value || null
+      if (!table || !table[nivType]) return null
+      const current = Number(poule.niveauTalent || 1)
+      const next = current + 1
+      const limit = Number(table[nivType].limit || 0)
+      if (limit && next > limit) return { maxed: true }
+      const egg_cost = table[nivType].egg_cost?.[current - 1]
+      const chicken_cost = table[nivType].chicken_cost?.[current - 1]
+      if (egg_cost == null || chicken_cost == null) return null
+      return { egg_cost: Number(egg_cost), chicken_cost: Number(chicken_cost) }
+    } catch (_) { return null }
+  }
+
+  async function upgradeTalent(poule) {
+    try {
+      if (!canUpgradeTalent(poule)) return false
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/talent/upgrade', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ especeId: poule.especeId })
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        window.$toast?.(data.error || 'Amélioration impossible', 'error')
+        return false
+      }
+      // appliquer retour serveur
+      const idx = rawPoules.value.findIndex(p => p.especeId === poule.especeId)
+      if (idx !== -1) rawPoules.value[idx] = { ...rawPoules.value[idx], ...data.poule }
+      await refreshPlayer()
+      window.$toast?.('Talent amélioré !', 'success')
+      return true
+    } catch (e) {
+      console.error('upgradeTalent client error:', e)
+      window.$toast?.('Erreur réseau', 'error')
+      return false
+    }
+  }
+
+  // Efface le flag "new" pour une espèce donnée (réactif + persistance best-effort)
+  async function clearNew(especeId) {
+    if (!especeId) return
+    const idx = rawPoules.value.findIndex(p => p.especeId === especeId)
+    if (idx !== -1 && rawPoules.value[idx]?.new) {
+      rawPoules.value[idx] = { ...rawPoules.value[idx], new: false }
+    }
+    try {
+      const token = localStorage.getItem('token')
+      await fetch(`/api/poules/${encodeURIComponent(especeId)}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ new: false })
+      })
+    } catch (_) { /* best-effort */ }
   }
 
   // Versions composable des fonctions de talent (utilisent les données synchronisées)
@@ -499,8 +563,9 @@ export function usePoules() {
     getTalent,
     getCategorie,
     hiddenImage,
-    fetchPoules,
-    refreshPoules: fetchPoules, // Alias pour compatibilité
+  fetchPoules: fetchPoulesSingleton,
+  refreshPoules: fetchPoulesSingleton, // Alias pour compatibilité
+  clearNew,
     // Système de talents :
     getTalentInfo: getTalentInfoLocal,
     getTalentLevel,
@@ -510,6 +575,7 @@ export function usePoules() {
     getIcon,
     getTalentDisplayName,
     getTalentLevelRoman,
+  getTalentNextCost,
     // Versions synchronisées (à utiliser dans les composants)
     getTalentEffectSync,
     getTalentDisplayNameSync,

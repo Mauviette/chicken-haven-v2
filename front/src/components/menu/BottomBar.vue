@@ -26,13 +26,20 @@
         🛒 Marché
       </ActionButton>
 
-      <ActionButton
-        :onClick="() => emit('open-collection')"
-        :disabled="route.path === '/collection'"
-        :active="route.path === '/collection'"
-      >
-        🐔 Collection
-      </ActionButton>
+      <div class="badge-wrapper collection-button">
+        <ActionButton
+          :onClick="() => emit('open-collection')"
+          :disabled="route.path === '/collection'"
+          :active="route.path === '/collection'"
+        >
+          🐔 Collection
+        </ActionButton>
+        <span
+          v-if="hasNewChicken"
+          class="badge-dot badge-dot--red"
+          title="Nouvelle poule dans la collection"
+        ></span>
+      </div>
 
       <!--ActionButton
         :onClick="() => emit('open-help')"
@@ -62,6 +69,7 @@ import { onMounted, onUnmounted, computed } from 'vue'
 import { useAchievements } from '@/composables/useAchievements'
 import { usePlayer } from '@/composables/usePlayer'
 import { useGameData } from '@/composables/useGameData'
+import { usePoules } from '@/composables/usePoules'
 const route = useRoute()
 
 const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help', 'open-options', 'open-achievements'])
@@ -94,6 +102,7 @@ onUnmounted(() => {
 // Marché déverrouillé à partir du niveau défini dans les données centralisées
 const { level } = usePlayer()
 const { levelUnlocks } = useGameData()
+const { poules } = usePoules()
 const isMarketUnlocked = computed(() => {
   // Cherche si le marché est présent dans les unlocks du niveau courant
   // Si le joueur est au niveau N, on considère qu'il a déjà franchi les niveaux < = N
@@ -105,6 +114,9 @@ const isMarketUnlocked = computed(() => {
   }
   return false
 })
+
+// Badge rouge sur Collection si nouvelle poule
+const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
 </script>
 
   <style scoped>
@@ -158,6 +170,12 @@ const isMarketUnlocked = computed(() => {
     box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
     pointer-events: none;
     z-index: 2;
+  }
+
+  .badge-dot--red {
+    background-color: #e53935;
+    box-shadow: 0 0 6px rgba(229, 57, 53, 0.8);
+    border-color: #8B0000;
   }
 
   .bottom-bar button {

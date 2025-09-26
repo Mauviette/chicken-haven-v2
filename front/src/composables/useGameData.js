@@ -42,10 +42,11 @@ export function useGameData() {
         throw new Error(result.error || 'Erreur lors de la récupération des données')
       }
 
-      // Mettre à jour les données
+  // Mettre à jour les données
       gameData.value = result.data
       dataVersion.value = result.data.version
       lastUpdated.value = result.data.lastUpdated
+  try { if (typeof window !== 'undefined') window.__gameDataCache = result.data } catch (_) {}
       
       // Mettre à jour le cache
       cachedData = result.data
@@ -94,6 +95,7 @@ export function useGameData() {
   const talents = computed(() => gameData.value?.talents || {})
   const boxes = computed(() => gameData.value?.boxes || [])
   const upgrades = computed(() => gameData.value?.upgrades || [])
+  const talentLevelUpgradeCost = computed(() => gameData.value?.talentLevelUpgradeCost || {})
   const levelUnlocks = computed(() => gameData.value?.levelUnlocks || {})
   const achievements = computed(() => gameData.value?.achievements || {})
   const items = computed(() => gameData.value?.items || {})
@@ -199,6 +201,7 @@ export function useGameData() {
     talents,
     boxes,
   upgrades,
+  talentLevelUpgradeCost,
     achievements,
     items,
     categories,

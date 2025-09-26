@@ -31,7 +31,7 @@
         v-for="tab in tabs" 
         :key="tab.id"
         :class="['tab-button', { active: activeTab === tab.id }]"
-        @click="activeTab = tab.id"
+        @click="switchTab(tab.id)"
       >
         {{ tab.icon }} {{ tab.name }}
       </button>
@@ -159,6 +159,7 @@ import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
 import { useBoxes } from '@/composables/useBoxes'
 import { useAchievements } from '@/composables/useAchievements'
+import { useSound } from '@/composables/useSound'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
 
@@ -175,9 +176,16 @@ const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes
 const { checkAchievements } = useAchievements()
 const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades } = useGameData()
 const router = useRouter()
+const { click, open: sndOpen, close: sndClose, confirm: sndConfirm, boxOpen: sndBoxOpen, boxResults: sndBoxResults } = useSound()
 
 // État des onglets
 const activeTab = ref('boxes')
+function switchTab(id) {
+  if (activeTab.value !== id) {
+    click()
+    activeTab.value = id
+  }
+}
 
 // État des popups
 const showBoxResults = ref(false)
@@ -394,17 +402,21 @@ async function openBox(box) {
     console.log('Achat boîte:', box)
     // Lancer l'animation d'ouverture
     currentBoxIcon.value = box.icon || '📦'
-    showOpenAnim.value = true
+  showOpenAnim.value = true
+  // Son pendant l'ouverture (error_004.mp3 demandé) – déclenche immédiatement
+  sndBoxOpen(0.95)
 
     // Simuler un court délai pour laisser l'anim démarrer (si réseau ultra-rapide)
     const minAnim = new Promise(res => setTimeout(res, 600))
     const apiCall = openBoxAPI(box.id)
     const result = await Promise.all([minAnim, apiCall]).then(([, r]) => r)
     
-  // Arrêter l'animation et afficher les résultats
+  // Arrêter l'animation et préparer l'affichage des résultats
   showOpenAnim.value = false
     boxResults.value = result.results || []
     lastOpenedBoxName.value = box.name
+  // Son des résultats de la boîte (chicken-results.mp3 demandé) – juste avant affichage
+  sndBoxResults(0.9)
     showBoxResults.value = true
     
     // Rafraîchir les données du joueur
@@ -491,6 +503,7 @@ async function buyUpgrade(upgrade) {
 }
 
 function closeBoxResults() {
+  sndClose()
   showBoxResults.value = false
   boxResults.value = []
   lastOpenedBoxName.value = ''

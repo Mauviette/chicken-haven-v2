@@ -27,7 +27,7 @@ import { usePlayer } from '@/composables/usePlayer'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { achievementsData } from '@/data/items.js'
 import { useGameData } from '@/composables/useGameData'
-const { eggs, level } = usePlayer()
+const { eggs, level, xp, xpRequired } = usePlayer()
 const { levelUnlocks, getLevelRewardsBetween } = useGameData()
 
 const emit = defineEmits(['open-profile'])
@@ -40,7 +40,9 @@ const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCas
 
 const levelTooltipHtml = () => {
   const l = level.value
-  const current = `<strong>Niveau ${l}</strong>`
+  const curXp = xp.value ?? 0
+  const reqXp = xpRequired.value ?? 0
+  const current = `<strong>Niveau ${l}</strong> <span style="opacity:0.9">(${curXp}/${reqXp} 🫐)</span>`
   const nextLevel = l + 1
   const unlocks = (levelUnlocks?.value && levelUnlocks.value[nextLevel]) ? levelUnlocks.value[nextLevel] : []
   const rewards = getLevelRewardsBetween ? getLevelRewardsBetween(l, nextLevel) : []

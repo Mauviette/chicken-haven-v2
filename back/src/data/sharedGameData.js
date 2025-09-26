@@ -137,7 +137,7 @@ export const talentsData = {
   'Chanceuse': {
     description: "Lors des récoltes, a une petite chance de fait pleuvoir des oeufs.",
     effet: (niveau) => `Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x${niveau} en oeufs.`,
-    maxNiveau: 10,
+    nivType : 'basic',
     icon: '🍀',
     calculation: {
       combine: 'linear',
@@ -160,7 +160,7 @@ export const talentsData = {
   'Énergétique': {
     description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
     effet: (niveau) => `+${niveau * 0.2} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
-    maxNiveau: 10,
+    nivType : 'basic',
     icon: '⚡',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -182,7 +182,7 @@ export const talentsData = {
   'Persévérante': {
     description: "Augmente l'énergie et l'intelligence de l'équipe.",
     effet: (niveau) => `+${niveau} énergie et intelligence à toutes les poules de l'équipe.`,
-    maxNiveau: 10,
+    nivType : 'basic',
     icon: '🏋️',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -237,13 +237,13 @@ export const talentsData = {
   'Majestueuse': {
     description: "Augmente le charisme.",
     effet: (niveau) => `+ ${niveau * 5} charisme`,
-    maxNiveau: 10,
+    nivType : 'basic',
     icon: '👑'
   },
   'Majestueuse': {
     description: "Augmente le charisme.",
     effet: (niveau) => `+ ${niveau * 5} charisme`,
-    maxNiveau: 10,
+    nivType : 'basic',
     icon: '👑',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -418,6 +418,14 @@ export const levelRewards = {
   // Ajoutez d'autres niveaux selon la progression désirée
 }
 
+export const talentLevelUpgradeCost = {
+  basic : { 
+    limit: 10, 
+    egg_cost : [100, 2000, 5000, 10000, 50000, 100000, 500000, 1000000, 10000000],
+    chicken_cost : [2, 4, 8, 16, 32, 64, 128, 256, 512]
+  }
+}
+
 // ========================
 // DONNÉES DES SUCCÈS
 // ========================
@@ -573,6 +581,7 @@ export function getAllGameData() {
     lastUpdated: LAST_UPDATED,
     especies: especeData,
     talents: talentsData,
+    talentLevelUpgradeCost,
     groupes,
     boxes: boxesData,
     upgrades: upgradesData,

@@ -82,11 +82,12 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useEgg } from '@/composables/useEgg'
 import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
+import { useSound } from '@/composables/useSound'
 import Tooltip from '@/components/menu/Tooltip.vue'
 
 const { 
@@ -103,6 +104,7 @@ const {
 const { refreshPlayer, fetchTeam, team } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
+const { eggClick, incomeUp } = useSound()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -321,6 +323,8 @@ const createEggEffect = (eggsGained) => {
 
 const handleEggClick = async () => {
   if (isClickable.value) {
+    // Son d'œuf cliqué
+    eggClick()
     const eggsGained = Math.floor(currentGains.value)
     const result = await clickEgg()
     // Créer l'effet visuel
@@ -331,7 +335,7 @@ const handleEggClick = async () => {
     if (result?.chanceuse?.active && result.chanceuse.proc) {
       const bonus = result.chanceuse.bonusEggs || 0
       if (window.$toast) {
-        window.$toast(`Chanceuse ! +${bonus} œufs bonus 🍀`, 'success')
+        window.$toast(`Chanceuse ! +${bonus} œufs bonus`, 'lucky')
       }
       // Effet identique à AuthView (pluie d'œufs) avec l'amount défini dans le DSL si présent
       const rainAmount = (result.chanceuse.effects || []).find(e => e?.type === 'visual_effect' && e?.effect === 'egg_rain')?.amount
@@ -351,6 +355,22 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopUpdates()
+})
+
+// Son lorsque la barre de gains se remplit (augmentation de currentGains)
+let _lastGains = 0
+let _lastGainsSoundAt = 0
+const GAINS_EPS = 0.5   // déclencher si +0.5 œuf
+const GAINS_SOUND_COOLDOWN = 400 // ms
+watch(() => currentGains.value, (nv, ov) => {
+  const now = Date.now()
+  const prev = typeof ov === 'number' ? ov : _lastGains
+  const cur = typeof nv === 'number' ? nv : prev
+  if (cur > prev + GAINS_EPS && (now - _lastGainsSoundAt) > GAINS_SOUND_COOLDOWN) {
+    incomeUp()
+    _lastGainsSoundAt = now
+  }
+  _lastGains = cur
 })
 </script>
 

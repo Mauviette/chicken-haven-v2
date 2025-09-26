@@ -66,7 +66,8 @@ const sortOrder = ref('desc')
 const {
   poules,
   getImage,
-  hiddenImage
+  hiddenImage,
+  clearNew
 } = usePoules()
 
 const { especies: especeData, loading: gameDataLoading } = useGameData()
@@ -98,7 +99,13 @@ function closeDetail() {
 
 function openDetail(poule) {
   if (poule.quantite <= 0) return
-  selectedPoule.value = poule
+  // Trouver la référence originale dans le store
+  const origin = (poules.value || []).find(p => p.especeId === poule.especeId) || poule
+  // Si la poule est marquée "nouvelle", nettoyer le flag côté front et back sur l'originale
+  if (origin.new) {
+    clearNew(origin.especeId)
+  }
+  selectedPoule.value = origin
 }
 
 function toggleSortOrder() {
@@ -186,6 +193,20 @@ watch(
     }
   },
   { immediate: true }
+)
+
+// Garder la sélection synchronisée si la liste des poules change (ex: après amélioration)
+watch(
+  () => poules.value,
+  (list) => {
+    if (!selectedPoule.value) return
+    const id = selectedPoule.value.especeId
+    const updated = (list || []).find(p => p.especeId === id)
+    if (updated && updated !== selectedPoule.value) {
+      selectedPoule.value = updated
+    }
+  },
+  { deep: false }
 )
 </script>
 

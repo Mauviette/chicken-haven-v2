@@ -65,7 +65,8 @@ export async function updatePoule(req, res) {
       // Mise à jour manuelle de chaque champ si fourni
       if (updateData.quantite !== undefined) current.quantite = updateData.quantite
       if (updateData.niveauTalent !== undefined) current.niveauTalent = updateData.niveauTalent
-      if (updateData.posteOccupe !== undefined) current.posteOccupe = updateData.posteOccupe
+  if (updateData.posteOccupe !== undefined) current.posteOccupe = updateData.posteOccupe
+  if (updateData.new !== undefined) current.new = updateData.new
 
       // Fusion profonde pour statutEnergie si défini
       if (updateData.statutEnergie) {
@@ -96,9 +97,9 @@ export async function addPoule(req, res) {
 
     const existing = poules.find(p => p.especeId === especeId)
     if (existing) {
-      // Mettre à jour la quantité
+      // Déjà possédée: on incrémente uniquement la quantité
+      // Ne pas modifier le flag 'new' (reste à sa valeur actuelle)
       existing.quantite += quantite
-      existing.new = true // Marquer comme nouvelle
     } else {
       // Ajouter nouvelle poule
       poules.push({

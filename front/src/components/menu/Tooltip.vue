@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 
 const props = defineProps({
   text: String,
@@ -139,6 +139,16 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleGlobalMouseMove)
+})
+
+// Si le texte change pendant que la tooltip est ouverte, forcer un léger remount pour garantir la mise à jour visuelle
+watch(() => props.text, () => {
+  if (show.value) {
+    show.value = false
+    nextTick(() => {
+      show.value = true
+    })
+  }
 })
 </script>
 
