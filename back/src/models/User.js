@@ -12,7 +12,9 @@ const UserSchema = new mongoose.Schema({
   },
 
   settings: {
-    sound: { type: Boolean, default: true }
+    sound: { type: Boolean, default: true },
+    animations: { type: Boolean, default: true },
+    volume: { type: Number, default: 100 }
   },
 
   poulesPossedees: [

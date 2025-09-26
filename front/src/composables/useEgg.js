@@ -14,6 +14,7 @@ let updateInterval = null
 let onTeamUpdated = null
 let onAuthLogin = null
 let onAuthLogout = null
+let onUpgradeBought = null
 
 export function useEgg() {
   const { token } = useAuth()
@@ -134,6 +135,14 @@ export function useEgg() {
       window.addEventListener('team-updated', onTeamUpdated)
     }
 
+    // Écouter les achats d'améliorations pour rafraîchir l'income/maxIncome
+    if (typeof window !== 'undefined' && !onUpgradeBought) {
+      onUpgradeBought = async () => {
+        try { await fetchEggStatus() } catch (_) {}
+      }
+      window.addEventListener('upgrade-bought', onUpgradeBought)
+    }
+
     // Réagir à la connexion/déconnexion
     if (typeof window !== 'undefined' && !onAuthLogin) {
       onAuthLogin = async () => { try { await fetchEggStatus() } catch (_) {} }
@@ -163,6 +172,10 @@ export function useEgg() {
     if (typeof window !== 'undefined' && onTeamUpdated) {
       window.removeEventListener('team-updated', onTeamUpdated)
       onTeamUpdated = null
+    }
+    if (typeof window !== 'undefined' && onUpgradeBought) {
+      window.removeEventListener('upgrade-bought', onUpgradeBought)
+      onUpgradeBought = null
     }
     if (typeof window !== 'undefined' && onAuthLogin) {
       window.removeEventListener('auth-login', onAuthLogin)

@@ -235,10 +235,29 @@ export const talentsData = {
     icon: '🧠'
   },
   'Majestueuse': {
-    description: "Attire l'attention lors des concours.",
-    effet: (niveau) => `Charisme concours +${niveau * 6}%`,
-    maxNiveau: 5,
+    description: "Augmente le charisme.",
+    effet: (niveau) => `+ ${niveau * 5} charisme`,
+    maxNiveau: 10,
     icon: '👑'
+  },
+  'Majestueuse': {
+    description: "Augmente le charisme.",
+    effet: (niveau) => `+ ${niveau * 5} charisme`,
+    maxNiveau: 10,
+    icon: '👑',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'stat_buff',
+          target: 'me',
+          stats: {
+            energie:
+              { op: 'mul', args: [ { var: 'niveau' }, 5 ] }
+        }
+      }
+      ]
+    }
   },
   'Rapide': {
     description: "Se déplace plus vite.",
@@ -351,8 +370,8 @@ export const upgradesData = [
     description: 'Augmente la capacité de stockage des œufs',
     icon: '🏠',
     priceType: 'stock_token',
-    costs: [1, 1, 1, 2, 2, 3, 4, 5],
-    rewards: [10, 10, 15, 15, 20, 25, 30, 40],
+    costs: [1, 1, 2, 2, 3, 4, 5, 8],
+    rewards: [5, 5, 10, 10, 15, 20, 25, 40],
     effectTemplate: '+{reward} œufs de stockage maximum',
     maxLevel: null,
     // Effet appliqué côté serveur à l'achat: ajoute reward au maxIncome

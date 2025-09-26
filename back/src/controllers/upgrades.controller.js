@@ -70,6 +70,8 @@ export async function buyUpgrade(req, res) {
     // Incrémenter niveau
     const newLevel = currentLevel + 1
     user.upgrades[uId] = newLevel
+  // Important: upgrades est de type Mixed -> il faut marquer le chemin comme modifié
+  try { user.markModified && user.markModified('upgrades') } catch (_) {}
 
     // Appliquer l'effet associé à ce niveau (si défini)
     try {
@@ -97,7 +99,12 @@ export async function buyUpgrade(req, res) {
       success: true,
       upgradeId: uId,
       newLevel: user.upgrades[uId],
-      resources: user.resources
+      resources: user.resources,
+      upgrades: user.upgrades || {},
+      clickableEgg: {
+        income: user.clickableEgg?.income || 0,
+        maxIncome: user.clickableEgg?.maxIncome || 0,
+      }
     })
   } catch (err) {
     console.error('buyUpgrade error:', err)

@@ -4,7 +4,8 @@ import { useAuth } from './useAuth'
 
 const settings = ref({
   sound: true,
-  animations: true
+  animations: true,
+  volume: 100,
 })
 
 const isLoaded = ref(false)
@@ -20,7 +21,19 @@ export function useSettings() {
           })
       
       const data = await res.json()
-      settings.value = data.settings || {}
+      // Fusionner avec des valeurs par défaut et normaliser
+      const incoming = data?.settings || {}
+      const merged = {
+        sound: true,
+        animations: true,
+        volume: 100,
+        ...incoming,
+      }
+      // Clamp/typer
+      merged.volume = Math.max(0, Math.min(100, Number(merged.volume ?? 100)))
+      merged.sound = Boolean(merged.sound)
+      merged.animations = Boolean(merged.animations)
+      settings.value = merged
       isLoaded.value = true
     } catch (err) {
       console.error('Erreur lors du chargement des settings :', err)
@@ -30,13 +43,19 @@ export function useSettings() {
   async function saveSettings() {
     if (!token.value) return
     try {
+        // Normaliser avant d'envoyer
+        const out = {
+          sound: Boolean(settings.value?.sound),
+          animations: Boolean(settings.value?.animations),
+          volume: Math.max(0, Math.min(100, Number(settings.value?.volume ?? 100)))
+        }
         await fetch('/api/auth/settings', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token.value}`
           },
-          body: JSON.stringify({ settings: settings.value })
+          body: JSON.stringify({ settings: out })
         })
         
     } catch (err) {

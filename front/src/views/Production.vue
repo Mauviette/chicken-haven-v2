@@ -248,7 +248,7 @@ let effectId = 0
 
 // Pluie d'œufs (même logique que dans AuthView)
 const eggContainer = ref(null)
-function dropEggs(count = 20) {
+function dropEggs(count = 50) {
   if (!eggContainer.value) return
   for (let i = 0; i < count; i++) {
     const span = document.createElement('span')

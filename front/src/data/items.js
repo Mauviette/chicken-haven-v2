@@ -26,7 +26,7 @@ export const achievementsData = {
     nom: 'jetons joker',
     nom_singulier: 'jeton joker',
     icon: '🃏',
-    description: 'Jetons universels pouvant être utilisés à la place de n\'importe quelle autre jeton.'
+    description: 'Jetons universels pouvant être utilisés à la place de n\'importe quel autre jeton.'
   },
   'blueberry': {
     id: 'blueberry',

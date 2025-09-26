@@ -154,6 +154,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayer } from '@/composables/usePlayer'
+import { useEgg } from '@/composables/useEgg'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
 import { useBoxes } from '@/composables/useBoxes'
@@ -168,6 +169,7 @@ import Tooltip from '@/components/menu/Tooltip.vue'
 import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
 
 const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
+const { fetchEggStatus } = useEgg()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
 const { checkAchievements } = useAchievements()
@@ -359,7 +361,7 @@ function getCurrentRewardForLevel(rewards, level) {
 }
 function getDisplayLevel(currentLevel, maxLevel) {
   if (maxLevel !== null && typeof maxLevel === 'number' && currentLevel >= maxLevel) return 'MAX'
-  return `Niveau ${currentLevel + 1}`
+  return `Niveau ${currentLevel}`
 }
 
 const upgradeOffers = computed(() => {
@@ -476,7 +478,11 @@ async function buyUpgrade(upgrade) {
     // Forcer le recalcul des offres
     upgradesVersion.value++
     // Rafraîchir les soldes (tokens)
-    try { await refreshPlayerData() } catch (_) {}
+  try { await refreshPlayerData() } catch (_) {}
+  // Rafraîchir immédiatement le statut de l'œuf (income / maxIncome)
+  try { await fetchEggStatus() } catch (_) {}
+  // Émettre un événement global pour que d'autres vues/composables réagissent si besoin
+  try { window.dispatchEvent(new CustomEvent('upgrade-bought', { detail: { upgradeId: upgrade.id, newLevel: Number(data?.newLevel || 0) } })) } catch (_) {}
     window.$toast && window.$toast(`Vous avez acheté ${upgrade.name} !`, 'success')
   } catch (e) {
     console.error('buyUpgrade error:', e)

@@ -6,7 +6,7 @@
         v-if="currentImg"
         :src="currentImg"
         class="parade-chicken"
-        :class="state"
+        :class="[state, isFallback ? 'fallback' : '']"
         :alt="name"
         :style="{ '--dir': direction }"
         @click="emitOpenDetail"
@@ -37,10 +37,13 @@ const direction = ref(Math.random() < 0.5 ? 1 : -1)
 const state = ref('idle') // 'walk' | 'idle' | 'peck'
 const currentImg = ref('')
 const stateUntil = ref(Date.now() + 2000)
+const isFallback = ref(false)
 
 function applyImage() {
   const img = props.images?.[state.value] || props.images?.fallback
   currentImg.value = img || ''
+  // Fallback
+  isFallback.value = !props.images?.[state.value] && !!props.images?.fallback
 }
 
 function rand(min, max) { return Math.random() * (max - min) + min }
@@ -151,6 +154,13 @@ watch(() => props.containerWidth, () => {
   position: absolute;
   bottom: 0; /* ancrer les pattes au bas de la scène */
   pointer-events: auto; /* nécessaire pour le tooltip */
+}
+
+/* Si fallback PNG, agrandir à 56x56 */
+.parade-chicken.fallback {
+  width: 56px;
+  height: 56px;
+  max-height: unset;
 }
 
 .parade-chicken {
