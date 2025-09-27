@@ -75,11 +75,11 @@ export async function openBox(req, res) {
       const existingPoule = user.poulesPossedees.find(p => p.especeId === result.chickenId)
       
       if (existingPoule) {
-        // Augmenter la quantité
+        // Augmenter la quantité sans marquer comme "new" si déjà possédée
         existingPoule.quantite += 1
-        existingPoule.new = true
+        // Ne pas toucher à existingPoule.new ici
       } else {
-        // Ajouter nouvelle poule
+        // Ajouter nouvelle poule (marquée comme nouvelle)
         user.poulesPossedees.push({
           especeId: result.chickenId,
           quantite: 1,
@@ -131,41 +131,65 @@ export async function openBox(req, res) {
 
 // Fonction pour simuler l'ouverture d'une boîte avec probabilités
 function simulateBoxOpening(box, ownedChickens) {
+  const groups = Array.isArray(box.dropGroups) ? box.dropGroups : []
+  if (!groups.length) return []
+
+  // Sélectionner UN SEUL groupe en fonction des probabilités (chance)
+  const candidates = groups.filter(g => Number(g.chance) > 0)
+  const totalChance = candidates.reduce((sum, g) => sum + Number(g.chance || 0), 0)
+  if (totalChance <= 0) return []
+
+  function availableForGroup(groupName) {
+    return Object.keys(especeData)
+      .filter(id => especeData[id].groupe === groupName)
+      .filter(id => {
+        // Les poules fondamentales sont toujours disponibles
+        if (especeData[id].groupe === 'fondamental') return true
+        // Les autres groupes nécessitent d'avoir débloqué au moins une poule
+        return ownedChickens.includes(id) || hasUnlockedGroup(groupName, ownedChickens)
+      })
+  }
+
+  let selectedGroup = null
+  let r = Math.random() * totalChance
+  let acc = 0
+  for (const g of candidates) {
+    acc += Number(g.chance || 0)
+    if (r <= acc) { selectedGroup = g; break }
+  }
+  if (!selectedGroup) selectedGroup = candidates[0]
+
+  // Vérifier la disponibilité pour le groupe choisi, sinon fallback vers un autre groupe disponible
+  let availableChickens = availableForGroup(selectedGroup.name)
+  if (!availableChickens.length) {
+    const sorted = [...candidates].sort((a, b) => Number(b.chance || 0) - Number(a.chance || 0))
+    for (const g of sorted) {
+      if (g === selectedGroup) continue
+      const cand = availableForGroup(g.name)
+      if (cand.length) { selectedGroup = g; availableChickens = cand; break }
+    }
+  }
+
+  // Fallback ultime: agréger toutes les dispos si aucune pour les groupes (devrait être rare)
+  if (!availableChickens.length) {
+    const all = []
+    for (const g of candidates) all.push(...availableForGroup(g.name))
+    if (!all.length) return []
+    availableChickens = all
+  }
+
+  const groupData = groupes.find(g => g.name === selectedGroup.name)
+  const rarityChances = groupData?.rarityDropChance || [100, 0, 0, 0]
+  const quantity = Math.max(1, Number(selectedGroup.quantity) || 1)
   const results = []
-
-  for (const dropGroup of box.dropGroups) {
-    // Vérifier si ce groupe drop (basé sur la chance)
-    const roll = Math.random() * 100
-    
-    if (roll <= dropGroup.chance) {
-      // Obtenir les poules disponibles pour ce groupe
-      const availableChickens = Object.keys(especeData)
-        .filter(id => especeData[id].groupe === dropGroup.name)
-        .filter(id => {
-          // Les poules fondamentales sont toujours disponibles
-          if (especeData[id].groupe === 'fondamental') return true
-          // Les autres groupes nécessitent d'avoir débloqué au moins une poule
-          return ownedChickens.includes(id) || hasUnlockedGroup(dropGroup.name, ownedChickens)
-        })
-
-      if (availableChickens.length > 0) {
-        // Obtenir les probabilités de rareté pour ce groupe
-        const groupData = groupes.find(g => g.name === dropGroup.name)
-        const rarityChances = groupData?.rarityDropChance || [100, 0, 0, 0]
-
-        // Générer les poules selon la quantité demandée
-        for (let i = 0; i < dropGroup.quantity; i++) {
-          const selectedChicken = selectChickenByRarity(availableChickens, rarityChances)
-          
-          if (selectedChicken) {
-            results.push({
-              chickenId: selectedChicken,
-              groupName: dropGroup.name,
-              rarity: especeData[selectedChicken]?.rarete || 'commune'
-            })
-          }
-        }
-      }
+  for (let i = 0; i < quantity; i++) {
+    const selectedChicken = selectChickenByRarity(availableChickens, rarityChances)
+    if (selectedChicken) {
+      results.push({
+        chickenId: selectedChicken,
+        groupName: selectedGroup.name,
+        rarity: especeData[selectedChicken]?.rarete || 'commune'
+      })
     }
   }
 

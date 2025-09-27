@@ -311,6 +311,7 @@ export async function updateAchievementProgress(userId, progressType, value) {
       }
     }
 
+    try { user.markModified && user.markModified('achievements') } catch (_) {}
     await user.save()
   } catch (error) {
     console.error('Erreur updateAchievementProgress:', error)

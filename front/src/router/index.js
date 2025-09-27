@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Production from '@/views/Production.vue'
 import Market from '@/views/Market.vue'
 import Collection from '@/views/Collection.vue'
+import UserProfile from '@/views/UserProfile.vue'
 import Auth from '@/views/AuthView.vue'
 import { useAuth } from '@/composables/useAuth'
 
@@ -37,6 +38,12 @@ const routes = [
     meta: { requiresAuth: true }
   }
   ,
+  {
+    path: '/user/:id',
+    name: 'UserProfile',
+    component: UserProfile,
+    meta: { requiresAuth: false }
+  },
   // Catch-all: redirige toute route invalide vers une page valide selon l'état d'auth
   {
     path: '/:pathMatch(.*)*',

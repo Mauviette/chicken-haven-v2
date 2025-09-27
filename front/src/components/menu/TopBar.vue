@@ -9,9 +9,9 @@
           </div>
         </Tooltip>
         <Tooltip :text="levelTooltipHtml()">
-          <button class="profile-btn" @click="openProfileMenu">
+          <button class="profile-btn" @click="openProfile">
             <div class="avatar-wrap">
-              <img id="avatar-anchor" src="@/assets/ui/avatar-default.svg" class="avatar" />
+              <img id="avatar-anchor" :src="topAvatarSrc" alt="avatar" class="avatar noselect" draggable="false" />
               <span class="level-badge">{{ level }}</span>
             </div>
           </button>
@@ -27,13 +27,50 @@ import { usePlayer } from '@/composables/usePlayer'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { achievementsData } from '@/data/items.js'
 import { useGameData } from '@/composables/useGameData'
+import { useRouter } from 'vue-router'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { usePoules } from '@/composables/usePoules'
 const { eggs, level, xp, xpRequired } = usePlayer()
 const { levelUnlocks, getLevelRewardsBetween } = useGameData()
+const router = useRouter()
+const { getImage, hiddenImage } = usePoules()
 
 const emit = defineEmits(['open-profile'])
 
-function openProfileMenu() {
-  emit('open-profile')
+const myProfileId = ref('')
+const myAvatarId = ref('hidden')
+const topAvatarSrc = computed(() => {
+  const a = myAvatarId.value
+  if (!a || a === 'hidden') return hiddenImage
+  return getImage(String(a))
+})
+onMounted(async () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    const res = await fetch('/api/user/me', { headers: { Authorization: `Bearer ${token}` } })
+    if (res.ok) {
+      const me = await res.json()
+      myProfileId.value = String(me.profileId || '').toUpperCase()
+      myAvatarId.value = me.avatar ? String(me.avatar) : 'hidden'
+    }
+  } catch (_) {}
+
+  // Ecouter les mises à jour d'avatar globales (depuis UserProfile)
+  const handler = (e) => {
+    try { myAvatarId.value = e?.detail?.avatar ? String(e.detail.avatar) : 'hidden' } catch (_) {}
+  }
+  window.addEventListener('avatar-updated', handler)
+  // Nettoyage
+  onBeforeUnmount(() => window.removeEventListener('avatar-updated', handler))
+})
+
+function openProfile() {
+  if (myProfileId.value) {
+    router.push(`/user/${myProfileId.value}`)
+  } else {
+    emit('open-profile')
+  }
 }
 
 const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`
@@ -121,6 +158,10 @@ const levelTooltipHtml = () => {
   border-radius: 50%;
   border: 2px solid #ffc66e;
   background-color: white;
+}
+
+.noselect {
+  user-select: none;
 }
 
 .avatar-wrap { position: relative; display: inline-block; }

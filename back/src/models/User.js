@@ -2,6 +2,8 @@
 import mongoose from 'mongoose'
 
 const UserSchema = new mongoose.Schema({
+  // Public profile identifier (6-char uppercase hex)
+  profileId: { type: String, unique: true, sparse: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
 
@@ -16,6 +18,12 @@ const UserSchema = new mongoose.Schema({
     animations: { type: Boolean, default: true },
     volume: { type: Number, default: 100 }
   },
+
+  // Avatar URL or key
+  avatar: { type: String, default: '' },
+
+  // Last activity for online status
+  lastSeen: { type: Date, default: () => new Date() },
 
   poulesPossedees: [
     {
@@ -90,7 +98,7 @@ const UserSchema = new mongoose.Schema({
     ]
   }
 
-})
+}, { timestamps: true })
 
 const User = mongoose.model('User', UserSchema)
 export default User

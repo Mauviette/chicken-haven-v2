@@ -369,8 +369,10 @@ export async function clickEgg(req, res) {
     // NB: garder les logs côté serveur comme demandé
     // Pas besoin d'attendre le résultat de cette promesse supplémentaire
     
+    // Inclure le bonus de Chanceuse dans le compteur "max œufs en 1 clic"
+    const eggsThisClickForMax = eggsGained + (chanceuse?.proc ? (chanceuse?.bonusEggs || 0) : 0)
     await updateAchievementProgress(req.userId, 'max', {
-      maxEggsInOneClick: eggsGained
+      maxEggsInOneClick: eggsThisClickForMax
     })
 
     res.json({

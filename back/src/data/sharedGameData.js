@@ -217,8 +217,8 @@ export const talentsData = {
     icon: '🕵️'
   },
   'Gourmande': {
-    description: "Consomme moins de nourriture.",
-    effet: (niveau) => `Consommation -${niveau * 5}%`,
+    description: "Augmente le revenu en fonction du stockage max.",
+    effet: (niveau) => `Augmente le revenu de ${niveau * 0.05} par stockage.`,
     maxNiveau: 5,
     icon: '🍗'
   },
@@ -233,12 +233,6 @@ export const talentsData = {
     effet: (niveau) => `+${niveau * 4}% de réussite aux énigmes`,
     maxNiveau: 5,
     icon: '🧠'
-  },
-  'Majestueuse': {
-    description: "Augmente le charisme.",
-    effet: (niveau) => `+ ${niveau * 5} charisme`,
-    nivType : 'basic',
-    icon: '👑'
   },
   'Majestueuse': {
     description: "Augmente le charisme.",

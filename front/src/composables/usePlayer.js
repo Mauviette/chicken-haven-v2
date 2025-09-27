@@ -36,6 +36,9 @@ export function usePlayer() {
         if (res2.ok) {
           const u = await res2.json()
           const prevLevel = level.value || 1
+          const currentProfileId = u?.profileId || u?.id || null
+          // Mémorise le dernier utilisateur pour éviter un faux level-up lors d'un switch de compte
+          const lastProfileId = (typeof window !== 'undefined') ? window.__lastProfileId : undefined
           const newLevel = u?.experience?.level ?? 1
           level.value = newLevel
           xp.value = u?.experience?.points ?? 0
@@ -48,8 +51,13 @@ export function usePlayer() {
             wildTokens.value = Number(u.resources.wild_token ?? wildTokens.value)
           }
           try {
-            if (newLevel > prevLevel && typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('level-up', { detail: { from: prevLevel, to: newLevel } }))
+            if (typeof window !== 'undefined') {
+              // N'émettre le level-up que si le même utilisateur passe un niveau
+              if (lastProfileId && currentProfileId && lastProfileId === currentProfileId && newLevel > prevLevel) {
+                window.dispatchEvent(new CustomEvent('level-up', { detail: { from: prevLevel, to: newLevel } }))
+              }
+              // Mettre à jour le dernier profileId après traitement
+              window.__lastProfileId = currentProfileId || null
             }
           } catch (_) {}
           // Si on veut manter resources aussi depuis cette route, on pourrait synchroniser ici.

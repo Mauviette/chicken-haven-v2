@@ -92,6 +92,13 @@
               >
                 Ouvrir
               </BuyButton>
+              <BuyButton
+                :price="getBulkPrice(box.price, 10)"
+                :onClick="() => openBoxMultiple(box, 10)"
+                :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(getBulkPrice(box.price, 10))"
+              >
+                Ouvrir x10
+              </BuyButton>
             </div>
           </div>
         </div>
@@ -397,6 +404,34 @@ const upgradeOffers = computed(() => {
 })
 
 // Fonctions d'achat
+function getBulkPrice(price, qty) {
+  if (typeof price === 'number') return price * qty
+  if (price && typeof price === 'object') {
+    return { type: price.type, count: (Number(price.count) || 0) * qty }
+  }
+  return price
+}
+
+function getMaxAffordableOpens(price, desiredQty) {
+  // Calcule combien d'ouvertures sont possibles avec les fonds locaux
+  const qty = Math.max(1, Number(desiredQty) || 1)
+  if (typeof price === 'number') {
+    const per = Number(price) || 0
+    if (per <= 0) return qty
+    return Math.min(qty, Math.floor((Number(playerEggs.value) || 0) / per))
+  }
+  const count = Number(price?.count) || 0
+  if (count <= 0) return qty
+  const type = price?.type
+  let balance = 0
+  if (type === 'eggs') balance = Number(playerEggs.value) || 0
+  else if (type === 'stock_token') balance = Number(stockTokens.value) || 0
+  else if (type === 'production_token') balance = Number(productionTokens.value) || 0
+  else if (type === 'wild_token') balance = Number(wildTokens.value) || 0
+  else balance = 0
+  return Math.min(qty, Math.floor(balance / count))
+}
+
 async function openBox(box) {
   try {
     console.log('Achat boîte:', box)
@@ -413,7 +448,11 @@ async function openBox(box) {
     
   // Arrêter l'animation et préparer l'affichage des résultats
   showOpenAnim.value = false
-    boxResults.value = result.results || []
+    // Trier les résultats par rareté (les plus rares en haut)
+    const singleResults = Array.isArray(result.results) ? [...result.results] : []
+    const rarityOrder = { legendaire: 4, légendaire: 4, epique: 3, épique: 3, rare: 2, commune: 1 }
+    singleResults.sort((a, b) => (rarityOrder[b?.rarete] || 0) - (rarityOrder[a?.rarete] || 0))
+    boxResults.value = singleResults
     lastOpenedBoxName.value = box.name
   // Son des résultats de la boîte (chicken-results.mp3 demandé) – juste avant affichage
   sndBoxResults(0.9)
@@ -462,6 +501,70 @@ async function openBox(box) {
 function buyChicken(offer) {
   // Cette fonction n'est plus utilisée car on achète des boîtes maintenant
   console.log('Achat direct de poule désactivé - utilisez les boîtes')
+}
+
+async function openBoxMultiple(box, times = 10) {
+  try {
+    const desired = Math.max(1, Number(times) || 1)
+    const affordable = getMaxAffordableOpens(box.price, desired)
+    if (affordable <= 0) {
+      window.$toast && window.$toast("Fonds insuffisants pour ouvrir cette boîte", 'error')
+      return
+    }
+
+    currentBoxIcon.value = box.icon || '📦'
+    showOpenAnim.value = true
+    sndBoxOpen(0.95)
+
+  const combined = []
+    let opened = 0
+    for (let i = 0; i < affordable; i++) {
+      try {
+        // Assure un petit délai pour laisser l'anim respirer sur la première ouverture
+        if (i === 0) {
+          await new Promise(res => setTimeout(res, 600))
+        }
+        const result = await openBoxAPI(box.id)
+        if (Array.isArray(result?.results)) {
+          combined.push(...result.results)
+        }
+        opened++
+      } catch (err) {
+        // Arrête si l'API renvoie une erreur (p.ex. fonds épuisés)
+        console.warn('Ouverture interrompue à', i + 1, err)
+        break
+      }
+    }
+
+    showOpenAnim.value = false
+    if (opened > 0) {
+      // Trier par rareté (les plus rares en haut)
+      const rarityOrder = { legendaire: 4, légendaire: 4, epique: 3, épique: 3, rare: 2, commune: 1 }
+      combined.sort((a, b) => (rarityOrder[b?.rarete] || 0) - (rarityOrder[a?.rarete] || 0))
+      boxResults.value = combined
+      lastOpenedBoxName.value = `${box.name} x${opened}`
+      sndBoxResults(0.9)
+      showBoxResults.value = true
+      // Rafraîchir les données du joueur et les poules
+      await Promise.all([refreshPlayerData(), refreshPoules()])
+      // Événements succès pour chaque poule obtenue
+      try {
+        for (const r of combined) {
+          window.dispatchEvent(new CustomEvent('chicken-bought', { detail: { especeId: r.especeId, isNew: r.isNew } }))
+        }
+      } catch (_) {}
+      // Optionnel: toast résumé
+      const newCount = combined.filter(r => r.isNew).length
+      const total = combined.length
+      // window.$toast && window.$toast(`🎉 ${opened} boîte${opened>1?'s':''} ouvertes: ${total} poule${total>1?'s':''} obtenue${total>1?'s':''}${newCount>0?` (${newCount} nouvelle${newCount>1?'s':''})`:''}`, 'success')
+    } else {
+      window.$toast && window.$toast('Aucune boîte ouverte', 'warning')
+    }
+  } catch (e) {
+    console.error('Erreur openBoxMultiple:', e)
+    showOpenAnim.value = false
+    window.$toast && window.$toast('Erreur lors de l\'ouverture multiple', 'error')
+  }
 }
 
 async function buyUpgrade(upgrade) {

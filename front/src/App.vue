@@ -3,8 +3,10 @@
     <TopBar v-if="!isAuthPage" 
       @open-profile="toast('Bientôt disponible !')"
     />
-    <router-view />
-  <TeamParade v-if="!isAuthPage" />
+    <div class="main-content">
+      <router-view />
+      <TeamParade v-if="!isAuthPage" />
+    </div>
   <LevelUpPopup
     v-if="levelUpVisible"
     :from="levelUpFrom"
@@ -167,6 +169,14 @@ img,
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1 1 auto;
+  min-height: 0; /* important pour permettre le scroll interne */
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
