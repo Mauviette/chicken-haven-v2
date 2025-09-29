@@ -30,7 +30,17 @@ export function useGameData() {
       loading.value = true
       error.value = null
 
-      const response = await fetch('/api/game-data')
+      const token = localStorage.getItem('token')
+      const headers = {
+        'Content-Type': 'application/json'
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/game-data`, {
+        headers
+      })
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -74,7 +84,17 @@ export function useGameData() {
   // Fonction pour vérifier si les données locales sont à jour
   async function checkDataVersion() {
     try {
-      const response = await fetch('/api/game-data/version')
+      const token = localStorage.getItem('token')
+      const headers = {
+        'Content-Type': 'application/json'
+      }
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/game-data/version`, {
+        headers
+      })
       const result = await response.json()
       
       if (dataVersion.value && dataVersion.value !== result.version) {

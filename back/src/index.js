@@ -18,13 +18,58 @@ dotenv.config()
 const app = express()
 
 app.use(cors({
-  origin: ['https://chickenhaven.vercel.app', 'http://localhost:5173'],
-  credentials: true
+  origin: function (origin, callback) {
+    // Autoriser les requêtes sans origin (ex: mobile apps, Postman)
+    if (!origin) return callback(null, true)
+    
+    const allowedOrigins = [
+      'https://chickenhaven.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:4173'
+    ]
+    
+    // Vérifier si l'origin est dans la liste ou si c'est un sous-domaine Vercel
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true)
+    }
+    
+    console.log(`❌ Origin non autorisé: ${origin}`)
+    callback(new Error('Non autorisé par CORS'))
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200
 }))
 
+// Middleware pour logger les requêtes CORS
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`)
+  next()
+})
+
 app.options('*', cors({
-  origin: ['https://chickenhaven.vercel.app', 'http://localhost:5173'],
-  credentials: true
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true)
+    
+    const allowedOrigins = [
+      'https://chickenhaven.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:4173'
+    ]
+    
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true)
+    }
+    
+    callback(new Error('Non autorisé par CORS'))
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200
 }));
 
 app.use(express.json())
@@ -43,7 +88,24 @@ app.use('/api/upgrades', upgradesRoutes)
 app.use('/api/talent', talentRoutes)
 
 app.get('/', (req, res) => {
-  res.send('API Chicken Haven OK 🐔')
+  res.json({ 
+    message: 'API Chicken Haven OK 🐔',
+    timestamp: new Date().toISOString(),
+    cors: 'Configured for chickenhaven.vercel.app'
+  })
+})
+
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString()
+  })
+})
+
+// Middleware de gestion des erreurs globales
+app.use((err, req, res, next) => {
+  console.error('❌ Erreur serveur:', err)
+  res.status(500).json({ error: 'Erreur interne du serveur' })
 })
 
 mongoose.connect(process.env.MONGO_URI, {
@@ -51,8 +113,10 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
 }).then(() => {
   console.log('✅ Connecté à MongoDB')
-  app.listen(process.env.PORT, '0.0.0.0', () => {
-    console.log(`🚀 Serveur lancé sur le port ${process.env.PORT}`)
+  const PORT = process.env.PORT || 3002
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Serveur lancé sur le port ${PORT}`)
+    console.log(`📡 CORS configuré pour: chickenhaven.vercel.app`)
   })
 }).catch((err) => {
   console.error('❌ Erreur de connexion MongoDB :', err.message)
