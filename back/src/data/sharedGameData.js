@@ -199,39 +199,36 @@ export const talentsData = {
     }
   },
   'Vive': {
-    description: "Termine les missions plus rapidement.",
-    effet: (niveau) => `Vitesse de mission +${niveau * 8}%`,
-    maxNiveau: 5,
+    description: "Augmente les revenus en fonction de l'intelligence et de l'énergie de l'équipe.",
+    effet: (niveau) => `${niveau * 0.1} de revenu par seconde pour chaque point d'énergie et d'intelligence dans l'équipe.`,
     icon: '🏃'
   },
   'Curieuse': {
     description: "Augmente le stockage en fonction du charisme",
     effet: (niveau) => `+${niveau * 2} de stockage par point de charisme`,
-    maxNiveau: 5,
     icon: '🔎'
   },
   'Discrète': {
-    description: "Moins de risques lors des missions risquées.",
-    effet: (niveau) => `Risque réduit de ${niveau * 6}%`,
-    maxNiveau: 5,
+    description: "Augmente l'intelligence mais baisse le charisme des poules de l'équipe.",
+    effet: (niveau) => `+${niveau * 2} charisme mais -${niveau * 1} à toute l'équipe.`,
     icon: '🕵️'
   },
   'Gourmande': {
     description: "Augmente le revenu en fonction du stockage max.",
     effet: (niveau) => `Augmente le revenu de ${niveau * 0.05} par stockage.`,
-    maxNiveau: 5,
+
     icon: '🍗'
   },
   'Protectrice': {
     description: "Protège les autres poules lors d'événements.",
     effet: (niveau) => `Protection +${niveau * 7}%`,
-    maxNiveau: 5,
+
     icon: '🛡️'
   },
   'Maligne': {
     description: "Résout les énigmes plus facilement.",
     effet: (niveau) => `+${niveau * 4}% de réussite aux énigmes`,
-    maxNiveau: 5,
+
     icon: '🧠'
   },
   'Majestueuse': {
@@ -256,13 +253,13 @@ export const talentsData = {
   'Rapide': {
     description: "Se déplace plus vite.",
     effet: (niveau) => `Vitesse +${niveau * 10}%`,
-    maxNiveau: 5,
+
     icon: '💨'
   },
   'Joyeuse': {
     description: "Augmente le moral du poulailler.",
     effet: (niveau) => `Moral +${niveau * 2}`,
-    maxNiveau: 5,
+
     icon: '🎉'
   }
 }
@@ -452,12 +449,12 @@ export const achievementsData = {
     id: 'egg_master',
     nom: 'Maître des Œufs',
     description: 'Récoltez 1000 œufs au total',
-    icon: '👑',
+    icon: '🥚',
     objectif: 1000,
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 2
     }
   },
   'egg_king': {
@@ -469,7 +466,19 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 3
+    }
+  },
+  'egg_god': {
+    id: 'egg_god',
+    nom: 'Dieu des Œufs',
+    description: 'Récoltez 100000 œufs au total',
+    icon: '🥚',
+    objectif: 100000,
+    type: 'eggs',
+    reward: {
+      type: 'blueberry',
+      quantite: 4
     }
   },
   'first_chicken': {
@@ -499,8 +508,20 @@ export const achievementsData = {
   'talent_apprentice': {
     id: 'talent_apprentice',
     nom: 'Apprenti Talent',
-    description: 'Améliorez une poule au niveau 3',
+    description: 'Améliorez une poule au niveau 2',
     icon: '⭐',
+    objectif: 2,
+    type: 'talent_level',
+    reward: {
+      type: 'blueberry',
+      quantite: 1
+    }
+  },
+  'talent_expert': {
+    id: 'talent_expert',
+    nom: 'Expert Talent',
+    description: 'Améliorez une poule au niveau 3',
+    icon: '🌟',
     objectif: 3,
     type: 'talent_level',
     reward: {
@@ -508,28 +529,16 @@ export const achievementsData = {
       quantite: 2
     }
   },
-  'talent_expert': {
-    id: 'talent_expert',
-    nom: 'Expert Talent',
+  'talent_master': {
+    id: 'talent_master',
+    nom: 'Maître Talent',
     description: 'Améliorez une poule au niveau 5',
-    icon: '🌟',
+    icon: '✨',
     objectif: 5,
     type: 'talent_level',
     reward: {
       type: 'blueberry',
       quantite: 3
-    }
-  },
-  'talent_master': {
-    id: 'talent_master',
-    nom: 'Maître Talent',
-    description: 'Améliorez une poule au niveau 8',
-    icon: '✨',
-    objectif: 8,
-    type: 'talent_level',
-    reward: {
-      type: 'blueberry',
-      quantite: 5
     }
   },
   'avatar_changed': {
@@ -565,7 +574,7 @@ export const achievementsData = {
     type: 'boxes_opened',
     reward: {
       type: 'blueberry',
-      quantite: 5
+      quantite: 3
     }
   },
   'box_master': {
@@ -577,7 +586,7 @@ export const achievementsData = {
     type: 'boxes_opened',
     reward: {
       type: 'blueberry',
-      quantite: 10
+      quantite: 5
     }
   }
 }
