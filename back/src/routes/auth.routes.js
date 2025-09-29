@@ -5,7 +5,7 @@ import User from '../models/User.js'
 import { verifyToken } from '../middleware/auth.middleware.js'
 
 const router = express.Router()
-const SECRET_KEY = process.env.JWT_SECRET || 'supersecretkey'
+const SECRET_KEY = process.env.JWT_SECRET
 
 // 🐣 Enregistrement
 router.post('/register', async (req, res) => {
