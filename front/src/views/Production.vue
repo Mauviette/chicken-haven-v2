@@ -63,6 +63,9 @@
               <div class="gains-text">
                 {{ Math.floor(currentGains) }} / {{ eggState.maxIncome }}
               </div>
+              <div class="gains-per-click">
+                <span class="click-info">💰 {{ Math.floor(currentGains) }} œuf{{ Math.floor(currentGains) > 1 ? 's' : '' }} par clic</span>
+              </div>
             </div>
             
             <div class="income-info">
@@ -327,8 +330,33 @@ const handleEggClick = async () => {
     eggClick()
     const eggsGained = Math.floor(currentGains.value)
     console.log('🥚 Clic sur œuf, gains attendus:', eggsGained)
+    
+    // Afficher immédiatement un toast avec les gains
+    if (window.$toast && eggsGained > 0) {
+      window.$toast(`+${eggsGained} œuf${eggsGained > 1 ? 's' : ''} 🥚`, 'success')
+    }
+    
+    // Réinitialiser visuellement les gains pour éviter l'effet "bloqué au max"
+    // On garde une copie de l'état actuel
+    const originalLastClick = eggState.value.lastClick
+    // Simuler un reset visuel immédiat
+    eggState.value = {
+      ...eggState.value,
+      lastClick: new Date() // Reset visuel immédiat
+    }
+    
     const result = await clickEgg()
     console.log('🥚 Résultat API:', result)
+    
+    // Si l'API a échoué, restaurer l'état précédent
+    if (!result) {
+      eggState.value = {
+        ...eggState.value,
+        lastClick: originalLastClick
+      }
+      return
+    }
+    
     // Créer l'effet visuel
     if (eggsGained > 0) {
       createEggEffect(eggsGained)
@@ -540,6 +568,28 @@ watch(() => currentGains.value, (nv, ov) => {
   font-size: 16px;
   color: #8B4513;
   margin-top: 5px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.gains-per-click {
+  text-align: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #c8ab86;
+}
+
+.click-info {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 12px;
+  color: #27ae60;
+  font-weight: bold;
+  background: rgba(39, 174, 96, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(39, 174, 96, 0.3);
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
