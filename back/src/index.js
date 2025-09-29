@@ -18,7 +18,7 @@ dotenv.config()
 const app = express()
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3002', 'chicken-haven-v2.vercel.app'],
+  origin: ['http://localhost:5173', 'http://localhost:3002', 'https://chicken-haven-v2.vercel.app'],
   credentials: true
 }))
 
