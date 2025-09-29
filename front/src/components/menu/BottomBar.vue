@@ -123,6 +123,8 @@ const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
   .bottom-bar {
     width: 100%;
     height: 80px;
+    min-height: 80px;
+    max-height: 80px;
     background-color: #421d00;
     background-image: url('@/assets/bar/bg.png');
     background-repeat: repeat;
@@ -130,10 +132,12 @@ const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
     align-items: center;
     justify-content: space-between;
     padding: 0 20px;
+    box-sizing: border-box;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
     position: relative;
     border-top: 4px solid #b77b3d;
     box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
   }
 
   .main-buttons {
@@ -197,27 +201,24 @@ const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
 
     @media (max-width: 600px) {
     .bottom-bar {
-      flex-direction: column;
-      justify-content: center;
-      height: auto;
-      padding: 12px;
-      gap: 8px;
+      height: 80px;
+      min-height: 80px;
+      max-height: 80px;
+      padding: 8px 12px;
+      gap: 4px;
     }
 
     .main-buttons {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
+      gap: 4px;
+      flex: 1;
     }
 
     .options-button {
       margin-left: 0;
-      margin-bottom: 8px;
     }
 
     .achievements-button {
       margin-right: 0;
-      margin-top: 8px;
     }
 
     .bottom-bar .action-button {

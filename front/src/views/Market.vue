@@ -169,6 +169,7 @@ import { useAchievements } from '@/composables/useAchievements'
 import { useSound } from '@/composables/useSound'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
+import { apiGet, apiPost } from '@/utils/api.js'
 
 import BoxResults from '@/components/menu/BoxResults.vue'
 import { boxesData, getPossibleChickensFromBox, openBoxSimulation, groupes } from '@/data/boxes.js'
@@ -574,20 +575,7 @@ async function buyUpgrade(upgrade) {
       window.$toast && window.$toast('Vous devez être connecté(e)', 'error')
       return
     }
-    const res = await fetch('/api/upgrades/buy', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ upgradeId: upgrade.id })
-    })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      window.$toast && window.$toast(err?.error || 'Achat impossible', 'error')
-      return
-    }
-    const data = await res.json()
+    const data = await apiPost('/api/upgrades/buy', { upgradeId: upgrade.id })
     // Mettre à jour le niveau courant localement
     upgradeLevels.value = { ...upgradeLevels.value, [upgrade.id]: Number(data?.newLevel || 0) }
     // Forcer le recalcul des offres
@@ -634,15 +622,12 @@ onMounted(async () => {
     try {
       const token = localStorage.getItem('token')
       if (token) {
-        const upRes = await fetch('/api/upgrades', { headers: { 'Authorization': `Bearer ${token}` } })
-        if (upRes.ok) {
-          const { upgrades: levels } = await upRes.json()
-          if (levels && typeof levels === 'object') {
-            upgradeLevels.value = Object.fromEntries(
-              Object.entries(levels).map(([k, v]) => [Number(k), Number(v) || 0])
-            )
-            upgradesVersion.value++
-          }
+        const { upgrades: levels } = await apiGet('/api/upgrades')
+        if (levels && typeof levels === 'object') {
+          upgradeLevels.value = Object.fromEntries(
+            Object.entries(levels).map(([k, v]) => [Number(k), Number(v) || 0])
+          )
+          upgradesVersion.value++
         }
       }
     } catch (e) { console.warn('Chargement upgrades échoué:', e) }

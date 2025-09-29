@@ -103,6 +103,8 @@ const levelTooltipHtml = () => {
 .top-bar {
   width: 100%;
   height: 60px;
+  min-height: 60px;
+  max-height: 60px;
   background-color: #f6e4c3;
   background-repeat: repeat;
   display: flex;
@@ -111,6 +113,7 @@ const levelTooltipHtml = () => {
   font-family: 'Fredoka', sans-serif;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .top-bar-inner {
