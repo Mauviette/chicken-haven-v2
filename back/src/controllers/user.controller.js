@@ -55,16 +55,12 @@ export async function updateAvatar(req, res) {
 
     // Mettre à jour les succès pour le changement d'avatar
     try {
-      // Vérifier si c'est le premier changement d'avatar
-      const isFirstAvatarChange = !user.achievements?.progress?.avatarChanged || user.achievements.progress.avatarChanged === 0
-      
-      if (isFirstAvatarChange) {
-        await updateAchievementProgress(req.userId, 'increment', {
-          avatarChanged: 1
-        })
-        // Déclencher une vérification complète pour les nouveaux succès
-        await triggerAchievementCheck(req.userId)
-      }
+      // Toujours incrémenter le compteur de changements d'avatar
+      await updateAchievementProgress(req.userId, 'increment', {
+        avatarChanged: 1
+      })
+      // Déclencher une vérification complète pour les nouveaux succès
+      await triggerAchievementCheck(req.userId)
     } catch (achievementError) {
       console.warn('Erreur mise à jour succès avatar:', achievementError)
     }

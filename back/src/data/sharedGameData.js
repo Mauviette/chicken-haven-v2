@@ -548,6 +548,30 @@ export const achievementsData = {
       quantite: 1
     }
   },
+  'avatar_enthusiast': {
+    id: 'avatar_enthusiast',
+    nom: 'Amateur de Style',
+    description: 'Changez votre avatar 5 fois',
+    icon: '🎭',
+    objectif: 5,
+    type: 'avatar_change',
+    reward: {
+      type: 'stock_token',
+      quantite: 2
+    }
+  },
+  'avatar_master': {
+    id: 'avatar_master',
+    nom: 'Maître du Style',
+    description: 'Changez votre avatar 10 fois',
+    icon: '👗',
+    objectif: 10,
+    type: 'avatar_change',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
   'box_opener': {
     id: 'box_opener',
     nom: 'Collectionneur de Boîtes',

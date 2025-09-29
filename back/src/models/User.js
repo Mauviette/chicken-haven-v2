@@ -93,7 +93,8 @@ const UserSchema = new mongoose.Schema({
           totalChickensOwned: 0,
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
-          maxEggsInOneClick: 0
+          maxEggsInOneClick: 0,
+          avatarChanged: 0
         },
         completed: [],
         lastChecked: new Date()
