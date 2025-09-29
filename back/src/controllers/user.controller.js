@@ -55,6 +55,7 @@ export async function updateAvatar(req, res) {
 
     // Mettre à jour les succès pour le changement d'avatar
     try {
+      console.log(`🎭 Avatar changed for user ${req.userId}: ${user.avatar}`)
       // Toujours incrémenter le compteur de changements d'avatar
       await updateAchievementProgress(req.userId, 'increment', {
         avatarChanged: 1

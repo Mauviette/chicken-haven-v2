@@ -309,6 +309,7 @@ export async function updateAchievementProgress(userId, progressType, value) {
           const currentValue = Number(user.achievements.progress[key]) || 0
           const incrementValue = Number(amount) || 0
           user.achievements.progress[key] = currentValue + incrementValue
+          console.log(`🔍 Achievement progress updated: ${key} ${currentValue} -> ${user.achievements.progress[key]}`)
         }
       }
     } else if (progressType === 'max') {
@@ -318,6 +319,7 @@ export async function updateAchievementProgress(userId, progressType, value) {
           const currentValue = Number(user.achievements.progress[key]) || 0
           const newValue = Number(amount) || 0
           user.achievements.progress[key] = Math.max(currentValue, newValue)
+          console.log(`🔍 Achievement progress updated (max): ${key} ${currentValue} -> ${user.achievements.progress[key]}`)
         }
       }
     }
@@ -359,6 +361,8 @@ export async function triggerAchievementCheck(userId) {
       user.achievements = updatedUser.achievements
     }
 
+    console.log(`🔍 Current achievement progress for user ${userId}:`, user.achievements.progress)
+
     // Vérifier chaque succès
     const newAchievements = []
     const completedIds = user.achievements.completed.map(a => a.achievementId)
@@ -375,6 +379,7 @@ export async function triggerAchievementCheck(userId) {
           rewardClaimed: false
         })
         newAchievements.push({ achievementId, reward: config.reward })
+        console.log(`🎉 New achievement unlocked: ${achievementId}`)
       }
     }
 
