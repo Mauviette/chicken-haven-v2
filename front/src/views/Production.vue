@@ -335,7 +335,7 @@ const handleEggClick = async () => {
       //window.$toast(`+${eggsGained} œuf${eggsGained > 1 ? 's' : ''} 🥚`, 'success')
     }
     
-    const result = await clickEgg()
+  const result = await clickEgg()
     
     // Si l'API a échoué, pas besoin de restaurer car useEgg gère maintenant l'état
     if (!result) {
@@ -346,6 +346,18 @@ const handleEggClick = async () => {
     if (eggsGained > 0) {
       createEggEffect(eggsGained)
     }
+
+    // Effet Chanceuse: pluie d'œufs + toast
+    try {
+      const ch = result?.chanceuse
+      if (ch?.proc) {
+        dropEggs(40)
+        if (window.$toast) {
+          const bonus = Math.floor(Number(ch.bonusEggs || 0))
+          window.$toast(`🍀 Chanceuse ! +${bonus} œufs bonus`, 'success')
+        }
+      }
+    } catch (_) {}
     
     // Actualiser l'affichage des œufs dans la TopBar
     await refreshPlayer()
@@ -429,13 +441,13 @@ watch(() => currentGains.value, (nv, ov) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 2.5vh;
 }
 
 .clickable-egg {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: clamp(90px, 15vw, 140px);
+  height: clamp(90px, 15vw, 140px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -463,7 +475,7 @@ watch(() => currentGains.value, (nv, ov) => {
 }
 
 .egg-sprite {
-  font-size: 80px;
+  font-size: clamp(56px, 10vw, 110px);
   z-index: 2;
   position: relative;
   user-select: none;
@@ -476,8 +488,8 @@ watch(() => currentGains.value, (nv, ov) => {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 100px;
-  height: 100px;
+  width: clamp(80px, 13vw, 120px);
+  height: clamp(80px, 13vw, 120px);
   background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%);
   border-radius: 50%;
   transform: translate(-50%, -50%);
@@ -508,8 +520,8 @@ watch(() => currentGains.value, (nv, ov) => {
   background: rgba(255, 255, 255, 0.95);
   border: 3px solid #8B4513;
   border-radius: 12px;
-  padding: 15px;
-  min-width: 200px;
+  padding: clamp(10px, 2vw, 16px);
+  width: min(65%, 360px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -519,7 +531,7 @@ watch(() => currentGains.value, (nv, ov) => {
 
 .gains-bar {
   width: 100%;
-  height: 20px;
+  height: clamp(14px, 2.2vh, 22px);
   background: #E0E0E0;
   border: 2px solid #8B4513;
   border-radius: 8px;
@@ -539,9 +551,9 @@ watch(() => currentGains.value, (nv, ov) => {
   text-align: center;
   font-family: 'Fredoka', sans-serif;
   font-weight: bold;
-  font-size: 16px;
+  font-size: clamp(14px, 2.8vw, 18px);
   color: #8B4513;
-  margin-top: 5px;
+  margin-top: 6px;
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -574,7 +586,7 @@ watch(() => currentGains.value, (nv, ov) => {
   text-align: center;
   font-family: 'Courier New', monospace;
   color: #666;
-  font-size: 14px;
+  font-size: clamp(12px, 2.4vw, 14px);
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -597,9 +609,10 @@ watch(() => currentGains.value, (nv, ov) => {
   background-color: #ffeecd;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23fab862' fill-opacity='0.39' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: repeat;
-  width: 400px;
-  height: 300px;
-  padding-top: 20px;
+  max-width: min(92vw, 560px);
+  height: clamp(240px, 56vh, 360px);
+  aspect-ratio: 4 / 3;
+  padding-top: 2vh;
   border-radius: 10px;
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -641,6 +654,18 @@ watch(() => currentGains.value, (nv, ov) => {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* Ajustements responsives additionnels */
+@media (max-width: 840px) {
+  .team-stats-banner {
+    font-size: 11px;
+    gap: 6px;
+  }
+}
+
+@media (max-height: 640px) {
+  .egg-container { gap: 1.5vh; }
 }
 </style>
 

@@ -257,6 +257,7 @@ export function useAchievements() {
     if (typeof window !== 'undefined') {
       const onChickenBought = () => setTimeout(checkAchievements, 250)
       const onEggClicked = () => setTimeout(checkAchievements, 250)
+      const onAvatarUpdated = () => setTimeout(checkAchievements, 250)
       const onAuthLogin = async () => {
         // Réinitialiser puis recharger les succès pour le nouveau compte
         try { notifiedAchievements.clear() } catch (_) {}
@@ -295,11 +296,13 @@ export function useAchievements() {
       }
       window.addEventListener('chicken-bought', onChickenBought)
       window.addEventListener('egg-clicked', onEggClicked)
+      window.addEventListener('avatar-updated', onAvatarUpdated)
       window.addEventListener('auth-login', onAuthLogin)
       window.addEventListener('auth-logout', onAuthLogout)
       // Stocker les handlers pour pouvoir les retirer si besoin
       startAutoCheck._onChickenBought = onChickenBought
       startAutoCheck._onEggClicked = onEggClicked
+      startAutoCheck._onAvatarUpdated = onAvatarUpdated
       startAutoCheck._onAuthLogin = onAuthLogin
       startAutoCheck._onAuthLogout = onAuthLogout
     }
@@ -318,6 +321,10 @@ export function useAchievements() {
       if (startAutoCheck._onEggClicked) {
         window.removeEventListener('egg-clicked', startAutoCheck._onEggClicked)
         startAutoCheck._onEggClicked = null
+      }
+      if (startAutoCheck._onAvatarUpdated) {
+        window.removeEventListener('avatar-updated', startAutoCheck._onAvatarUpdated)
+        startAutoCheck._onAvatarUpdated = null
       }
       if (startAutoCheck._onAuthLogin) {
         window.removeEventListener('auth-login', startAutoCheck._onAuthLogin)

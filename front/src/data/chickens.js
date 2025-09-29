@@ -1,8 +1,7 @@
 // DEPRECATED - Utilisez useGameData() pour les données synchronisées
 import { useGameData } from '@/composables/useGameData.js'
 
-// Export pour compatibilité (DEPRECATED)
-export { especeDataLocal as especeData, talentsDataLocal as talentsData } from '@/composables/usePoules.js'
+// Anciennes données locales supprimées. Utiliser les getters synchronisés ci-dessous.
 
 // Fonction pour obtenir les données synchronisées
 export function getEspeceData() {

@@ -92,6 +92,7 @@ import { formatString, achievementsData } from '@/data/items.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { flyBlueberriesToAvatar } from '@/utils/blueberryAnimation.js'
 import { usePlayer } from '@/composables/usePlayer'
+import { useSound } from '@/composables/useSound'
 
 const props = defineProps({
   visible: {
@@ -116,6 +117,7 @@ const {
 } = useAchievements()
 
 const { eggs, addEggs, addTokens, refreshPlayer } = usePlayer()
+const { confirm: sndConfirm } = useSound()
 
 const refreshing = ref(false)
 
@@ -158,6 +160,8 @@ const handleClaimReward = async (achievement, event) => {
 
     const reward = await claimReward(achievement.id)
     if (reward) {
+      // Son de récompense
+      try { sndConfirm() } catch (_) {}
       // Appliquer localement une mise à jour UI rapide
       if (reward.type === 'eggs') {
         addEggs?.(reward.quantite || 0)

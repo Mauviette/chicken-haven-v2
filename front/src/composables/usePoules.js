@@ -6,222 +6,7 @@ import { apiGet, apiPost, apiPut } from '@/utils/api.js'
 const chickenImages = import.meta.glob('@/assets/chickens/**/basic.png', { eager: true })
 const hiddenImage = chickenImages['/src/assets/chickens/hidden/basic.png']?.default || ''
 
-// DEPRECATED - Utilisez useGameData() pour les données synchronisées
-export const especeDataLocal = {
-  'blanchonette': {
-    nom: 'Blanchonette',
-    talent: 'Chanceuse',
-    image: chickenImages['/src/assets/chickens/white/basic.png'].default,
-    categorie: 'eclosion',
-    rarete: 'rare',
-    stats: { intelligence: 4, energie: 2, charisme: 3 },
-    groupe: 'fondamental'
-  },
-  'poulette-rousse': {
-    nom: 'Poulette Roussette',
-    talent: 'Énergétique',
-    image: chickenImages['/src/assets/chickens/red/basic.png'].default,
-    categorie: 'eclosion',
-    rarete: 'commune',
-    stats: { intelligence: 2, energie: 5, charisme: 2 },
-    groupe: 'fondamental',
-  },
-  'noiraude': {
-    nom: 'Noiraude',
-    talent: 'Persévérante',
-    image: chickenImages['/src/assets/chickens/black/basic.png'].default,
-    categorie: 'eclosion',
-    rarete: 'commune',
-    stats: { intelligence: 2, energie: 3, charisme: 4 },
-    groupe: 'fondamental',
-  },
-  'argentine': {
-    nom: 'Argentine',
-    talent: 'Vive',
-    image: chickenImages['/src/assets/chickens/argentine/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'commune',
-    stats: { intelligence: 3, energie: 3, charisme: 3 },
-    groupe: 'brillant',
-  },
-  'aubepine': {
-    nom: 'Aubépine',
-    talent: 'Curieuse',
-    image: chickenImages['/src/assets/chickens/aubepine/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'rare',
-    stats: { intelligence: 4, energie: 3, charisme: 2 },
-    groupe: 'brillant',
-  },
-  'cendree': {
-    nom: 'Cendrée',
-    talent: 'Discrète',
-    image: chickenImages['/src/assets/chickens/cendree/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'commune',
-    stats: { intelligence: 3, energie: 2, charisme: 4 },
-    groupe: 'brillant',
-  },
-  'choco': {
-    nom: 'Poulette choco',
-    talent: 'Gourmande',
-    image: chickenImages['/src/assets/chickens/choco/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'commune',
-    stats: { intelligence: 1, energie: 4, charisme: 4 },
-    groupe: 'discret',
-  },
-  'ecailleuse': {
-    nom: 'Écailleuse',
-    talent: 'Protectrice',
-    image: chickenImages['/src/assets/chickens/ecailleuse/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'rare',
-    stats: { intelligence: 3, energie: 4, charisme: 2 },
-    groupe: 'discret',
-  },
-  'grisette': {
-    nom: 'Grisette',
-    talent: 'Maligne',
-    image: chickenImages['/src/assets/chickens/grisette/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'commune',
-    stats: { intelligence: 5, energie: 1, charisme: 3 },
-    groupe: 'discret',
-  },
-  'queuedepaon': {
-    nom: 'Queue de Paon',
-    talent: 'Majestueuse',
-    image: chickenImages['/src/assets/chickens/queuedepaon/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'epique',
-    stats: { intelligence: 3, energie: 1, charisme: 5 },
-    groupe: 'chic',
-  },
-  'rayee': {
-    nom: 'Rayée',
-    talent: 'Rapide',
-    image: chickenImages['/src/assets/chickens/rayee/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'commune',
-    stats: { intelligence: 4, energie: 4, charisme: 1 },
-    groupe: 'chic',
-  },
-  'tachetee': {
-    nom: 'Tachetée',
-    talent: 'Joyeuse',
-    image: chickenImages['/src/assets/chickens/tachetee/basic.png']?.default || hiddenImage,
-    categorie: 'eclosion',
-    rarete: 'rare',
-    stats: { intelligence: 4, energie: 1, charisme: 4 },
-    groupe: 'chic',
-  },
-}
-
-// DEPRECATED - Utilisez useGameData() pour les données synchronisées
-export const talentsDataLocal = {
-  'Chanceuse': {
-    description: "Lors des récoltes, a une petite chance de fait pleuvoir des oeufs.",
-    effet: (niveau) => `Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x${niveau} en oeufs.`,
-    calc: { req: [ 'niveau', 'maxStockage' ],
-            print: (calcul) => `Pour chaque oeuf récolté, 1% de chance de gagner ${calcul} oeufs`,
-            type: {
-              trigger : 'harvest',
-              chance : true,
-              reward: 'egg_rain',
-              calcul: (niveau, maxStockage) => niveau * maxStockage,
-            }
-    },
-    maxNiveau: 10,
-    icon: '🍀'
-  },
-  'Énergétique': {
-    description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
-    effet: (niveau) => `+${niveau * 0.2} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
-    calc: { req: [ 'energieEquipe', 'niveau' ],
-            print: (revenu) => `+${revenu}/s`,
-            type: {
-              trigger : 'always',
-              chance : false,
-              reward: 'income',
-              calcul: (niveau, energieEquipe) => energieEquipe * 0.2 * niveau,
-            }
-    },
-    maxNiveau: 10,
-    icon: '⚡'
-  },
-  'Persévérante': {
-    description: "Augmente l'énergie et l'intelligence de l'équipe.",
-    effet: (niveau) => `+${niveau} énergie et intelligence à toutes les poules de l'équipe.`,
-    calc: { req: [ 'niveau' ],
-            calcul: (niveau) => niveau,
-            type: {
-              trigger : 'always',
-              chance : false,
-              reward: 'buff',
-              target: 'team',
-              stats : ['intelligence', 'charisme'],
-              print: (niveau) => `+${niveau} énergie et intelligence à toutes les poules de l'équipe.`,
-            }
-    },
-    maxNiveau: 10,
-    icon: '🏋️'
-  },
-  'Vive': {
-    description: "Termine les missions plus rapidement.",
-    effet: (niveau) => `Vitesse de mission +${niveau * 8}%`,
-    maxNiveau: 5,
-    icon: '🏃'
-  },
-  'Curieuse': {
-    description: "Découvre plus d'événements spéciaux.",
-    effet: (niveau) => `+${niveau * 3}% d'événements spéciaux`,
-    maxNiveau: 5,
-    icon: '🔎'
-  },
-  'Discrète': {
-    description: "Moins de risques lors des missions risquées.",
-    effet: (niveau) => `Risque réduit de ${niveau * 6}%`,
-    maxNiveau: 5,
-    icon: '🕵️'
-  },
-  'Gourmande': {
-    description: "Consomme moins de nourriture.",
-    effet: (niveau) => `Consommation -${niveau * 5}%`,
-    maxNiveau: 5,
-    icon: '🍗'
-  },
-  'Protectrice': {
-    description: "Protège les autres poules lors d'événements.",
-    effet: (niveau) => `Protection +${niveau * 7}%`,
-    maxNiveau: 5,
-    icon: '🛡️'
-  },
-  'Maligne': {
-    description: "Résout les énigmes plus facilement.",
-    effet: (niveau) => `+${niveau * 4}% de réussite aux énigmes`,
-    maxNiveau: 5,
-    icon: '🧠'
-  },
-  'Majestueuse': {
-    description: "Attire l'attention lors des concours.",
-    effet: (niveau) => `Charisme concours +${niveau * 6}%`,
-    maxNiveau: 5,
-    icon: '👑'
-  },
-  'Rapide': {
-    description: "Se déplace plus vite.",
-    effet: (niveau) => `Vitesse +${niveau * 10}%`,
-    maxNiveau: 5,
-    icon: '💨'
-  },
-  'Joyeuse': {
-    description: "Augmente le moral du poulailler.",
-    effet: (niveau) => `Moral +${niveau * 2}`,
-    maxNiveau: 5,
-    icon: '🎉'
-  },
-}
+// NOTE: Toutes les données d'espèces et de talents doivent désormais provenir de useGameData()
 
 // Méthodes pour le système de talents (utilise les données synchronisées)
 function getTalentLevel(poule) {
@@ -251,24 +36,17 @@ export function getTalentLevelRoman(poule) {
   return romanNumerals[niveau - 1] || '???'
 }
 
-// Fonctions exportées qui utilisent les données locales comme fallback
+// Fonctions exportées reposant sur les données synchronisées
 export function getTalentEffect(poule) {
-  try {
-    // Utiliser les données locales comme fallback
-    const espece = especeDataLocal[poule.especeId]
-    const niveau = getTalentLevel(poule)
-    const talentInfo = talentsDataLocal[espece?.talent]
-    return talentInfo?.effet ? talentInfo.effet(niveau) : '???'
-  } catch (error) {
-    console.error('Erreur getTalentEffect:', error)
-    return '???'
-  }
+  // Délègue à la version synchronisée
+  return getTalentEffectSync(poule)
 }
 
-// Fonction utilitaire pour récupérer l'icône d'un talent
+// Fonction utilitaire pour récupérer l'icône d'un talent depuis les données synchronisées
 export function getIcon(talentName) {
   try {
-    const talentInfo = talentsDataLocal[talentName]
+    const { talents } = useGameData()
+    const talentInfo = (talents.value || {})[talentName]
     return talentInfo?.icon || ''
   } catch (error) {
     console.error('Erreur getIcon:', error)
@@ -277,17 +55,8 @@ export function getIcon(talentName) {
 }
 
 export function getTalentDisplayName(poule) {
-  try {
-    // Utiliser les données locales comme fallback
-    const espece = especeDataLocal[poule.especeId]
-    const talentName = espece?.talent
-    const talentInfo = talentsDataLocal[talentName]
-    const icon = talentInfo?.icon || ''
-    return `${icon} ${talentName} ${getTalentLevelRoman(poule)}`
-  } catch (error) {
-    console.error('Erreur getTalentDisplayName:', error)
-    return '??? ???'
-  }
+  // Délègue à la version synchronisée
+  return getTalentDisplayNameSync(poule)
 }
 
 // Singleton d'état partagé entre tous les appels à usePoules()
@@ -431,18 +200,9 @@ export function usePoules() {
   async function upgradeTalent(poule) {
     try {
       if (!canUpgradeTalent(poule)) return false
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/talent/upgrade`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ especeId: poule.especeId })
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        window.$toast?.(data.error || 'Amélioration impossible', 'error')
+      const data = await apiPost('/api/talent/upgrade', { especeId: poule.especeId })
+      if (!data?.success) {
+        window.$toast?.(data?.error || 'Amélioration impossible', 'error')
         return false
       }
       // appliquer retour serveur
@@ -466,20 +226,13 @@ export function usePoules() {
       rawPoules.value[idx] = { ...rawPoules.value[idx], new: false }
     }
     try {
-      const token = localStorage.getItem('token')
-      await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/poules/${encodeURIComponent(especeId)}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ new: false })
-      })
+      await apiPut(`/api/poules/${encodeURIComponent(especeId)}`, { new: false })
     } catch (_) { /* best-effort */ }
   }
 
   // Versions composable des fonctions de talent (utilisent les données synchronisées)
   function getTalentEffectSync(poule) {
+    if (!poule || !poule.especeId) return '???'
     try {
       const especiesData = especies.value || {}
       const talentsData = talents.value || {}
@@ -547,19 +300,57 @@ export function usePoules() {
         }
       }
 
-      // 3) Sinon, préférer un texte d'effet plutôt que la description
-      //    a) Fallback local (fonctions non sérialisables côté backend)
-      const localInfo = talentsDataLocal[talentName]
-      if (localInfo && typeof localInfo.effet === 'function') {
-        return localInfo.effet(niveau)
+      // 2.b) Talent basé sur une probabilité par œuf: Chanceuse
+      // Cherche une condition random_chance et un effet resource eggs
+      if (calc) {
+        const rc = Array.isArray(calc.conditions)
+          ? calc.conditions.find(c => c?.type === 'random_chance')
+          : null
+        const resEff = Array.isArray(calc.effects)
+          ? calc.effects.find(e => e?.type === 'resource' && e?.resource === 'eggs')
+          : null
+        if (rc && resEff) {
+          // pSingle peut être 0..1 (fraction) ou 0..100 (pourcents)
+          let p = 0.01
+          if (typeof rc.value === 'number' && !Number.isNaN(rc.value)) {
+            p = rc.value > 1 ? (rc.value / 100) : rc.value
+          }
+          const pct = Math.round(p * 100)
+          // Montant: souvent niveau * stockageMax -> afficher en fonction du niveau
+          // Sans connaître stockageMax côté client, on exprime la formule textuelle
+          return `Pour chaque œuf collecté, ${pct}% de chance de gagner stockage max × ${niveau} en œufs.`
+        }
       }
-      //    b) Si par exception le backend expose une fonction effet, l'utiliser
+
+      // 3) Sinon, préférer un texte d'effet plutôt que la description
+      //    a) Si par exception le backend expose une fonction effet, l'utiliser
       const tInfo = talentsData[talentName]
       if (tInfo && typeof tInfo.effet === 'function') {
         return tInfo.effet(niveau)
       }
-      //    c) Dernier recours: description (locale ou backend)
-      return (localInfo?.description || tInfo?.description || '???')
+      //    b) Fallback local minimal (les fonctions ne sont pas sérialisables côté backend)
+      const localEffect = {
+        'Chanceuse': (n) => `Pour chaque œuf collecté, 1% de chance de gagner stockage max × ${n} en œufs.`,
+        'Énergétique': (n) => `+${(n * 0.2).toFixed(1)} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
+        'Energetique': (n) => `+${(n * 0.2).toFixed(1)} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
+        'Persévérante': (n) => `+${n} énergie et intelligence à toutes les poules de l'équipe.`,
+        'Perseverante': (n) => `+${n} énergie et intelligence à toutes les poules de l'équipe.`,
+        'Vive': (n) => `Vitesse de mission +${n * 8}%`,
+        'Curieuse': (n) => `+${n * 3}% d'événements spéciaux`,
+        'Discrète': (n) => `Risque réduit de ${n * 6}%`,
+        'Discrete': (n) => `Risque réduit de ${n * 6}%`,
+        'Gourmande': (n) => `Consommation -${n * 5}%`,
+        'Protectrice': (n) => `Protection +${n * 7}%`,
+        'Maligne': (n) => `+${n * 4}% de réussite aux énigmes`,
+        'Majestueuse': (n) => `Charisme concours +${n * 6}%`,
+        'Rapide': (n) => `Vitesse +${n * 10}%`,
+        'Joyeuse': (n) => `Moral +${n * 2}`
+      }
+      if (talentName && typeof localEffect[talentName] === 'function') {
+        return localEffect[talentName](niveau)
+      }
+      //    c) Dernier recours: description backend
+      return (tInfo?.description || '???')
     } catch (error) {
       console.error('Erreur getTalentEffectSync:', error)
       return '???'
@@ -609,8 +400,5 @@ export function usePoules() {
     // Versions synchronisées (à utiliser dans les composants)
     getTalentEffectSync,
     getTalentDisplayNameSync,
-    // Données locales (DEPRECATED - à supprimer)
-    especeData: especeDataLocal,
-    talentsData: talentsDataLocal,
   }
 }

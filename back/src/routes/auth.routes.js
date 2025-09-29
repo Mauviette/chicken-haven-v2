@@ -5,7 +5,10 @@ import User from '../models/User.js'
 import { verifyToken } from '../middleware/auth.middleware.js'
 
 const router = express.Router()
-const SECRET_KEY = process.env.JWT_SECRET
+const SECRET_KEY = process.env.JWT_SECRET || 'dev-secret'
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  JWT_SECRET manquant. Utilisation d\'une clé par défaut pour le développement.')
+}
 
 // 🐣 Enregistrement
 router.post('/register', async (req, res) => {

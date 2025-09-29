@@ -3,7 +3,12 @@
 
 export function flyBlueberriesToAvatar({ count = 1, startRect, duration = 800 } = {}) {
   try {
-    const target = document.getElementById('avatar-anchor')
+    let target = document.getElementById('avatar-anchor')
+    // Fallback: chercher une image avatar visible si l'ancre n'est pas encore montée
+    if (!target) {
+      const candidate = document.querySelector('img.avatar')
+      if (candidate) target = candidate
+    }
     if (!target) return
     const targetRect = target.getBoundingClientRect()
 

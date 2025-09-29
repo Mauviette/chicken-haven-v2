@@ -2,6 +2,7 @@
 // Composable pour gérer les données de jeu synchronisées avec le backend
 
 import { ref, computed, onMounted } from 'vue'
+import { apiGet } from '@/utils/api.js'
 
 // État global des données de jeu
 const gameData = ref(null)
@@ -30,23 +31,7 @@ export function useGameData() {
       loading.value = true
       error.value = null
 
-      const token = localStorage.getItem('token')
-      const headers = {
-        'Content-Type': 'application/json'
-      }
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/game-data`, {
-        headers
-      })
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const result = await response.json()
+      const result = await apiGet('/api/game-data')
       
       if (!result.success) {
         throw new Error(result.error || 'Erreur lors de la récupération des données')
@@ -84,18 +69,7 @@ export function useGameData() {
   // Fonction pour vérifier si les données locales sont à jour
   async function checkDataVersion() {
     try {
-      const token = localStorage.getItem('token')
-      const headers = {
-        'Content-Type': 'application/json'
-      }
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/game-data/version`, {
-        headers
-      })
-      const result = await response.json()
+      const result = await apiGet('/api/game-data/version')
       
       if (dataVersion.value && dataVersion.value !== result.version) {
         console.log('🔄 Nouvelle version des données détectée, synchronisation...')

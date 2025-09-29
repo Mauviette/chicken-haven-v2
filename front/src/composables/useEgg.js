@@ -65,7 +65,7 @@ export function useEgg() {
           lastClick: new Date(data.lastClick),
           totalEggs: data.totalEggs
         }
-        console.log('Egg status synced with server:', data)
+        // sync ok
       }
     } catch (error) {
       console.error('Erreur lors de la récupération du statut de l\'œuf:', error)
@@ -98,7 +98,7 @@ export function useEgg() {
           totalEggs: data.totalEggs,
           lastClick: new Date(data.lastClick)
         }
-        console.log('Egg clicked successfully:', data)
+        // click ok
 
         // Afficher un message de succès si disponible
         if (window.$toast) {
@@ -138,10 +138,10 @@ export function useEgg() {
       eggState.value = { ...eggState.value }
     }, 1000)
 
-    // Synchronisation avec le serveur toutes les 3 secondes
+    // Synchronisation avec le serveur toutes les 1 seconde
     const serverSyncInterval = setInterval(() => {
       fetchEggStatus()
-    }, 3000)
+    }, 1000)
 
     // Stocker l'interval de sync pour pouvoir l'arrêter
     if (!eggState.value._serverSyncInterval) {
