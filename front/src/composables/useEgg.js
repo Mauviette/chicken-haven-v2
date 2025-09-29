@@ -4,6 +4,7 @@ import { useAuth } from './useAuth'
 const eggState = ref({
   income: 1,
   maxIncome: 30,
+  currentStocked: 0,
   lastClick: new Date(),
   totalEggs: 0,
   isLoading: false
@@ -20,8 +21,13 @@ export function useEgg() {
 
   const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/egg`
 
-  // État calculé pour l'affichage - calcul temps réel côté frontend
+  // État calculé pour l'affichage - utiliser serveur quand disponible
   const currentGains = computed(() => {
+    // Si on a une valeur du serveur récente, l'utiliser
+    if (eggState.value.currentStocked !== undefined) {
+      return eggState.value.currentStocked
+    }
+    // Sinon calcul local en fallback
     const now = new Date()
     const lastClick = new Date(eggState.value.lastClick)
     const timeDiff = Math.floor((now - lastClick) / 1000)
@@ -55,6 +61,7 @@ export function useEgg() {
           ...eggState.value,
           income: data.income,
           maxIncome: data.maxIncome,
+          currentStocked: data.currentStocked,
           lastClick: new Date(data.lastClick),
           totalEggs: data.totalEggs
         }
@@ -87,6 +94,7 @@ export function useEgg() {
           ...eggState.value,
           income: data.income ?? eggState.value.income,
           maxIncome: data.maxIncome ?? eggState.value.maxIncome,
+          currentStocked: data.currentStocked ?? 0,
           totalEggs: data.totalEggs,
           lastClick: new Date(data.lastClick)
         }
@@ -130,10 +138,10 @@ export function useEgg() {
       eggState.value = { ...eggState.value }
     }, 1000)
 
-    // Synchronisation avec le serveur toutes les 10 secondes
+    // Synchronisation avec le serveur toutes les 3 secondes
     const serverSyncInterval = setInterval(() => {
       fetchEggStatus()
-    }, 10000)
+    }, 3000)
 
     // Stocker l'interval de sync pour pouvoir l'arrêter
     if (!eggState.value._serverSyncInterval) {

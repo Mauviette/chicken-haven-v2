@@ -154,7 +154,7 @@ watch(() => props.containerWidth, () => {
 /* Racine absolue positionnée par rapport à .stage (parent avec position:relative) */
 .actor {
   position: absolute;
-  bottom: 0; /* ancrer les pattes au bas de la scène */
+  bottom: -1px; /* ancrer les pattes au bas de la scène, baissé de 1px */
   pointer-events: auto; /* nécessaire pour le tooltip */
 }
 
