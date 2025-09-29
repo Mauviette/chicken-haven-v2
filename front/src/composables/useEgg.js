@@ -129,8 +129,21 @@ export function useEgg() {
     if (updateInterval) return
 
     updateInterval = setInterval(() => {
-      // Force la réactivité en mettant à jour une référence
-      eggState.value = { ...eggState.value }
+      // Mettre à jour currentStocked en temps réel si on a les données nécessaires
+      if (eggState.value.lastClick && eggState.value.income != null && eggState.value.maxIncome != null) {
+        const now = new Date()
+        const timeDiffSeconds = Math.floor((now - new Date(eggState.value.lastClick)) / 1000)
+        const newCurrentStocked = Math.min(timeDiffSeconds * eggState.value.income, eggState.value.maxIncome)
+        
+        // Mettre à jour currentStocked pour que currentGains soit recalculé
+        eggState.value = {
+          ...eggState.value,
+          currentStocked: newCurrentStocked
+        }
+      } else {
+        // Force la réactivité en mettant à jour une référence
+        eggState.value = { ...eggState.value }
+      }
     }, 1000)
 
     // Écouter les changements d'équipe pour rafraîchir l'income immédiatement
