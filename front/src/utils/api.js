@@ -68,6 +68,14 @@ export const apiPut = (endpoint, data = null) => apiCallJSON(endpoint, {
 })
 
 /**
+ * PATCH request avec JSON parsing
+ */
+export const apiPatch = (endpoint, data = null) => apiCallJSON(endpoint, {
+  method: 'PATCH',
+  body: data ? JSON.stringify(data) : null
+})
+
+/**
  * DELETE request avec JSON parsing
  */
 export const apiDelete = (endpoint) => apiCallJSON(endpoint, { method: 'DELETE' })

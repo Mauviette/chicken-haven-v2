@@ -1,6 +1,7 @@
 // composables/useSettings.js
 import { ref, watch } from 'vue'
 import { useAuth } from './useAuth'
+import { apiGet, apiPatch } from '@/utils/api.js'
 
 const settings = ref({
   sound: true,
@@ -16,11 +17,7 @@ export function useSettings() {
   async function fetchSettings() {
     if (!token.value) return
     try {
-        const res = await fetch('/api/auth/me', {
-            headers: { Authorization: `Bearer ${token.value}` }
-          })
-      
-      const data = await res.json()
+      const data = await apiGet('/api/auth/me')
       // Fusionner avec des valeurs par défaut et normaliser
       const incoming = data?.settings || {}
       const merged = {
@@ -49,14 +46,7 @@ export function useSettings() {
           animations: Boolean(settings.value?.animations),
           volume: Math.max(0, Math.min(100, Number(settings.value?.volume ?? 100)))
         }
-        await fetch('/api/auth/settings', {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token.value}`
-          },
-          body: JSON.stringify({ settings: out })
-        })
+        await apiPatch('/api/auth/settings', { settings: out })
         
     } catch (err) {
       console.error('Erreur lors de la sauvegarde des settings :', err)
