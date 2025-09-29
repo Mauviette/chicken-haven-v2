@@ -219,13 +219,13 @@ export const talentsData = {
     icon: '🍗'
   },
   'Protectrice': {
-    description: "Augmente le stockage max en fonction de la production.",
-    effet: (niveau) => `Augmente le stockage de ${niveau * 2} par production/s.`,
+    description: "Augmente la production et le stockage max en fonction de l'intelligence.",
+    effet: (niveau) => `Augmente le stockage de ${niveau} et la production de ${niveau * 0.1} par point d'intelligence dans l'équipe.`,
     icon: '🛡️'
   },
   'Maligne': {
-    description: "Résout les énigmes plus facilement.",
-    effet: (niveau) => `+${niveau * 4}% de réussite aux énigmes`,
+    description: "Cliquez-moi pour augmenter l'intelligence temporairement.",
+    effet: (niveau) => `Cliquez moi pour augmenter l'intelligence globale de ${niveau * 10}% pendant 10s. Cooldown 1 minute`, //Clic se fait sur TeamParadeChicken
     icon: '🧠'
   },
   'Majestueuse': {
@@ -248,15 +248,13 @@ export const talentsData = {
     }
   },
   'Rapide': {
-    description: "Se déplace plus vite.",
-    effet: (niveau) => `Vitesse +${niveau * 10}%`,
-
+    description: "Baisse les cooldown de capacité de poules.",
+    effet: (niveau) => `Baisse les cooldown de capacité de poules de ${5 + niveau * 5}%`,
     icon: '💨'
   },
   'Joyeuse': {
-    description: "Augmente le moral du poulailler.",
-    effet: (niveau) => `Moral +${niveau * 2}`,
-
+    description: "Cliquez-moi pour augmenter les revenus temporairement.",
+    effet: (niveau) => `Cliquez moi pour augmenter le revenu de ${niveau * 200}% pendant 10s. Cooldown 1 minute`, //Clic se fait sur TeamParadeChicken
     icon: '🎉'
   }
 }

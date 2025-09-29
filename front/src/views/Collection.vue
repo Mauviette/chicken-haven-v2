@@ -29,7 +29,7 @@
         :espece="especeData[poule.especeId]"
         :image="getImage(poule.especeId)"
         :hiddenImage="hiddenImage"
-        @click="poule.quantite > 0 && openDetail(poule)"
+        @click="poule.quantite >= 0 && openDetail(poule)"
       />
     </div>
 
