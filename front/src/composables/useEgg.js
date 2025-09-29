@@ -19,7 +19,7 @@ let onUpgradeBought = null
 export function useEgg() {
   const { token } = useAuth()
 
-  const API_BASE = 'http://localhost:3002/api/egg'
+  const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/egg`
 
   // État calculé pour l'affichage
   const currentGains = computed(() => {

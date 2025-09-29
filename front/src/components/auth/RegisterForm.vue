@@ -24,7 +24,7 @@
     registerBtn.textContent = "Inscription...";
 
     try {
-      const res = await axios.post('http://localhost:3002/api/auth/register', {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
         username: username.value,
         password: password.value
       })

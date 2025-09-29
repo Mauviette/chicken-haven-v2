@@ -1,7 +1,7 @@
 // composables/useBoxes.js
 import { ref } from 'vue'
 
-const API_BASE_URL = 'http://localhost:3002'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export function useBoxes() {
   const loading = ref(false)

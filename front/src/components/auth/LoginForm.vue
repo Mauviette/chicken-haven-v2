@@ -24,7 +24,7 @@
     loginBtn.textContent = "Connexion...";
     
     try {
-      const res = await axios.post('http://localhost:3002/api/auth/login', {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
         username: username.value,
         password: password.value
       })

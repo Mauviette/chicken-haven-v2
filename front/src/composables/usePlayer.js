@@ -15,7 +15,7 @@ export function usePlayer() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch('http://localhost:3002/api/egg/status', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/egg/status`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

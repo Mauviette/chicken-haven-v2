@@ -25,7 +25,7 @@ export function useAchievements() {
   const { eggs, refreshPlayerData } = usePlayer()
   const { achievements: gameAchievements } = useGameData()
   
-  const API_BASE = 'http://localhost:3002/api/achievements'
+  const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/achievements`
 
   // Computed properties pour l'affichage
   const achievements = computed(() => {
