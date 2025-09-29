@@ -64,7 +64,7 @@
                 {{ Math.floor(currentGains) }} / {{ eggState.maxIncome }}
               </div>
               <div class="gains-per-click">
-                <span class="click-info">💰 {{ Math.floor(currentGains) }} œuf{{ Math.floor(currentGains) > 1 ? 's' : '' }} par clic</span>
+                <!--span class="click-info">💰 {{ Math.floor(currentGains) }} œuf{{ Math.floor(currentGains) > 1 ? 's' : '' }} par clic</span-->
               </div>
             </div>
             
@@ -329,31 +329,16 @@ const handleEggClick = async () => {
     // Son d'œuf cliqué
     eggClick()
     const eggsGained = Math.floor(currentGains.value)
-    console.log('🥚 Clic sur œuf, gains attendus:', eggsGained)
     
     // Afficher immédiatement un toast avec les gains
     if (window.$toast && eggsGained > 0) {
-      //window.$toast(`+${eggsGained} œuf${eggsGained > 1 ? 's' : ''} 🥚`, 'success')
-    }
-    
-    // Réinitialiser visuellement les gains pour éviter l'effet "bloqué au max"
-    // On garde une copie de l'état actuel
-    const originalLastClick = eggState.value.lastClick
-    // Simuler un reset visuel immédiat
-    eggState.value = {
-      ...eggState.value,
-      lastClick: new Date() // Reset visuel immédiat
+      window.$toast(`+${eggsGained} œuf${eggsGained > 1 ? 's' : ''} 🥚`, 'success')
     }
     
     const result = await clickEgg()
-    console.log('🥚 Résultat API:', result)
     
-    // Si l'API a échoué, restaurer l'état précédent
+    // Si l'API a échoué, pas besoin de restaurer car useEgg gère maintenant l'état
     if (!result) {
-      eggState.value = {
-        ...eggState.value,
-        lastClick: originalLastClick
-      }
       return
     }
     
@@ -361,20 +346,9 @@ const handleEggClick = async () => {
     if (eggsGained > 0) {
       createEggEffect(eggsGained)
     }
-    // Effet visuel/Toast si Chanceuse a proc
-    if (result?.chanceuse?.active && result.chanceuse.proc) {
-      const bonus = result.chanceuse.bonusEggs || 0
-      if (window.$toast) {
-        window.$toast(`Chanceuse ! +${bonus} œufs bonus`, 'lucky')
-      }
-      // Effet identique à AuthView (pluie d'œufs) avec l'amount défini dans le DSL si présent
-      const rainAmount = (result.chanceuse.effects || []).find(e => e?.type === 'visual_effect' && e?.effect === 'egg_rain')?.amount
-      dropEggs(Math.max(1, Number(rainAmount) || 20))
-    }
+    
     // Actualiser l'affichage des œufs dans la TopBar
-    console.log('🔄 Rafraîchissement des données joueur...')
     await refreshPlayer()
-    console.log('✅ Données joueur rafraîchies')
   }
 }
 

@@ -23,9 +23,13 @@ export function useEgg() {
 
   // État calculé pour l'affichage
   const currentGains = computed(() => {
+    // Utiliser la valeur du serveur si disponible, sinon calcul local en fallback
+    if (eggState.value.currentStocked !== undefined) {
+      return eggState.value.currentStocked
+    }
+    // Fallback: calcul local si le serveur n'a pas encore répondu
     const now = new Date()
     const timeDiff = Math.floor((now - new Date(eggState.value.lastClick)) / 1000)
-    // Garder la valeur exacte (non floored) pour éviter un décalage avec le serveur
     return Math.min(timeDiff * eggState.value.income, eggState.value.maxIncome)
   })
 
@@ -55,6 +59,7 @@ export function useEgg() {
           ...eggState.value,
           income: data.income,
           maxIncome: data.maxIncome,
+          currentStocked: data.currentStocked,
           lastClick: new Date(data.lastClick),
           totalEggs: data.totalEggs
         }
@@ -86,6 +91,7 @@ export function useEgg() {
           ...eggState.value,
           income: data.income ?? eggState.value.income,
           maxIncome: data.maxIncome ?? eggState.value.maxIncome,
+          currentStocked: data.currentStocked ?? 0,
           totalEggs: data.totalEggs,
           lastClick: new Date(data.lastClick)
         }
