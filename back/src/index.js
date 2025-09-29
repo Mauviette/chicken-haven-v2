@@ -49,28 +49,8 @@ app.use((req, res, next) => {
   next()
 })
 
-app.options('*', cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true)
-    
-    const allowedOrigins = [
-      'https://chickenhaven.vercel.app',
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://localhost:4173'
-    ]
-    
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-      return callback(null, true)
-    }
-    
-    callback(new Error('Non autorisé par CORS'))
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  optionsSuccessStatus: 200
-}));
+// Supprimer la route OPTIONS générique qui cause l'erreur
+// Le middleware CORS global gère déjà les requêtes preflight
 
 app.use(express.json())
 
