@@ -49,5 +49,25 @@ mongoose.connect(process.env.MONGO_URI, {
   app.listen(process.env.PORT, '0.0.0.0', () => {
     console.log(`🚀 Serveur lancé sur le port ${process.env.PORT}`)
   })
-}).catch((err) => console.error('Erreur MongoDB :', err))
+}).catch((err) => {
+  console.error('❌ Erreur de connexion MongoDB :', err.message)
+  console.log('🔄 Tentative de redémarrage dans 5 secondes...')
+  setTimeout(() => {
+    process.exit(1)
+  }, 5000)
+})
+
+// Gestion des erreurs de connexion après l'initialisation
+mongoose.connection.on('error', (err) => {
+  console.error('❌ Erreur MongoDB :', err.message)
+})
+
+mongoose.connection.on('disconnected', () => {
+  console.log('⚠️ MongoDB déconnecté')
+})
+
+// Reconnexion automatique
+mongoose.connection.on('reconnected', () => {
+  console.log('✅ MongoDB reconnecté')
+})
 
