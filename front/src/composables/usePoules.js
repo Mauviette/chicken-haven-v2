@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameData } from './useGameData.js'
 import { usePlayer } from './usePlayer.js'
 import { apiGet, apiPost, apiPut } from '@/utils/api.js'
@@ -296,6 +296,12 @@ const loading = ref(true)
 
 async function fetchPoulesSingleton() {
   try {
+    // Ne pas appeler l'API si l'utilisateur n'est pas connecté
+    const token = localStorage.getItem('token')
+    if (!token) {
+      rawPoules.value = []
+      return
+    }
     const data = await apiGet('/api/poules')
     rawPoules.value = Array.isArray(data) ? data : []
   } catch (err) {
@@ -309,12 +315,39 @@ export function usePoules() {
   // Utiliser les données synchronisées
   const { especies, talents, getEspeceInfo, getTalentInfo, talentLevelUpgradeCost } = useGameData()
   const { refreshPlayer } = usePlayer()
+  // Helper local (évite import circulaire avec useAuth)
+  const isLoggedIn = () => !!localStorage.getItem('token')
 
   // Charger une seule fois (les montages suivants ne rechargeront pas si déjà fait)
+  const onLogin = () => {
+    fetchPoulesSingleton()
+  }
+  const onLogout = () => {
+    rawPoules.value = []
+    loading.value = false
+  }
+
   onMounted(() => {
-    if (!rawPoules.value || rawPoules.value.length === 0) {
+    // Charge seulement si connecté
+    if (isLoggedIn() && (!rawPoules.value || rawPoules.value.length === 0)) {
       fetchPoulesSingleton()
+    } else if (!isLoggedIn()) {
+      // Pas connecté: pas d'appel réseau et pas d'état de chargement bloqué
+      loading.value = false
     }
+
+    // Écoute les événements globaux pour réagir aux changements d'auth
+    try {
+      window.addEventListener('auth-login', onLogin)
+      window.addEventListener('auth-logout', onLogout)
+    } catch (_) {}
+  })
+
+  onUnmounted(() => {
+    try {
+      window.removeEventListener('auth-login', onLogin)
+      window.removeEventListener('auth-logout', onLogout)
+    } catch (_) {}
   })
 
   const poules = computed(() => {

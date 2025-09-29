@@ -225,7 +225,7 @@ export const talentsData = {
   },
   'Maligne': {
     description: "Cliquez-moi pour augmenter l'intelligence temporairement.",
-    effet: (niveau) => `Cliquez moi pour augmenter l'intelligence globale de ${niveau * 10}% pendant 10s. Cooldown 1 minute`, //Clic se fait sur TeamParadeChicken
+    effet: (niveau) => `Cliquez moi pour augmenter l'intelligence globale de ${niveau * 50}% pendant 20s. Cooldown 1 minute`, //Clic se fait sur TeamParadeChicken
     icon: '🧠'
   },
   'Majestueuse': {
@@ -249,7 +249,7 @@ export const talentsData = {
   },
   'Rapide': {
     description: "Baisse les cooldown de capacité de poules.",
-    effet: (niveau) => `Baisse les cooldown de capacité de poules de ${5 + niveau * 5}%`,
+    effet: (niveau) => `Baisse les cooldown de capacité de poules de ${10 + niveau * 8}%`,
     icon: '💨'
   },
   'Joyeuse': {
