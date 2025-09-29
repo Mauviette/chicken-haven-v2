@@ -106,7 +106,6 @@ const levelTooltipHtml = () => {
   width: 100%;
   height: 60px;
   background-color: #f6e4c3;
-  background-image: url("@/assets/bar/top-texture.png");
   background-repeat: repeat;
   display: flex;
   justify-content: center;
