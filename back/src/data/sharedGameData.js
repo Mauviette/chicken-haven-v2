@@ -214,21 +214,18 @@ export const talentsData = {
     icon: '🕵️'
   },
   'Gourmande': {
-    description: "Augmente le revenu en fonction du stockage max.",
-    effet: (niveau) => `Augmente le revenu de ${niveau * 0.05} par stockage.`,
-
+    description: "Des chocolats apparaissent sur l'écran qui augmentent la production lorsque cliqués.",
+    effet: (niveau) => `Des chocolats apparaissent, en cliquer un augmente la production de ${niveau * 100}% pendant 15s.`,
     icon: '🍗'
   },
   'Protectrice': {
-    description: "Protège les autres poules lors d'événements.",
-    effet: (niveau) => `Protection +${niveau * 7}%`,
-
+    description: "Augmente le stockage max en fonction de la production.",
+    effet: (niveau) => `Augmente le stockage de ${niveau * 2} par production/s.`,
     icon: '🛡️'
   },
   'Maligne': {
     description: "Résout les énigmes plus facilement.",
     effet: (niveau) => `+${niveau * 4}% de réussite aux énigmes`,
-
     icon: '🧠'
   },
   'Majestueuse': {

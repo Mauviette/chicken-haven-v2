@@ -197,7 +197,7 @@ export async function claimReward(req, res) {
     } catch (_) {}
 
     // Vérifier que les conditions sont toujours remplies au moment de la réclamation
-    if (!config.check(user.achievements.progress)) {
+    if (!config.check(user.achievements.progress, user)) {
       return res.status(400).json({ error: 'Conditions du succès non remplies' })
     }
 

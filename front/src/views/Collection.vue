@@ -98,7 +98,6 @@ function closeDetail() {
 }
 
 function openDetail(poule) {
-  if (poule.quantite <= 0) return
   // Trouver la référence originale dans le store
   const origin = (poules.value || []).find(p => p.especeId === poule.especeId) || poule
   // Si la poule est marquée "nouvelle", nettoyer le flag côté front et back sur l'originale
@@ -136,7 +135,7 @@ const filteredPoules = computed(() => {
     return {
       ...poule,
       _matchScore: matchScore,
-      _isUnlocked: poule.quantite > 0,
+      _isUnlocked: poule.quantite > -1,
       _inTeam: (team.value?.slots || []).some(s => s?.especeId === poule.especeId),
       _rareteIndex: rareteOrder[espece?.rarete] || 0,
     }

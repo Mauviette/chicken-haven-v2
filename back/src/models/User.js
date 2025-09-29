@@ -56,8 +56,20 @@ const UserSchema = new mongoose.Schema({
     lastClick: { type: Date },
     income: { type: Number, default: 1 },
     maxIncome: { type: Number, default: 10 },
-    currentStocked: { type: Number, default: 0 }
+    currentStocked: { type: Number, default: 0 },
   },
+
+  buffs: [
+    {
+      origin: { type: String, default: 'Inconnu' },
+      buff_type: { type: String, default: 'income' },
+      lasts_until: { type: Date, default: () => new Date() },
+      buff: {
+        operation: { type: String, default: 'mult' },
+        amount: { type: String, default: '1.5' },
+      }
+    }
+  ],
 
   resources : {
     eggs : { type : Number, default: 0},
