@@ -1,4 +1,5 @@
 import User from '../models/User.js'
+import { updateAchievementProgress, triggerAchievementCheck } from './achievements.controller.js'
 
 function makeProfileId() {
   // 3 bytes random -> 6 hex uppercase
@@ -51,6 +52,18 @@ export async function updateAvatar(req, res) {
     }
 
     await user.save()
+
+    // Mettre à jour les succès pour le changement d'avatar
+    try {
+      await updateAchievementProgress(req.userId, 'increment', {
+        avatarChanged: 1
+      })
+      // Déclencher une vérification complète pour les nouveaux succès
+      await triggerAchievementCheck(req.userId)
+    } catch (achievementError) {
+      console.warn('Erreur mise à jour succès avatar:', achievementError)
+    }
+
     res.json({ success: true, avatar: user.avatar })
   } catch (err) {
     console.error(err)

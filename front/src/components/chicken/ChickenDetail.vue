@@ -155,14 +155,14 @@ const upgradePrices = computed(() => {
     { type: 'eggs', count: nextCost.value.egg_cost },
     // On utilise un faux type pour l'icône poule; BuyButton s'attend à un type connu
     // On affichera l'icône via eggs si inconnu; mais mieux: remap vers un montant textuel avec poule
-    { type: 'eggs', count: nextCost.value.chicken_cost + 1, _iconOverride: '🐔' }
+    { type: 'eggs', count: nextCost.value.chicken_cost, _iconOverride: '🐔' }
   ]
 })
 const canUpgrade = computed(() => {
   const cost = nextCost.value
   const p = currentPoule.value
   if (!cost || !p) return false
-  const needChickens = Number(cost.chicken_cost || 0) + 1
+  const needChickens = Number(cost.chicken_cost || 0)
   const hasEggs = Number(eggs?.value ?? 0) >= Number(cost.egg_cost || 0)
   const hasChickens = Number(p.quantite || 0) >= needChickens
   return hasEggs && hasChickens
@@ -172,7 +172,7 @@ const missingTooltip = computed(() => {
   const cost = nextCost.value
   const p = currentPoule.value
   if (!cost || !p) return ''
-  const needChickens = Number(cost.chicken_cost || 0) + 1
+  const needChickens = Number(cost.chicken_cost || 0)
   const haveEggs = Number(eggs?.value ?? 0)
   const haveChickens = Number(p.quantite || 0)
   const missing = []

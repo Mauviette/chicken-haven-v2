@@ -1,5 +1,6 @@
 import User from '../models/User.js'
 import { especeData, talentsData, talentLevelUpgradeCost } from '../data/sharedGameData.js'
+import { updateAchievementProgress, triggerAchievementCheck } from './achievements.controller.js'
 
 function getTalentForEspece(especeId) {
   const e = especeData[especeId]
@@ -41,16 +42,25 @@ export async function upgradeTalent(req, res) {
     // Vérifs ressources: oeufs et poules
     const eggs = Number(user.resources?.eggs || 0)
     const qty = Number(poule.quantite || 0)
-    const neededChickens = Number(cost.chicken_cost || 0) + 1
+    const neededChickens = Number(cost.chicken_cost || 0)
     if (eggs < cost.egg_cost) return res.status(400).json({ error: 'Œufs insuffisants' })
     if (qty < neededChickens) return res.status(400).json({ error: 'Poules insuffisantes' })
 
     // Déductions et upgrade
     user.resources.eggs = eggs - Number(cost.egg_cost)
-    poule.quantite = qty - neededChickens
+    poule.quantite = Math.max(0, qty - neededChickens) // Garder la poule même si quantité = 0
     poule.niveauTalent = Number(poule.niveauTalent || 1) + 1
 
     await user.save()
+
+    // Mettre à jour les succès pour le niveau de talent atteint
+    const newLevel = poule.niveauTalent
+    try {
+      // Déclencher une vérification complète des succès (inclut talent_level)
+      await triggerAchievementCheck(req.userId)
+    } catch (achievementError) {
+      console.warn('Erreur mise à jour succès talent:', achievementError)
+    }
 
     // Calculer prochain coût pour l'UI
     const nextCost = getCostForNextLevel(poule)

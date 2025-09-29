@@ -11,7 +11,7 @@ Object.entries(achievementsData).forEach(([id, data]) => {
     type: data.type,
     objectif: data.objectif,
     reward: data.reward,
-    check: (progress) => {
+    check: (progress, user) => {
       switch (data.type) {
         case 'eggs':
           return progress.totalEggsCollected >= data.objectif
@@ -19,8 +19,16 @@ Object.entries(achievementsData).forEach(([id, data]) => {
           return progress.totalChickensOwned >= data.objectif
         case 'boxes':
           return progress.totalBoxesOpened >= data.objectif
+        case 'boxes_opened':
+          return progress.totalBoxesOpened >= data.objectif
         case 'production':
           return progress.totalProductionCompleted >= data.objectif
+        case 'talent_level':
+          // Vérifier si une poule a atteint le niveau requis
+          const poules = user?.poulesPossedees || []
+          return poules.some(poule => (poule.niveauTalent || 1) >= data.objectif)
+        case 'avatar_change':
+          return progress.avatarChanged >= data.objectif
         default:
           return false
       }
@@ -42,7 +50,8 @@ export async function getAchievementsStatus(req, res) {
           totalChickensOwned: Number(user.poulesPossedees?.length) || 0,
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
-          maxEggsInOneClick: 0
+          maxEggsInOneClick: 0,
+          avatarChanged: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -123,8 +132,8 @@ export async function checkAchievements(req, res) {
       // Ignorer si déjà complété
       if (completedIds.includes(achievementId)) continue
 
-      // Vérifier si les conditions sont remplies
-      if (config.check(user.achievements.progress)) {
+      // Vérifier si les conditions sont remplies (passer user pour talent_level)
+      if (config.check(user.achievements.progress, user)) {
         user.achievements.completed.push({
           achievementId,
           completedAt: new Date(),
@@ -274,7 +283,8 @@ export async function updateAchievementProgress(userId, progressType, value) {
           totalChickensOwned: 0,
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
-          maxEggsInOneClick: 0
+          maxEggsInOneClick: 0,
+          avatarChanged: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -315,5 +325,68 @@ export async function updateAchievementProgress(userId, progressType, value) {
     await user.save()
   } catch (error) {
     console.error('Erreur updateAchievementProgress:', error)
+  }
+}
+
+// Fonction utilitaire pour déclencher une vérification complète des succès
+export async function triggerAchievementCheck(userId) {
+  try {
+    const user = await User.findById(userId)
+    if (!user) return
+
+    // Initialiser les succès si nécessaire
+    if (!user.achievements || Array.isArray(user.achievements) || !user.achievements.progress) {
+      const achievementsObject = {
+        progress: {
+          totalEggsCollected: Number(user.resources?.eggs) || 0,
+          totalChickensOwned: Number(user.poulesPossedees?.length) || 0,
+          totalProductionCompleted: 0,
+          totalBoxesOpened: 0,
+          maxEggsInOneClick: 0,
+          avatarChanged: 0
+        },
+        completed: [],
+        lastChecked: new Date()
+      }
+      
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { achievements: achievementsObject },
+        { new: true, runValidators: false }
+      )
+      
+      user.achievements = updatedUser.achievements
+    }
+
+    // Vérifier chaque succès
+    const newAchievements = []
+    const completedIds = user.achievements.completed.map(a => a.achievementId)
+
+    for (const [achievementId, config] of Object.entries(achievementsConfig)) {
+      // Ignorer si déjà complété
+      if (completedIds.includes(achievementId)) continue
+
+      // Vérifier si les conditions sont remplies
+      if (config.check(user.achievements.progress, user)) {
+        user.achievements.completed.push({
+          achievementId,
+          completedAt: new Date(),
+          rewardClaimed: false
+        })
+        newAchievements.push({ achievementId, reward: config.reward })
+      }
+    }
+
+    if (newAchievements.length > 0) {
+      user.achievements.lastChecked = new Date()
+      user.markModified('achievements')
+      await user.save()
+      return newAchievements
+    }
+
+    return []
+  } catch (error) {
+    console.error('Erreur triggerAchievementCheck:', error)
+    return []
   }
 }

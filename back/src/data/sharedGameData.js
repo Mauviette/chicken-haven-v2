@@ -236,7 +236,7 @@ export const talentsData = {
   },
   'Majestueuse': {
     description: "Augmente le charisme.",
-    effet: (niveau) => `+ ${niveau * 5} charisme`,
+    effet: (niveau) => `+${niveau * 5} charisme`,
     nivType : 'basic',
     icon: '👑',
     calculation: {
@@ -445,7 +445,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 2
+      quantite: 1
     }
   },
   'egg_master': {
@@ -457,7 +457,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 3
+      quantite: 1
     }
   },
   'egg_king': {
@@ -469,7 +469,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 4
+      quantite: 1
     }
   },
   'first_chicken': {
@@ -481,7 +481,7 @@ export const achievementsData = {
     type: 'chickens',
     reward: {
       type: 'blueberry',
-      quantite: 4
+      quantite: 1
     }
   },
   'chicken_collector': {
@@ -493,7 +493,91 @@ export const achievementsData = {
     type: 'chickens',
     reward: {
       type: 'blueberry',
+      quantite: 1
+    }
+  },
+  'talent_apprentice': {
+    id: 'talent_apprentice',
+    nom: 'Apprenti Talent',
+    description: 'Améliorez une poule au niveau 3',
+    icon: '⭐',
+    objectif: 3,
+    type: 'talent_level',
+    reward: {
+      type: 'blueberry',
       quantite: 2
+    }
+  },
+  'talent_expert': {
+    id: 'talent_expert',
+    nom: 'Expert Talent',
+    description: 'Améliorez une poule au niveau 5',
+    icon: '🌟',
+    objectif: 5,
+    type: 'talent_level',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'talent_master': {
+    id: 'talent_master',
+    nom: 'Maître Talent',
+    description: 'Améliorez une poule au niveau 8',
+    icon: '✨',
+    objectif: 8,
+    type: 'talent_level',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'avatar_changed': {
+    id: 'avatar_changed',
+    nom: 'Nouveau Look',
+    description: 'Changez votre avatar pour la première fois',
+    icon: '👤',
+    objectif: 1,
+    type: 'avatar_change',
+    reward: {
+      type: 'stock_token',
+      quantite: 1
+    }
+  },
+  'box_opener': {
+    id: 'box_opener',
+    nom: 'Collectionneur de Boîtes',
+    description: 'Ouvrez 10 boîtes au total',
+    icon: '📦',
+    objectif: 10,
+    type: 'boxes_opened',
+    reward: {
+      type: 'blueberry',
+      quantite: 2
+    }
+  },
+  'box_enthusiast': {
+    id: 'box_enthusiast',
+    nom: 'Amateur de Boîtes',
+    description: 'Ouvrez 50 boîtes au total',
+    icon: '📦',
+    objectif: 50,
+    type: 'boxes_opened',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'box_master': {
+    id: 'box_master',
+    nom: 'Maître des Boîtes',
+    description: 'Ouvrez 100 boîtes au total',
+    icon: '📦',
+    objectif: 100,
+    type: 'boxes_opened',
+    reward: {
+      type: 'blueberry',
+      quantite: 10
     }
   }
 }
@@ -557,6 +641,21 @@ export const achievementCategories = {
     nom: 'Boîtes',
     icon: '📦',
     color: '#9C27B0'
+  },
+  'talent_level': {
+    nom: 'Talents',
+    icon: '⭐',
+    color: '#E91E63'
+  },
+  'avatar_change': {
+    nom: 'Personnalisation',
+    icon: '👤',
+    color: '#795548'
+  },
+  'boxes_opened': {
+    nom: 'Ouvertures',
+    icon: '📦',
+    color: '#673AB7'
   }
 }
 
