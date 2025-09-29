@@ -32,7 +32,7 @@ export function usePlayer() {
 
       // Récupérer l'XP / level (API unifiée /api/user/me)
       try {
-        const res2 = await fetch('/api/user/me', { headers: { Authorization: `Bearer ${token}` } })
+        const res2 = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/me`, { headers: { Authorization: `Bearer ${token}` } })
         if (res2.ok) {
           const u = await res2.json()
           const prevLevel = level.value || 1
@@ -72,7 +72,7 @@ export function usePlayer() {
     try {
       const token = localStorage.getItem('token')
       if (!token) return
-      const res = await fetch('/api/team', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/team`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
@@ -89,7 +89,7 @@ export function usePlayer() {
     try {
       const token = localStorage.getItem('token')
       if (!token) return
-      const res = await fetch('/api/team', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/team`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

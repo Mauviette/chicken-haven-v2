@@ -1,6 +1,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useGameData } from './useGameData.js'
 import { usePlayer } from './usePlayer.js'
+import { apiGet, apiPost, apiPut } from '@/utils/api.js'
 
 const chickenImages = import.meta.glob('@/assets/chickens/**/basic.png', { eager: true })
 const hiddenImage = chickenImages['/src/assets/chickens/hidden/basic.png']?.default || ''
@@ -295,11 +296,7 @@ const loading = ref(true)
 
 async function fetchPoulesSingleton() {
   try {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/poules', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    const data = await res.json()
+    const data = await apiGet('/api/poules')
     rawPoules.value = Array.isArray(data) ? data : []
   } catch (err) {
     console.error('Erreur chargement poules:', err)
@@ -402,7 +399,7 @@ export function usePoules() {
     try {
       if (!canUpgradeTalent(poule)) return false
       const token = localStorage.getItem('token')
-      const res = await fetch('/api/talent/upgrade', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/talent/upgrade`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -437,7 +434,7 @@ export function usePoules() {
     }
     try {
       const token = localStorage.getItem('token')
-      await fetch(`/api/poules/${encodeURIComponent(especeId)}`, {
+      await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/poules/${encodeURIComponent(especeId)}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
