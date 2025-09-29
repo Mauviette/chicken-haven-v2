@@ -111,7 +111,8 @@ const {
   checkAchievements,
   claimReward,
   startAutoCheck,
-  stopAutoCheck
+  stopAutoCheck,
+  fetchGameData
 } = useAchievements()
 
 const { eggs, addEggs, addTokens, refreshPlayer } = usePlayer()
@@ -184,6 +185,9 @@ const handleRefresh = async () => {
   
   refreshing.value = true
   try {
+    // Forcer le rechargement des données de jeu (pour les nouveaux succès)
+    await fetchGameData(true)
+    
     await fetchAchievements()
     const newAchievements = await checkAchievements()
     

@@ -10,7 +10,8 @@ const userAchievements = ref({
     totalChickensOwned: 0,
     totalProductionCompleted: 0,
     totalBoxesOpened: 0,
-    maxEggsInOneClick: 0
+    maxEggsInOneClick: 0,
+    avatarChanged: 0
   },
   completed: [],
   lastChecked: new Date()
@@ -23,7 +24,7 @@ const notifiedAchievements = new Set()
 export function useAchievements() {
   const { token } = useAuth()
   const { eggs, refreshPlayerData } = usePlayer()
-  const { achievements: gameAchievements } = useGameData()
+  const { achievements: gameAchievements, fetchGameData } = useGameData()
   
   const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/achievements`
 
@@ -69,7 +70,17 @@ export function useAchievements() {
       case 'production':
         return Math.min(userAchievements.value.progress.totalProductionCompleted, achievement.objectif)
       case 'boxes':
+      case 'boxes_opened':
         return Math.min(userAchievements.value.progress.totalBoxesOpened, achievement.objectif)
+      case 'talent_level':
+        // Pour les succès de niveau de talent, le progrès est géré côté serveur
+        // On retourne soit 0 (pas atteint) soit l'objectif (atteint)
+        const completedEntry = userAchievements.value.completed.find(
+          c => c.achievementId === achievement.id
+        )
+        return completedEntry ? achievement.objectif : 0
+      case 'avatar_change':
+        return Math.min(userAchievements.value.progress.avatarChanged, achievement.objectif)
       default:
         return 0
     }
@@ -255,7 +266,8 @@ export function useAchievements() {
             totalChickensOwned: 0,
             totalProductionCompleted: 0,
             totalBoxesOpened: 0,
-            maxEggsInOneClick: 0
+            maxEggsInOneClick: 0,
+            avatarChanged: 0
           },
           completed: [],
           lastChecked: new Date()
@@ -274,7 +286,8 @@ export function useAchievements() {
             totalChickensOwned: 0,
             totalProductionCompleted: 0,
             totalBoxesOpened: 0,
-            maxEggsInOneClick: 0
+            maxEggsInOneClick: 0,
+            avatarChanged: 0
           },
           completed: [],
           lastChecked: new Date()
@@ -340,6 +353,9 @@ export function useAchievements() {
 
     // Helpers
     getCurrentProgress,
-    getProgressWidth
+    getProgressWidth,
+
+    // Rechargement des données de jeu
+    fetchGameData
   }
 }

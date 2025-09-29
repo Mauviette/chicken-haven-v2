@@ -205,8 +205,8 @@ export const talentsData = {
     icon: '🏃'
   },
   'Curieuse': {
-    description: "Découvre plus d'événements spéciaux.",
-    effet: (niveau) => `+${niveau * 3}% d'événements spéciaux`,
+    description: "Augmente le stockage en fonction du charisme",
+    effet: (niveau) => `+${niveau * 2} de stockage par point de charisme`,
     maxNiveau: 5,
     icon: '🔎'
   },
