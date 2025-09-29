@@ -326,7 +326,9 @@ const handleEggClick = async () => {
     // Son d'œuf cliqué
     eggClick()
     const eggsGained = Math.floor(currentGains.value)
+    console.log('🥚 Clic sur œuf, gains attendus:', eggsGained)
     const result = await clickEgg()
+    console.log('🥚 Résultat API:', result)
     // Créer l'effet visuel
     if (eggsGained > 0) {
       createEggEffect(eggsGained)
@@ -342,7 +344,9 @@ const handleEggClick = async () => {
       dropEggs(Math.max(1, Number(rainAmount) || 20))
     }
     // Actualiser l'affichage des œufs dans la TopBar
+    console.log('🔄 Rafraîchissement des données joueur...')
     await refreshPlayer()
+    console.log('✅ Données joueur rafraîchies')
   }
 }
 

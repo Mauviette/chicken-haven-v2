@@ -12,8 +12,12 @@ const xpRequired = ref(2)
 export function usePlayer() {
   async function refreshPlayer() {
     try {
+      console.log('🔄 refreshPlayer: début')
       const token = localStorage.getItem('token')
-      if (!token) return
+      if (!token) {
+        console.log('❌ refreshPlayer: pas de token')
+        return
+      }
 
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/egg/status`, {
         headers: {
@@ -24,10 +28,14 @@ export function usePlayer() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log('📊 refreshPlayer: données reçues:', data)
         eggs.value = data.totalEggs || 0
         stockTokens.value = data.stockTokens || 0
         productionTokens.value = data.productionTokens || 0
         wildTokens.value = data.wildTokens || 0
+        console.log('✅ refreshPlayer: œufs mis à jour:', eggs.value)
+      } else {
+        console.log('❌ refreshPlayer: erreur API status:', response.status)
       }
 
       // Récupérer l'XP / level (API unifiée /api/user/me)

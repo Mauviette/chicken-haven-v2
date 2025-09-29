@@ -76,6 +76,7 @@ import { useRoute } from 'vue-router'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
 import Popup from '@/components/menu/Popup.vue'
+import { apiGet, apiPatch } from '@/utils/api.js'
 
 const route = useRoute()
 const loading = ref(true)
@@ -125,13 +126,7 @@ async function loadProfile(id) {
   try {
     loading.value = true
     error.value = ''
-    const resp = await fetch(`/api/user/profile/${encodeURIComponent(id)}`)
-    if (!resp.ok) {
-      error.value = 'Profil introuvable.'
-      profile.value = null
-      return
-    }
-    profile.value = await resp.json()
+    profile.value = await apiGet(`/api/user/profile/${encodeURIComponent(id)}`)
   } catch (e) {
     console.error(e)
     error.value = 'Erreur de chargement du profil.'
@@ -148,11 +143,8 @@ onMounted(() => {
     try {
       const token = localStorage.getItem('token')
       if (!token) return
-      const res = await fetch('/api/user/me', { headers: { Authorization: `Bearer ${token}` } })
-      if (res.ok) {
-        const me = await res.json()
-        meProfileId.value = String(me.profileId || '').toUpperCase()
-      }
+      const me = await apiGet('/api/user/me')
+      meProfileId.value = String(me.profileId || '').toUpperCase()
     } catch (_) {}
   })()
 })
@@ -194,13 +186,8 @@ async function chooseAvatar(val) {
     if (!isOwnProfile.value) return
     const token = localStorage.getItem('token')
     if (!token) { window.$toast?.('Connecte-toi pour changer l\'avatar', 'error'); return }
-    const res = await fetch('/api/user/me/avatar', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ avatar: val })
-    })
-    const data = await res.json()
-    if (!res.ok || !data?.success) {
+    const data = await apiPatch('/api/user/me/avatar', { avatar: val })
+    if (!data?.success) {
       window.$toast?.(data?.error || 'Impossible de changer l\'avatar', 'error')
       return
     }
