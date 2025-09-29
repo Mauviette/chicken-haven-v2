@@ -4,7 +4,6 @@ import { useAuth } from './useAuth'
 const eggState = ref({
   income: 1,
   maxIncome: 30,
-  currentStocked: 0,
   lastClick: new Date(),
   totalEggs: 0,
   isLoading: false
@@ -21,16 +20,13 @@ export function useEgg() {
 
   const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/egg`
 
-  // État calculé pour l'affichage
+  // État calculé pour l'affichage - calcul temps réel côté frontend
   const currentGains = computed(() => {
-    // Utiliser la valeur du serveur si disponible, sinon calcul local en fallback
-    if (eggState.value.currentStocked !== undefined) {
-      return eggState.value.currentStocked
-    }
-    // Fallback: calcul local si le serveur n'a pas encore répondu
     const now = new Date()
-    const timeDiff = Math.floor((now - new Date(eggState.value.lastClick)) / 1000)
-    return Math.min(timeDiff * eggState.value.income, eggState.value.maxIncome)
+    const lastClick = new Date(eggState.value.lastClick)
+    const timeDiff = Math.floor((now - lastClick) / 1000)
+    const calculated = Math.min(timeDiff * eggState.value.income, eggState.value.maxIncome)
+    return calculated
   })
 
   const isClickable = computed(() => {
@@ -59,10 +55,10 @@ export function useEgg() {
           ...eggState.value,
           income: data.income,
           maxIncome: data.maxIncome,
-          currentStocked: data.currentStocked,
           lastClick: new Date(data.lastClick),
           totalEggs: data.totalEggs
         }
+        console.log('Egg status synced with server:', data)
       }
     } catch (error) {
       console.error('Erreur lors de la récupération du statut de l\'œuf:', error)
@@ -91,10 +87,10 @@ export function useEgg() {
           ...eggState.value,
           income: data.income ?? eggState.value.income,
           maxIncome: data.maxIncome ?? eggState.value.maxIncome,
-          currentStocked: data.currentStocked ?? 0,
           totalEggs: data.totalEggs,
           lastClick: new Date(data.lastClick)
         }
+        console.log('Egg clicked successfully:', data)
 
         // Afficher un message de succès si disponible
         if (window.$toast) {
@@ -128,10 +124,21 @@ export function useEgg() {
   const startUpdates = () => {
     if (updateInterval) return
 
+    // Mise à jour de l'affichage chaque seconde pour le calcul temps réel
     updateInterval = setInterval(() => {
       // Force la réactivité en mettant à jour une référence
       eggState.value = { ...eggState.value }
     }, 1000)
+
+    // Synchronisation avec le serveur toutes les 10 secondes
+    const serverSyncInterval = setInterval(() => {
+      fetchEggStatus()
+    }, 10000)
+
+    // Stocker l'interval de sync pour pouvoir l'arrêter
+    if (!eggState.value._serverSyncInterval) {
+      eggState.value._serverSyncInterval = serverSyncInterval
+    }
 
     // Écouter les changements d'équipe pour rafraîchir l'income immédiatement
     if (typeof window !== 'undefined' && !onTeamUpdated) {
@@ -159,7 +166,6 @@ export function useEgg() {
         eggState.value = {
           income: 1,
           maxIncome: 30,
-          currentStocked: 0,
           lastClick: new Date(),
           totalEggs: 0,
           isLoading: false
@@ -175,6 +181,12 @@ export function useEgg() {
       clearInterval(updateInterval)
       updateInterval = null
     }
+    
+    if (eggState.value._serverSyncInterval) {
+      clearInterval(eggState.value._serverSyncInterval)
+      eggState.value._serverSyncInterval = null
+    }
+    
     if (typeof window !== 'undefined' && onTeamUpdated) {
       window.removeEventListener('team-updated', onTeamUpdated)
       onTeamUpdated = null

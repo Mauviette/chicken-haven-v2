@@ -332,7 +332,7 @@ const handleEggClick = async () => {
     
     // Afficher immédiatement un toast avec les gains
     if (window.$toast && eggsGained > 0) {
-      window.$toast(`+${eggsGained} œuf${eggsGained > 1 ? 's' : ''} 🥚`, 'success')
+      //window.$toast(`+${eggsGained} œuf${eggsGained > 1 ? 's' : ''} 🥚`, 'success')
     }
     
     const result = await clickEgg()
