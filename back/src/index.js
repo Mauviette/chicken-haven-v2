@@ -18,9 +18,14 @@ dotenv.config()
 const app = express()
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://chickenhaven.vercel.app'],
+  origin: ['https://chickenhaven.vercel.app', 'http://localhost:5173'],
   credentials: true
 }))
+
+app.options('*', cors({
+  origin: ['https://chickenhaven.vercel.app', 'http://localhost:5173'],
+  credentials: true
+}));
 
 app.use(express.json())
 
