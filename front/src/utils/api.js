@@ -1,7 +1,7 @@
 // utils/api.js
 // Utilitaire pour les appels API avec gestion centralisée des URLs et authentification
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const getApiBaseUrl = () => import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002'
 
 /**
  * Effectue un appel API avec l'URL de base configurée
@@ -21,7 +21,7 @@ export async function apiCall(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`
   }
   
-  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`
+  const url = `${getApiBaseUrl()}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`
   
   return fetch(url, {
     ...options,

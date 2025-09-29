@@ -30,6 +30,7 @@ import { useGameData } from '@/composables/useGameData'
 import { useRouter } from 'vue-router'
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { usePoules } from '@/composables/usePoules'
+import { apiGet } from '@/utils/api.js'
 const { eggs, level, xp, xpRequired } = usePlayer()
 const { levelUnlocks, getLevelRewardsBetween } = useGameData()
 const router = useRouter()
@@ -48,12 +49,9 @@ onMounted(async () => {
   try {
     const token = localStorage.getItem('token')
     if (!token) return
-    const res = await fetch('/api/user/me', { headers: { Authorization: `Bearer ${token}` } })
-    if (res.ok) {
-      const me = await res.json()
-      myProfileId.value = String(me.profileId || '').toUpperCase()
-      myAvatarId.value = me.avatar ? String(me.avatar) : 'hidden'
-    }
+    const me = await apiGet('/api/user/me')
+    myProfileId.value = String(me.profileId || '').toUpperCase()
+    myAvatarId.value = me.avatar ? String(me.avatar) : 'hidden'
   } catch (_) {}
 
   // Ecouter les mises à jour d'avatar globales (depuis UserProfile)
