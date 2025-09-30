@@ -249,6 +249,21 @@ function handleCloseDetail() {
   z-index: 2; /* au-dessus de la BottomBar (qui n'a pas de z-index) */
 }
 
+/* Ajustements responsifs pour s'adapter à la BottomBar */
+@media (max-width: 768px) {
+  .team-parade {
+    bottom: 0; /* directement en bas car pas de BottomBar sur mobile */
+    height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .team-parade {
+    bottom: 0; /* directement en bas sur très petits écrans */
+    height: 50px;
+  }
+}
+
 .stage {
   position: relative;
   width: 100%;

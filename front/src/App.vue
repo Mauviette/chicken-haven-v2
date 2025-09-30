@@ -2,6 +2,10 @@
   <div id="app">
     <TopBar v-if="!isAuthPage" 
       @open-profile="toast('Bientôt disponible !')"
+      @open-achievements="toggleAchievementsWithSound"
+      @open-options="openOptions"
+      @close-achievements="closeAchievements"
+      :achievements-open="showAchievements"
     />
     <div class="main-content">
       <router-view />
@@ -61,7 +65,7 @@ onMounted(async () => {
   window.$toast = toast
   
   // Initialiser la synchronisation des données de jeu
-  console.log('🔄 Initialisation de la synchronisation des données...')
+  //console.log('🔄 Initialisation de la synchronisation des données...')
   
   // Charger les données du joueur si connecté
   if (localStorage.getItem('token')) {
@@ -141,6 +145,10 @@ function toggleAchievementsWithSound() {
   showAchievements.value = !showAchievements.value
   opening ? sndOpen() : sndClose()
 }
+function closeAchievements() {
+  showAchievements.value = false
+  sndClose()
+}
 </script>
 
 <style>
@@ -178,6 +186,20 @@ img,
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  margin-bottom: 80px; /* espace pour la BottomBar fixe */
+}
+
+/* Ajustements responsifs pour la main-content */
+@media (max-width: 768px) {
+  .main-content {
+    margin-bottom: 0; /* pas de BottomBar sur mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    margin-bottom: 0; /* pas de BottomBar sur très petits écrans */
+  }
 }
 
 </style>

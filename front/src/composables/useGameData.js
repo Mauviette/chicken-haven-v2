@@ -47,7 +47,7 @@ export function useGameData() {
       cachedData = result.data
       cacheTimestamp = now
 
-      console.log(`✅ Données de jeu synchronisées - Version: ${result.data.version}`)
+      //console.log(`✅ Données de jeu synchronisées - Version: ${result.data.version}`)
       
       return result.data
     } catch (err) {
@@ -57,7 +57,7 @@ export function useGameData() {
       // En cas d'erreur, utiliser les données en cache si disponibles
       if (cachedData) {
         gameData.value = cachedData
-        console.log('📦 Utilisation des données en cache')
+        //console.log('📦 Utilisation des données en cache')
       }
       
       throw err

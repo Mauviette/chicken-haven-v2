@@ -196,4 +196,52 @@ onBeforeUnmount(() => {
   10%  { opacity: 1; }
   100% { transform: translateY(110vh) rotate(var(--rotEnd)); opacity: 0; }
 }
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .levelup-card {
+    width: 300px;
+    max-width: 95vw;
+    padding: 16px 14px 20px;
+  }
+  
+  .avatar {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .level-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+  
+  .unlocks-list, .rewards-list {
+    gap: 4px;
+  }
+  
+  .unlock-item, .reward-item {
+    padding: 4px 6px;
+  }
+  
+  .unlock-item .label, .reward-item .label {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .levelup-card {
+    width: 280px;
+    max-width: 90vw;
+    padding: 14px 12px 18px;
+  }
+  
+  .avatar {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .unlock-item .label, .reward-item .label {
+    font-size: 12px;
+  }
+}
 </style>

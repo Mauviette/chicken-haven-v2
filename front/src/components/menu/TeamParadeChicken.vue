@@ -1,7 +1,7 @@
 <template>
   <!-- Conteneur acteur positionné relativement à la scène (parent .stage) -->
   <div class="actor" :style="{ left: x + 'px' }">
-    <Tooltip :text="tooltipHtml" :key="tooltipHtml">
+    <Tooltip :text="tooltipHtml" :key="tooltipHtml" v-if="!isMobile">
       <img
         v-if="currentImg"
         :src="currentImg"
@@ -12,6 +12,16 @@
         @click="emitOpenDetail"
       />
     </Tooltip>
+    <!-- Version sans tooltip pour mobile -->
+    <img
+      v-if="currentImg && isMobile"
+      :src="currentImg"
+      class="parade-chicken"
+      :class="[state, isFallback ? 'fallback' : '']"
+      :alt="name"
+      :style="{ '--dir': direction }"
+      @click="emitOpenDetail"
+    />
   </div>
 </template>
 
@@ -38,6 +48,26 @@ const state = ref('idle') // 'walk' | 'idle' | 'peck'
 const currentImg = ref('')
 const stateUntil = ref(Date.now() + 2000)
 const isFallback = ref(false)
+
+// Détection mobile
+const isMobile = ref(window.innerWidth <= 768)
+
+// Écouter les changements de taille d'écran
+function updateMobileState() {
+  isMobile.value = window.innerWidth <= 768
+}
+
+onMounted(() => {
+  window.addEventListener('resize', updateMobileState)
+  initPosition()
+  applyImage()
+  rafId = requestAnimationFrame(step)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateMobileState)
+  if (rafId) cancelAnimationFrame(rafId)
+})
 
 function applyImage() {
   const img = props.images?.[state.value] || props.images?.fallback

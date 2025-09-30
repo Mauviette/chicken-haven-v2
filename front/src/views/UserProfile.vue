@@ -313,11 +313,6 @@ function talentLabel(slot) {
 .stat-row span { opacity: .85; }
 .stat-row b { font-size: 16px; }
 
-@media (max-width: 600px) {
-  .header-card { grid-template-columns: auto 1fr; }
-  .level-pill { grid-column: 1 / -1; justify-self: start; }
-}
-
 .two-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -349,12 +344,77 @@ function talentLabel(slot) {
   .two-cols { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 600px) {
+  .profile-view {
+    padding: 16px;
+  }
+  
+  .header-card { 
+    grid-template-columns: auto 1fr; 
+    gap: 12px;
+  }
+  
+  .level-pill { 
+    grid-column: 1 / -1; 
+    justify-self: start; 
+  }
+  
+  .avatar {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .username {
+    font-size: 18px;
+  }
+  
+  .team-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  
+  .slot-chicken {
+    width: 48px;
+    height: 48px;
+  }
+}
+
 /* Popup avatars */
-.avatar-popup { max-width: 720px; }
+.avatar-popup { 
+  max-width: 720px; 
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.avatar-popup h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 10px;
+}
+
+/* Mobile responsive pour le popup d'avatar */
+@media (max-width: 768px) {
+  .avatar-popup {
+    max-width: 95vw;
+    max-height: 85vh;
+    padding: 16px;
+  }
+  
+  .avatar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+  
+  .avatar-item img {
+    width: 48px;
+    height: 48px;
+  }
 }
 .avatar-item {
   background: #fffaf1;

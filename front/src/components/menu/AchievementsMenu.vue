@@ -540,16 +540,18 @@ const getRewardDescription = (reward) => {
   font-weight: bold;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .achievements-overlay {
+    top: 0;
     width: 100vw;
     left: 0;
     right: auto;
+    height: 100vh;
   }
   
   .achievements-menu {
     border-left: none;
-    border-top: 2px solid #8B4513;
+    border-top: none;
     border-bottom: 2px solid #8B4513;
   }
 }

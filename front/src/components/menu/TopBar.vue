@@ -1,7 +1,37 @@
 <template>
   <div class="top-bar">
     <div class="top-bar-inner">
-      <div class="game-title">Chicken Haven</div>
+      <!-- Menu hamburger sur mobile, titre sur desktop -->
+      <div class="left-section">
+        <div class="game-title desktop-only">Chicken Haven</div>
+        <div class="mobile-menu mobile-only">
+          <button class="hamburger-btn" @click="handleHamburgerClick" :class="{ active: showMobileMenu || achievementsOpen }">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <!-- Menu déroulant mobile -->
+          <div class="mobile-dropdown" :class="{ visible: showMobileMenu }">
+            <div class="mobile-menu-item" @click="navigateTo('/production')" :class="{ active: isActive('/production') }">
+              ⚒️ Production
+            </div>
+            <div class="mobile-menu-item" @click="navigateTo('/market')" :class="{ active: isActive('/market'), disabled: !isMarketUnlocked }">
+              🛒 Marché
+            </div>
+            <div class="mobile-menu-item" @click="navigateTo('/collection')" :class="{ active: isActive('/collection') }">
+              🐔 Collection
+            </div>
+            <div class="mobile-menu-divider"></div>
+            <div class="mobile-menu-item" @click="openAchievements">
+              🏆 Succès
+              <span v-if="hasUnclaimedRewards" class="menu-badge"></span>
+            </div>
+            <div class="mobile-menu-item" @click="openOptions">
+              ⚙️ Paramètres
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="top-right">
         <Tooltip :text="eggTooltipHtml" position="bottom">
           <div class="egg-counter">
@@ -27,24 +57,53 @@ import { usePlayer } from '@/composables/usePlayer'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { achievementsData } from '@/data/items.js'
 import { useGameData } from '@/composables/useGameData'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { usePoules } from '@/composables/usePoules'
+import { useAchievements } from '@/composables/useAchievements'
 import { apiGet } from '@/utils/api.js'
+
 const { eggs, level, xp, xpRequired } = usePlayer()
 const { levelUnlocks, getLevelRewardsBetween } = useGameData()
 const router = useRouter()
+const route = useRoute()
 const { getImage, hiddenImage } = usePoules()
+const { achievements } = useAchievements()
 
-const emit = defineEmits(['open-profile'])
+const props = defineProps({
+  achievementsOpen: {
+    type: Boolean,
+    default: false
+  }
+})
 
+const emit = defineEmits(['open-profile', 'open-achievements', 'open-options', 'close-achievements'])
+
+const showMobileMenu = ref(false)
 const myProfileId = ref('')
 const myAvatarId = ref('hidden')
+
+// Marché déverrouillé
+const isMarketUnlocked = computed(() => {
+  const l = level.value || 1
+  for (let n = 1; n <= l; n++) {
+    const arr = (levelUnlocks?.value && levelUnlocks.value[n]) ? levelUnlocks.value[n] : []
+    if (arr.some(u => u.id === 'market')) return true
+  }
+  return false
+})
+
+// Succès non réclamés
+const hasUnclaimedRewards = computed(() =>
+  (achievements?.value || []).some(a => a.completed && !a.rewardClaimed)
+)
+
 const topAvatarSrc = computed(() => {
   const a = myAvatarId.value
   if (!a || a === 'hidden') return hiddenImage
   return getImage(String(a))
 })
+
 onMounted(async () => {
   try {
     const token = localStorage.getItem('token')
@@ -63,12 +122,46 @@ onMounted(async () => {
   onBeforeUnmount(() => window.removeEventListener('avatar-updated', handler))
 })
 
+function toggleMobileMenu() {
+  showMobileMenu.value = !showMobileMenu.value
+}
+
+function handleHamburgerClick() {
+  if (props.achievementsOpen) {
+    // Si le menu achievements est ouvert, le fermer
+    emit('close-achievements')
+  } else {
+    // Sinon, toggle le menu mobile
+    toggleMobileMenu()
+  }
+}
+
+function navigateTo(path) {
+  if (path === '/market' && !isMarketUnlocked.value) return
+  router.push(path)
+  showMobileMenu.value = false
+}
+
+function isActive(path) {
+  return route.path === path
+}
+
 function openProfile() {
   if (myProfileId.value) {
     router.push(`/user/${myProfileId.value}`)
   } else {
     emit('open-profile')
   }
+}
+
+function openAchievements() {
+  showMobileMenu.value = false // Fermer le menu mobile
+  emit('open-achievements')
+}
+
+function openOptions() {
+  emit('open-options')
+  showMobileMenu.value = false
 }
 
 const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`
@@ -88,7 +181,7 @@ const levelTooltipHtml = () => {
 
   const rewardsHtml = rewards.length
     ? rewards.map(r => `${r.icon} ${r.label}`).join('<br>')
-    : 'Aucune récompense'
+    : ''
 
   let html = `${current}<br><em>À venir au niveau ${nextLevel} :</em>`
   if (unlocksHtml) html += `<br>${unlocksHtml}`
@@ -112,8 +205,10 @@ const levelTooltipHtml = () => {
   align-items: center;
   font-family: 'Fredoka', sans-serif;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
+  position: relative;
+  z-index: 100;
 }
 
 .top-bar-inner {
@@ -124,6 +219,145 @@ const levelTooltipHtml = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  overflow: visible;
+}
+
+.left-section {
+  position: relative;
+  overflow: visible;
+}
+
+.game-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #6d3c00;
+}
+
+.mobile-menu {
+  position: relative;
+  overflow: visible;
+}
+
+.hamburger-btn {
+  background: none;
+  border: none;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  z-index: 1001;
+  overflow: visible;
+}
+
+.hamburger-btn span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background-color: #6d3c00;
+  border-radius: 1px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+  position: absolute;
+}
+
+.hamburger-btn span:nth-child(1) {
+  top: calc(50% - 6px);
+}
+
+.hamburger-btn span:nth-child(2) {
+  top: calc(50% - 1px);
+}
+
+.hamburger-btn span:nth-child(3) {
+  top: calc(50% + 4px);
+}
+
+.hamburger-btn.active span:nth-child(1) {
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.hamburger-btn.active span:nth-child(2) {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.hamburger-btn.active span:nth-child(3) {
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.mobile-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #f6e4c3;
+  border: 2px solid #ffc66e;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.mobile-dropdown.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.mobile-menu-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  color: #6d3c00;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 198, 110, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-menu-item:hover:not(.disabled) {
+  background-color: rgba(255, 198, 110, 0.2);
+}
+
+.mobile-menu-item.active {
+  background-color: rgba(255, 198, 110, 0.4);
+  font-weight: bold;
+}
+
+.mobile-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mobile-menu-item:last-child {
+  border-bottom: none;
+}
+
+.mobile-menu-divider {
+  height: 1px;
+  background-color: rgba(255, 198, 110, 0.5);
+  margin: 4px 0;
+}
+
+.menu-badge {
+  width: 8px;
+  height: 8px;
+  background-color: #FFD700;
+  border: 1px solid #8B4513;
+  border-radius: 50%;
+  margin-left: 8px;
 }
 
 .top-right {
@@ -164,45 +398,81 @@ const levelTooltipHtml = () => {
   user-select: none;
 }
 
-.avatar-wrap { position: relative; display: inline-block; }
+.avatar-wrap { 
+  position: relative; 
+  display: inline-block; 
+}
+
 .level-badge {
   position: absolute;
   right: -4px;
   bottom: 2px;
-  background: #7b61ff; /* violet myrtille */
+  background: #7b61ff;
   color: white;
   font-weight: bold;
   border: 2px solid #fff;
   font-size: 12px;
   line-height: 1;
   padding: 3px 7px;
-  border-radius: 999px; /* plus rond */
+  border-radius: 999px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-@media (max-width: 600px) {
-  .top-bar-inner {
-    padding: 0 10px;
+/* Responsivité */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
   }
 
-  .game-title {
-    font-size: 14px;
+  .mobile-only {
+    display: block;
+  }
+
+  .top-bar-inner {
+    padding: 0 16px;
   }
 
   .egg-counter {
     font-size: 13px;
-    padding: 4px 6px;
+    padding: 4px 8px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .level-badge {
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-bar-inner {
+    padding: 0 12px;
+  }
+
+  .top-right {
+    gap: 8px;
+  }
+
+  .egg-counter {
+    font-size: 12px;
+    padding: 3px 6px;
   }
 
   .avatar {
     width: 26px;
     height: 26px;
   }
-  .level-badge {
-    font-size: 10px;
-    right: -4px;
-    bottom: 2px;
-  }
 }
-
 </style>

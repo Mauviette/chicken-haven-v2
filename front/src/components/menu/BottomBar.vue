@@ -1,11 +1,14 @@
 <template>
   <div class="bottom-bar">
-    <div class="options-button">
-      <ActionButton
-        :onClick="() => emit('open-options')"
-      >
-        ⚙️
-      </ActionButton>
+    <div class="side-buttons left-side">
+      <div class="options-button">
+        <ActionButton
+          :onClick="() => emit('open-options')"
+        >
+          <span class="desktop-text">⚙️</span>
+          <span class="mobile-text">⚙️</span>
+        </ActionButton>
+      </div>
     </div>
 
     <div class="main-buttons">
@@ -13,8 +16,10 @@
         :onClick="() => emit('open-production')"
         :disabled="route.path === '/production'"
         :active="route.path === '/production'"
+        class="mobile-compact"
       >
-        ⚒️ Production
+        <span class="desktop-text">⚒️ Production</span>
+        <span class="mobile-text">⚒️</span>
       </ActionButton>
 
       <ActionButton
@@ -22,8 +27,10 @@
         :disabled="route.path === '/market' || !isMarketUnlocked"
         :active="route.path === '/market'"
         :title="!isMarketUnlocked ? 'Débloqué au niveau 2' : ''"
+        class="mobile-compact"
       >
-        🛒 Marché
+        <span class="desktop-text">🛒 Marché</span>
+        <span class="mobile-text">🛒</span>
       </ActionButton>
 
       <div class="badge-wrapper collection-button">
@@ -31,8 +38,10 @@
           :onClick="() => emit('open-collection')"
           :disabled="route.path === '/collection'"
           :active="route.path === '/collection'"
+          class="mobile-compact"
         >
-          🐔 Collection
+          <span class="desktop-text">🐔 Collection</span>
+          <span class="mobile-text">🐔</span>
         </ActionButton>
         <span
           v-if="hasNewChicken"
@@ -48,17 +57,20 @@
       </ActionButton-->
     </div>
 
-    <div class="achievements-button badge-wrapper">
-      <ActionButton
-        :onClick="() => emit('open-achievements')"
-      >
-        🏆
-      </ActionButton>
-      <span
-        v-if="hasUnclaimedRewards"
-        class="badge-dot"
-        title="Récompense de succès disponible"
-      ></span>
+    <div class="side-buttons right-side">
+      <div class="achievements-button badge-wrapper">
+        <ActionButton
+          :onClick="() => emit('open-achievements')"
+        >
+          <span class="desktop-text">🏆</span>
+          <span class="mobile-text">🏆</span>
+        </ActionButton>
+        <span
+          v-if="hasUnclaimedRewards"
+          class="badge-dot"
+          title="Récompense de succès disponible"
+        ></span>
+      </div>
     </div>
   </div>
 </template>
@@ -134,10 +146,21 @@ const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
     padding: 0 20px;
     box-sizing: border-box;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-    position: relative;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     border-top: 4px solid #b77b3d;
     box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
     flex-shrink: 0;
+    z-index: 10;
+  }
+
+  /* Cacher la BottomBar sur mobile */
+  @media (max-width: 768px) {
+    .bottom-bar {
+      display: none;
+    }
   }
 
   .main-buttons {
@@ -148,12 +171,26 @@ const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
     flex: 1;
   }
 
+  .side-buttons {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .left-side {
+    margin-left: 0;
+  }
+
+  .right-side {
+    margin-right: 0;
+  }
+
   .options-button {
-    margin-left: 0px;
+    margin-left: 0;
   }
 
   .achievements-button {
-    margin-right: 32px;
+    margin-right: 0;
   }
 
   /* Badge de notification pour succès à réclamer */
@@ -199,7 +236,103 @@ const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
     transform: translateY(-1px);
   }
 
-    @media (max-width: 600px) {
+  /* Gestion du texte responsive */
+  .mobile-text {
+    display: none;
+  }
+
+  .desktop-text {
+    display: inline;
+  }
+
+  /* Media queries pour mobile */
+  @media (max-width: 768px) {
+    .bottom-bar {
+      height: 70px;
+      min-height: 70px;
+      max-height: 70px;
+      padding: 4px 8px;
+      position: fixed;
+      bottom: 0;
+    }
+
+    .main-buttons {
+      gap: 8px;
+      flex: 1;
+      justify-content: space-evenly;
+    }
+
+    .side-buttons {
+      flex-shrink: 0;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .left-side {
+      margin-left: 0;
+    }
+
+    .right-side {
+      margin-right: 0;
+    }
+
+    .bottom-bar .action-button {
+      font-size: 12px;
+      padding: 6px 8px;
+      white-space: nowrap;
+      min-width: auto;
+    }
+
+    /* Réduire la taille des textes sur très petits écrans */
+    @media (max-width: 480px) {
+      .mobile-text {
+        display: inline;
+      }
+
+      .desktop-text {
+        display: none;
+      }
+
+      .side-buttons .action-button {
+        font-size: 18px;
+        padding: 10px;
+        border-radius: 50%;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .bottom-bar .action-button {
+        font-size: 16px;
+        padding: 8px 12px;
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .bottom-bar {
+        height: 60px;
+        min-height: 60px;
+        max-height: 60px;
+        padding: 2px 4px;
+      }
+
+      .main-buttons {
+        gap: 6px;
+      }
+
+      .side-buttons {
+        background: rgba(139, 69, 19, 0.3);
+        border: 1px solid rgba(255, 198, 110, 0.5);
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
     .bottom-bar {
       height: 80px;
       min-height: 80px;
@@ -213,11 +346,11 @@ const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
       flex: 1;
     }
 
-    .options-button {
+    .left-side {
       margin-left: 0;
     }
 
-    .achievements-button {
+    .right-side {
       margin-right: 0;
     }
 

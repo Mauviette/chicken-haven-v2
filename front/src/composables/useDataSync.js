@@ -18,7 +18,7 @@ export function useDataSync() {
       await fetchGameData(true) // Force refresh
       syncStatus.value = 'success'
       lastSyncTime.value = new Date()
-      console.log('✅ Synchronisation initiale terminée')
+      //console.log('✅ Synchronisation initiale terminée')
       
       // Démarrer la vérification périodique
       startPeriodicCheck()

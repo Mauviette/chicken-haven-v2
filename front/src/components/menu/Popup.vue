@@ -76,5 +76,28 @@
     transform: scale(1);
   }
 }
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .popup-content {
+    width: 340px;
+    max-width: 95vw;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .popup-content {
+    width: 300px;
+    max-width: 90vw;
+    padding: 16px;
+  }
+  
+  .close-btn {
+    top: 6px;
+    right: 10px;
+    font-size: 18px;
+  }
+}
   </style>
   
