@@ -1,5 +1,22 @@
 <template>
   <div class="production-screen">
+    <!-- Bandeau des buffs actifs -->
+    <div class="buffs-container" v-if="activeBuffs.length > 0">
+      <div
+        v-for="(buff, index) in activeBuffs"
+        :key="index"
+        class="buff-badge"
+      >
+        <Tooltip 
+          :text="getBuffTooltipHtml(buff)"
+          position="bottom"
+          :followMouse="false"
+        >
+          <div class="buff-icon">{{ getBuffIcon(buff) }}</div>
+        </Tooltip>
+      </div>
+    </div>
+
     <!-- Bandeau des stats d'équipe -->
     <div class="team-stats-banner">
       <Tooltip text="Somme de l'intelligence des poules équipées.">
@@ -93,6 +110,7 @@ import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
 import { useSound } from '@/composables/useSound'
+import { useBuffs } from '@/composables/useBuffs'
 import Tooltip from '@/components/menu/Tooltip.vue'
 
 const { 
@@ -110,6 +128,7 @@ const { refreshPlayer, fetchTeam, team } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
+const { activeBuffs, fetchBuffs, getTimeRemaining, formatBuffEffect, getBuffIcon } = useBuffs()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -318,6 +337,20 @@ const storageTooltipHtml = computed(() => {
   return html
 })
 
+// HTML du tooltip des buffs
+const getBuffTooltipHtml = (buff) => {
+  const effect = formatBuffEffect(buff)
+  const timeRemaining = getTimeRemaining(buff)
+  const origin = buff.origin || 'Inconnu'
+
+  let html = `<div>`
+  html += `<div style="font-weight:bold;margin-bottom:4px;color:#d4752a;">${effect}</div>`
+  html += `<div style="margin-bottom:4px;">Source: <strong>${origin}</strong></div>`
+  html += `<div style="color:#666;">Durée restante: <strong>${timeRemaining}</strong></div>`
+  html += `</div>`
+  return html
+}
+
 // Effets visuels
 const eggEffects = ref([])
 let effectId = 0
@@ -439,6 +472,7 @@ onMounted(async () => {
   // S'assurer que l'équipe est à jour pour les stats
   await fetchTeam()
   await fetchEggStatus()
+  await fetchBuffs()
   startUpdates()
 })
 
@@ -489,6 +523,48 @@ watch(() => currentGains.value, (nv, ov) => {
   text-shadow: 0 1px 0 #fff;
   pointer-events: auto;
   z-index: 5;
+}
+
+.buffs-container {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.buff-badge {
+  background: linear-gradient(135deg, #ffd700, #ffeb3b);
+  border: 2px solid #d4af37;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+  transition: all 0.2s ease;
+  animation: buff-pulse 3s infinite ease-in-out;
+}
+
+.buff-badge:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.buff-icon {
+  font-size: 18px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .team-stats-banner .stat-chip {
@@ -720,6 +796,22 @@ watch(() => currentGains.value, (nv, ov) => {
 @keyframes glow {
   0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
   100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes buff-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 
+      0 2px 6px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 
+      0 3px 8px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 0 8px rgba(255, 215, 0, 0.3);
+  }
 }
 
 @keyframes blink {
