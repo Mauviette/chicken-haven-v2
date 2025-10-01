@@ -42,7 +42,7 @@ function normalizeKey(str) {
 }
 
 // Calcule l'énergie totale de l'équipe (somme des stats energie des poules équipées)
-function computeTeamEnergy(user) {
+export function computeTeamEnergy(user) {
   const slots = user?.team?.slots || []
   let totalBase = 0
   const members = []
@@ -63,7 +63,7 @@ function computeTeamEnergy(user) {
 }
 
 // Calcule l'intelligence totale de l'équipe (somme des stats intelligence des poules équipées)
-function computeTeamIntelligence(user) {
+export function computeTeamIntelligence(user) {
   const slots = user?.team?.slots || []
   let totalBase = 0
   const members = []
@@ -262,7 +262,7 @@ function runTalentWithConditions(user, talentName, context = {}) {
 }
 
 // Calcule les bonus de stockage de tous les talents actifs
-function runTalentStorage(user) {
+export function runTalentStorage(user) {
   const slots = user?.team?.slots || []
   const owned = user?.poulesPossedees || []
   

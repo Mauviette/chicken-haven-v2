@@ -4,6 +4,13 @@
 import User from '../models/User.js'
 import { achievementsData, talentsData, especeData } from '../data/sharedGameData.js'
 
+// Importer les fonctions de calcul du contrôleur des œufs
+import { 
+  computeTeamEnergy, 
+  computeTeamIntelligence, 
+  runTalentStorage 
+} from './egg.controller.js'
+
 // Stockage des derniers spawns par utilisateur pour éviter la triche
 const userLastSpawns = new Map()
 
@@ -28,89 +35,6 @@ function evalExpr(expr, ctx) {
     }
   }
   return 0
-}
-
-// Calcule l'énergie totale de l'équipe (copie du egg controller)
-function computeTeamEnergy(user) {
-  const slots = user?.team?.slots || []
-  let totalBase = 0
-  const members = []
-  for (const s of slots) {
-    const id = s?.especeId
-    if (!id) continue
-    const e = especeData[id]
-    const energy = Number(e?.stats?.energie) || 0
-    totalBase += energy
-    members.push(id)
-  }
-  return totalBase
-}
-
-// Calcule l'intelligence totale de l'équipe (copie du egg controller)
-function computeTeamIntelligence(user) {
-  const slots = user?.team?.slots || []
-  let totalBase = 0
-  const members = []
-  for (const s of slots) {
-    const id = s?.especeId
-    if (!id) continue
-    const e = especeData[id]
-    const intelligence = Number(e?.stats?.intelligence) || 0
-    totalBase += intelligence
-    members.push(id)
-  }
-  return totalBase
-}
-
-// Calcule les bonus de stockage de tous les talents actifs (copie du egg controller)
-function runTalentStorage(user) {
-  const slots = user?.team?.slots || []
-  const owned = user?.poulesPossedees || []
-  
-  let totalBonus = 0
-  const breakdown = []
-
-  // Précalculer les stats d'équipe une seule fois
-  const teamEnergy = computeTeamEnergy(user)
-  const teamIntelligence = computeTeamIntelligence(user)
-
-  for (const slot of slots) {
-    const especeId = slot?.especeId
-    if (!especeId) continue
-
-    const talentName = especeData[especeId]?.talent
-    if (!talentName) continue
-
-    const calc = talentsData?.[talentName]?.calculation
-    if (!calc || !Array.isArray(calc.effects)) continue
-
-    const ownedPoule = owned.find(p => p.especeId === especeId)
-    const niveauTalent = Math.max(1, Number(ownedPoule?.niveauTalent) || 1)
-
-    // Contexte pour l'évaluation DSL
-    const ctx = { 
-      niveau: niveauTalent, 
-      teamEnergy, 
-      teamIntelligence 
-    }
-
-    // Chercher tous les effets storage_bonus sur eggs
-    for (const effect of calc.effects) {
-      if (effect?.type === 'storage_bonus' && effect?.resource === 'eggs') {
-        const amount = Number(evalExpr(effect.amount, ctx)) || 0
-        totalBonus += amount
-        breakdown.push({ 
-          especeId, 
-          talentName, 
-          niveau: niveauTalent, 
-          amount,
-          context: { teamEnergy, teamIntelligence }
-        })
-      }
-    }
-  }
-
-  return { storageBonus: totalBonus, breakdown }
 }
 
 // Fonction pour calculer le stockage total comme dans egg controller
@@ -205,7 +129,7 @@ export async function checkAvailableSpawnables(req, res) {
         if (now - lastSpawn >= spawnInterval) {
           // 25% de chance d'apparition à chaque vérification
           const spawnChance = Math.random()
-          if (spawnChance < 0.15) {
+          if (spawnChance < 0.1) {
             const spawnableId = `${spawnerId}_${now}`
             
             availableSpawnables.push({
