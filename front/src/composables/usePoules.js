@@ -239,117 +239,44 @@ export function usePoules() {
       const espece = especiesData[poule.especeId]
       const niveau = getTalentLevel(poule)
       const talentName = espece?.talent
-      const calc = talentsData[talentName]?.calculation
-
-      // Petit évaluateur d'expressions (miroir minimal du serveur)
-      function evalExpr(expr, ctx) {
-        if (expr == null) return 0
-        if (typeof expr === 'number') return expr
-        if (typeof expr === 'string') return Number.isFinite(ctx[expr]) ? ctx[expr] : (ctx[expr] ?? 0)
-        if (typeof expr === 'object') {
-          if (Object.prototype.hasOwnProperty.call(expr, 'var')) {
-            const v = expr.var
-            return Number.isFinite(ctx[v]) ? ctx[v] : (ctx[v] ?? 0)
-          }
-          const op = expr.op
-          const args = Array.isArray(expr.args) ? expr.args : []
-          const vals = args.map(a => evalExpr(a, ctx))
-          switch (op) {
-            case 'add': return vals.reduce((a, b) => a + b, 0)
-            case 'sub': return vals.slice(1).reduce((a, b) => a - b, vals[0] || 0)
-            case 'mul': return vals.reduce((a, b) => a * b, 1)
-            case 'div': return vals.slice(1).reduce((a, b) => (b === 0 ? a : a / b), vals[0] || 0)
-            case 'min': return Math.min(...vals)
-            case 'max': return Math.max(...vals)
-            default: return 0
-          }
-        }
-        return 0
-      }
-
-      // 1) Essayer d'interpréter un bonus de revenu passif (Énergétique) via le DSL
-      if (calc && Array.isArray(calc.effects)) {
-        const incomeEff = calc.effects.find(e => e?.type === 'income_bonus_per_second')
-        if (incomeEff?.amount != null) {
-          const perEnergy = evalExpr(incomeEff.amount, { niveau, teamEnergy: 1 })
-          const fmt = Number.isInteger(perEnergy) ? `${perEnergy}` : perEnergy.toFixed(1)
-          return `+${fmt} de revenu par seconde pour chaque point d'énergie dans l'équipe.`
-        }
-      }
-
-      // 2) Essayer d'interpréter un stat_buff générique
-      if (calc && Array.isArray(calc.effects)) {
-        const ctx = { niveau }
-        const deltas = { intelligence: 0, energie: 0, charisme: 0 }
-        for (const eff of calc.effects) {
-          if (!eff || eff.type !== 'stat_buff') continue
-          if (eff.target && eff.target !== 'team') continue
-          const stats = eff.stats || {}
-          for (const key of ['intelligence', 'energie', 'charisme']) {
-            if (stats[key] != null) {
-              deltas[key] += Number(evalExpr(stats[key], ctx)) || 0
-            }
-          }
-        }
-        const parts = []
-        if (deltas.intelligence) parts.push(`+${deltas.intelligence} intelligence`)
-        if (deltas.energie) parts.push(`+${deltas.energie} énergie`)
-        if (deltas.charisme) parts.push(`+${deltas.charisme} charisme`)
-        if (parts.length) {
-          return `${parts.join(' et ')} à toutes les poules de l'équipe.`
-        }
-      }
-
-      // 2.b) Talent basé sur une probabilité par œuf: Chanceuse
-      // Cherche une condition random_chance et un effet resource eggs
-      if (calc) {
-        const rc = Array.isArray(calc.conditions)
-          ? calc.conditions.find(c => c?.type === 'random_chance')
-          : null
-        const resEff = Array.isArray(calc.effects)
-          ? calc.effects.find(e => e?.type === 'resource' && e?.resource === 'eggs')
-          : null
-        if (rc && resEff) {
-          // pSingle peut être 0..1 (fraction) ou 0..100 (pourcents)
-          let p = 0.01
-          if (typeof rc.value === 'number' && !Number.isNaN(rc.value)) {
-            p = rc.value > 1 ? (rc.value / 100) : rc.value
-          }
-          const pct = Math.round(p * 100)
-          // Montant: souvent niveau * stockageMax -> afficher en fonction du niveau
-          // Sans connaître stockageMax côté client, on exprime la formule textuelle
-          return `Pour chaque œuf collecté, ${pct}% de chance de gagner stockage max × ${niveau} en œufs.`
-        }
-      }
-
-      // 3) Sinon, préférer un texte d'effet plutôt que la description
-      //    a) Si par exception le backend expose une fonction effet, l'utiliser
       const tInfo = talentsData[talentName]
-      if (tInfo && typeof tInfo.effet === 'function') {
-        return tInfo.effet(niveau)
+      
+      // Utiliser le champ 'effet' et interpréter les templates
+      if (tInfo && tInfo.effet) {
+        let effet = tInfo.effet
+        
+        // Si c'est encore une fonction (cas de développement local), l'appeler
+        if (typeof effet === 'function') {
+          return effet(niveau)
+        }
+        
+        // Sinon, interpréter le template de chaîne de caractères
+        if (typeof effet === 'string') {
+          // Remplacer {niveau} par la valeur actuelle
+          effet = effet.replace(/\{niveau\}/g, niveau)
+          
+          // Évaluer les expressions mathématiques simples comme {niveau*0.2}
+          effet = effet.replace(/\{([^}]+)\}/g, (match, expr) => {
+            try {
+              // Remplacer 'niveau' par sa valeur dans l'expression
+              const cleanExpr = expr.replace(/niveau/g, niveau)
+              // Évaluer l'expression mathématique simple (seulement +, -, *, /, parenthèses et nombres)
+              if (/^[\d+\-*/.() ]+$/.test(cleanExpr)) {
+                const result = Function('"use strict"; return (' + cleanExpr + ')')()
+                // Formatter le résultat (garder 1 décimale si nécessaire)
+                return Number.isInteger(result) ? result.toString() : result.toFixed(1)
+              }
+              return match // Garder l'expression originale si elle ne peut pas être évaluée
+            } catch (e) {
+              return match // Garder l'expression originale en cas d'erreur
+            }
+          })
+          
+          return effet
+        }
       }
-      //    b) Fallback local minimal (les fonctions ne sont pas sérialisables côté backend)
-      const localEffect = {
-        'Chanceuse': (n) => `Pour chaque œuf collecté, 1% de chance de gagner stockage max × ${n} en œufs.`,
-        'Énergétique': (n) => `+${(n * 0.2).toFixed(1)} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
-        'Energetique': (n) => `+${(n * 0.2).toFixed(1)} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
-        'Persévérante': (n) => `+${n} énergie et intelligence à toutes les poules de l'équipe.`,
-        'Perseverante': (n) => `+${n} énergie et intelligence à toutes les poules de l'équipe.`,
-        'Vive': (n) => `Vitesse de mission +${n * 8}%`,
-        'Curieuse': (n) => `+${n * 3}% d'événements spéciaux`,
-        'Discrète': (n) => `Risque réduit de ${n * 6}%`,
-        'Discrete': (n) => `Risque réduit de ${n * 6}%`,
-        'Gourmande': (n) => `Consommation -${n * 5}%`,
-        'Protectrice': (n) => `Protection +${n * 7}%`,
-        'Maligne': (n) => `+${n * 4}% de réussite aux énigmes`,
-        'Majestueuse': (n) => `Charisme concours +${n * 6}%`,
-        'Rapide': (n) => `Vitesse +${n * 10}%`,
-        'Joyeuse': (n) => `Moral +${n * 2}`
-      }
-      if (talentName && typeof localEffect[talentName] === 'function') {
-        return localEffect[talentName](niveau)
-      }
-      //    c) Dernier recours: description backend
+      
+      // Fallback: utiliser la description si pas d'effet défini
       return (tInfo?.description || '???')
     } catch (error) {
       console.error('Erreur getTalentEffectSync:', error)
