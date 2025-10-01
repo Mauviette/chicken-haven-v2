@@ -13,7 +13,7 @@ let pollingInterval = null
 
 export function useSpawnables() {
   const { talents, especies } = useGameData()
-  const { team, fetchTeam, eggs } = usePlayer()
+  const { team, fetchTeam, eggs, refreshPlayer } = usePlayer()
   const { poules } = usePoules()
 
   // Fonction pour vérifier les nouveaux spawnables depuis le serveur
@@ -26,11 +26,12 @@ export function useSpawnables() {
         for (const spawnable of spawnables) {
           console.log(`🥚 Un spawnable est apparu: ${spawnable.talentName} (${spawnable.type})`)
           
-          // Ajouter le spawnable à la liste avec position aléatoire
+          // Ajouter le spawnable à la liste avec position et rotation aléatoires
           const newSpawnable = {
             ...spawnable,
             x: Math.random() * 80 + 10, // 10% à 90% de la largeur
             y: Math.random() * 60 + 20, // 20% à 80% de la hauteur
+            rotation: Math.random() * 360, // Rotation aléatoire de 0 à 360 degrés
             timestamp: Date.now(),
             lifetime: 30000 // 30 secondes de durée de vie
           }
@@ -62,8 +63,13 @@ export function useSpawnables() {
 
         console.log('🎯 Spawnable cliqué avec succès:', response.reward)
         
-        // Recharger les données du joueur pour mettre à jour les ressources
-        await fetchTeam()
+        // Mise à jour immédiate des œufs dans l'interface
+        if (response.reward && response.reward.type === 'resource' && response.reward.resource === 'eggs') {
+          eggs.value += response.reward.amount
+        }
+        
+        // Recharger les données du joueur pour mettre à jour les ressources (sécurité)
+        await refreshPlayer()
         
         return response.reward
       }
