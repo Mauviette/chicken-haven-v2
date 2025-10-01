@@ -29,7 +29,8 @@
         :espece="especeData[poule.especeId]"
         :image="getImage(poule.especeId)"
         :hiddenImage="hiddenImage"
-        @click="poule.quantite >= 0 && openDetail(poule)"
+        :class="{ 'non-clickable': poule.quantite <= 0 }"
+        @click="poule.quantite > 0 ? openDetail(poule) : null"
       />
     </div>
 
@@ -41,6 +42,7 @@
       @close="closeDetail"
     />
 
+  <br/><br/><br/>
   </div>
 </template>
 
@@ -298,6 +300,19 @@ watch(
   color: #6d3c00;
   padding: 40px;
   width: 100%;
+}
+
+/* Styles pour les poules non cliquables */
+.non-clickable {
+  pointer-events: none;
+  opacity: 0.6;
+  filter: grayscale(0.3);
+  cursor: not-allowed !important;
+}
+
+.non-clickable:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 </style>

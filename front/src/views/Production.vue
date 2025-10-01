@@ -111,6 +111,7 @@ import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
 import { useSound } from '@/composables/useSound'
 import { useBuffs } from '@/composables/useBuffs'
+import { apiPost } from '@/utils/api'
 import Tooltip from '@/components/menu/Tooltip.vue'
 
 const { 
@@ -129,6 +130,8 @@ const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
 const { activeBuffs, fetchBuffs, getTimeRemaining, formatBuffEffect, getBuffIcon } = useBuffs()
+
+console.log('activeBuffs.value:', activeBuffs.value);
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -474,6 +477,19 @@ onMounted(async () => {
   await fetchEggStatus()
   await fetchBuffs()
   startUpdates()
+  
+  // Test temporaire - ajouter un buff pour voir l'affichage
+  // (Vous pouvez supprimer cette partie une fois que ça marche)
+  if (activeBuffs.value.length === 0) {
+    console.log('Aucun buff trouvé, test d\'ajout d\'un buff...')
+    try {
+      const response = await apiPost('/api/user/test-buff')
+      console.log('Buff de test ajouté:', response)
+      await fetchBuffs()
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du buff de test:', error)
+    }
+  }
 })
 
 onUnmounted(() => {
@@ -495,6 +511,11 @@ watch(() => currentGains.value, (nv, ov) => {
   }
   _lastGains = cur
 })
+
+// Debug des buffs actifs
+watch(() => activeBuffs.value, (newBuffs) => {
+  console.log('Buffs actifs mis à jour:', newBuffs)
+}, { immediate: true })
 </script>
 
 <style scoped>
