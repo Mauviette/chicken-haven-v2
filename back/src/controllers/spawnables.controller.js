@@ -7,7 +7,8 @@ import { achievementsData, talentsData, especeData } from '../data/sharedGameDat
 // Importer les fonctions de calcul du contrôleur des œufs
 import { 
   computeTeamEnergy, 
-  computeTeamIntelligence, 
+  computeTeamIntelligence,
+  computeTeamCharisme,
   runTalentStorage 
 } from './egg.controller.js'
 
@@ -156,7 +157,7 @@ export async function checkAvailableSpawnables(req, res) {
           stockageMax: totalStorage, // Utiliser le stockage total
           teamEnergy: computeTeamEnergy(user),
           teamIntelligence: computeTeamIntelligence(user),
-          teamCharisme: 10
+          teamCharisme: computeTeamCharisme(user)
         }
 
         const spawnInterval = evalExpr(spawnEffect.spawnRate, ctx) * 1000 // en ms
@@ -296,7 +297,7 @@ export async function clickSpawnableObject(req, res) {
       stockageMax: totalStorage, // Utiliser le stockage total correct
       teamEnergy: computeTeamEnergy(user),
       teamIntelligence: computeTeamIntelligence(user),
-      teamCharisme: 10
+      teamCharisme: computeTeamCharisme(user)
     }
 
     console.log(`💰 Calcul de récompense pour ${talentName}:`, {

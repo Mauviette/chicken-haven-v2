@@ -205,17 +205,65 @@ export const talentsData = {
   'Vive': {
     description: "Augmente les revenus en fonction de l'intelligence et de l'énergie de l'équipe.",
     effet: "{niveau*0.1} de revenu par seconde pour chaque point d'énergie et d'intelligence dans l'équipe.",
-    icon: '🏃'
+    nivType: 'basic',
+    icon: '🏃',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'income_bonus_per_second',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { op: 'add', args: [ { var: 'teamEnergy' }, { var: 'teamIntelligence' } ] },
+              { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] }
+            ]
+          }
+        }
+      ]
+    }
   },
   'Curieuse': {
     description: "Augmente le stockage en fonction du charisme",
     effet: "+{niveau*2} de stockage par point de charisme",
-    icon: '🔎'
+    nivType: 'basic',
+    icon: '🔎',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'storage_bonus',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { var: 'teamCharisme' },
+              { op: 'mul', args: [ { var: 'niveau' }, 2 ] }
+            ]
+          }
+        }
+      ]
+    }
   },
   'Discrète': {
     description: "Augmente l'intelligence mais baisse le charisme des poules de l'équipe.",
     effet: "+{niveau*2} intelligence et -{niveau*1} charisme à toute l'équipe.",
-    icon: '🕵️'
+    nivType: 'basic',
+    icon: '🕵️',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'stat_buff',
+          target: 'team',
+          stats: {
+            intelligence: { op: 'mul', args: [ { var: 'niveau' }, 2 ] },
+            charisme: { op: 'mul', args: [ { var: 'niveau' }, -1 ] }
+          }
+        }
+      ]
+    }
   },
   'Gourmande': {
     description: "Des chocolats apparaissent sur l'écran qui augmentent la production et le stockage lorsque cliqués.",
@@ -296,10 +344,9 @@ export const talentsData = {
           type: 'stat_buff',
           target: 'me',
           stats: {
-            energie:
-              { op: 'mul', args: [ { var: 'niveau' }, 5 ] }
+            charisme: { op: 'mul', args: [ { var: 'niveau' }, 5 ] }
+          }
         }
-      }
       ]
     }
   },

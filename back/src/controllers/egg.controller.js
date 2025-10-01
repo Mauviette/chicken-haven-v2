@@ -83,6 +83,27 @@ export function computeTeamIntelligence(user) {
   return totalBase + extraTotal
 }
 
+// Calcule le charisme total de l'équipe (somme des stats charisme des poules équipées)
+export function computeTeamCharisme(user) {
+  const slots = user?.team?.slots || []
+  let totalBase = 0
+  const members = []
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const e = especeData[id]
+    const charisme = Number(e?.stats?.charisme) || 0
+    totalBase += charisme
+    members.push(id)
+  }
+
+  // Appliquer tous les buffs de stats provenant du DSL (target: 'team')
+  const buffs = aggregateTeamStatBuffs(user)
+  const extraPerMember = Number(buffs?.charisme || 0)
+  const extraTotal = extraPerMember * members.length
+  return totalBase + extraTotal
+}
+
 // Renvoie les entrées de talents actifs correspondants au nom demandé sur l'équipe
 function getActiveTalentEntries(user, targetTalentName) {
   const normTarget = normalizeKey(targetTalentName)
@@ -191,6 +212,7 @@ function runTalentIncome(user) {
   // Précalculer les stats d'équipe une seule fois
   const teamEnergy = computeTeamEnergy(user)
   const teamIntelligence = computeTeamIntelligence(user)
+  const teamCharisme = computeTeamCharisme(user)
 
   for (const slot of slots) {
     const especeId = slot?.especeId
@@ -209,7 +231,8 @@ function runTalentIncome(user) {
     const ctx = { 
       niveau: niveauTalent, 
       teamEnergy, 
-      teamIntelligence 
+      teamIntelligence,
+      teamCharisme
     }
 
     // Chercher tous les effets income_bonus_per_second sur eggs
@@ -314,6 +337,7 @@ export function runTalentStorage(user) {
   // Précalculer les stats d'équipe une seule fois
   const teamEnergy = computeTeamEnergy(user)
   const teamIntelligence = computeTeamIntelligence(user)
+  const teamCharisme = computeTeamCharisme(user)
 
   for (const slot of slots) {
     const especeId = slot?.especeId
@@ -332,7 +356,8 @@ export function runTalentStorage(user) {
     const ctx = { 
       niveau: niveauTalent, 
       teamEnergy, 
-      teamIntelligence 
+      teamIntelligence,
+      teamCharisme
     }
 
     // Chercher tous les effets storage_bonus sur eggs
