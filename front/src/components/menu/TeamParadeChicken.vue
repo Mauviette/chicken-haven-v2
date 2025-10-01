@@ -1,4 +1,4 @@
-<template>
+j<template>
   <!-- Conteneur acteur positionné relativement à la scène (parent .stage) -->
   <div class="actor" :style="{ left: x + 'px' }">
     <Tooltip :text="tooltipHtml" :key="tooltipHtml" v-if="!isMobile">
@@ -184,7 +184,7 @@ watch(() => props.containerWidth, () => {
 /* Racine absolue positionnée par rapport à .stage (parent avec position:relative) */
 .actor {
   position: absolute;
-  bottom: -1px; /* ancrer les pattes au bas de la scène, baissé de 1px */
+  bottom: -4px; /* ancrer les pattes au bas de la scène, baissé de 1px */
   pointer-events: auto; /* nécessaire pour le tooltip */
 }
 

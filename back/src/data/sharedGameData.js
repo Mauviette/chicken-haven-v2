@@ -132,15 +132,14 @@ export const especeData = {
 // DONNÉES DES TALENTS
 // ========================
 
-//POUR L'INSTANT NE FAIRE QUE LES 3 PREMIERS
 export const talentsData = {
   'Chanceuse': {
     description: "Lors des récoltes, a une petite chance de fait pleuvoir des oeufs.",
-    effet: (niveau) => `Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x${niveau} en oeufs.`,
+    effet: "Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x{niveau} en oeufs.",
     nivType : 'basic',
     icon: '🍀',
     calculation: {
-      combine: 'linear',
+      combine: 'not_linear',
       triggers: [
         { type: 'on_egg_harvest' }
       ],
@@ -159,7 +158,7 @@ export const talentsData = {
   },
   'Énergétique': {
     description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
-    effet: (niveau) => `+${niveau * 0.2} de revenu par seconde pour chaque point d'énergie dans l'équipe.`,
+    effet: "+{niveau*0.2} de revenu par seconde pour chaque point d'énergie dans l'équipe.",
     nivType : 'basic',
     icon: '⚡',
     calculation: {
@@ -181,7 +180,7 @@ export const talentsData = {
   },
   'Persévérante': {
     description: "Augmente l'énergie et l'intelligence de l'équipe.",
-    effet: (niveau) => `+${niveau} énergie et intelligence à toutes les poules de l'équipe.`,
+    effet: "+{niveau} énergie et intelligence à toutes les poules de l'équipe.",
     nivType : 'basic',
     icon: '🏋️',
     calculation: {
@@ -200,37 +199,65 @@ export const talentsData = {
   },
   'Vive': {
     description: "Augmente les revenus en fonction de l'intelligence et de l'énergie de l'équipe.",
-    effet: (niveau) => `${niveau * 0.1} de revenu par seconde pour chaque point d'énergie et d'intelligence dans l'équipe.`,
+    effet: "{niveau*0.1} de revenu par seconde pour chaque point d'énergie et d'intelligence dans l'équipe.",
     icon: '🏃'
   },
   'Curieuse': {
     description: "Augmente le stockage en fonction du charisme",
-    effet: (niveau) => `+${niveau * 2} de stockage par point de charisme`,
+    effet: "+{niveau*2} de stockage par point de charisme",
     icon: '🔎'
   },
   'Discrète': {
     description: "Augmente l'intelligence mais baisse le charisme des poules de l'équipe.",
-    effet: (niveau) => `+${niveau * 2} charisme mais -${niveau * 1} à toute l'équipe.`,
+    effet: "+{niveau*2} intelligence et -{niveau*1} charisme à toute l'équipe.",
     icon: '🕵️'
   },
   'Gourmande': {
     description: "Des chocolats apparaissent sur l'écran qui augmentent la production lorsque cliqués.",
-    effet: (niveau) => `Des chocolats apparaissent, en cliquer un augmente la production de ${niveau * 100}% pendant 15s.`,
+    effet: "Des chocolats apparaissent, en cliquer un augmente la production de {niveau*100}% pendant 15s.",
     icon: '🍗'
   },
   'Protectrice': {
     description: "Augmente la production et le stockage max en fonction de l'intelligence.",
-    effet: (niveau) => `Augmente le stockage de ${niveau} et la production de ${niveau * 0.1} par point d'intelligence dans l'équipe.`,
-    icon: '🛡️'
+    effet: "Augmente le stockage de {niveau} et la production de {niveau*0.1} par point d'intelligence dans l'équipe.",
+    nivType: 'basic',
+    icon: '🛡️',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'income_bonus_per_second',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { var: 'teamIntelligence' },
+              { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] }
+            ]
+          }
+        },
+        {
+          type: 'storage_bonus',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { var: 'teamIntelligence' },
+              { var: 'niveau' }
+            ]
+          }
+        }
+      ]
+    }
   },
   'Maligne': {
     description: "Cliquez-moi pour augmenter l'intelligence temporairement.",
-    effet: (niveau) => `Cliquez moi pour augmenter l'intelligence globale de ${niveau * 50}% pendant 20s. Cooldown 1 minute`, //Clic se fait sur TeamParadeChicken
+    effet: "Cliquez moi pour augmenter l'intelligence globale de {niveau*50}% pendant 20s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
     icon: '🧠'
   },
   'Majestueuse': {
     description: "Augmente le charisme.",
-    effet: (niveau) => `+${niveau * 5} charisme`,
+    effet: "+{niveau*5} charisme",
     nivType : 'basic',
     icon: '👑',
     calculation: {
@@ -249,12 +276,12 @@ export const talentsData = {
   },
   'Rapide': {
     description: "Baisse les cooldown de capacité de poules.",
-    effet: (niveau) => `Baisse les cooldown de capacité de poules de ${10 + niveau * 8}%`,
+    effet: "Baisse les cooldown de capacité de poules de {10+niveau*8}%",
     icon: '💨'
   },
   'Joyeuse': {
     description: "Cliquez-moi pour augmenter les revenus temporairement.",
-    effet: (niveau) => `Cliquez moi pour augmenter le revenu de ${niveau * 200}% pendant 10s. Cooldown 1 minute`, //Clic se fait sur TeamParadeChicken
+    effet: "Cliquez moi pour augmenter le revenu de {100+niveau*100}% pendant 10s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
     icon: '🎉'
   }
 }
@@ -281,7 +308,7 @@ export const groupes = [
   { 
     name: 'chic', 
     description: 'Groupe chic', 
-    rarityDropChance: [75, 20, 5, 0]
+    rarityDropChance: [65, 25, 10, 0]
   }
 ]
 
@@ -316,13 +343,8 @@ export const boxesData = [
         quantity: 1
       },
       {
-        name: 'brillant',
-        chance: 30,
-        quantity: 1
-      },
-      {
         name: 'discret',
-        chance: 30,
+        chance: 60,
         quantity: 1
       }
     ],
@@ -337,9 +359,14 @@ export const boxesData = [
     dropGroups: [
       {
         name: 'chic',
-        chance: 100,
+        chance: 50,
         quantity: 1
-      }
+      },
+      {
+        name: 'brillant',
+        chance: 50,
+        quantity: 1
+      },
     ],
     unlock_level: 5
   }

@@ -1,5 +1,22 @@
 <template>
   <div class="production-screen">
+    <!-- Bandeau des buffs actifs -->
+    <div class="buffs-container" v-if="activeBuffs.length > 0">
+      <div
+        v-for="(buff, index) in activeBuffs"
+        :key="index"
+        class="buff-badge"
+      >
+        <Tooltip 
+          :text="getBuffTooltipHtml(buff)"
+          position="bottom"
+          :followMouse="false"
+        >
+          <div class="buff-icon">{{ getBuffIcon(buff) }}</div>
+        </Tooltip>
+      </div>
+    </div>
+
     <!-- Bandeau des stats d'équipe -->
     <div class="team-stats-banner">
       <Tooltip text="Somme de l'intelligence des poules équipées.">
@@ -61,7 +78,9 @@
                 ></div>
               </div>
               <div class="gains-text">
-                {{ Math.floor(currentGains) }} / {{ eggState.maxIncome }}
+                <Tooltip :text="storageTooltipHtml">
+                  <span>{{ Math.floor(currentGains) }} / {{ eggState.maxIncome }}</span>
+                </Tooltip>
               </div>
               <div class="gains-per-click">
                 <!--span class="click-info">💰 {{ Math.floor(currentGains) }} œuf{{ Math.floor(currentGains) > 1 ? 's' : '' }} par clic</span-->
@@ -91,6 +110,7 @@ import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
 import { useSound } from '@/composables/useSound'
+import { useBuffs } from '@/composables/useBuffs'
 import Tooltip from '@/components/menu/Tooltip.vue'
 
 const { 
@@ -108,6 +128,7 @@ const { refreshPlayer, fetchTeam, team } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
+const { activeBuffs, fetchBuffs, getTimeRemaining, formatBuffEffect, getBuffIcon } = useBuffs()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -191,52 +212,98 @@ const teamStats = computed(() => {
   }
 })
 
-// Décomposition du bonus Énergétique (miroir de runTalentEnergetique côté serveur)
-const energeticDetails = computed(() => {
+// Calcul générique des bonus de talents (remplace energeticDetails)
+const talentBonusDetails = computed(() => {
   try {
     const slots = team.value?.slots || []
     const speciesMap = especies.value || {}
     const talentsMap = talents.value || {}
     const owned = poules.value || []
-    const teamEnergy = Number(teamStats.value?.energie || 0)
+    const currentTeamStats = teamStats.value || {}
+    const teamStatsCtx = {
+      teamEnergy: Number(currentTeamStats.energie || 0),
+      teamIntelligence: Number(currentTeamStats.intelligence || 0),
+      teamCharisme: Number(currentTeamStats.charisme || 0)
+    }
 
-    let total = 0
-    const entries = []
+    let totalIncome = 0
+    let totalStorage = 0
+    const incomeEntries = []
+    const storageEntries = []
+
     for (const s of slots) {
       const id = s?.especeId
       if (!id) continue
       const sp = speciesMap[id]
       const tName = sp?.talent
-      if (!tName || !['Énergétique', 'Energetique'].includes(tName)) continue
+      if (!tName) continue
       const calc = talentsMap[tName]?.calculation
       if (!calc || !Array.isArray(calc.effects)) continue
-      const eff = calc.effects.find(e => e?.type === 'income_bonus_per_second' && (e?.resource === 'eggs' || e?.resource == null))
-      if (!eff) continue
+      
       const own = owned.find(p => p.especeId === id)
       const niveau = Math.max(1, Number(own?.niveauTalent) || 1)
-      const amount = Number(evalExpr(eff.amount, { teamEnergy, niveau })) || 0
-      total += amount
-      entries.push({ especeId: id, name: sp?.nom || id, level: niveau, amount, teamEnergy })
+      const ctx = { niveau, ...teamStatsCtx }
+
+      // Calculer les bonus d'income
+      const incomeEffects = calc.effects.filter(e => e?.type === 'income_bonus_per_second' && (e?.resource === 'eggs' || e?.resource == null))
+      for (const eff of incomeEffects) {
+        const amount = Number(evalExpr(eff.amount, ctx)) || 0
+        if (amount > 0) {
+          totalIncome += amount
+          incomeEntries.push({ 
+            especeId: id, 
+            name: sp?.nom || id, 
+            talentName: tName,
+            level: niveau, 
+            amount,
+            type: 'income'
+          })
+        }
+      }
+
+      // Calculer les bonus de stockage
+      const storageEffects = calc.effects.filter(e => e?.type === 'storage_bonus' && (e?.resource === 'eggs' || e?.resource == null))
+      for (const eff of storageEffects) {
+        const amount = Number(evalExpr(eff.amount, ctx)) || 0
+        if (amount > 0) {
+          totalStorage += amount
+          storageEntries.push({ 
+            especeId: id, 
+            name: sp?.nom || id, 
+            talentName: tName,
+            level: niveau, 
+            amount,
+            type: 'storage'
+          })
+        }
+      }
     }
-    return { total, entries }
+
+    return { 
+      income: { total: totalIncome, entries: incomeEntries },
+      storage: { total: totalStorage, entries: storageEntries }
+    }
   } catch (_) {
-    return { total: 0, entries: [] }
+    return { 
+      income: { total: 0, entries: [] },
+      storage: { total: 0, entries: [] }
+    }
   }
 })
 
 // HTML du tooltip de l'income
 const incomeTooltipHtml = computed(() => {
   const effective = Number(eggState.value.income || 0)
-  const energetic = energeticDetails.value
-  const base = Math.max(0, effective - Number(energetic.total || 0))
+  const bonusDetails = talentBonusDetails.value
+  const base = Math.max(0, effective - Number(bonusDetails.income.total || 0))
 
   let html = `<div>`
   html += `<div style="font-weight:bold;margin-bottom:4px;">Revenu par seconde</div>`
   html += `<div>Base (incl. améliorations): <strong>${formatIncome(base)}</strong></div>`
 
-  if (energetic.entries.length) {
-    for (const e of energetic.entries) {
-      html += `<div>Énergétique — ${e.name} (niv ${roman(e.level)}): <strong>+${formatIncome(e.amount)}</strong></div>`
+  if (bonusDetails.income.entries.length) {
+    for (const e of bonusDetails.income.entries) {
+      html += `<div>${e.talentName} — ${e.name} (niv ${roman(e.level)}): <strong>+${formatIncome(e.amount)}</strong></div>`
     }
   } else {
     html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
@@ -246,6 +313,43 @@ const incomeTooltipHtml = computed(() => {
   html += `</div>`
   return html
 })
+
+// HTML du tooltip du stockage maximum
+const storageTooltipHtml = computed(() => {
+  const effective = Number(eggState.value.maxIncome || 0)
+  const bonusDetails = talentBonusDetails.value
+  const base = Math.max(0, effective - Number(bonusDetails.storage.total || 0))
+
+  let html = `<div>`
+  html += `<div style="font-weight:bold;margin-bottom:4px;">Stockage maximum</div>`
+  html += `<div>Base (incl. améliorations): <strong>${base}</strong></div>`
+
+  if (bonusDetails.storage.entries.length) {
+    for (const e of bonusDetails.storage.entries) {
+      html += `<div>${e.talentName} — ${e.name} (niv ${roman(e.level)}): <strong>+${e.amount}</strong></div>`
+    }
+  } else {
+    html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
+  }
+
+  html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">Total: <strong>${effective}</strong></div>`
+  html += `</div>`
+  return html
+})
+
+// HTML du tooltip des buffs
+const getBuffTooltipHtml = (buff) => {
+  const effect = formatBuffEffect(buff)
+  const timeRemaining = getTimeRemaining(buff)
+  const origin = buff.origin || 'Inconnu'
+
+  let html = `<div>`
+  html += `<div style="font-weight:bold;margin-bottom:4px;color:#d4752a;">${effect}</div>`
+  html += `<div style="margin-bottom:4px;">Source: <strong>${origin}</strong></div>`
+  html += `<div style="color:#666;">Durée restante: <strong>${timeRemaining}</strong></div>`
+  html += `</div>`
+  return html
+}
 
 // Effets visuels
 const eggEffects = ref([])
@@ -368,6 +472,7 @@ onMounted(async () => {
   // S'assurer que l'équipe est à jour pour les stats
   await fetchTeam()
   await fetchEggStatus()
+  await fetchBuffs()
   startUpdates()
 })
 
@@ -418,6 +523,48 @@ watch(() => currentGains.value, (nv, ov) => {
   text-shadow: 0 1px 0 #fff;
   pointer-events: auto;
   z-index: 5;
+}
+
+.buffs-container {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.buff-badge {
+  background: linear-gradient(135deg, #ffd700, #ffeb3b);
+  border: 2px solid #d4af37;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+  transition: all 0.2s ease;
+  animation: buff-pulse 3s infinite ease-in-out;
+}
+
+.buff-badge:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.buff-icon {
+  font-size: 18px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .team-stats-banner .stat-chip {
@@ -649,6 +796,22 @@ watch(() => currentGains.value, (nv, ov) => {
 @keyframes glow {
   0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
   100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes buff-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 
+      0 2px 6px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 
+      0 3px 8px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 0 8px rgba(255, 215, 0, 0.3);
+  }
 }
 
 @keyframes blink {

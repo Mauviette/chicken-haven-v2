@@ -62,6 +62,27 @@ function computeTeamEnergy(user) {
   return totalBase + extraTotal
 }
 
+// Calcule l'intelligence totale de l'équipe (somme des stats intelligence des poules équipées)
+function computeTeamIntelligence(user) {
+  const slots = user?.team?.slots || []
+  let totalBase = 0
+  const members = []
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const e = especeData[id]
+    const intelligence = Number(e?.stats?.intelligence) || 0
+    totalBase += intelligence
+    members.push(id)
+  }
+
+  // Appliquer tous les buffs de stats provenant du DSL (target: 'team')
+  const buffs = aggregateTeamStatBuffs(user)
+  const extraPerMember = Number(buffs?.intelligence || 0)
+  const extraTotal = extraPerMember * members.length
+  return totalBase + extraTotal
+}
+
 // Renvoie les entrées de talents actifs correspondants au nom demandé sur l'équipe
 function getActiveTalentEntries(user, targetTalentName) {
   const normTarget = normalizeKey(targetTalentName)
@@ -117,77 +138,178 @@ function aggregateTeamStatBuffs(user) {
   return result
 }
 
-// Interprète le talent Énergétique (bonus d'income par seconde)
-function runTalentEnergetique(user) {
-  const calc = talentsData?.['Énergétique']?.calculation || talentsData?.['Energetique']?.calculation
-  if (!calc) return { bonusPerSecond: 0, breakdown: [] }
-
-  const energeticEntries = getActiveTalentEntries(user, 'Énergétique')
-  if (energeticEntries.length === 0) return { bonusPerSecond: 0, breakdown: [] }
-
-  const teamEnergy = computeTeamEnergy(user)
-
-  let bonusPerSecond = 0
+// Calcule les bonus d'income par seconde de tous les talents actifs
+function runTalentIncome(user) {
+  const slots = user?.team?.slots || []
+  const owned = user?.poulesPossedees || []
+  
+  let totalBonus = 0
   const breakdown = []
 
-  for (const entry of energeticEntries) {
-    // Chercher l'effet income_bonus_per_second sur resource eggs
-    const effect = (calc.effects || []).find(e => e?.type === 'income_bonus_per_second' && e?.resource === 'eggs')
-    if (!effect) continue
-    const ctx = { teamEnergy, niveau: Number(entry.niveauTalent) || 0 }
-    const amt = Number(evalExpr(effect.amount, ctx)) || 0
-    bonusPerSecond += amt
-    breakdown.push({ especeId: entry.especeId, niveau: entry.niveauTalent, teamEnergy, amount: amt })
-  }
+  // Précalculer les stats d'équipe une seule fois
+  const teamEnergy = computeTeamEnergy(user)
+  const teamIntelligence = computeTeamIntelligence(user)
 
-  return { bonusPerSecond, breakdown }
-}
+  for (const slot of slots) {
+    const especeId = slot?.especeId
+    if (!especeId) continue
 
-// Interprète le talent Chanceuse à partir du DSL
-function runTalentChanceuse({ eggsGained, stockageMax, niveau }) {
-  const calc = talentsData?.['Chanceuse']?.calculation
-  if (!calc) return { proc: false, bonusEggs: 0, procChance: 0, effects: [] }
+    const talentName = especeData[especeId]?.talent
+    if (!talentName) continue
 
-  // Conditions: random_chance (per-egg), combinée sur eggsGained
-  const rc = Array.isArray(calc.conditions)
-    ? calc.conditions.find(c => c?.type === 'random_chance')
-    : null
-  let pSingle = 0.01
-  if (rc && typeof rc.value === 'number' && !Number.isNaN(rc.value)) {
-    pSingle = rc.value > 1 ? (rc.value / 100) : rc.value
-  }
+    const calc = talentsData?.[talentName]?.calculation
+    if (!calc || !Array.isArray(calc.effects)) continue
 
-  // Proba combinée: 1 - (1 - p)^n
-  const n = Math.max(0, Number(eggsGained) || 0)
-  const p = Math.min(Math.max(pSingle, 0), 1)
-  let combined
-  if ((calc.combine || 'independent') === 'linear') {
-    // Mode linéaire : au plus un proc, P = min(n * p, 1)
-    combined = Math.min(n * p, 1)
-  } else {
-    // Mode par défaut : essais indépendants
-    combined = 1 - Math.pow(1 - p, n)
-  }
-  const roll = Math.random()
-  const proc = roll < combined
+    const ownedPoule = owned.find(p => p.especeId === especeId)
+    const niveauTalent = Math.max(1, Number(ownedPoule?.niveauTalent) || 1)
 
-  const effects = []
-  let bonusEggs = 0
-  if (proc) {
-    const ctx = { niveau: Number(niveau) || 0, stockageMax: Number(stockageMax) || 0, eggsGained: n }
-    for (const eff of (calc.effects || [])) {
-      if (!eff || typeof eff !== 'object') continue
-      if (eff.type === 'visual_effect') {
-        effects.push({ type: 'visual_effect', effect: eff.effect, amount: eff.amount ?? 0 })
-      } else if (eff.type === 'resource' && eff.resource === 'eggs') {
-        const amt = Math.floor(Math.max(0, Number(evalExpr(eff.amount, ctx)) || 0))
-        bonusEggs += amt
-        effects.push({ type: 'resource', resource: 'eggs', amount: amt })
+    // Contexte pour l'évaluation DSL
+    const ctx = { 
+      niveau: niveauTalent, 
+      teamEnergy, 
+      teamIntelligence 
+    }
+
+    // Chercher tous les effets income_bonus_per_second sur eggs
+    for (const effect of calc.effects) {
+      if (effect?.type === 'income_bonus_per_second' && effect?.resource === 'eggs') {
+        const amount = Number(evalExpr(effect.amount, ctx)) || 0
+        totalBonus += amount
+        breakdown.push({ 
+          especeId, 
+          talentName, 
+          niveau: niveauTalent, 
+          amount,
+          context: { teamEnergy, teamIntelligence }
+        })
       }
     }
   }
 
-  return { proc, bonusEggs, procChance: combined, pSingle, roll, effects }
+  return { bonusPerSecond: totalBonus, breakdown }
+}
+
+// Évalue un talent avec conditions (comme Chanceuse) de manière générique
+function runTalentWithConditions(user, talentName, context = {}) {
+  const calc = talentsData?.[talentName]?.calculation
+  if (!calc) return { proc: false, effects: [], procChance: 0 }
+
+  // Trouver les poules avec ce talent dans l'équipe
+  const slots = user?.team?.slots || []
+  const owned = user?.poulesPossedees || []
+  
+  const activeTalents = []
+  for (const slot of slots) {
+    const especeId = slot?.especeId
+    if (!especeId) continue
+    
+    const espece = especeData[especeId]
+    if (normalizeKey(espece?.talent) === normalizeKey(talentName) || especeId === 'blanchonette') {
+      const ownedPoule = owned.find(p => p.especeId === especeId)
+      const niveauTalent = Math.max(1, Number(ownedPoule?.niveauTalent) || 1)
+      activeTalents.push({ especeId, niveauTalent })
+    }
+  }
+
+  if (activeTalents.length === 0) {
+    return { proc: false, effects: [], procChance: 0 }
+  }
+
+  // Pour l'instant, on prend le premier talent trouvé (on peut étendre plus tard)
+  const talent = activeTalents[0]
+  const ctx = { 
+    niveau: talent.niveauTalent, 
+    teamEnergy: computeTeamEnergy(user),
+    teamIntelligence: computeTeamIntelligence(user),
+    ...context 
+  }
+
+  // Évaluer les conditions
+  let procChance = 0
+  const conditions = calc.conditions || []
+  
+  for (const condition of conditions) {
+    if (condition?.type === 'random_chance') {
+      let pSingle = Number(condition.value) || 0.01
+      if (pSingle > 1) pSingle = pSingle / 100
+      
+      const eggsGained = Number(context.eggsGained) || 0
+      if ((calc.combine || 'independent') === 'linear') {
+        procChance = Math.min(eggsGained * pSingle, 1)
+      } else {
+        procChance = 1 - Math.pow(1 - pSingle, eggsGained)
+      }
+      break
+    }
+  }
+
+  const roll = Math.random()
+  const proc = roll < procChance
+
+  const effects = []
+  if (proc) {
+    for (const effect of (calc.effects || [])) {
+      if (effect?.type === 'visual_effect') {
+        effects.push({ type: 'visual_effect', effect: effect.effect, amount: effect.amount ?? 0 })
+      } else if (effect?.type === 'resource' && effect?.resource === 'eggs') {
+        const amount = Math.floor(Math.max(0, Number(evalExpr(effect.amount, ctx)) || 0))
+        effects.push({ type: 'resource', resource: 'eggs', amount })
+      }
+    }
+  }
+
+  return { proc, effects, procChance, pSingle: pSingle || 0.01, roll }
+}
+
+// Calcule les bonus de stockage de tous les talents actifs
+function runTalentStorage(user) {
+  const slots = user?.team?.slots || []
+  const owned = user?.poulesPossedees || []
+  
+  let totalBonus = 0
+  const breakdown = []
+
+  // Précalculer les stats d'équipe une seule fois
+  const teamEnergy = computeTeamEnergy(user)
+  const teamIntelligence = computeTeamIntelligence(user)
+
+  for (const slot of slots) {
+    const especeId = slot?.especeId
+    if (!especeId) continue
+
+    const talentName = especeData[especeId]?.talent
+    if (!talentName) continue
+
+    const calc = talentsData?.[talentName]?.calculation
+    if (!calc || !Array.isArray(calc.effects)) continue
+
+    const ownedPoule = owned.find(p => p.especeId === especeId)
+    const niveauTalent = Math.max(1, Number(ownedPoule?.niveauTalent) || 1)
+
+    // Contexte pour l'évaluation DSL
+    const ctx = { 
+      niveau: niveauTalent, 
+      teamEnergy, 
+      teamIntelligence 
+    }
+
+    // Chercher tous les effets storage_bonus sur eggs
+    for (const effect of calc.effects) {
+      if (effect?.type === 'storage_bonus' && effect?.resource === 'eggs') {
+        const amount = Number(evalExpr(effect.amount, ctx)) || 0
+        totalBonus += amount
+        breakdown.push({ 
+          especeId, 
+          talentName, 
+          niveau: niveauTalent, 
+          amount,
+          context: { teamEnergy, teamIntelligence }
+        })
+      }
+    }
+  }
+
+  return { storageBonus: totalBonus, breakdown }
 }
 
 // GET /api/egg/status - Récupère le statut actuel de l'œuf cliquable
@@ -224,26 +346,33 @@ export async function getEggStatus(req, res) {
     console.log('  baseIncome:', baseIncome)
     console.log('  maxIncome:', maxIncome)
 
-    // Talent Énergétique - bonus passif d'income/s
-    const energetic = runTalentEnergetique(user)
-    const effectiveIncome = Math.max(0, baseIncome + energetic.bonusPerSecond)
-    console.log(`  energetic: teamBonus=${energetic.bonusPerSecond} -> effectiveIncome=${effectiveIncome}`)
+    // Talents passifs
+    const incomeBonus = runTalentIncome(user)
+    const storageBonus = runTalentStorage(user)
+    
+    const effectiveIncome = Math.max(0, baseIncome + incomeBonus.bonusPerSecond)
+    const effectiveMaxIncome = Math.max(0, maxIncome + storageBonus.storageBonus)
+    
+    console.log(`  income talents: totalBonus=${incomeBonus.bonusPerSecond}`)
+    console.log(`  storage talents: totalBonus=${storageBonus.storageBonus}`)
+    console.log(`  effective: income=${effectiveIncome}, maxIncome=${effectiveMaxIncome}`)
 
     // Calculer les gains actuels basés sur le temps écoulé
   const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
-  const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, maxIncome)
+  const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)
     
     console.log('  timeDiffSeconds:', timeDiffSeconds)
     console.log('  currentStocked:', currentStocked)
 
     res.json({
       income: effectiveIncome,
-      maxIncome,
+      maxIncome: effectiveMaxIncome,
       currentStocked,
       lastClick,
       totalEggs: user.resources?.eggs || 0,
       // Optionnel: debug serveur pour le front si besoin
-      energetic: { bonusPerSecond: energetic.bonusPerSecond }
+      incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
+      storageBonus: { storageBonus: storageBonus.storageBonus, breakdown: storageBonus.breakdown }
     })
   } catch (err) {
     console.error(err)
@@ -266,15 +395,19 @@ export async function clickEgg(req, res) {
     
     // Calculer les gains actuels
   const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
-    // Talent Énergétique
-    const energetic = runTalentEnergetique(user)
-    const effectiveIncome = Math.max(0, baseIncome + energetic.bonusPerSecond)
-  const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, maxIncome)
+    // Talents passifs
+    const incomeBonus = runTalentIncome(user)
+    const storageBonus = runTalentStorage(user)
+    
+    const effectiveIncome = Math.max(0, baseIncome + incomeBonus.bonusPerSecond)
+    const effectiveMaxIncome = Math.max(0, maxIncome + storageBonus.storageBonus)
+  const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)
 
     // Log d'entrée côté serveur pour faciliter le debug
     try {
       console.log(`[Egg] clickEgg called for user=${user.username || user._id} at ${now.toISOString()}`)
-      console.log(`       timeDiffSeconds=${timeDiffSeconds}, baseIncome=${baseIncome}, energeticBonus=${energetic.bonusPerSecond}, effectiveIncome=${effectiveIncome}, maxIncome=${maxIncome}, currentStocked=${currentStocked}`)
+      console.log(`       timeDiffSeconds=${timeDiffSeconds}, baseIncome=${baseIncome}, incomeBonus=${incomeBonus.bonusPerSecond}, storageBonus=${storageBonus.storageBonus}`)
+      console.log(`       effectiveIncome=${effectiveIncome}, effectiveMaxIncome=${effectiveMaxIncome}, currentStocked=${currentStocked}`)
     } catch (_) { /* no-op */ }
 
     // Vérifier si l'œuf est cliquable (income >= 1)
@@ -305,40 +438,33 @@ export async function clickEgg(req, res) {
         console.log('[Egg] Team slots =', JSON.stringify(teamOverview))
       } catch (_) { /* no-op */ }
 
-      // Recherche robuste: on compare en minuscule/trim, et on tolère explicitement l'id 'blanchonette'
-      const chanceuseSlot = teamSlots.find(s => {
-        const id = s?.especeId
-        if (!id) return false
-        if (id === 'blanchonette') return true
-        const e = especeData[id]
-        const talentName = (e?.talent || '').toLowerCase().trim()
-        return talentName === 'chanceuse'
-      })
-
-      if (chanceuseSlot && eggsGained > 0) {
+      if (eggsGained > 0) {
         chanceuse.active = true
-        // Récupérer le niveau de talent de l'espèce associée
-        const owned = (user.poulesPossedees || []).find(p => p.especeId === chanceuseSlot.especeId)
-        const niveauTalent = Math.max(1, owned?.niveauTalent || 1)
-
-        const stockageMax = user.clickableEgg?.maxIncome || 0
-        const outcome = runTalentChanceuse({ eggsGained, stockageMax, niveau: niveauTalent })
+        
+        const outcome = runTalentWithConditions(user, 'Chanceuse', { 
+          eggsGained, 
+          stockageMax: effectiveMaxIncome 
+        })
 
         chanceuse.procChance = outcome.procChance
         console.log(`[Chanceuse] eggsGained=${eggsGained}, pSingle(from config)=${(outcome.pSingle*100).toFixed(2)}%, combined=${(outcome.procChance*100).toFixed(2)}%, roll=${outcome.roll.toFixed(4)}`)
 
         if (outcome.proc) {
-          user.resources.eggs = currentEggs + eggsGained + (outcome.bonusEggs || 0)
+          const bonusEggs = outcome.effects
+            .filter(e => e.type === 'resource' && e.resource === 'eggs')
+            .reduce((sum, e) => sum + (e.amount || 0), 0)
+            
+          user.resources.eggs = currentEggs + eggsGained + bonusEggs
           chanceuse.proc = true
-          chanceuse.bonusEggs = outcome.bonusEggs || 0
+          chanceuse.bonusEggs = bonusEggs
           chanceuse.effects = outcome.effects || []
-          console.log(`[Chanceuse] PROC! Bonus eggs=${chanceuse.bonusEggs} (niveau=${niveauTalent} x stockageMax=${stockageMax})`)
+          console.log(`[Chanceuse] PROC! Bonus eggs=${bonusEggs}`)
         } else {
           user.resources.eggs = currentEggs + eggsGained
         }
       } else {
-        // Pas de talent Chanceuse actif
-        console.log('[Chanceuse] Aucune poule Chanceuse détectée dans l\'équipe (ou eggsGained=0).')
+        // Pas assez d'œufs pour déclencher le talent
+        console.log('[Chanceuse] eggsGained=0, talent non évalué.')
         user.resources.eggs = currentEggs + eggsGained
       }
     } catch (e) {
@@ -383,7 +509,7 @@ export async function clickEgg(req, res) {
       maxIncome,
       currentStocked: 0,
       lastClick: now,
-      energetic: { bonusPerSecond: energetic.bonusPerSecond },
+      incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
       // Infos talent Chanceuse pour le frontend (optionnel pour déclencher un effet visuel)
       chanceuse: {
         active: chanceuse.active,
