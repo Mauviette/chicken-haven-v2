@@ -160,18 +160,18 @@ const createRewardEffectAtPosition = (rect, amount) => {
     { 
       opacity: 0, 
       transform: `translateX(-50%) translateY(0) scale(0.3) rotate(${randomRotation}deg)`, 
-      filter: 'brightness(3)' 
+      filter: 'brightness(2)' 
     },
     { 
       opacity: 1, 
       transform: `translateX(-50%) translateY(-25px) scale(1.4) rotate(${randomRotation}deg)`, 
-      filter: 'brightness(1.8)',
+      filter: 'brightness(1.4)',
       offset: 0.25
     },
     { 
       opacity: 1, 
       transform: `translateX(-50%) translateY(-50px) scale(1.2) rotate(${randomRotation}deg)`, 
-      filter: 'brightness(1.4)',
+      filter: 'brightness(1.2)',
       offset: 0.6
     },
     { 
