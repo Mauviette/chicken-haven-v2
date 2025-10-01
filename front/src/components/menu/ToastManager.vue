@@ -30,10 +30,11 @@ const emojiMap = {
   info: 'ℹ️',
   warning: '⚠️',
   chicken: '🐔',
-  'team-add': '➕🐔',
-  'team-remove': '➖🐔',
+  'team-add': '🐔',
+  'team-remove': '🐔',
   achievement : '🏆',
   lucky : '🍀',
+  power : '⚡',
 }
 
 function showToast(message, type = 'info', duration = 5000) {

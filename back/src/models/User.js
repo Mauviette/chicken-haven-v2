@@ -71,6 +71,12 @@ const UserSchema = new mongoose.Schema({
     }
   ],
 
+  // Cooldowns génériques des talents actifs (clé libre -> Date ISO de disponibilité)
+  cooldowns: {
+    type: mongoose.Schema.Types.Mixed,
+    default: function () { return {} }
+  },
+
   resources : {
     eggs : { type : Number, default: 0},
     stock_token : { type : Number, default: 0},

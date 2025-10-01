@@ -2,7 +2,8 @@
   <!-- Conteneur acteur positionné relativement à la scène (parent .stage) -->
   <div class="actor" :style="{ left: x + 'px' }">
     <Tooltip :text="tooltipHtml" :key="tooltipHtml" v-if="!isMobile">
-      <img
+      <div class="parade-wrapper">
+        <img
         v-if="currentImg"
         :src="currentImg"
         class="parade-chicken"
@@ -10,10 +11,14 @@
         :alt="name"
         :style="{ '--dir': direction }"
         @click="emitOpenDetail"
-      />
+        />
+  <!-- Indicateur talent activable: petit éclair en haut à droite -->
+  <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">⚡</span>
+      </div>
     </Tooltip>
     <!-- Version sans tooltip pour mobile -->
-    <img
+    <div class="parade-wrapper" v-if="currentImg && isMobile">
+      <img
       v-if="currentImg && isMobile"
       :src="currentImg"
       class="parade-chicken"
@@ -21,7 +26,9 @@
       :alt="name"
       :style="{ '--dir': direction }"
       @click="emitOpenDetail"
-    />
+      />
+  <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">⚡</span>
+    </div>
   </div>
 </template>
 
@@ -30,6 +37,10 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
+import { apiCall } from '@/utils/api'
+import { useSound } from '@/composables/useSound'
+import { useEgg } from '@/composables/useEgg'
+import { useBuffs } from '@/composables/useBuffs'
 
 const props = defineProps({
   especeId: String,
@@ -49,6 +60,7 @@ const state = ref('idle') // 'walk' | 'idle' | 'peck'
 const currentImg = ref('')
 const stateUntil = ref(Date.now() + 2000)
 const isFallback = ref(false)
+const isActivating = ref(false)
 
 // Détection mobile
 const isMobile = ref(window.innerWidth <= 768)
@@ -127,7 +139,16 @@ function initPosition() {
 }
 
 function emitOpenDetail() {
-  if (props.especeId) {
+  if (!props.especeId) return
+  const talent = especeDataFor(props.especeId)?.talent
+  if (talent === 'Maligne' || talent === 'Joyeuse' || talent === 'Rapide') {
+    if (isTalentReady.value) {
+      triggerActiveTalent(talent)
+    } else {
+      // Pas prêt: ouvrir détail
+      emit('open-detail', props.especeId)
+    }
+  } else {
     emit('open-detail', props.especeId)
   }
 }
@@ -135,6 +156,96 @@ function emitOpenDetail() {
 // Tooltip combinant nom en gras + effet du talent
 const { especies, poules, getTalentEffectSync } = usePoules()
 const { talents } = useGameData()
+const { click: sndClick, confirm: sndOk } = useSound()
+const { eggState, fetchEggStatus } = useEgg()
+const { fetchBuffs } = useBuffs()
+
+function especeDataFor(id) {
+  return (especies.value || {})[id] || null
+}
+
+async function triggerActiveTalent(talentName) {
+  try {
+    if (isActivating.value) return
+    isActivating.value = true
+    sndClick()
+    // Utiliser apiCall pour pouvoir lire le JSON même en cas de 400
+    const response = await apiCall('/api/talent/activate', {
+      method: 'POST',
+      body: JSON.stringify({ talentName })
+    })
+    let data = null
+    try { data = await response.clone().json() } catch (_) { data = null }
+
+    if (response.ok && data?.success) {
+      const dur = data?.applied?.duration
+      const inc = data?.applied?.income_multiplier
+      const sto = data?.applied?.storage_multiplier
+      const stat = data?.applied?.stat || data?.applied?.type === 'stat_multiplier'
+      if (inc && dur) {
+        window.$toast?.(`${talentName} activé: revenu x${inc} pendant ${Math.round((dur||0)/1000)}s`, 'power')
+      } else if (sto && dur) {
+        window.$toast?.(`${talentName} activé: stockage x${sto} pendant ${Math.round((dur||0)/1000)}s`, 'power')
+      } else if (stat && dur) {
+        window.$toast?.(`${talentName} activé: bonus de stats pendant ${Math.round((dur||0)/1000)}s`, 'power')
+      } else {
+        window.$toast?.(`${talentName} activé`, 'power')
+      }
+      sndOk()
+      // Rafraîchir immédiatement les cooldowns et la liste des buffs
+      await Promise.allSettled([ fetchEggStatus(), fetchBuffs?.() ])
+    } else {
+      const readyInMs = data?.readyInMs
+      const errMsg = data?.error || `Activation impossible (${response.status})`
+      if (readyInMs != null) {
+        const s = Math.ceil(readyInMs / 1000)
+        window.$toast?.(`${talentName} en recharge (${s}s)`, 'error')
+        // Synchroniser les cooldowns côté client
+        await fetchEggStatus()
+        // Ouvrir le détail comme demandé quand non disponible
+        emit('open-detail', props.especeId)
+      } else {
+        window.$toast?.(errMsg, 'error')
+      }
+    }
+  } catch (e) {
+    window.$toast?.('Erreur activation talent', 'error')
+  } finally {
+    isActivating.value = false
+  }
+}
+
+// État talent activable et cooldown
+const isActivableTalent = computed(() => {
+  const t = especeDataFor(props.especeId)?.talent
+  return t === 'Maligne' || t === 'Joyeuse' || t === 'Rapide'
+})
+
+const cooldownKey = computed(() => {
+  const t = especeDataFor(props.especeId)?.talent
+  return t ? `talent_${t}` : null
+})
+
+const nowMs = () => Date.now()
+const remainingMs = computed(() => {
+  const key = cooldownKey.value
+  if (!key) return 0
+  const cdMap = eggState.value?.cooldowns || {}
+  const until = cdMap[key] ? new Date(cdMap[key]).getTime() : 0
+  const delta = (until || 0) - nowMs()
+  return Math.max(0, delta)
+})
+
+const isTalentReady = computed(() => remainingMs.value <= 0)
+
+// Invalider l’affichage toutes les secondes pour le compte à rebours
+let _tick = null
+onMounted(() => {
+  if (!_tick) _tick = setInterval(() => { /* force computed to update */ x.value = x.value }, 1000)
+})
+onUnmounted(() => {
+  if (_tick) { clearInterval(_tick); _tick = null }
+})
 
 // Mini évaluateur d'expressions (aligné avec Production.vue)
 function evalExpr(expr, ctx) {
@@ -222,6 +333,12 @@ const tooltipHtml = computed(() => {
   const parts = []
   if (title) parts.push(title)
   if (statsLine) parts.push(statsLine)
+  if (isActivableTalent.value) {
+    const ms = remainingMs.value
+    const s = Math.ceil(ms / 1000)
+    const label = isTalentReady.value ? '<span style="color:#27ae60">Prêt</span>' : `${s}s de recharge`
+    parts.push(`Capacité: ${label}`)
+  }
   if (effect) parts.push(effect)
   return parts.join('<br>')
 })
@@ -266,6 +383,30 @@ watch(() => props.containerWidth, () => {
   transform: scaleX(var(--dir, 1));
   transform-origin: bottom center;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+}
+/* Wrapper pour positionner les badges */
+.parade-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.badge-activable {
+  position: absolute;
+  top: -4px;
+  right: -12px;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* Variante quand la capacité n'est pas prête */
+.badge-activable.not-ready {
+  filter: grayscale(1) brightness(0.8);
+  opacity: 0.7;
 }
 
 /* Les GIF gèrent déjà l'animation; garder un léger effet visuel si souhaité (optionnel) */

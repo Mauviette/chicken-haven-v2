@@ -8,7 +8,8 @@ const eggState = ref({
   currentStocked: 0,
   lastClick: new Date(),
   totalEggs: 0,
-  isLoading: false
+  isLoading: false,
+  cooldowns: {}
 })
 
 let updateInterval = null
@@ -59,7 +60,8 @@ export function useEgg() {
           maxIncome: data.maxIncome,
           currentStocked: data.currentStocked,
           lastClick: new Date(data.lastClick),
-          totalEggs: data.totalEggs
+          totalEggs: data.totalEggs,
+          cooldowns: data.cooldowns || {}
         }
         // sync ok
       }

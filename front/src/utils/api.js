@@ -58,11 +58,12 @@ export async function apiCallJSON(endpoint, options = {}) {
   const response = await apiCall(endpoint, options)
   
   if (!response.ok) {
-    const error = await response.text()
+    const error = await response.clone().text()
     throw new Error(`API Error ${response.status}: ${error}`)
   }
   
-  return response.json()
+  // Utiliser une copie pour éviter l'erreur "body stream already read" en cas de déduplication
+  return response.clone().json()
 }
 
 /**

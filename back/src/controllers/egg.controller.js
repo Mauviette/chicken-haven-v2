@@ -61,7 +61,8 @@ export function computeTeamEnergy(user) {
   const buffs = aggregateTeamStatBuffs(user)
   const extraPerMember = Number(buffs?.energie || 0)
   const extraTotal = extraPerMember * members.length
-  return totalBase + extraTotal
+  const tempMult = computeActiveBuffMultipliers(user).teamStat.energie || 1
+  return (totalBase + extraTotal) * tempMult
 }
 
 // Calcule l'intelligence totale de l'équipe (somme des stats intelligence des poules équipées)
@@ -83,7 +84,8 @@ export function computeTeamIntelligence(user) {
   const buffs = aggregateTeamStatBuffs(user)
   const extraPerMember = Number(buffs?.intelligence || 0)
   const extraTotal = extraPerMember * members.length
-  return totalBase + extraTotal
+  const tempMult = computeActiveBuffMultipliers(user).teamStat.intelligence || 1
+  return (totalBase + extraTotal) * tempMult
 }
 
 // Calcule le charisme total de l'équipe (somme des stats charisme des poules équipées)
@@ -106,7 +108,8 @@ export function computeTeamCharisme(user) {
   const buffs = aggregateTeamStatBuffs(user)
   const extraPerMember = Number(buffs?.charisme || 0)
   const extraTotal = extraPerMember * members.length
-  return totalBase + extraTotal
+  const tempMult = computeActiveBuffMultipliers(user).teamStat.charisme || 1
+  return (totalBase + extraTotal) * tempMult
 }
 
 // Renvoie les entrées de talents actifs correspondants au nom demandé sur l'équipe
@@ -208,7 +211,8 @@ function computeActiveBuffMultipliers(user) {
   const multipliers = {
     income: 1,
     storage: 1,
-    production: 1
+    production: 1,
+    teamStat: { intelligence: 1, energie: 1, charisme: 1 }
   }
   
   // Appliquer les buffs multiplicatifs
@@ -229,6 +233,15 @@ function computeActiveBuffMultipliers(user) {
           break
         case 'production':
           multipliers.production *= amount
+          break
+        case 'team_stat_intelligence':
+          multipliers.teamStat.intelligence *= amount
+          break
+        case 'team_stat_energie':
+          multipliers.teamStat.energie *= amount
+          break
+        case 'team_stat_charisme':
+          multipliers.teamStat.charisme *= amount
           break
       }
     }
@@ -483,7 +496,8 @@ export async function getEggStatus(req, res) {
       totalEggs: user.resources?.eggs || 0,
       // Optionnel: debug serveur pour le front si besoin
       incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
-      storageBonus: { storageBonus: storageBonus.storageBonus, breakdown: storageBonus.breakdown }
+      storageBonus: { storageBonus: storageBonus.storageBonus, breakdown: storageBonus.breakdown },
+      cooldowns: user.cooldowns || {}
     })
   } catch (err) {
     console.error(err)

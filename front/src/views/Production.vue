@@ -23,14 +23,14 @@
 
     <!-- Bandeau des stats d'équipe -->
     <div class="team-stats-banner">
-      <Tooltip text="Somme de l'intelligence des poules équipées.">
-        <span class="stat-chip">🧠 {{ teamStats.intelligence }}</span>
+      <Tooltip :text="intelligenceTooltipHtml">
+        <span class="stat-chip" :class="{ buffed: teamStatMult.intelligence > 1 }">🧠 {{ Math.round(teamStats.intelligence) }}</span>
       </Tooltip>
-      <Tooltip text="Somme de l'énergie de l'équipe.">
-        <span class="stat-chip">⚡ {{ teamStats.energie }}</span>
+      <Tooltip :text="energieTooltipHtml">
+        <span class="stat-chip" :class="{ buffed: teamStatMult.energie > 1 }">⚡ {{ Math.round(teamStats.energie) }}</span>
       </Tooltip>
-      <Tooltip text="Somme du charisme des poules équipées.">
-        <span class="stat-chip">✨ {{ teamStats.charisme }}</span>
+      <Tooltip :text="charismeTooltipHtml">
+        <span class="stat-chip" :class="{ buffed: teamStatMult.charisme > 1 }">✨ {{ Math.round(teamStats.charisme) }}</span>
       </Tooltip>
     </div>
     <div class="production-content">
@@ -206,8 +206,61 @@ const getStorageBuffMultiplier = () => {
   }, 1)
 }
 
-// Stats d'équipe (somme des stats des poules équipées) + buffs du DSL (stat_buff target: team)
-const teamStats = computed(() => {
+// Mult multiplicateurs temporaires pour stats d’équipe (via origin/type)
+const teamStatMult = computed(() => {
+  const mult = { intelligence: 1, energie: 1, charisme: 1 }
+  for (const b of activeBuffs.value) {
+    const op = b.buff?.operation || 'mult'
+    const amt = parseFloat(b.buff?.amount || 1)
+    if (op !== 'mult') continue
+    switch (b.buff_type) {
+      case 'team_stat_intelligence': mult.intelligence *= amt; break
+      case 'team_stat_energie': mult.energie *= amt; break
+      case 'team_stat_charisme': mult.charisme *= amt; break
+    }
+  }
+  return mult
+})
+
+const makeStatTooltip = (label, base, extraPerMember, members, mult) => {
+  const extraTotal = extraPerMember * members
+  const subtotal = base + extraTotal
+  const total = subtotal * mult
+  return `<div>
+    <div style="font-weight:bold;margin-bottom:4px;">${label}</div>
+    <div>Base: <strong>${Math.round(base)}</strong></div>
+    <div>Buffs équipe: <strong>+${Math.round(extraTotal)}</strong></div>
+    ${mult > 1 ? `<div>Multiplicateur temporaire: <strong>x${mult.toFixed(2)}</strong></div>` : ''}
+    <div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">Total: <strong>${Math.round(total)}</strong></div>
+  </div>`
+}
+
+const intelligenceTooltipHtml = computed(() => makeStatTooltip(
+  "Intelligence d'équipe",
+  teamStatsBreakdown.value.base.intelligence,
+  teamStatsBreakdown.value.buffsPerMember.intelligence,
+  teamStatsBreakdown.value.memberCount,
+  teamStatMult.value.intelligence
+))
+
+const energieTooltipHtml = computed(() => makeStatTooltip(
+  "Énergie d'équipe",
+  teamStatsBreakdown.value.base.energie,
+  teamStatsBreakdown.value.buffsPerMember.energie,
+  teamStatsBreakdown.value.memberCount,
+  teamStatMult.value.energie
+))
+
+const charismeTooltipHtml = computed(() => makeStatTooltip(
+  "Charisme d'équipe",
+  teamStatsBreakdown.value.base.charisme,
+  teamStatsBreakdown.value.buffsPerMember.charisme,
+  teamStatsBreakdown.value.memberCount,
+  teamStatMult.value.charisme
+))
+
+// Breakdown détaillé: base (stats de chaque membre + buffs perso), buffs par membre (target: team), et nombre de membres
+const teamStatsBreakdown = computed(() => {
   const slots = team.value?.slots || []
   let base = { intelligence: 0, energie: 0, charisme: 0 }
   for (const s of slots) {
@@ -272,10 +325,16 @@ const teamStats = computed(() => {
     }
   }
   const memberCount = slots.filter(s => s?.especeId).length
+  return { base, buffsPerMember, memberCount }
+})
+
+// Stats d'équipe effectives (base + buffs team par membre)
+const teamStats = computed(() => {
+  const br = teamStatsBreakdown.value
   return {
-    intelligence: base.intelligence + (buffsPerMember.intelligence || 0) * memberCount,
-    energie: base.energie + (buffsPerMember.energie || 0) * memberCount,
-    charisme: base.charisme + (buffsPerMember.charisme || 0) * memberCount,
+    intelligence: br.base.intelligence + (br.buffsPerMember.intelligence || 0) * br.memberCount,
+    energie: br.base.energie + (br.buffsPerMember.energie || 0) * br.memberCount,
+    charisme: br.base.charisme + (br.buffsPerMember.charisme || 0) * br.memberCount,
   }
 })
 
@@ -712,6 +771,11 @@ watch(() => activeBuffs.value, (newBuffs) => {
   border: 1px solid #c8ab86;
   padding: 2px 6px;
   border-radius: 8px;
+}
+
+.team-stats-banner .stat-chip.buffed {
+  color: #c99100;
+  font-weight: 700;
 }
 
 .production-content {

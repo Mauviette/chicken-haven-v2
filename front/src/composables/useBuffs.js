@@ -57,7 +57,7 @@ export function useBuffs() {
     const operation = buff.buff?.operation || 'mult'
     const amount = buff.buff?.amount || '1'
     const type = buff.buff_type || 'income'
-    
+
     let effectText = ''
     if (operation === 'mult') {
       const multiplier = parseFloat(amount)
@@ -68,24 +68,35 @@ export function useBuffs() {
     } else {
       effectText = `${operation} ${amount}`
     }
-    
-    let typeText = ''
-    switch (type) {
-      case 'income':
-      case 'income_multiplier':
-        typeText = 'Revenu'
-        break
-      case 'production':
-        typeText = 'Production'
-        break
-      case 'storage':
-        typeText = 'Stockage'
-        break
-      default:
-        typeText = type.replace('_', ' ')
-    }
-    
-    return `${typeText} ${effectText}`
+
+    // Mapping lisible des types, y compris les stats d'équipe
+    const typeLabel = (() => {
+      switch (type) {
+        case 'income':
+        case 'income_multiplier':
+          return 'Revenu'
+        case 'production':
+          return 'Production'
+        case 'storage':
+        case 'storage_multiplier':
+          return 'Stockage'
+        case 'income_storage_multiplier':
+          return 'Production & Stockage'
+        case 'team_stat_intelligence':
+          return "Intelligence d'équipe"
+        case 'team_stat_energie':
+          return "Énergie d'équipe"
+        case 'team_stat_charisme':
+          return "Charisme d'équipe"
+        default:
+          return type
+            .split('_')
+            .map((w, i) => (i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+            .join(' ')
+      }
+    })()
+
+    return `${typeLabel} ${effectText}`
   }
 
   // Obtient l'icône d'un buff selon son type et son origine
@@ -93,6 +104,10 @@ export function useBuffs() {
     // Icône spéciale pour les buffs de chocolat de la poule Gourmande
     if (buff.origin && buff.origin.includes('Gourmande')) {
       return '🍫'
+    }
+    
+    if (buff.origin && buff.origin.includes('Joyeuse')) {
+      return '🎉'
     }
     
     const type = buff.buff_type || 'income'
@@ -103,7 +118,16 @@ export function useBuffs() {
       case 'production':
         return '⚡'
       case 'storage':
+      case 'storage_multiplier':
         return '📦'
+      case 'income_storage_multiplier':
+        return '🍫'
+      case 'team_stat_intelligence':
+        return '🧠'
+      case 'team_stat_energie':
+        return '⚡'
+      case 'team_stat_charisme':
+        return '✨'
       default:
         return '✨'
     }
@@ -118,13 +142,22 @@ export function useBuffs() {
     
     const type = buff.buff_type || 'income'
     switch (type) {
+      // Production en jaune
       case 'income':
       case 'income_multiplier':
-        return { bg: '#ffd700', border: '#d4af37' }
       case 'production':
-        return { bg: '#ff6b35', border: '#e55722' }
+        return { bg: '#ffd700', border: '#d4af37' }
+      // Stockage en marron
       case 'storage':
-        return { bg: '#4ecdc4', border: '#3bb3aa' }
+      case 'storage_multiplier':
+        return { bg: '#8B6B4A', border: '#6b4e34' }
+      // Buffs de stats en beige/rosé
+      case 'team_stat_intelligence':
+      case 'team_stat_energie':
+      case 'team_stat_charisme':
+        return { bg: '#f2d7d9', border: '#d9a7aa' }
+      case 'income_storage_multiplier':
+        return { bg: '#c68c53', border: '#8a5a2b' }
       default:
         return { bg: '#9b59b6', border: '#8e44ad' }
     }

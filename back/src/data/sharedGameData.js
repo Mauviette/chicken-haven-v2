@@ -330,7 +330,21 @@ export const talentsData = {
   'Maligne': {
     description: "Cliquez-moi pour augmenter l'intelligence temporairement.",
     effet: "Cliquez moi pour augmenter l'intelligence globale de {niveau*50}% pendant 20s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
-    icon: '🧠'
+    icon: '🧠',
+    calculation: {
+      triggers: [ { type: 'active' } ],
+      cooldown_ms: 60000,
+      effects: [
+        {
+          type: 'apply_stat_multiplier',
+          target: 'team',
+          duration: 20000,
+          stats: {
+            intelligence: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] }
+          }
+        }
+      ]
+    }
   },
   'Majestueuse': {
     description: "Augmente le charisme.",
@@ -351,14 +365,38 @@ export const talentsData = {
     }
   },
   'Rapide': {
-    description: "Baisse les cooldown de capacité de poules.",
-    effet: "Baisse les cooldown de capacité de poules de {10+niveau*8}%",
-    icon: '💨'
+    description: "Cliquez-moi pour augmenter le stockage temporairement.",
+    effet: "Cliquez moi pour augmenter le stockage de {niveau*25}% pendant 15s. Cooldown 1 minute",
+    icon: '💨',
+    calculation: {
+      triggers: [ { type: 'active' } ],
+      cooldown_ms: 60000,
+      effects: [
+        {
+          type: 'apply_buff',
+          buff_type: 'storage',
+          duration: 15000,
+          amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }
+        }
+      ]
+    }
   },
   'Joyeuse': {
     description: "Cliquez-moi pour augmenter les revenus temporairement.",
     effet: "Cliquez moi pour augmenter le revenu de {100+niveau*100}% pendant 10s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
-    icon: '🎉'
+    icon: '🎉',
+    calculation: {
+      triggers: [ { type: 'active' } ],
+      cooldown_ms: 60000,
+      effects: [
+        {
+          type: 'apply_buff',
+          buff_type: 'income_multiplier',
+          duration: 10000,
+          amount: { op: 'add', args: [ 2, { var: 'niveau' } ] } // 2 + niveau  => 100% + niveau*100%
+        }
+      ]
+    }
   }
 }
 
