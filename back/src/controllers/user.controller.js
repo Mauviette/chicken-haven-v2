@@ -27,34 +27,6 @@ async function ensureProfileId(user) {
   return fallback
 }
 
-// POST /api/user/test-buff - Ajoute un buff de test (pour développement)
-export async function addTestBuff(req, res) {
-  try {
-    const user = await User.findById(req.userId)
-    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
-
-    // Ajouter un buff de test qui dure 1 heure
-    const testBuff = {
-      origin: 'Test de développement',
-      buff_type: 'income',
-      lasts_until: new Date(Date.now() + 60 * 60 * 1000), // +1 heure
-      buff: {
-        operation: 'mult',
-        amount: '1.5'
-      }
-    }
-
-    user.buffs = user.buffs || []
-    user.buffs.push(testBuff)
-    await user.save()
-
-    res.json({ success: true, buff: testBuff })
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Erreur serveur' })
-  }
-}
-
 // GET /api/user/buffs - Récupère les buffs actifs de l'utilisateur
 export async function getBuffs(req, res) {
   try {

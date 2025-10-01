@@ -5,6 +5,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useGameData } from './useGameData'
 import { usePlayer } from './usePlayer'
 import { usePoules } from './usePoules'
+import { useBuffs } from './useBuffs'
 import { apiGet, apiPost } from '@/utils/api'
 
 // État global des objets spawned
@@ -15,6 +16,7 @@ export function useSpawnables() {
   const { talents, especies } = useGameData()
   const { team, fetchTeam, eggs, refreshPlayer } = usePlayer()
   const { poules } = usePoules()
+  const { fetchBuffs } = useBuffs()
 
   // Fonction pour vérifier les nouveaux spawnables depuis le serveur
   const checkForNewSpawnables = async () => {
@@ -66,6 +68,12 @@ export function useSpawnables() {
         // Mise à jour immédiate des œufs dans l'interface
         if (response.reward && response.reward.type === 'resource' && response.reward.resource === 'eggs') {
           eggs.value += response.reward.amount
+        }
+        
+        // Si c'est un buff, rafraîchir la liste des buffs
+        if (response.reward && response.reward.type === 'buff') {
+          console.log('🍫 Buff appliqué, rafraîchissement de la liste des buffs')
+          await fetchBuffs()
         }
         
         // Recharger les données du joueur pour mettre à jour les ressources (sécurité)

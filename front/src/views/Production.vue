@@ -6,6 +6,10 @@
         v-for="(buff, index) in activeBuffs"
         :key="index"
         class="buff-badge"
+        :style="{
+          background: `linear-gradient(135deg, ${getBuffColor(buff).bg}, ${getBuffColor(buff).bg}dd)`,
+          borderColor: getBuffColor(buff).border
+        }"
       >
         <Tooltip 
           :text="getBuffTooltipHtml(buff)"
@@ -133,7 +137,7 @@ const { refreshPlayer, fetchTeam, team } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
-const { activeBuffs, fetchBuffs, getTimeRemaining, formatBuffEffect, getBuffIcon } = useBuffs()
+const { activeBuffs, fetchBuffs, getTimeRemaining, formatBuffEffect, getBuffIcon, getBuffColor } = useBuffs()
 
 console.log('activeBuffs.value:', activeBuffs.value);
 
@@ -171,6 +175,35 @@ const formatIncome = (n) => {
 const roman = (n) => {
   const arr = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV']
   return arr[(Number(n)||0)-1] || `${n}`
+}
+
+// Fonctions utilitaires pour les buffs
+const getActiveIncomeBuffs = () => {
+  return activeBuffs.value.filter(buff => {
+    const type = buff.buff_type || 'income'
+    return type === 'income' || type === 'income_multiplier'
+  })
+}
+
+const getActiveStorageBuffs = () => {
+  return activeBuffs.value.filter(buff => {
+    const type = buff.buff_type || 'income'
+    return type === 'storage'
+  })
+}
+
+const getIncomeBuffMultiplier = () => {
+  return getActiveIncomeBuffs().reduce((total, buff) => {
+    const multiplier = parseFloat(buff.buff?.amount || 1)
+    return total * multiplier
+  }, 1)
+}
+
+const getStorageBuffMultiplier = () => {
+  return getActiveStorageBuffs().reduce((total, buff) => {
+    const multiplier = parseFloat(buff.buff?.amount || 1)
+    return total * multiplier
+  }, 1)
 }
 
 // Stats d'équipe (somme des stats des poules équipées) + buffs du DSL (stat_buff target: team)
@@ -302,7 +335,9 @@ const talentBonusDetails = computed(() => {
 const incomeTooltipHtml = computed(() => {
   const effective = Number(eggState.value.income || 0)
   const bonusDetails = talentBonusDetails.value
-  const base = Math.max(0, effective - Number(bonusDetails.income.total || 0))
+  const talentBonus = Number(bonusDetails.income.total || 0)
+  const base = Math.max(0, effective / getIncomeBuffMultiplier() - talentBonus)
+  const subtotal = base + talentBonus
 
   let html = `<div>`
   html += `<div style="font-weight:bold;margin-bottom:4px;">Revenu par seconde</div>`
@@ -316,7 +351,28 @@ const incomeTooltipHtml = computed(() => {
     html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
   }
 
-  html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">Total: <strong>${formatIncome(effective)}</strong>/s</div>`
+  // Section buffs temporaires
+  const incomeBuffs = getActiveIncomeBuffs()
+  /*if (incomeBuffs.length > 0) {
+    html += `<div style="margin-top:8px;border-top:1px solid #d4752a;padding-top:4px;">`
+    html += `<div style="font-weight:bold;color:#d4752a;margin-bottom:2px;">🍫 Buffs Temporaires</div>`
+    for (const buff of incomeBuffs) {
+      const multiplier = parseFloat(buff.buff?.amount || 1)
+      const percentage = Math.round((multiplier - 1) * 100)
+      const timeRemaining = getTimeRemaining(buff)
+      html += `<div style="color:#8B4513;">${buff.origin || 'Buff'} (+${percentage}%): <strong>x${multiplier.toFixed(1)}</strong> <span style="opacity:0.7;">(${timeRemaining})</span></div>`
+    }
+    html += `</div>`
+  }*/
+
+  html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">`
+  html += `<div>Sous-total: <strong>${formatIncome(subtotal)}</strong>/s</div>`
+  if (incomeBuffs.length > 0) {
+    const buffMultiplier = getIncomeBuffMultiplier()
+    html += `<div>Multiplicateur buffs: <strong>x${buffMultiplier.toFixed(2)}</strong></div>`
+  }
+  html += `<div style="font-weight:bold;">Total: <strong>${formatIncome(effective)}</strong>/s</div>`
+  html += `</div>`
   html += `</div>`
   return html
 })
@@ -325,7 +381,9 @@ const incomeTooltipHtml = computed(() => {
 const storageTooltipHtml = computed(() => {
   const effective = Number(eggState.value.maxIncome || 0)
   const bonusDetails = talentBonusDetails.value
-  const base = Math.max(0, effective - Number(bonusDetails.storage.total || 0))
+  const talentBonus = Number(bonusDetails.storage.total || 0)
+  const base = Math.max(0, effective / getStorageBuffMultiplier() - talentBonus)
+  const subtotal = base + talentBonus
 
   let html = `<div>`
   html += `<div style="font-weight:bold;margin-bottom:4px;">Stockage maximum</div>`
@@ -339,7 +397,28 @@ const storageTooltipHtml = computed(() => {
     html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
   }
 
-  html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">Total: <strong>${effective}</strong></div>`
+  // Section buffs temporaires
+  const storageBuffs = getActiveStorageBuffs()
+  /*if (storageBuffs.length > 0) {
+    html += `<div style="margin-top:8px;border-top:1px solid #d4752a;padding-top:4px;">`
+    html += `<div style="font-weight:bold;color:#d4752a;margin-bottom:2px;">🍫 Buffs Temporaires</div>`
+    for (const buff of storageBuffs) {
+      const multiplier = parseFloat(buff.buff?.amount || 1)
+      const percentage = Math.round((multiplier - 1) * 100)
+      const timeRemaining = getTimeRemaining(buff)
+      html += `<div style="color:#8B4513;">${buff.origin || 'Buff'} (+${percentage}%): <strong>x${multiplier.toFixed(1)}</strong> <span style="opacity:0.7;">(${timeRemaining})</span></div>`
+    }
+    html += `</div>`
+  }*/
+
+  html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">`
+  html += `<div>Sous-total: <strong>${subtotal}</strong></div>`
+  if (storageBuffs.length > 0) {
+    const buffMultiplier = getStorageBuffMultiplier()
+    html += `<div>Multiplicateur buffs: <strong>x${buffMultiplier.toFixed(2)}</strong></div>`
+  }
+  html += `<div style="font-weight:bold;">Total: <strong>${effective}</strong></div>`
+  html += `</div>`
   html += `</div>`
   return html
 })
@@ -482,18 +561,10 @@ onMounted(async () => {
   await fetchBuffs()
   startUpdates()
   
-  // Test temporaire - ajouter un buff pour voir l'affichage
-  // (Vous pouvez supprimer cette partie une fois que ça marche)
-  if (activeBuffs.value.length === 0) {
-    console.log('Aucun buff trouvé, test d\'ajout d\'un buff...')
-    try {
-      const response = await apiPost('/api/user/test-buff')
-      console.log('Buff de test ajouté:', response)
-      await fetchBuffs()
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du buff de test:', error)
-    }
-  }
+  // Rafraîchir les buffs toutes les secondes pour mettre à jour les temps restants
+  setInterval(() => {
+    fetchBuffs()
+  }, 1000)
 })
 
 onUnmounted(() => {
@@ -564,24 +635,26 @@ watch(() => activeBuffs.value, (newBuffs) => {
   background: linear-gradient(135deg, #ffd700, #ffeb3b);
   border: 2px solid #d4af37;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 
-    0 2px 6px rgba(0, 0, 0, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
   cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   animation: buff-pulse 3s infinite ease-in-out;
+  position: relative;
 }
 
 .buff-badge:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
   box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 6px 16px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation-play-state: paused;
 }
 
 .buff-icon {

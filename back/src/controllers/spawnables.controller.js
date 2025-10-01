@@ -237,29 +237,72 @@ export async function clickSpawnableObject(req, res) {
         appliedReward = { type: 'resource', resource: 'eggs', amount }
       }
     } else if (reward.type === 'buff') {
-      // TODO: Implémenter les buffs pour les chocolats
-      const duration = reward.duration || 15000
-      const multiplier = evalExpr(reward.multiplier, ctx)
+      const duration = evalExpr(reward.duration, ctx) || 15000
       
-      // Ajouter le buff
-      const buff = {
-        origin: `Talent ${talentName}`,
-        buff_type: reward.buff_type || 'income',
-        lasts_until: new Date(Date.now() + duration),
-        buff: {
-          operation: 'mult',
-          amount: String(multiplier)
+      // Gérer les nouveaux buffs avec income et storage séparés
+      if (reward.buff_type === 'income_storage_multiplier') {
+        const incomeMultiplier = evalExpr(reward.income_multiplier, ctx) || 1.25
+        const storageMultiplier = evalExpr(reward.storage_multiplier, ctx) || 1.25
+        
+        // Créer deux buffs séparés
+        const incomeBuffs = {
+          origin: `Talent ${talentName}`,
+          buff_type: 'income',
+          lasts_until: new Date(Date.now() + duration),
+          buff: {
+            operation: 'mult',
+            amount: String(incomeMultiplier)
+          }
         }
-      }
-      
-      user.buffs = user.buffs || []
-      user.buffs.push(buff)
-      
-      appliedReward = { 
-        type: 'buff', 
-        buff_type: reward.buff_type, 
-        duration, 
-        multiplier 
+        
+        const storageBuff = {
+          origin: `Talent ${talentName}`,
+          buff_type: 'storage',
+          lasts_until: new Date(Date.now() + duration),
+          buff: {
+            operation: 'mult',
+            amount: String(storageMultiplier)
+          }
+        }
+        
+        user.buffs = user.buffs || []
+        user.buffs.push(incomeBuffs, storageBuff)
+        
+        appliedReward = { 
+          type: 'buff', 
+          buff_type: reward.buff_type, 
+          duration, 
+          income_multiplier: incomeMultiplier,
+          storage_multiplier: storageMultiplier
+        }
+        
+        console.log(`🍫 Buff income+storage appliqué: income x${incomeMultiplier}, storage x${storageMultiplier} pendant ${Math.round(duration/1000)}s`)
+      } else {
+        // Ancien système avec un seul multiplicateur
+        const multiplier = evalExpr(reward.multiplier, ctx) || 1.5
+        
+        // Créer le buff selon les données de sharedGameData
+        const buff = {
+          origin: `Talent ${talentName}`,
+          buff_type: reward.buff_type || 'income',
+          lasts_until: new Date(Date.now() + duration),
+          buff: {
+            operation: 'mult',
+            amount: String(multiplier)
+          }
+        }
+        
+        user.buffs = user.buffs || []
+        user.buffs.push(buff)
+        
+        appliedReward = { 
+          type: 'buff', 
+          buff_type: reward.buff_type, 
+          duration, 
+          multiplier 
+        }
+        
+        console.log(`🍫 Buff appliqué: ${reward.buff_type} x${multiplier} pendant ${Math.round(duration/1000)}s`)
       }
     }
 

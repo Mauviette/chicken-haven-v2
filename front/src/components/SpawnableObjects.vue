@@ -55,10 +55,13 @@ const handleClick = async (obj, event) => {
     // Gérer le clic et récupérer la récompense
     const reward = await clickObject(obj)
     
-    // Créer l'effet visuel avec le vrai montant (utiliser la position sauvegardée)
+    // Créer l'effet visuel avec le vrai montant ou buff
     if (reward && reward.type === 'resource' && reward.resource === 'eggs') {
       console.log('🎨 Création de l\'effet visuel pour:', reward.amount, 'œufs')
       createRewardEffectAtPosition(rect, reward.amount)
+    } else if (reward && reward.type === 'buff') {
+      console.log('🍫 Création de l\'effet visuel pour buff:', reward.buff_type)
+      createBuffEffectAtPosition(rect, reward)
     }
     
     // Animation de retour avec un petit bounce
@@ -191,6 +194,147 @@ const createRewardEffectAtPosition = (rect, amount) => {
   }, 2200)
 }
 
+// Fonction pour créer l'effet visuel des buffs
+const createBuffEffectAtPosition = (rect, reward) => {
+  console.log('🍫 createBuffEffectAtPosition appelée avec:', { rect, reward })
+  
+  // Rotation aléatoire pour le texte
+  const randomRotation = (Math.random() - 0.5) * 30 // Entre -15 et +15 degrés
+  
+  // Icône et couleur selon le type de buff
+  let icon = '✨'
+  let color = '#FF6B35'
+  
+  switch (reward.buff_type) {
+    case 'income_multiplier':
+    case 'income':
+      icon = '💰'
+      color = '#FFD700'
+      break
+    case 'production':
+      icon = '⚡'
+      color = '#FF6B35'
+      break
+    case 'storage':
+      icon = '📦'
+      color = '#4ECDC4'
+      break
+  }
+  
+  // Effet principal du buff
+  const effectEl = document.createElement('div')
+  const percentage = Math.round((reward.multiplier - 1) * 100)
+  effectEl.textContent = `+${percentage}%`
+  effectEl.className = 'buff-effect'
+  effectEl.style.cssText = `
+    position: fixed;
+    left: ${rect.left + rect.width / 2}px;
+    top: ${rect.top - 10}px;
+    font-size: 24px;
+    font-weight: 900;
+    color: ${color};
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8), 0 0 12px ${color}88;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translateX(-50%) rotate(${randomRotation}deg);
+    font-family: 'Fredoka', sans-serif;
+    letter-spacing: 1px;
+    user-select: none;
+  `
+  
+  document.body.appendChild(effectEl)
+  
+  // Créer des particules d'icônes autour
+  for (let i = 0; i < 6; i++) {
+    const particle = document.createElement('div')
+    particle.textContent = icon
+    particle.style.cssText = `
+      position: fixed;
+      left: ${rect.left + rect.width / 2}px;
+      top: ${rect.top + rect.height / 2}px;
+      font-size: 16px;
+      color: ${color};
+      pointer-events: none;
+      z-index: 9998;
+      transform: translateX(-50%) translateY(-50%);
+      user-select: none;
+    `
+    
+    document.body.appendChild(particle)
+    
+    // Animation des particules en spirale
+    const angle = (i * 60) * Math.PI / 180 // 60 degrés entre chaque particule
+    const distance = 60 + Math.random() * 40
+    const endX = Math.cos(angle) * distance
+    const endY = Math.sin(angle) * distance
+    
+    particle.animate([
+      { 
+        opacity: 0,
+        transform: 'translateX(-50%) translateY(-50%) scale(0) rotate(0deg)',
+      },
+      { 
+        opacity: 1,
+        transform: 'translateX(-50%) translateY(-50%) scale(1.3) rotate(120deg)',
+        offset: 0.3
+      },
+      { 
+        opacity: 0.7,
+        transform: `translateX(${endX - 50}%) translateY(${endY - 50}%) scale(0.8) rotate(240deg)`,
+        offset: 0.8
+      },
+      { 
+        opacity: 0,
+        transform: `translateX(${endX - 50}%) translateY(${endY - 50}%) scale(0.2) rotate(360deg)`,
+      }
+    ], {
+      duration: 2000,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    })
+    
+    setTimeout(() => {
+      if (particle.parentNode) {
+        particle.remove()
+      }
+    }, 2000)
+  }
+  
+  // Animation du texte principal
+  effectEl.animate([
+    { 
+      opacity: 0, 
+      transform: `translateX(-50%) translateY(0) scale(0.2) rotate(${randomRotation}deg)`, 
+      filter: 'brightness(2) blur(2px)' 
+    },
+    { 
+      opacity: 1, 
+      transform: `translateX(-50%) translateY(-20px) scale(1.5) rotate(${randomRotation}deg)`, 
+      filter: 'brightness(1.5) blur(0px)',
+      offset: 0.2
+    },
+    { 
+      opacity: 1, 
+      transform: `translateX(-50%) translateY(-40px) scale(1.2) rotate(${randomRotation}deg)`, 
+      filter: 'brightness(1.2) blur(0px)',
+      offset: 0.7
+    },
+    { 
+      opacity: 0, 
+      transform: `translateX(-50%) translateY(-70px) scale(0.8) rotate(${randomRotation}deg)`, 
+      filter: 'brightness(1) blur(1px)' 
+    }
+  ], {
+    duration: 2500,
+    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+  })
+  
+  setTimeout(() => {
+    if (effectEl.parentNode) {
+      effectEl.remove()
+    }
+  }, 2500)
+}
+
 // Fonction pour créer l'effet visuel de récompense (version originale, gardée pour compatibilité)
 const createRewardEffect = (clickedElement, amount) => {
   const rect = clickedElement.getBoundingClientRect()
@@ -256,14 +400,28 @@ const createRewardEffect = (clickedElement, amount) => {
 }
 
 .spawnable-chocolate .spawnable-icon {
-  filter: drop-shadow(0 2px 4px rgba(139, 69, 19, 0.5));
+  filter: drop-shadow(0 3px 6px rgba(139, 69, 19, 0.8)) brightness(1.3) contrast(1.2);
+  color: #8B4513; /* Brun chocolat */
+  animation: chocolate-shimmer 2s ease-in-out infinite alternate;
 }
 
 .spawnable-chocolate .spawnable-glow {
-  background: radial-gradient(circle, rgba(222, 184, 135, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(222, 184, 135, 0.6) 0%, rgba(139, 69, 19, 0.3) 50%, transparent 70%);
+  width: 55px;
+  height: 55px;
+  animation: chocolate-glow 1.5s ease-in-out infinite alternate;
 }
 
 /* Animations */
+@keyframes chocolate-shimmer {
+  0% {
+    filter: drop-shadow(0 3px 6px rgba(139, 69, 19, 0.8)) brightness(1.3) contrast(1.2) hue-rotate(0deg);
+  }
+  100% {
+    filter: drop-shadow(0 3px 8px rgba(139, 69, 19, 1)) brightness(1.5) contrast(1.3) hue-rotate(10deg);
+  }
+}
+
 @keyframes spawnable-appear {
   0% {
     opacity: 0;
@@ -281,6 +439,19 @@ const createRewardEffect = (clickedElement, amount) => {
   }
   50% {
     transform: translate(-50%, -50%) translateY(-5px);
+  }
+}
+
+@keyframes chocolate-glow {
+  0% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+    background: radial-gradient(circle, rgba(222, 184, 135, 0.6) 0%, rgba(139, 69, 19, 0.3) 50%, transparent 70%);
+  }
+  100% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.3);
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(222, 184, 135, 0.5) 50%, transparent 70%);
   }
 }
 

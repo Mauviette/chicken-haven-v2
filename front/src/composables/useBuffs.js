@@ -38,13 +38,17 @@ export function useBuffs() {
     
     if (diffMs <= 0) return 'Expiré'
     
-    const hours = Math.floor(diffMs / (1000 * 60 * 60))
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+    const totalSeconds = Math.floor(diffMs / 1000)
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
     
     if (hours > 0) {
       return `${hours}h ${minutes}m`
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`
     } else {
-      return `${minutes}m`
+      return `${seconds}s`
     }
   }
 
@@ -68,6 +72,7 @@ export function useBuffs() {
     let typeText = ''
     switch (type) {
       case 'income':
+      case 'income_multiplier':
         typeText = 'Revenu'
         break
       case 'production':
@@ -77,17 +82,23 @@ export function useBuffs() {
         typeText = 'Stockage'
         break
       default:
-        typeText = type
+        typeText = type.replace('_', ' ')
     }
     
     return `${typeText} ${effectText}`
   }
 
-  // Obtient l'icône d'un buff selon son type
+  // Obtient l'icône d'un buff selon son type et son origine
   function getBuffIcon(buff) {
+    // Icône spéciale pour les buffs de chocolat de la poule Gourmande
+    if (buff.origin && buff.origin.includes('Gourmande')) {
+      return '🍫'
+    }
+    
     const type = buff.buff_type || 'income'
     switch (type) {
       case 'income':
+      case 'income_multiplier':
         return '💰'
       case 'production':
         return '⚡'
@@ -98,12 +109,34 @@ export function useBuffs() {
     }
   }
 
+  // Obtient la couleur d'un buff selon son type et son origine
+  function getBuffColor(buff) {
+    // Couleur spéciale pour les buffs de chocolat de la poule Gourmande
+    if (buff.origin && buff.origin.includes('Gourmande')) {
+      return { bg: '#8B4513', border: '#654321' } // Brun chocolat
+    }
+    
+    const type = buff.buff_type || 'income'
+    switch (type) {
+      case 'income':
+      case 'income_multiplier':
+        return { bg: '#ffd700', border: '#d4af37' }
+      case 'production':
+        return { bg: '#ff6b35', border: '#e55722' }
+      case 'storage':
+        return { bg: '#4ecdc4', border: '#3bb3aa' }
+      default:
+        return { bg: '#9b59b6', border: '#8e44ad' }
+    }
+  }
+
   return {
     buffs,
     activeBuffs,
     fetchBuffs,
     getTimeRemaining,
     formatBuffEffect,
-    getBuffIcon
+    getBuffIcon,
+    getBuffColor
   }
 }

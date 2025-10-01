@@ -218,8 +218,8 @@ export const talentsData = {
     icon: '🕵️'
   },
   'Gourmande': {
-    description: "Des chocolats apparaissent sur l'écran qui augmentent la production lorsque cliqués.",
-    effet: "Des chocolats apparaissent, en cliquer un augmente la production de {niveau*100}% pendant 15s.",
+    description: "Des chocolats apparaissent sur l'écran qui augmentent la production et le stockage lorsque cliqués.",
+    effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {niveau*25}% pendant 15s.",
     icon: '🍗',
     calculation: {
       combine: 'not_linear',
@@ -237,9 +237,10 @@ export const talentsData = {
           lifetime: 10000, // 10 secondes
           reward: {
             type: 'buff',
-            buff_type: 'income_multiplier',
+            buff_type: 'income_storage_multiplier',
             duration: 15000, // 15s
-            multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 1 ] } ] } // 1 + niveau (100% par niveau)
+            income_multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }, // 1 + niveau*0.25 (25% par niveau)
+            storage_multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] } // 1 + niveau*0.25 (25% par niveau)
           }
         }
       ]
