@@ -30,6 +30,98 @@ function evalExpr(expr, ctx) {
   return 0
 }
 
+// Calcule l'énergie totale de l'équipe (copie du egg controller)
+function computeTeamEnergy(user) {
+  const slots = user?.team?.slots || []
+  let totalBase = 0
+  const members = []
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const e = especeData[id]
+    const energy = Number(e?.stats?.energie) || 0
+    totalBase += energy
+    members.push(id)
+  }
+  return totalBase
+}
+
+// Calcule l'intelligence totale de l'équipe (copie du egg controller)
+function computeTeamIntelligence(user) {
+  const slots = user?.team?.slots || []
+  let totalBase = 0
+  const members = []
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const e = especeData[id]
+    const intelligence = Number(e?.stats?.intelligence) || 0
+    totalBase += intelligence
+    members.push(id)
+  }
+  return totalBase
+}
+
+// Calcule les bonus de stockage de tous les talents actifs (copie du egg controller)
+function runTalentStorage(user) {
+  const slots = user?.team?.slots || []
+  const owned = user?.poulesPossedees || []
+  
+  let totalBonus = 0
+  const breakdown = []
+
+  // Précalculer les stats d'équipe une seule fois
+  const teamEnergy = computeTeamEnergy(user)
+  const teamIntelligence = computeTeamIntelligence(user)
+
+  for (const slot of slots) {
+    const especeId = slot?.especeId
+    if (!especeId) continue
+
+    const talentName = especeData[especeId]?.talent
+    if (!talentName) continue
+
+    const calc = talentsData?.[talentName]?.calculation
+    if (!calc || !Array.isArray(calc.effects)) continue
+
+    const ownedPoule = owned.find(p => p.especeId === especeId)
+    const niveauTalent = Math.max(1, Number(ownedPoule?.niveauTalent) || 1)
+
+    // Contexte pour l'évaluation DSL
+    const ctx = { 
+      niveau: niveauTalent, 
+      teamEnergy, 
+      teamIntelligence 
+    }
+
+    // Chercher tous les effets storage_bonus sur eggs
+    for (const effect of calc.effects) {
+      if (effect?.type === 'storage_bonus' && effect?.resource === 'eggs') {
+        const amount = Number(evalExpr(effect.amount, ctx)) || 0
+        totalBonus += amount
+        breakdown.push({ 
+          especeId, 
+          talentName, 
+          niveau: niveauTalent, 
+          amount,
+          context: { teamEnergy, teamIntelligence }
+        })
+      }
+    }
+  }
+
+  return { storageBonus: totalBonus, breakdown }
+}
+
+// Fonction pour calculer le stockage total comme dans egg controller
+function calculateTotalStorage(user) {
+  const baseMaxIncome = user.clickableEgg?.maxIncome || 100
+  const storageBonus = runTalentStorage(user)
+  const effectiveMaxIncome = Math.max(0, baseMaxIncome + storageBonus.storageBonus)
+  
+  return effectiveMaxIncome
+}
+
 // GET /api/spawnables/check - Vérifier les spawnables disponibles
 export async function checkAvailableSpawnables(req, res) {
   try {
@@ -98,12 +190,13 @@ export async function checkAvailableSpawnables(req, res) {
         const spawnerId = `${talentName}_${especeId}`
         const lastSpawn = userSpawns.get(spawnerId) || 0
 
-        // Calculer l'intervalle de spawn
+        // Calculer l'intervalle de spawn avec le stockage total
+        const totalStorage = calculateTotalStorage(user)
         const ctx = {
           niveau,
-          stockageMax: user.clickableEgg?.maxIncome || 100,
-          teamEnergy: 10,
-          teamIntelligence: 10,
+          stockageMax: totalStorage, // Utiliser le stockage total
+          teamEnergy: computeTeamEnergy(user),
+          teamIntelligence: computeTeamIntelligence(user),
           teamCharisme: 10
         }
 
@@ -112,7 +205,7 @@ export async function checkAvailableSpawnables(req, res) {
         if (now - lastSpawn >= spawnInterval) {
           // 25% de chance d'apparition à chaque vérification
           const spawnChance = Math.random()
-          if (spawnChance < 0.25) {
+          if (spawnChance < 0.15) {
             const spawnableId = `${spawnerId}_${now}`
             
             availableSpawnables.push({
@@ -188,16 +281,25 @@ export async function clickSpawnableObject(req, res) {
       return res.status(400).json({ error: 'Poule non possédée' })
     }
 
+    // Calculer le stockage total comme dans egg controller
     const niveau = Math.max(1, Number(poule.niveauTalent) || 1)
+    const totalStorage = calculateTotalStorage(user)
     
     // Calculer le contexte pour l'évaluation des expressions
     const ctx = {
       niveau,
-      stockageMax: user.clickableEgg?.maxIncome || 100,
-      teamEnergy: 10, // TODO: Calculer les vraies stats d'équipe
-      teamIntelligence: 10,
+      stockageMax: totalStorage, // Utiliser le stockage total correct
+      teamEnergy: computeTeamEnergy(user),
+      teamIntelligence: computeTeamIntelligence(user),
       teamCharisme: 10
     }
+
+    console.log(`💰 Calcul de récompense pour ${talentName}:`, {
+      baseStorage: user.clickableEgg?.maxIncome || 100,
+      totalStorage,
+      niveau,
+      storageBonus: runTalentStorage(user).storageBonus
+    })
 
     // Traiter la récompense
     const reward = spawnEffect.reward

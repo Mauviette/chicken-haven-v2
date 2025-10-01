@@ -83,14 +83,14 @@ const createRewardEffectAtPosition = (rect, amount) => {
     position: fixed;
     left: ${rect.left + rect.width / 2}px;
     top: ${rect.top - 15}px;
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 900;
     color: #FFD700;
     text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 0 0 15px rgba(255,215,0,0.7);
     pointer-events: none;
     z-index: 9999;
     transform: translateX(-50%) rotate(${randomRotation}deg);
-    font-family: 'Arial Black', Arial, sans-serif;
+    font-family: 'Fredoka', sans-serif;
     letter-spacing: 2px;
     user-select: none;
   `
@@ -237,12 +237,12 @@ const createRewardEffect = (clickedElement, amount) => {
 
 /* Styles spécifiques pour différents types d'objets */
 .spawnable-white_egg .spawnable-icon {
-  filter: drop-shadow(0 3px 6px rgba(255, 255, 255, 0.8)) brightness(1.5) contrast(1.3) saturate(0.3);
-  color: #FAFAFA; /* Blanc très pur */
+  filter: drop-shadow(0 3px 6px rgba(255, 240, 200, 0.6)) brightness(1.2) contrast(1.1) saturate(0.8);
+  color: #F5F5DC; /* Beige crème au lieu du blanc pur */
 }
 
 .spawnable-white_egg .spawnable-glow {
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(240, 248, 255, 0.3) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(245, 245, 220, 0.4) 0%, rgba(255, 248, 220, 0.2) 50%, transparent 70%);
   width: 50px;
   height: 50px;
 }
