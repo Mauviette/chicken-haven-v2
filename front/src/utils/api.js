@@ -3,10 +3,16 @@
 
 const getApiBaseUrl = () => import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002'
 
+// Déduplication des requêtes GET concurrentes (même URL + méthode + token)
+const inFlight = new Map()
+function getKey(url, method, token) {
+  return `${method || 'GET'}::${token || ''}::${url}`
+}
+
 /**
  * Effectue un appel API avec l'URL de base configurée
  * @param {string} endpoint - Le chemin de l'endpoint (ex: '/api/poules')
- * @param {RequestInit} options - Options fetch standard
+ * @param {RequestInit & { _dedupeKey?: string }} options - Options fetch standard
  * @returns {Promise<Response>}
  */
 export async function apiCall(endpoint, options = {}) {
@@ -22,7 +28,20 @@ export async function apiCall(endpoint, options = {}) {
   }
   
   const url = `${getApiBaseUrl()}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`
-  
+  const method = (options.method || 'GET').toUpperCase()
+
+  // Dédupe uniquement les GET (POST/PUT/PATCH/DELETE potentiellement non idempotents)
+  if (method === 'GET') {
+    const key = options._dedupeKey || getKey(url, method, token)
+    if (inFlight.has(key)) {
+      return inFlight.get(key)
+    }
+    const p = fetch(url, { ...options, headers })
+      .finally(() => { inFlight.delete(key) })
+    inFlight.set(key, p)
+    return p
+  }
+
   return fetch(url, {
     ...options,
     headers

@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { apiGet, apiPut } from '@/utils/api'
 
 const eggs = ref(0)
 const stockTokens = ref(0)
@@ -19,30 +20,20 @@ export function usePlayer() {
         return
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/egg/status`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
+      const data = await apiGet('/api/egg/status')
+      if (data) {
         //console.log('📊 refreshPlayer: données reçues:', data)
         eggs.value = data.totalEggs || 0
         stockTokens.value = data.stockTokens || 0
         productionTokens.value = data.productionTokens || 0
         wildTokens.value = data.wildTokens || 0
         //console.log('✅ refreshPlayer: œufs mis à jour:', eggs.value)
-      } else {
-        console.log('❌ refreshPlayer: erreur API status:', response.status)
       }
 
       // Récupérer l'XP / level (API unifiée /api/user/me)
       try {
-        const res2 = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/me`, { headers: { Authorization: `Bearer ${token}` } })
-        if (res2.ok) {
-          const u = await res2.json()
+        const u = await apiGet('/api/user/me')
+        if (u) {
           const prevLevel = level.value || 1
           const currentProfileId = u?.profileId || u?.id || null
           // Mémorise le dernier utilisateur pour éviter un faux level-up lors d'un switch de compte
@@ -80,11 +71,8 @@ export function usePlayer() {
     try {
       const token = localStorage.getItem('token')
       if (!token) return
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/team`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const data = await apiGet('/api/team')
+      if (data) {
         team.value = data
         try { window.__teamSlotsCached = Array.isArray(team.value?.slots) ? [...team.value.slots] : [] } catch (_) {}
       }
@@ -97,16 +85,9 @@ export function usePlayer() {
     try {
       const token = localStorage.getItem('token')
       if (!token) return
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/team`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ slots: newSlots })
-      })
-      if (res.ok) {
-        team.value = await res.json()
+      const updated = await apiPut('/api/team', { slots: newSlots })
+      if (updated) {
+        team.value = updated
         try { window.__teamSlotsCached = Array.isArray(team.value?.slots) ? [...team.value.slots] : [] } catch (_) {}
         // Notifier globalement que l'équipe a changé (ex: pour rafraîchir l'income)
         try {

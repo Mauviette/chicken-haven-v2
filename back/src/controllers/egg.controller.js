@@ -257,7 +257,10 @@ function runTalentIncome(user) {
 // Évalue un talent avec conditions (comme Chanceuse) de manière générique
 function runTalentWithConditions(user, talentName, context = {}) {
   const calc = talentsData?.[talentName]?.calculation
-  if (!calc) return { proc: false, effects: [], procChance: 0 }
+  // Valeurs par défaut sûres
+  let defaultPSingle = 0.01
+  let defaultRoll = Math.random()
+  if (!calc) return { proc: false, effects: [], procChance: 0, pSingle: defaultPSingle, roll: defaultRoll }
 
   // Trouver les poules avec ce talent dans l'équipe
   const slots = user?.team?.slots || []
@@ -277,7 +280,7 @@ function runTalentWithConditions(user, talentName, context = {}) {
   }
 
   if (activeTalents.length === 0) {
-    return { proc: false, effects: [], procChance: 0 }
+    return { proc: false, effects: [], procChance: 0, pSingle: defaultPSingle, roll: defaultRoll }
   }
 
   // Pour l'instant, on prend le premier talent trouvé (on peut étendre plus tard)
@@ -291,11 +294,13 @@ function runTalentWithConditions(user, talentName, context = {}) {
 
   // Évaluer les conditions
   let procChance = 0
+  let pSingle = defaultPSingle
   const conditions = calc.conditions || []
   
   for (const condition of conditions) {
     if (condition?.type === 'random_chance') {
-      let pSingle = Number(condition.value) || 0.01
+      pSingle = Number(condition.value)
+      if (!Number.isFinite(pSingle)) pSingle = defaultPSingle
       if (pSingle > 1) pSingle = pSingle / 100
       
       const eggsGained = Number(context.eggsGained) || 0
@@ -308,7 +313,7 @@ function runTalentWithConditions(user, talentName, context = {}) {
     }
   }
 
-  const roll = Math.random()
+  const roll = defaultRoll
   const proc = roll < procChance
 
   const effects = []
@@ -323,7 +328,7 @@ function runTalentWithConditions(user, talentName, context = {}) {
     }
   }
 
-  return { proc, effects, procChance, pSingle: pSingle || 0.01, roll }
+  return { proc, effects, procChance, pSingle, roll }
 }
 
 // Calcule les bonus de stockage de tous les talents actifs
@@ -520,7 +525,15 @@ export async function clickEgg(req, res) {
         })
 
         chanceuse.procChance = outcome.procChance
-        console.log(`[Chanceuse] eggsGained=${eggsGained}, pSingle(from config)=${(outcome.pSingle*100).toFixed(2)}%, combined=${(outcome.procChance*100).toFixed(2)}%, roll=${outcome.roll.toFixed(4)}`)
+        try {
+          const pS = Number(outcome.pSingle)
+          const pc = Number(outcome.procChance)
+          const rl = Number(outcome.roll)
+          const pSStr = Number.isFinite(pS) ? (pS * 100).toFixed(2) : 'N/A'
+          const pcStr = Number.isFinite(pc) ? (pc * 100).toFixed(2) : 'N/A'
+          const rlStr = Number.isFinite(rl) ? rl.toFixed(4) : 'N/A'
+          console.log(`[Chanceuse] eggsGained=${eggsGained}, pSingle(from config)=${pSStr}%, combined=${pcStr}%, roll=${rlStr}`)
+        } catch (_) { /* safe log */ }
 
         if (outcome.proc) {
           const bonusEggs = outcome.effects

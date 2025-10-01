@@ -1,5 +1,6 @@
 import { ref, computed, onMounted, onUnmounted, readonly } from 'vue'
 import { useAuth } from './useAuth'
+import { apiGet, apiPost } from '@/utils/api'
 
 const eggState = ref({
   income: 1,
@@ -11,15 +12,17 @@ const eggState = ref({
 })
 
 let updateInterval = null
+let serverSyncInterval = null
 let onTeamUpdated = null
 let onAuthLogin = null
 let onAuthLogout = null
 let onUpgradeBought = null
+let onVisibilityChange = null
 
 export function useEgg() {
   const { token } = useAuth()
 
-  const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/egg`
+  const API_BASE = `/api/egg`
 
   // État calculé pour l'affichage - utiliser serveur quand disponible
   const currentGains = computed(() => {
@@ -48,15 +51,8 @@ export function useEgg() {
     if (!token.value) return
 
     try {
-      const response = await fetch(`${API_BASE}/status`, {
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
+      const data = await apiGet(`${API_BASE}/status`)
+      if (data) {
         eggState.value = {
           ...eggState.value,
           income: data.income,
@@ -80,16 +76,8 @@ export function useEgg() {
     eggState.value.isLoading = true
 
     try {
-      const response = await fetch(`${API_BASE}/click`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
+      const data = await apiPost(`${API_BASE}/click`)
+      if (data) {
         eggState.value = {
           ...eggState.value,
           income: data.income ?? eggState.value.income,
@@ -110,12 +98,6 @@ export function useEgg() {
 
         // Retourner la réponse complète (incl. chanceuse)
         return data
-      } else {
-        const error = await response.json()
-        if (window.$toast) {
-          window.$toast(error.error || 'Erreur lors du clic', 'error')
-        }
-        return null
       }
     } catch (error) {
       console.error('Erreur lors du clic sur l\'œuf:', error)
@@ -138,15 +120,17 @@ export function useEgg() {
       eggState.value = { ...eggState.value }
     }, 1000)
 
-    // Synchronisation avec le serveur toutes les 1 seconde
-    const serverSyncInterval = setInterval(() => {
-      fetchEggStatus()
-    }, 1000)
-
-    // Stocker l'interval de sync pour pouvoir l'arrêter
-    if (!eggState.value._serverSyncInterval) {
+    // Fonction utilitaire pour planifier la sync serveur
+    const scheduleServerSync = (ms) => {
+      if (serverSyncInterval) clearInterval(serverSyncInterval)
+      serverSyncInterval = setInterval(() => { fetchEggStatus() }, ms)
       eggState.value._serverSyncInterval = serverSyncInterval
     }
+    // Première synchronisation immédiate
+    fetchEggStatus().catch(() => {})
+    // Intervalle adaptatif selon visibilité (1s visible, 5s caché)
+    const initialMs = (typeof document !== 'undefined' && document.hidden) ? 5000 : 1000
+    scheduleServerSync(initialMs)
 
     // Écouter les changements d'équipe pour rafraîchir l'income immédiatement
     if (typeof window !== 'undefined' && !onTeamUpdated) {
@@ -181,6 +165,20 @@ export function useEgg() {
       }
       window.addEventListener('auth-logout', onAuthLogout)
     }
+
+    // Adapter la fréquence à la visibilité de l'onglet
+    if (typeof document !== 'undefined' && !onVisibilityChange) {
+      onVisibilityChange = () => {
+        const ms = document.hidden ? 5000 : 1000
+        if (serverSyncInterval) {
+          clearInterval(serverSyncInterval)
+          serverSyncInterval = null
+        }
+        serverSyncInterval = setInterval(() => { fetchEggStatus() }, ms)
+        eggState.value._serverSyncInterval = serverSyncInterval
+      }
+      document.addEventListener('visibilitychange', onVisibilityChange)
+    }
   }
 
   // Arrêter les mises à jour automatiques
@@ -193,6 +191,10 @@ export function useEgg() {
     if (eggState.value._serverSyncInterval) {
       clearInterval(eggState.value._serverSyncInterval)
       eggState.value._serverSyncInterval = null
+    }
+    if (serverSyncInterval) {
+      clearInterval(serverSyncInterval)
+      serverSyncInterval = null
     }
     
     if (typeof window !== 'undefined' && onTeamUpdated) {
@@ -210,6 +212,10 @@ export function useEgg() {
     if (typeof window !== 'undefined' && onAuthLogout) {
       window.removeEventListener('auth-logout', onAuthLogout)
       onAuthLogout = null
+    }
+    if (typeof document !== 'undefined' && onVisibilityChange) {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      onVisibilityChange = null
     }
   }
 

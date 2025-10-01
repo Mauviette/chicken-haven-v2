@@ -133,7 +133,7 @@ const {
   stopUpdates 
 } = useEgg()
 
-const { refreshPlayer, fetchTeam, team } = usePlayer()
+const { refreshPlayer, fetchTeam, team, setEggs } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
@@ -550,25 +550,40 @@ const handleEggClick = async () => {
     } catch (_) {}
     
     // Actualiser l'affichage des œufs dans la TopBar
-    await refreshPlayer()
+    try {
+      // Si la réponse contient le totalEggs à jour, évitons un fetch supplémentaire
+      if (typeof result.totalEggs === 'number') {
+        setEggs(Number(result.totalEggs))
+      } else {
+        await refreshPlayer()
+      }
+    } catch (_) {
+      await refreshPlayer()
+    }
   }
 }
 
 onMounted(async () => {
   // S'assurer que l'équipe est à jour pour les stats
   await fetchTeam()
-  await fetchEggStatus()
+  // startUpdates fera un fetchEggStatus immédiat
   await fetchBuffs()
   startUpdates()
   
-  // Rafraîchir les buffs toutes les secondes pour mettre à jour les temps restants
-  setInterval(() => {
-    fetchBuffs()
-  }, 1000)
+  // Rafraîchir les buffs périodiquement (toutes les 15s); le compte à rebours est calculé en local
+  const BUFFS_REFRESH_MS = 15000
+  if (typeof window !== 'undefined') {
+    window.__buffsInterval && clearInterval(window.__buffsInterval)
+    window.__buffsInterval = setInterval(() => { fetchBuffs() }, BUFFS_REFRESH_MS)
+  }
 })
 
 onUnmounted(() => {
   stopUpdates()
+  if (typeof window !== 'undefined' && window.__buffsInterval) {
+    clearInterval(window.__buffsInterval)
+    window.__buffsInterval = null
+  }
 })
 
 // Son lorsque la barre de gains se remplit (augmentation de currentGains)
