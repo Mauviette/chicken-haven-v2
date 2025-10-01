@@ -11,11 +11,18 @@
       :style="{
         left: obj.x + '%',
         top: obj.y + '%',
-        transform: `translate(-50%, -50%) rotate(${obj.rotation || 0}deg)`
+        transform: `translate(-50%, -50%)`
       }"
       @click="(event) => handleClick(obj, event)"
     >
-      <span class="spawnable-icon">{{ obj.icon }}</span>
+      <span 
+        class="spawnable-icon" 
+        :style="{
+          transform: `rotate(${obj.rotation || 0}deg)`
+        }"
+      >
+        {{ obj.icon }}
+      </span>
       <div class="spawnable-glow"></div>
     </div>
   </div>
@@ -35,12 +42,13 @@ const handleClick = async (obj, event) => {
     
     // Récupérer l'élément cliqué
     const element = event.currentTarget
+    const icon = element.querySelector('.spawnable-icon')
     
     // Sauvegarder la position avant que l'élément ne disparaisse
     const rect = element.getBoundingClientRect()
     
     // Effet visuel de clic immédiat
-    element.style.transform = `translate(-50%, -50%) rotate(${obj.rotation || 0}deg) scale(1.4)`
+    element.style.transform = `translate(-50%, -50%) scale(1.4)`
     element.style.transition = 'transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55)'
     element.classList.add('clicked')
     
@@ -55,9 +63,9 @@ const handleClick = async (obj, event) => {
     
     // Animation de retour avec un petit bounce
     setTimeout(() => {
-      element.style.transform = `translate(-50%, -50%) rotate(${obj.rotation || 0}deg) scale(1.1)`
+      element.style.transform = `translate(-50%, -50%) scale(1.1)`
       setTimeout(() => {
-        element.style.transform = `translate(-50%, -50%) rotate(${obj.rotation || 0}deg) scale(1)`
+        element.style.transform = `translate(-50%, -50%) scale(1)`
         element.classList.remove('clicked')
       }, 100)
     }, 200)
@@ -195,8 +203,8 @@ const createRewardEffect = (clickedElement, amount) => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 125%;
+  height: 125%;
   pointer-events: none;
   z-index: 5;
 }

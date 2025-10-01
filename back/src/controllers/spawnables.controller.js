@@ -129,7 +129,7 @@ export async function checkAvailableSpawnables(req, res) {
         if (now - lastSpawn >= spawnInterval) {
           // 25% de chance d'apparition à chaque vérification
           const spawnChance = Math.random()
-          if (spawnChance < 0.1) {
+          if (spawnChance < 0.05) {
             const spawnableId = `${spawnerId}_${now}`
             
             availableSpawnables.push({
