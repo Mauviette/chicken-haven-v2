@@ -139,7 +139,7 @@ export const talentsData = {
     nivType : 'basic',
     icon: '🍀',
     calculation: {
-      combine: 'linear',
+      combine: 'not_linear',
       triggers: [
         { type: 'on_egg_harvest' }
       ],
@@ -209,7 +209,7 @@ export const talentsData = {
   },
   'Discrète': {
     description: "Augmente l'intelligence mais baisse le charisme des poules de l'équipe.",
-    effet: "+{niveau*2} charisme mais -{niveau*1} à toute l'équipe.",
+    effet: "+{niveau*2} intelligence et -{niveau*1} charisme à toute l'équipe.",
     icon: '🕵️'
   },
   'Gourmande': {
@@ -220,7 +220,35 @@ export const talentsData = {
   'Protectrice': {
     description: "Augmente la production et le stockage max en fonction de l'intelligence.",
     effet: "Augmente le stockage de {niveau} et la production de {niveau*0.1} par point d'intelligence dans l'équipe.",
-    icon: '🛡️'
+    nivType: 'basic',
+    icon: '🛡️',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'income_bonus_per_second',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { var: 'teamIntelligence' },
+              { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] }
+            ]
+          }
+        },
+        {
+          type: 'storage_bonus',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { var: 'teamIntelligence' },
+              { var: 'niveau' }
+            ]
+          }
+        }
+      ]
+    }
   },
   'Maligne': {
     description: "Cliquez-moi pour augmenter l'intelligence temporairement.",
@@ -253,7 +281,7 @@ export const talentsData = {
   },
   'Joyeuse': {
     description: "Cliquez-moi pour augmenter les revenus temporairement.",
-    effet: "Cliquez moi pour augmenter le revenu de {niveau*200}% pendant 10s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
+    effet: "Cliquez moi pour augmenter le revenu de {100+niveau*100}% pendant 10s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
     icon: '🎉'
   }
 }
