@@ -172,7 +172,7 @@ import BuyButton from '@/components/menu/BuyButton.vue'
 import { apiGet, apiPost } from '@/utils/api.js'
 
 import BoxResults from '@/components/menu/BoxResults.vue'
-import { boxesData, getPossibleChickensFromBox, openBoxSimulation, groupes } from '@/data/boxes.js'
+import { boxesData, getPossibleChickensFromBox, openBoxSimulation } from '@/data/boxes.js'
 import { formatPrice, achievementsData } from '@/data/items.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
@@ -182,7 +182,7 @@ const { fetchEggStatus } = useEgg()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
 const { checkAchievements } = useAchievements()
-const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades } = useGameData()
+const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes } = useGameData()
 const router = useRouter()
 const { click, open: sndOpen, close: sndClose, confirm: sndConfirm, boxOpen: sndBoxOpen, boxResults: sndBoxResults } = useSound()
 
@@ -276,9 +276,9 @@ function getRarityColor(rarity) {
   }
 }
 
-// Fonction pour récupérer la description d'un groupe depuis boxes.js
+// Fonction pour récupérer la description d'un groupe depuis les données synchronisées
 function getGroupDescription(groupName) {
-  const group = groupes.find(g => g.name === groupName)
+  const group = groupes.value?.find(g => g.name === groupName)
   return group ? group.description : groupName
 }
 
@@ -332,7 +332,7 @@ function getBoxRarityProbabilities(box) {
   let avgProbabilities = [0, 0, 0, 0] // [commune, rare, épique, légendaire]
   
   box.dropGroups.forEach(group => {
-    const groupData = groupes.find(g => g.name === group.name)
+    const groupData = groupes.value?.find(g => g.name === group.name)
     if (groupData && groupData.rarityDropChance) {
       const weight = group.chance / totalChance
       groupData.rarityDropChance.forEach((prob, index) => {

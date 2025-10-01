@@ -132,7 +132,6 @@ export const especeData = {
 // DONNÉES DES TALENTS
 // ========================
 
-//POUR L'INSTANT NE FAIRE QUE LES 3 PREMIERS
 export const talentsData = {
   'Chanceuse': {
     description: "Lors des récoltes, a une petite chance de fait pleuvoir des oeufs.",
@@ -281,7 +280,7 @@ export const groupes = [
   { 
     name: 'chic', 
     description: 'Groupe chic', 
-    rarityDropChance: [75, 20, 5, 0]
+    rarityDropChance: [65, 25, 10, 0]
   }
 ]
 
@@ -316,13 +315,8 @@ export const boxesData = [
         quantity: 1
       },
       {
-        name: 'brillant',
-        chance: 30,
-        quantity: 1
-      },
-      {
         name: 'discret',
-        chance: 30,
+        chance: 60,
         quantity: 1
       }
     ],
@@ -337,9 +331,14 @@ export const boxesData = [
     dropGroups: [
       {
         name: 'chic',
-        chance: 100,
+        chance: 50,
         quantity: 1
-      }
+      },
+      {
+        name: 'brillant',
+        chance: 50,
+        quantity: 1
+      },
     ],
     unlock_level: 5
   }
