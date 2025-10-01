@@ -340,11 +340,11 @@ export async function getEggStatus(req, res) {
     const baseIncome = user.clickableEgg.income || 1
     const maxIncome = user.clickableEgg.maxIncome || 30
     
-    console.log('DEBUG - getEggStatus:')
+    /*console.log('DEBUG - getEggStatus:')
     console.log('  now:', now)
     console.log('  lastClick:', lastClick)
     console.log('  baseIncome:', baseIncome)
-    console.log('  maxIncome:', maxIncome)
+    console.log('  maxIncome:', maxIncome)*/
 
     // Talents passifs
     const incomeBonus = runTalentIncome(user)
@@ -353,16 +353,16 @@ export async function getEggStatus(req, res) {
     const effectiveIncome = Math.max(0, baseIncome + incomeBonus.bonusPerSecond)
     const effectiveMaxIncome = Math.max(0, maxIncome + storageBonus.storageBonus)
     
-    console.log(`  income talents: totalBonus=${incomeBonus.bonusPerSecond}`)
+    /*console.log(`  income talents: totalBonus=${incomeBonus.bonusPerSecond}`)
     console.log(`  storage talents: totalBonus=${storageBonus.storageBonus}`)
-    console.log(`  effective: income=${effectiveIncome}, maxIncome=${effectiveMaxIncome}`)
+    console.log(`  effective: income=${effectiveIncome}, maxIncome=${effectiveMaxIncome}`)*/
 
     // Calculer les gains actuels basés sur le temps écoulé
   const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
   const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)
     
-    console.log('  timeDiffSeconds:', timeDiffSeconds)
-    console.log('  currentStocked:', currentStocked)
+    /*console.log('  timeDiffSeconds:', timeDiffSeconds)
+    console.log('  currentStocked:', currentStocked)*/
 
     res.json({
       income: effectiveIncome,

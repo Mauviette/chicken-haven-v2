@@ -134,24 +134,29 @@ export const especeData = {
 
 export const talentsData = {
   'Chanceuse': {
-    description: "Lors des récoltes, a une petite chance de fait pleuvoir des oeufs.",
-    effet: "Pour chaque oeuf récolté, 1% de chance de gagner votre stockage max x{niveau} en oeufs.",
+    description: "Des œufs blancs apparaissent sur l'écran.",
+    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{niveau} œufs.",
     nivType : 'basic',
     icon: '🍀',
     calculation: {
       combine: 'not_linear',
       triggers: [
-        { type: 'on_egg_harvest' }
-      ],
-      conditions: [
-        { type: 'random_chance', value: 0.01 }
+        { type: 'spawner' }
       ],
       effects: [
-        { type: 'visual_effect', effect: 'egg_rain', amount: 15 },
         {
-          type: 'resource',
-          resource: 'eggs',
-          amount: { op: 'mul', args: [ { var: 'niveau' }, { var: 'stockageMax' } ] }
+          type: 'spawn_clickable',
+          spawner_id: 'lucky_egg',
+          icon: '🥚',
+          style: 'white-egg',
+          spawn_rate: { op: 'div', args: [ 15000, { var: 'niveau' } ] }, // 15s / niveau
+          max_concurrent: { op: 'add', args: [ 1, { var: 'niveau' } ] }, // 1 + niveau
+          lifetime: 8000, // 8 secondes
+          reward: {
+            type: 'resource',
+            resource: 'eggs',
+            amount: { op: 'mul', args: [ { var: 'niveau' }, { var: 'stockageMax' } ] }
+          }
         }
       ]
     }
@@ -215,7 +220,30 @@ export const talentsData = {
   'Gourmande': {
     description: "Des chocolats apparaissent sur l'écran qui augmentent la production lorsque cliqués.",
     effet: "Des chocolats apparaissent, en cliquer un augmente la production de {niveau*100}% pendant 15s.",
-    icon: '🍗'
+    icon: '🍗',
+    calculation: {
+      combine: 'not_linear',
+      triggers: [
+        { type: 'spawner' }
+      ],
+      effects: [
+        {
+          type: 'spawn_clickable',
+          spawner_id: 'chocolate',
+          icon: '🍫',
+          style: 'chocolate',
+          spawn_rate: { op: 'div', args: [ 20000, { var: 'niveau' } ] }, // 20s / niveau
+          max_concurrent: 2,
+          lifetime: 10000, // 10 secondes
+          reward: {
+            type: 'buff',
+            buff_type: 'income_multiplier',
+            duration: 15000, // 15s
+            multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 1 ] } ] } // 1 + niveau (100% par niveau)
+          }
+        }
+      ]
+    }
   },
   'Protectrice': {
     description: "Augmente la production et le stockage max en fonction de l'intelligence.",

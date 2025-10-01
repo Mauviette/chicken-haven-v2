@@ -74,7 +74,7 @@ const { eggs } = usePlayerComposable()
 const showUpgradeBadge = computed(() => {
   const cost = getTalentNextCost(props.poule)
   if (!cost) return false // pas d'upgrade
-  const needChickens = Number(cost.chicken_cost || 0) + 1
+  const needChickens = Number(cost.chicken_cost || 0)
   const hasEggs = Number(eggs?.value ?? 0) >= Number(cost.egg_cost || 0)
   const hasChickens = Number(props.poule?.quantite || 0) >= needChickens
   return hasEggs && hasChickens
