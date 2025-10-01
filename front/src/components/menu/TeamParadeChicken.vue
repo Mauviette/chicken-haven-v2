@@ -1,4 +1,4 @@
-j<template>
+<template>
   <!-- Conteneur acteur positionné relativement à la scène (parent .stage) -->
   <div class="actor" :style="{ left: x + 'px' }">
     <Tooltip :text="tooltipHtml" :key="tooltipHtml" v-if="!isMobile">
@@ -29,6 +29,7 @@ j<template>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
+import { useGameData } from '@/composables/useGameData'
 
 const props = defineProps({
   especeId: String,
@@ -133,6 +134,61 @@ function emitOpenDetail() {
 
 // Tooltip combinant nom en gras + effet du talent
 const { especies, poules, getTalentEffectSync } = usePoules()
+const { talents } = useGameData()
+
+// Mini évaluateur d'expressions (aligné avec Production.vue)
+function evalExpr(expr, ctx) {
+  if (expr == null) return 0
+  if (typeof expr === 'number') return expr
+  if (typeof expr === 'string') return Number.isFinite(ctx[expr]) ? ctx[expr] : (ctx[expr] ?? 0)
+  if (typeof expr === 'object') {
+    if (Object.prototype.hasOwnProperty.call(expr, 'var')) {
+      const v = expr.var
+      return Number.isFinite(ctx[v]) ? ctx[v] : (ctx[v] ?? 0)
+    }
+    const op = expr.op
+    const args = Array.isArray(expr.args) ? expr.args : []
+    const vals = args.map(a => evalExpr(a, ctx))
+    switch (op) {
+      case 'add': return vals.reduce((a, b) => a + b, 0)
+      case 'sub': return vals.slice(1).reduce((a, b) => a - b, vals[0] || 0)
+      case 'mul': return vals.reduce((a, b) => a * b, 1)
+      case 'div': return vals.slice(1).reduce((a, b) => (b === 0 ? a : a / b), vals[0] || 0)
+      case 'min': return Math.min(...vals)
+      case 'max': return Math.max(...vals)
+      default: return 0
+    }
+  }
+  return 0
+}
+
+// Buffs personnels (target: 'me') pour cette poule (ex: Majestueuse => +5*niveau charisme)
+const selfBuffs = computed(() => {
+  const id = props.especeId
+  const result = { intelligence: 0, energie: 0, charisme: 0 }
+  if (!id) return result
+  try {
+    const sp = especies.value?.[id]
+    const talentName = sp?.talent
+    const calc = (talentName && (talents.value?.[talentName]?.calculation)) || null
+    if (!calc || !Array.isArray(calc.effects)) return result
+    const p = (poules.value || []).find(pp => pp.especeId === id)
+    const niveau = Math.max(1, Number(p?.niveauTalent) || 1)
+    const ctx = { niveau }
+    for (const eff of calc.effects) {
+      if (!eff || eff.type !== 'stat_buff') continue
+      const target = eff.target || 'me'
+      if (target !== 'me') continue
+      const st = eff.stats || {}
+      for (const key of ['intelligence', 'energie', 'charisme']) {
+        if (st[key] != null) {
+          result[key] += Number(evalExpr(st[key], ctx)) || 0
+        }
+      }
+    }
+  } catch (_) {}
+  return result
+})
 
 const tooltipHtml = computed(() => {
   // Toujours recalculer l'effet avec le niveau courant depuis le store
@@ -144,16 +200,24 @@ const tooltipHtml = computed(() => {
   const baseInt = Number(st.intelligence ?? 0)
   const baseEne = Number(st.energie ?? 0)
   const baseCha = Number(st.charisme ?? 0)
-  const bInt = Math.max(0, Number(props.statBuffs?.intelligence) || 0)
-  const bEne = Math.max(0, Number(props.statBuffs?.energie) || 0)
-  const bCha = Math.max(0, Number(props.statBuffs?.charisme) || 0)
+  // Buffs d'équipe reçus + buff personnel (Majestueuse, Discrète, etc.)
+  const teamBuffs = props.statBuffs || { intelligence: 0, energie: 0, charisme: 0 }
+  const selfB = selfBuffs.value || { intelligence: 0, energie: 0, charisme: 0 }
+  const safe = (v) => Number.isFinite(Number(v)) ? Number(v) : 0
+  const bInt = safe(teamBuffs.intelligence) + safe(selfB.intelligence)
+  const bEne = safe(teamBuffs.energie) + safe(selfB.energie)
+  const bCha = safe(teamBuffs.charisme) + safe(selfB.charisme)
 
   const showInt = baseInt + bInt
   const showEne = baseEne + bEne
   const showCha = baseCha + bCha
 
-  const plus = (v) => v > 0 ? ` <span style="color:#118a00">(+${v})</span>` : ''
-  const statsLine = `🧠${showInt}${plus(bInt)} ⚡${showEne}${plus(bEne)} ✨${showCha}${plus(bCha)}`
+  const annotate = (v) => {
+    if (v > 0) return ` <span style="color:#118a00">(+${v})</span>`
+    if (v < 0) return ` <span style="color:#c22020">(-${Math.abs(v)})</span>`
+    return ''
+  }
+  const statsLine = `🧠${showInt}${annotate(bInt)} ⚡${showEne}${annotate(bEne)} ✨${showCha}${annotate(bCha)}`
 
   const parts = []
   if (title) parts.push(title)

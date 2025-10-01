@@ -51,7 +51,9 @@ export function computeTeamEnergy(user) {
     if (!id) continue
     const e = especeData[id]
     const energy = Number(e?.stats?.energie) || 0
-    totalBase += energy
+    // Buffs personnels (target: 'me') appliqués à ce membre
+    const selfBuff = computeSelfStatBuff(user, id)
+    totalBase += energy + (Number(selfBuff.energie) || 0)
     members.push(id)
   }
 
@@ -72,7 +74,8 @@ export function computeTeamIntelligence(user) {
     if (!id) continue
     const e = especeData[id]
     const intelligence = Number(e?.stats?.intelligence) || 0
-    totalBase += intelligence
+    const selfBuff = computeSelfStatBuff(user, id)
+    totalBase += intelligence + (Number(selfBuff.intelligence) || 0)
     members.push(id)
   }
 
@@ -93,7 +96,9 @@ export function computeTeamCharisme(user) {
     if (!id) continue
     const e = especeData[id]
     const charisme = Number(e?.stats?.charisme) || 0
-    totalBase += charisme
+    // Intégrer les buffs personnels (ex: Majestueuse: target 'me')
+    const selfBuff = computeSelfStatBuff(user, id)
+    totalBase += charisme + (Number(selfBuff.charisme) || 0)
     members.push(id)
   }
 
@@ -155,6 +160,37 @@ function aggregateTeamStatBuffs(user) {
       }
     }
   }
+
+  return result
+}
+
+// Calcule les buffs personnels (target: 'me') d'une poule équipée donnée
+function computeSelfStatBuff(user, especeId) {
+  const result = { intelligence: 0, energie: 0, charisme: 0 }
+  if (!especeId) return result
+
+  try {
+    const talentName = especeData[especeId]?.talent
+    if (!talentName) return result
+    const calc = talentsData?.[talentName]?.calculation
+    if (!calc || !Array.isArray(calc.effects)) return result
+
+    const owned = user?.poulesPossedees || []
+    const own = owned.find(p => p.especeId === especeId)
+    const niveauTalent = Math.max(1, Number(own?.niveauTalent) || 1)
+    const ctx = { niveau: niveauTalent }
+
+    for (const eff of calc.effects) {
+      if (!eff || eff.type !== 'stat_buff') continue
+      if ((eff.target || 'me') !== 'me') continue
+      const stats = eff.stats || {}
+      for (const key of ['intelligence', 'energie', 'charisme']) {
+        if (stats[key] != null) {
+          result[key] += Number(evalExpr(stats[key], ctx)) || 0
+        }
+      }
+    }
+  } catch (_) { /* no-op */ }
 
   return result
 }

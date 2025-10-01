@@ -73,7 +73,7 @@ import { usePlayer as usePlayerComposable } from '@/composables/usePlayer'
 const { eggs } = usePlayerComposable()
 const showUpgradeBadge = computed(() => {
   const cost = getTalentNextCost(props.poule)
-  if (!cost) return false // pas d'upgrade
+  if (!cost || cost.maxed) return false // pas d'upgrade si max
   const needChickens = Number(cost.chicken_cost || 0)
   const hasEggs = Number(eggs?.value ?? 0) >= Number(cost.egg_cost || 0)
   const hasChickens = Number(props.poule?.quantite || 0) >= needChickens

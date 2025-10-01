@@ -111,6 +111,17 @@ onMounted(async () => {
     const me = await apiGet('/api/user/me')
     myProfileId.value = String(me.profileId || '').toUpperCase()
     myAvatarId.value = me.avatar ? String(me.avatar) : 'hidden'
+    // Mettre à jour immédiatement le niveau/xp/œufs du store (évite d'attendre un autre refresh)
+    try {
+      if (me?.experience) {
+        level.value = me.experience.level ?? level.value
+        xp.value = me.experience.points ?? xp.value
+        xpRequired.value = me.experience.required_points ?? xpRequired.value
+      }
+      if (me?.resources) {
+        eggs.value = Number(me.resources.eggs ?? eggs.value)
+      }
+    } catch (_) {}
   } catch (_) {}
 
   // Ecouter les mises à jour d'avatar globales (depuis UserProfile)

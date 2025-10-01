@@ -48,7 +48,7 @@
       <div class="actions" style="justify-content: space-between; align-items:center;">
             <div>
               <!-- Toujours utiliser la Tooltip custom: affiche ressources manquantes et/ou effet du prochain niveau -->
-              <Tooltip v-if="nextCost && !maxed" :text="upgradeTooltipText" :followMouse="true">
+              <Tooltip v-if="!maxed && nextCost" :text="upgradeTooltipText" :followMouse="true">
                 <BuyButton
                   :onClick="onUpgrade"
                   :disabled="!canUpgrade || upgrading"
@@ -57,6 +57,7 @@
                   {{ upgrading ? '...' : 'Améliorer' }}
                 </BuyButton>
               </Tooltip>
+              <ActionButton v-else :disabled="true">Niveau de talent maximum atteint</ActionButton>
             </div>
         <div>
           <button v-if="!inTeam" class="btn equip" @click="onEquip">Équiper dans l'équipe</button>
@@ -79,6 +80,7 @@
 import Popup from '@/components/menu/Popup.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
 import Tooltip from '../menu/Tooltip.vue'
+import ActionButton from '@/components/menu/ActionButton.vue'
 import { usePoules } from '@/composables/usePoules'
 import { usePlayer } from '@/composables/usePlayer'
 import { computed, ref, onMounted } from 'vue'
@@ -148,9 +150,13 @@ const inTeam = computed(() => isInTeam(currentPoule.value?.especeId))
 
 const upgrading = ref(false)
 const nextCost = computed(() => getTalentNextCost(currentPoule.value))
-const maxed = computed(() => !nextCost.value)
+// Maxé si aucun coût disponible OU si l'objet de coût indique explicitement maxed
+const maxed = computed(() => {
+  const c = nextCost.value
+  return !c || !!c.maxed
+})
 const upgradePrices = computed(() => {
-  if (!nextCost.value) return null
+  if (maxed.value || !nextCost.value) return null
   return [
     { type: 'eggs', count: nextCost.value.egg_cost },
     // On utilise un faux type pour l'icône poule; BuyButton s'attend à un type connu
@@ -161,7 +167,7 @@ const upgradePrices = computed(() => {
 const canUpgrade = computed(() => {
   const cost = nextCost.value
   const p = currentPoule.value
-  if (!cost || !p) return false
+  if (!p || !cost || cost.maxed) return false
   const needChickens = Number(cost.chicken_cost || 0)
   const hasEggs = Number(eggs?.value ?? 0) >= Number(cost.egg_cost || 0)
   const hasChickens = Number(p.quantite || 0) >= needChickens
@@ -255,6 +261,8 @@ async function onUpgrade() {
   gap: 16px;
   font-family: 'Fredoka', sans-serif;
 }
+
+
 
 .header {
   display: flex;

@@ -215,9 +215,36 @@ const teamStats = computed(() => {
     if (!id) continue
     const sp = especies.value?.[id]
     if (sp?.stats) {
-      base.intelligence += Number(sp.stats.intelligence) || 0
-      base.energie += Number(sp.stats.energie) || 0
-      base.charisme += Number(sp.stats.charisme) || 0
+      // Base
+      const bInt = Number(sp.stats.intelligence) || 0
+      const bEne = Number(sp.stats.energie) || 0
+      const bCha = Number(sp.stats.charisme) || 0
+      // Buffs personnels (target: 'me'), ex: Majestueuse
+      let selfBuff = { intelligence: 0, energie: 0, charisme: 0 }
+      try {
+        const talentName = sp?.talent
+        const calc = talents.value?.[talentName]?.calculation
+        if (calc && Array.isArray(calc.effects)) {
+          const p = poules.value?.find(pp => pp.especeId === id)
+          const niveau = Math.max(1, Number(p?.niveauTalent) || 1)
+          const ctx = { niveau }
+          for (const eff of calc.effects) {
+            if (!eff || eff.type !== 'stat_buff') continue
+            const target = eff.target || 'me'
+            if (target !== 'me') continue
+            const st = eff.stats || {}
+            for (const key of ['intelligence', 'energie', 'charisme']) {
+              if (st[key] != null) {
+                selfBuff[key] += Number(evalExpr(st[key], ctx)) || 0
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      base.intelligence += bInt + (selfBuff.intelligence || 0)
+      base.energie += bEne + (selfBuff.energie || 0)
+      base.charisme += bCha + (selfBuff.charisme || 0)
     }
   }
   // Buffs par membre agrégés

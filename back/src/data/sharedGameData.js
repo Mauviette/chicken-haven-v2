@@ -64,7 +64,7 @@ export const especeData = {
     groupe: 'brillant',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 3, energie: 2, charisme: 4 }
+    stats: { intelligence: 5, energie: 2, charisme: 2 }
   },
   'choco': {
     nom: 'Poulette choco',
@@ -203,8 +203,8 @@ export const talentsData = {
     }
   },
   'Vive': {
-    description: "Augmente les revenus en fonction de l'intelligence et de l'énergie de l'équipe.",
-    effet: "{niveau*0.1} de revenu par seconde pour chaque point d'énergie et d'intelligence dans l'équipe.",
+    description: "Augmente les revenus en fonction de l'intelligence ou de l'énergie de l'équipe.",
+    effet: "{niveau*0.1} de revenu par seconde pour chaque point d'énergie ou d'intelligence dans l'équipe.",
     nivType: 'basic',
     icon: '🏃',
     calculation: {
@@ -268,7 +268,7 @@ export const talentsData = {
   'Gourmande': {
     description: "Des chocolats apparaissent sur l'écran qui augmentent la production et le stockage lorsque cliqués.",
     effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {niveau*25}% pendant 15s.",
-    icon: '🍗',
+    icon: '🍫',
     calculation: {
       combine: 'not_linear',
       triggers: [
