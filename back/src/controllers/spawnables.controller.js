@@ -14,6 +14,12 @@ import {
 // Stockage des derniers spawns par utilisateur pour éviter la triche
 const userLastSpawns = new Map()
 
+// Stockage des spawnables actifs par utilisateur (pour éviter l'exploit multi-onglets)
+const userActiveSpawnables = new Map()
+
+// Limite maximale de spawnables simultanés par utilisateur
+const MAX_SPAWNABLES_PER_USER = 3
+
 // Fonction pour évaluer les expressions du DSL (miroir du frontend)
 function evalExpr(expr, ctx) {
   if (expr == null) return 0
@@ -66,12 +72,41 @@ export async function checkAvailableSpawnables(req, res) {
     const now = Date.now()
     const userId = req.userId.toString()
     
+    // Nettoyer les spawnables expirés dans la base de données
+    user.activeSpawnables = user.activeSpawnables?.filter(s => new Date(s.expiresAt) > new Date()) || []
+    
     if (!userLastSpawns.has(userId)) {
       userLastSpawns.set(userId, new Map())
     }
     
+    // Initialiser les spawnables actifs pour cet utilisateur
+    if (!userActiveSpawnables.has(userId)) {
+      userActiveSpawnables.set(userId, new Map())
+    }
+    
     const userSpawns = userLastSpawns.get(userId)
+    const activeSpawnables = userActiveSpawnables.get(userId)
     const availableSpawnables = []
+
+    // Synchroniser avec la base de données
+    for (const dbSpawnable of user.activeSpawnables) {
+      activeSpawnables.set(dbSpawnable.spawnerId, new Date(dbSpawnable.createdAt).getTime())
+    }
+
+    // Nettoyer les spawnables expirés (plus de 30 secondes)
+    const expiredKeys = []
+    for (const [key, timestamp] of activeSpawnables.entries()) {
+      if (now - timestamp > 30000) {
+        expiredKeys.push(key)
+      }
+    }
+    expiredKeys.forEach(key => activeSpawnables.delete(key))
+
+    // Vérifier si l'utilisateur a déjà atteint la limite de spawnables
+    if (user.activeSpawnables.length >= MAX_SPAWNABLES_PER_USER) {
+      console.log(`🚫 User ${userId} has reached max spawnables limit (${user.activeSpawnables.length}/${MAX_SPAWNABLES_PER_USER})`)
+      return res.json({ spawnables: [] })
+    }
 
     // Parcourir l'équipe active
     for (const especeId of activeTeam) {
@@ -127,12 +162,20 @@ export async function checkAvailableSpawnables(req, res) {
         const spawnInterval = evalExpr(spawnEffect.spawnRate, ctx) * 1000 // en ms
 
         if (now - lastSpawn >= spawnInterval) {
-          // 25% de chance d'apparition à chaque vérification
+          // Vérifier s'il n'y a pas déjà un spawnable actif pour ce spawner
+          const hasActiveSpawnable = user.activeSpawnables.some(s => s.spawnerId === spawnerId)
+          if (hasActiveSpawnable) {
+            console.log(`⏳ Spawnable ${spawnerId} already active, skipping`)
+            continue
+          }
+
+          // 5% de chance d'apparition à chaque vérification (réduit pour éviter le spam)
           const spawnChance = Math.random()
           if (spawnChance < 0.05) {
             const spawnableId = `${spawnerId}_${now}`
+            const expiresAt = new Date(now + 30000) // 30 secondes
             
-            availableSpawnables.push({
+            const newSpawnable = {
               id: spawnableId,
               spawnerId: spawnerId,
               talentName: talentName,
@@ -141,17 +184,37 @@ export async function checkAvailableSpawnables(req, res) {
               icon: spawnEffect.icon,
               style: spawnEffect.style || {},
               nivel: niveau
-            })
+            }
+            
+            availableSpawnables.push(newSpawnable)
 
+            // Ajouter à la base de données
+            user.activeSpawnables.push({
+              spawnerId: spawnerId,
+              spawnableId: spawnableId,
+              talentName: talentName,
+              especeId: especeId,
+              createdAt: new Date(now),
+              expiresAt: expiresAt
+            })
+            
+            // Marquer ce spawnable comme actif en mémoire
+            activeSpawnables.set(spawnerId, now)
+            
             // Marquer ce spawnable comme spawné
             userSpawns.set(spawnerId, now)
             
             console.log(`🥚 Spawnable available: ${talentName} for ${especeId} (niveau ${niveau}) - Chance réussie!`)
           } else {
-            console.log(`🎲 Spawnable chance échouée: ${talentName} for ${especeId} (${(spawnChance * 100).toFixed(1)}% > 25%)`)
+            console.log(`🎲 Spawnable chance échouée: ${talentName} for ${especeId} (${(spawnChance * 100).toFixed(1)}% > 5%)`)
           }
         }
       }
+    }
+
+    // Sauvegarder les changements (spawnables expirés nettoyés + nouveaux spawnables)
+    if (user.isModified()) {
+      await user.save()
     }
 
     res.json({ spawnables: availableSpawnables })
@@ -172,6 +235,24 @@ export async function clickSpawnableObject(req, res) {
     
     if (!spawnerId || !talentName || !especeId) {
       return res.status(400).json({ error: 'Données manquantes' })
+    }
+
+    const userId = req.userId.toString()
+
+    // Vérifier que le spawnable est bien actif pour cet utilisateur dans la base de données
+    const activeSpawnableIndex = user.activeSpawnables.findIndex(s => s.spawnerId === spawnerId)
+    if (activeSpawnableIndex === -1) {
+      return res.status(400).json({ error: 'Ce spawnable n\'est pas actif ou a expiré' })
+    }
+
+    const activeSpawnable = user.activeSpawnables[activeSpawnableIndex]
+    
+    // Vérifier l'expiration
+    if (new Date(activeSpawnable.expiresAt) < new Date()) {
+      // Nettoyer le spawnable expiré
+      user.activeSpawnables.splice(activeSpawnableIndex, 1)
+      await user.save()
+      return res.status(400).json({ error: 'Ce spawnable a expiré' })
     }
 
     // Vérifier que l'utilisateur a bien cette poule équipée
@@ -306,6 +387,18 @@ export async function clickSpawnableObject(req, res) {
       }
     }
 
+    await user.save()
+
+    // Retirer le spawnable de la liste des actifs (base de données)
+    user.activeSpawnables.splice(activeSpawnableIndex, 1)
+    
+    // Retirer aussi de la mémoire si présent
+    if (userActiveSpawnables.has(userId)) {
+      const activeSpawnables = userActiveSpawnables.get(userId)
+      activeSpawnables.delete(spawnerId)
+    }
+
+    // Sauvegarder à nouveau pour retirer le spawnable
     await user.save()
 
     // Log pour debug

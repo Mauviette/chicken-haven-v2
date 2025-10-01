@@ -109,7 +109,19 @@ const UserSchema = new mongoose.Schema({
         especeId: { type: String, default: null }
       }
     ]
-  }
+  },
+
+  // Spawnables actifs pour éviter l'exploit multi-onglets
+  activeSpawnables: [
+    {
+      spawnerId: { type: String, required: true },
+      spawnableId: { type: String, required: true },
+      talentName: { type: String, required: true },
+      especeId: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now },
+      expiresAt: { type: Date, required: true }
+    }
+  ]
 
 }, { timestamps: true })
 
