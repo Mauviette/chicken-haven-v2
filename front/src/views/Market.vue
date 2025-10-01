@@ -228,7 +228,7 @@ const boxOffers = computed(() => {
 // Poules débloquées (uniquement les poules obtenues par le joueur)
 const unlockedChickens = computed(() => {
   const ownedChickens = poules.value
-    .filter(poule => poule.quantite > 0)
+    .filter(poule => poule.owned)
     .map(poule => poule.especeId)
   
   return ownedChickens

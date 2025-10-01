@@ -15,7 +15,7 @@ function getTalentLevel(poule) {
   const missingOrZero = (poule.niveauTalent == null || poule.niveauTalent === 0)
   if (missingOrZero) {
     // 1) possédée: niveau 1 par défaut
-    if (poule.quantite > 0) return 1
+    if (poule.owned) return 1
     // 2) ou bien déjà équipée dans l'équipe (juste après un equip avant refresh poules)
     try {
       const slots = Array.isArray(window.__teamSlotsCached) ? window.__teamSlotsCached : []
@@ -26,8 +26,8 @@ function getTalentLevel(poule) {
 }
 
 function isTalentUnlocked(poule) {
-  // Pour l'instant, considérons que le talent est débloqué si la poule est possédée
-  return poule && poule.quantite > 0
+  // Le talent est débloqué si la poule est possédée (owned: true)
+  return poule && poule.owned
 }
 
 export function getTalentLevelRoman(poule) {
@@ -124,15 +124,23 @@ export function usePoules() {
     const especiesData = especies.value || {}
     return Object.keys(especiesData).map((id) => {
       const fromServer = rawPoules.value.find((p) => p.especeId === id)
-      return (
-        fromServer || {
+      if (fromServer) {
+        // Poule possédée : ajouter le flag owned: true
+        return {
+          ...fromServer,
+          owned: true
+        }
+      } else {
+        // Poule jamais débloquée : créer un objet par défaut avec owned: false
+        return {
           especeId: id,
           quantite: 0,
           niveauTalent: 0,
           statutEnergie: { etat: 'non_obtenue' },
           posteOccupe: null,
+          owned: false
         }
-      )
+      }
     })
   })
 

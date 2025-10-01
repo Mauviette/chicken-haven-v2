@@ -63,7 +63,7 @@ async function fetchDisponibles() {
     const data = await res.json()
     poulesDisponibles.value = data.filter(p =>
       p.statutEnergie.etat === 'disponible' &&
-      p.quantite > 0 &&
+      p.owned &&
       !p.posteOccupe
     )
   } catch (err) {

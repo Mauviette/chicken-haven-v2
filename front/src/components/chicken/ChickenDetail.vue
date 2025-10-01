@@ -206,7 +206,7 @@ const upgradeTooltipText = computed(() => {
 })
 
 async function onEquip() {
-  if (!currentPoule.value || currentPoule.value.quantite <= 0) return
+  if (!currentPoule.value || !currentPoule.value.owned) return
   const ok = await equipChicken(currentPoule.value.especeId)
   if (ok) {
     const name = props.espece?.nom || currentPoule.value.especeId

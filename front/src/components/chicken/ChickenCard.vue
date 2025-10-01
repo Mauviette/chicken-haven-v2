@@ -1,8 +1,8 @@
 <template>
   <div
-    :class="['poule-card', espece?.rarete || 'commune', { grisee: poule.quantite === 0 }]"
+    :class="['poule-card', espece?.rarete || 'commune', { grisee: !poule.owned }]"
   >
-    <template v-if="espece && poule.quantite > 0">
+    <template v-if="espece && poule.owned">
       <!-- Badges coins en bordure de carte -->
       <div v-if="inTeam" class="badge-corner badge-team" aria-label="Équipe">🐾</div>
       <div v-if="showUpgradeBadge" class="badge-corner badge-upgrade" aria-label="Amélioration disponible">

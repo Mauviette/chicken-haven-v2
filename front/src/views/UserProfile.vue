@@ -91,7 +91,7 @@ const avatarPopup = ref(false)
 // Game data for species/talents + helpers
 const { especies, talents, getImage, getNom, getTalentEffectSync, poules, hiddenImage } = usePoules()
 const totalEspeces = computed(() => Object.keys(especies.value || {}).length)
-const ownedPoules = computed(() => (poules.value || []).filter(p => (p?.quantite || 0) > 0))
+const ownedPoules = computed(() => (poules.value || []).filter(p => p?.owned))
 const hiddenAvatar = computed(() => hiddenImage)
 
 // Source d'image correcte pour l'avatar affiché en tête

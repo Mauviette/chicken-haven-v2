@@ -26,7 +26,7 @@ async function fetchPoulesDisponibles() {
     poulesDisponibles.value = data.filter(poule =>
       poule.statutEnergie.etat === 'disponible' &&
       poule.posteOccupe == null &&
-      poule.quantite > 0
+      poule.owned
     ).map(poule => ({
       ...poule,
       nom: resolveNom(poule.especeId),

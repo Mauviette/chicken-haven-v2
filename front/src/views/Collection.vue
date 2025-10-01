@@ -29,8 +29,8 @@
         :espece="especeData[poule.especeId]"
         :image="getImage(poule.especeId)"
         :hiddenImage="hiddenImage"
-        :class="{ 'non-clickable': poule.quantite <= 0 }"
-        @click="poule.quantite > 0 ? openDetail(poule) : null"
+        :class="{ 'non-clickable': !poule.owned }"
+        @click="poule.owned ? openDetail(poule) : null"
       />
     </div>
 
@@ -137,7 +137,7 @@ const filteredPoules = computed(() => {
     return {
       ...poule,
       _matchScore: matchScore,
-      _isUnlocked: poule.quantite > -1,
+      _isUnlocked: poule.owned, // Utiliser le flag owned au lieu de quantite > -1
       _inTeam: (team.value?.slots || []).some(s => s?.especeId === poule.especeId),
       _rareteIndex: rareteOrder[espece?.rarete] || 0,
     }
