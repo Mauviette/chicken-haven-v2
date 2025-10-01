@@ -127,7 +127,7 @@ function formatRareté(r) {
     commune: '⭐ Commune',
     rare: '🌟 Rare',
     epique: '💎 Épique',
-    legendary: '🔥 Légendaire',
+    legendaire: '🔥 Légendaire',
   }
   return map[r] || r
 }
@@ -310,7 +310,7 @@ async function onUpgrade() {
 .rarete.epique {
     color: #c98bff;
 }
-.rarete.legendary {
+.rarete.legendaire {
     color: gold;
 }
 .section {

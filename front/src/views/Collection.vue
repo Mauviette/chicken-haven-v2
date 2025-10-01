@@ -176,7 +176,7 @@ const rareteOrder = {
   commune: 1,
   rare: 2,
   epique: 3,
-  legendary: 4,
+  legendaire: 4,
 }
 
 const usedSlots = computed(() => (team.value?.slots || []).filter(s => s?.especeId).length)

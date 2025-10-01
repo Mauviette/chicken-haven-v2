@@ -9,6 +9,8 @@
     />
     <div class="main-content">
       <router-view />
+      <!-- Objets spawnables visibles sur toutes les vues principales -->
+      <SpawnableObjects />
       <TeamParade v-if="!isAuthPage" />
     </div>
   <LevelUpPopup
@@ -40,6 +42,7 @@ import Options from '@/components/menu/Options.vue'
 import BottomBar from '@/components/menu/BottomBar.vue'
 import TopBar from '@/components/menu/TopBar.vue'
 import TeamParade from '@/components/menu/TeamParade.vue'
+import SpawnableObjects from '@/components/SpawnableObjects.vue'
 import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
 import LevelUpPopup from '@/components/menu/LevelUpPopup.vue'
 import { getUnlocksBetween } from '@/data/unlocks.js'

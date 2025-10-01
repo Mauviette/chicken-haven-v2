@@ -184,7 +184,7 @@ const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes
 const { checkAchievements } = useAchievements()
 const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes } = useGameData()
 const router = useRouter()
-const { click, open: sndOpen, close: sndClose, confirm: sndConfirm, boxOpen: sndBoxOpen, boxResults: sndBoxResults } = useSound()
+const { click, open: sndOpen, close: sndClose, confirm: sndConfirm, boxOpen: sndBoxOpen, boxResults: sndBoxResults, legendaryDrop: sndLegend, epicDrop: sndEpic } = useSound()
 
 // État des onglets
 const activeTab = ref('boxes')
@@ -455,7 +455,18 @@ async function openBox(box) {
     singleResults.sort((a, b) => (rarityOrder[b?.rarete] || 0) - (rarityOrder[a?.rarete] || 0))
     boxResults.value = singleResults
     lastOpenedBoxName.value = box.name
-  // Son des résultats de la boîte (chicken-results.mp3 demandé) – juste avant affichage
+  // Effet et son spéciaux si un légendaire est présent
+  try {
+    const hasLegendary = singleResults.some(r => (r?.rarete === 'legendaire' || r?.rarete === 'légendaire'))
+    const hasEpic = singleResults.some(r => (r?.rarete === 'epique' || r?.rarete === 'épique'))
+    if (hasLegendary) {
+      sndLegend(1)
+      triggerLegendaryFX()
+    } else if (hasEpic) {
+      sndEpic(0.95)
+    }
+  } catch (_) {}
+  // Son des résultats (général)
   sndBoxResults(0.9)
     showBoxResults.value = true
     
@@ -544,6 +555,17 @@ async function openBoxMultiple(box, times = 10) {
       combined.sort((a, b) => (rarityOrder[b?.rarete] || 0) - (rarityOrder[a?.rarete] || 0))
       boxResults.value = combined
       lastOpenedBoxName.value = `${box.name} x${opened}`
+      // Effet et son spéciaux si un légendaire est présent dans le lot
+      try {
+        const hasLegendary = combined.some(r => (r?.rarete === 'legendaire' || r?.rarete === 'légendaire'))
+        const hasEpic = combined.some(r => (r?.rarete === 'epique' || r?.rarete === 'épique'))
+        if (hasLegendary) {
+          sndLegend(1)
+          triggerLegendaryFX()
+        } else if (hasEpic) {
+          sndEpic(0.95)
+        }
+      } catch (_) {}
       sndBoxResults(0.9)
       showBoxResults.value = true
       // Rafraîchir les données du joueur et les poules
@@ -638,6 +660,22 @@ onMounted(async () => {
     availableBoxes.value = boxesData
   }
 })
+
+// Effet visuel "de fou" pour drop légendaire
+function triggerLegendaryFX() {
+  try {
+    const el = document.createElement('div')
+    el.className = 'legendary-fx'
+    document.body.appendChild(el)
+    setTimeout(() => { el.classList.add('show') }, 10)
+    setTimeout(() => {
+      el.classList.remove('show')
+      setTimeout(() => el.remove(), 500)
+    }, 1500)
+  } catch (_) {}
+}
+
+// Effet épique désormais géré directement sur la carte dans BoxResults.vue
 </script>
 
 <style scoped>
@@ -1094,5 +1132,51 @@ onMounted(async () => {
     grid-template-columns: repeat(2, 1fr);
     max-width: 800px;
   }
+}
+</style>
+
+<style>
+/* Effet visuel global pour drop légendaire */
+.legendary-fx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99999;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(255,215,0,0.25) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.85) 100%);
+  box-shadow: inset 0 0 120px rgba(255, 215, 0, 0.35), inset 0 0 240px rgba(255, 165, 0, 0.2);
+  transition: opacity 150ms ease;
+}
+.legendary-fx.show {
+  opacity: 1;
+  animation: legendary-pulse 1200ms ease-out forwards;
+}
+@keyframes legendary-pulse {
+  0% { filter: brightness(1) saturate(1); }
+  25% { filter: brightness(1.8) saturate(1.4); }
+  50% { filter: brightness(1.4) saturate(1.2); }
+  100% { filter: brightness(1) saturate(1); opacity: 0; }
+}
+
+/* Effet visuel global pour drop épique */
+.epic-fx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99998;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(155, 89, 182, 0.2) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.8) 100%);
+  box-shadow: inset 0 0 100px rgba(155, 89, 182, 0.35), inset 0 0 200px rgba(142, 68, 173, 0.25);
+  transition: opacity 120ms ease;
+}
+.epic-fx.show {
+  opacity: 1;
+  animation: epic-pulse 1000ms ease-out forwards;
+}
+@keyframes epic-pulse {
+  0% { filter: brightness(1) saturate(1); }
+  25% { filter: brightness(1.5) saturate(1.3); }
+  50% { filter: brightness(1.25) saturate(1.15); }
+  100% { filter: brightness(1) saturate(1); opacity: 0; }
 }
 </style>

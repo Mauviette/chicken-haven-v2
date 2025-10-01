@@ -12,6 +12,7 @@
       </div>
       <div class="image-wrapper">
         <img :src="image" alt="poule" class="poule-image" draggable="false" />
+        <div v-if="isActivableTalent" class="badge-activable-talent" aria-label="Capacité activable">⚡</div>
         <!-- Badge NOUVEAU (style Market) -->
         <div v-if="isNew" class="new-badge">NOUVEAU</div>
       </div>
@@ -28,7 +29,10 @@
       </div>
     </template>
     <template v-else-if="espece">
-  <img :src="hiddenImage" alt="hidden chicken" class="poule-image" draggable="false" />
+  <div class="image-wrapper">
+    <img :src="hiddenImage" alt="hidden chicken" class="poule-image" draggable="false" />
+    <div v-if="isActivableTalent" class="badge-activable-talent" aria-label="Capacité activable">⚡</div>
+  </div>
       <div class="info">
         <div class="name">???</div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
@@ -66,6 +70,7 @@ const props = defineProps({
 
 const { getTalentDisplayNameSync, getTalentNextCost, upgradeTalent, poules } = usePoules()
 const { isInTeam } = usePlayer()
+const { talents } = useGameData()
 const inTeam = computed(() => isInTeam(props.poule?.especeId))
 
 // Badge amélioration disponible: si un nextCost existe et que le joueur a les ressources
@@ -82,6 +87,18 @@ const showUpgradeBadge = computed(() => {
 
 // Badge "nouveau"
 const isNew = computed(() => !!props.poule?.new)
+
+// Indique si le talent de cette espèce est activable (triggers contient 'active')
+const isActivableTalent = computed(() => {
+  try {
+    const tName = props.espece?.talent
+    const calc = tName && talents.value?.[tName]?.calculation
+    const triggers = Array.isArray(calc?.triggers) ? calc.triggers : []
+    return triggers.some(t => t?.type === 'active')
+  } catch (_) {
+    return false
+  }
+})
 
 function getTalentDisplayName(poule) {
   return getTalentDisplayNameSync(poule)
@@ -107,7 +124,7 @@ function formatRareté(r) {
     commune: '⭐ Commune',
     rare: '🌟 Rare',
     epique: '💎 Épique',
-    legendary: '🔥 Légendaire',
+    legendaire: '🔥 Légendaire',
   }
   return map[r] || r
 }
@@ -144,6 +161,21 @@ function formatRareté(r) {
 }
 
 .image-wrapper { position: relative; }
+
+.badge-activable-talent {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  line-height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
 
 /* Badges coins (bordure de la carte) */
 .badge-corner {
@@ -217,7 +249,7 @@ function formatRareté(r) {
 .poule-card.epique {
   border-color: #c98bff;
 }
-.poule-card.legendary {
+.poule-card.legendaire {
   border-color: gold;
 }
 
@@ -225,7 +257,7 @@ function formatRareté(r) {
 .poule-card.commune .badge-team { background: #c2c2c2; border: 2px solid #c2c2c2; }
 .poule-card.rare .badge-team { background: #7bc0ff; border: 2px solid #7bc0ff; }
 .poule-card.epique .badge-team { background: #c98bff; border: 2px solid #c98bff; }
-.poule-card.legendary .badge-team { background: gold; border: 2px solid gold; color: #5c2c08; }
+.poule-card.legendaire .badge-team { background: gold; border: 2px solid gold; color: #5c2c08; }
 
 .quantite {
   font-size: 12px;
@@ -254,7 +286,7 @@ function formatRareté(r) {
   background: #f3e6ff;
   color: #8e44ad;
 }
-.poule-card.legendary .rarete {
+.poule-card.legendaire .rarete {
   background: #fffbe6;
   color: #b8860b;
 }

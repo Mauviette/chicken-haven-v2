@@ -29,7 +29,11 @@ const SOUND_MAP = {
   ,
   // Marché / boîtes
   box_open: new URL('../assets/sounds/ui/error_004.ogg', import.meta.url).href,
-  chicken_results: new URL('../assets/sounds/ui/chicken-results.ogg', import.meta.url).href
+  chicken_results: new URL('../assets/sounds/ui/chicken-results.ogg', import.meta.url).href,
+  // Légendaire
+  dark_item: new URL('../assets/sounds/ui/dark-item.mp3', import.meta.url).href,
+  // Épique
+  epic_item: new URL('../assets/sounds/ui/confirmation_002.ogg', import.meta.url).href
 }
 
 function getAudio(key) {
@@ -92,6 +96,10 @@ export function useSound() {
   // Marché (volume un peu plus présent pour feedback clair)
   const boxOpen = (volume = 0.9) => play('box_open', { volume })
   const boxResults = (volume = 0.85) => play('chicken_results', { volume })
+  // Drop légendaire
+  const legendaryDrop = (volume = 1) => play('dark_item', { volume })
+  // Drop épique
+  const epicDrop = (volume = 0.9) => play('epic_item', { volume })
 
   return {
     play,
@@ -106,6 +114,8 @@ export function useSound() {
     eggClick,
     incomeUp,
     boxOpen,
-    boxResults
+    boxResults,
+    legendaryDrop,
+    epicDrop
   }
 }

@@ -40,11 +40,7 @@
         <div class="egg-container">
           <div 
             class="clickable-egg"
-            :class="{ 
-              'clickable': isClickable, 
-              'max-gains': currentGains >= eggState.maxIncome,
-              'loading': eggState.isLoading 
-            }"
+            :class="{ 'loading': eggState.isLoading, 'clickable': isClickable, 'max-gains': currentGains >= eggState.maxIncome }"
             @click="handleEggClick"
           >
             <div class="egg-sprite">🥚</div>
@@ -102,8 +98,6 @@
 
       </div>
       
-      <!-- Objets spawnés par les talents -->
-      <SpawnableObjects />
     </div>
     <!-- Overlay pour la pluie d'œufs -->
     <div ref="eggContainer" class="falling-eggs-container"></div>
@@ -120,7 +114,6 @@ import { useSound } from '@/composables/useSound'
 import { useBuffs } from '@/composables/useBuffs'
 import { apiPost } from '@/utils/api'
 import Tooltip from '@/components/menu/Tooltip.vue'
-import SpawnableObjects from '@/components/SpawnableObjects.vue'
 
 const { 
   eggState, 

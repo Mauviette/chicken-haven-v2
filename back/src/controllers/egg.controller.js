@@ -386,6 +386,7 @@ export function runTalentStorage(user) {
   const owned = user?.poulesPossedees || []
   
   let totalBonus = 0
+  let storageMultiplier = 1
   const breakdown = []
 
   // Précalculer les stats d'équipe une seule fois
@@ -414,9 +415,9 @@ export function runTalentStorage(user) {
       teamCharisme
     }
 
-    // Chercher tous les effets storage_bonus sur eggs
+    // Chercher effets relatifs au stockage
     for (const effect of calc.effects) {
-      if (effect?.type === 'storage_bonus' && effect?.resource === 'eggs') {
+      if (effect?.type === 'storage_bonus' && (effect?.resource === 'eggs' || effect?.resource == null)) {
         const amount = Number(evalExpr(effect.amount, ctx)) || 0
         totalBonus += amount
         breakdown.push({ 
@@ -424,13 +425,26 @@ export function runTalentStorage(user) {
           talentName, 
           niveau: niveauTalent, 
           amount,
-          context: { teamEnergy, teamIntelligence }
+          kind: 'add',
+          context: { teamEnergy, teamIntelligence, teamCharisme }
         })
+      } else if (effect?.type === 'storage_multiplier') {
+        const mult = Number(evalExpr(effect.amount, ctx)) || 1
+        if (mult > 0) {
+          storageMultiplier *= mult
+          breakdown.push({
+            especeId,
+            talentName,
+            niveau: niveauTalent,
+            amount: mult,
+            kind: 'mult'
+          })
+        }
       }
     }
   }
 
-  return { storageBonus: totalBonus, breakdown }
+  return { storageBonus: totalBonus, storageMultiplier, breakdown }
 }
 
 // GET /api/egg/status - Récupère le statut actuel de l'œuf cliquable
@@ -469,13 +483,13 @@ export async function getEggStatus(req, res) {
 
     // Talents passifs
     const incomeBonus = runTalentIncome(user)
-    const storageBonus = runTalentStorage(user)
+  const storageBonus = runTalentStorage(user)
     
     // Appliquer les buffs temporaires
     const buffMultipliers = computeActiveBuffMultipliers(user)
     
     const effectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
-    const effectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * buffMultipliers.storage)
+  const effectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier * buffMultipliers.storage)
     
     /*console.log(`  income talents: totalBonus=${incomeBonus.bonusPerSecond}`)
     console.log(`  storage talents: totalBonus=${storageBonus.storageBonus}`)
@@ -496,7 +510,7 @@ export async function getEggStatus(req, res) {
       totalEggs: user.resources?.eggs || 0,
       // Optionnel: debug serveur pour le front si besoin
       incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
-      storageBonus: { storageBonus: storageBonus.storageBonus, breakdown: storageBonus.breakdown },
+  storageBonus: { storageBonus: storageBonus.storageBonus, storageMultiplier: storageBonus.storageMultiplier, breakdown: storageBonus.breakdown },
       cooldowns: user.cooldowns || {}
     })
   } catch (err) {
@@ -522,13 +536,13 @@ export async function clickEgg(req, res) {
   const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
     // Talents passifs
     const incomeBonus = runTalentIncome(user)
-    const storageBonus = runTalentStorage(user)
+  const storageBonus = runTalentStorage(user)
     
     // Appliquer les buffs temporaires
     const buffMultipliers = computeActiveBuffMultipliers(user)
     
     const effectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
-    const effectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * buffMultipliers.storage)
+  const effectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier * buffMultipliers.storage)
   const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)
 
     // Log d'entrée côté serveur pour faciliter le debug

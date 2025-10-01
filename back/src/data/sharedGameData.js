@@ -126,6 +126,29 @@ export const especeData = {
     rarete: 'rare',
     stats: { intelligence: 4, energie: 1, charisme: 4 }
   }
+  ,
+  // Nouvelle poule légendaire
+  'space': {
+    nom: 'Poulette galactique',
+    description: "Une poule venue des étoiles, qui dilate votre hangar", 
+    image: 'chickens/space/basic.png',
+    talent: 'Spaciale',
+    groupe: 'chic',
+    categorie: 'eclosion',
+    rarete: 'legendaire',
+    stats: { intelligence: 4, energie: 4, charisme: 4 }
+  },
+  // Nouvelle poule épique
+  'duck': {
+    nom: 'Canard',
+    description: "Un canard très productif, motivé par n'importe quelle stat", 
+    image: 'chickens/duck/basic.png',
+    talent: 'Canard',
+    groupe: 'discret',
+    categorie: 'eclosion',
+    rarete: 'epique',
+    stats: { intelligence: 2, energie: 3, charisme: 2 }
+  }
 }
 
 // ========================
@@ -398,6 +421,45 @@ export const talentsData = {
       ]
     }
   }
+  ,
+  'Spaciale': {
+    description: "Augmente votre stockage maximum de façon multiplicative.",
+    effet: "+{niveau*10}% de stockage (multiplicatif, passif)",
+    nivType: 'legend',
+    icon: '🪐',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          // Multiplicateur passif de stockage
+          type: 'storage_multiplier',
+          amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] } ] }
+        }
+      ]
+    }
+  },
+  'Canard': {
+    description: "Augmente le revenu par seconde en fonction de TOUTES les stats d'équipe.",
+    effet: "+{0.1*niveau} /s par point de stat (Intelligence + Énergie + Charisme)",
+    nivType: 'basic',
+    icon: '🦆',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'income_bonus_per_second',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { op: 'add', args: [ { var: 'teamEnergy' }, { var: 'teamIntelligence' }, { var: 'teamCharisme' } ] },
+              { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] }
+            ]
+          }
+        }
+      ]
+    }
+  }
 }
 
 // ========================
@@ -417,12 +479,14 @@ export const groupes = [
   { 
     name: 'discret', 
     description: 'Groupe discret', 
-    rarityDropChance: [75, 25, 0, 0]
+    // Légère chance d'épique pour permettre l'obtention de Canard
+    rarityDropChance: [70, 25, 5, 0]
   },
   { 
     name: 'chic', 
     description: 'Groupe chic', 
-    rarityDropChance: [65, 25, 10, 0]
+    // Très faible chance de légendaire pour Spaciale
+    rarityDropChance: [64, 25, 10, 1]
   }
 ]
 
@@ -550,6 +614,11 @@ export const talentLevelUpgradeCost = {
     limit: 10, 
     egg_cost : [100, 2000, 5000, 10000, 50000, 100000, 500000, 1000000, 10000000],
     chicken_cost : [2, 4, 8, 16, 32, 64, 128, 256, 512]
+  },
+  legend: {
+    limit: 5,
+    egg_cost: [10000, 25000, 50000, 100000],
+    chicken_cost: [2, 4, 8, 16]
   }
 }
 

@@ -87,7 +87,7 @@ const showDetail = ref(false)
   border-color: #c98bff;
   box-shadow: 0 0 0 2px #c98bff44, 0 2px 4px rgba(0,0,0,0.08);
 }
-.post-card.rarity-legendary {
+.post-card.rarity-legendaire {
   border-color: gold;
   box-shadow: 0 0 0 2px #ffd70066, 0 2px 4px rgba(0,0,0,0.10);
 }

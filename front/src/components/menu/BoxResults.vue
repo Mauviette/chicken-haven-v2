@@ -16,7 +16,7 @@
           <div 
             v-for="(result, index) in results" 
             :key="index"
-            :class="['result-item', `rarity-${result.rarete}`]"
+            :class="['result-item', `rarity-${result.rarete}`, { 'epic-appear': result.rarete === 'epique' }]"
           >
             <div class="result-icon">
               <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
@@ -223,6 +223,18 @@ function onImageError(event) {
   border-color: #c98bff;
 }
 
+/* Animation mise en avant pour l'épique au drop */
+.epic-appear {
+  animation: epicCard 900ms ease-out both;
+  box-shadow: 0 0 16px rgba(155, 89, 182, 0.35), inset 0 0 8px rgba(155, 89, 182, 0.15);
+}
+@keyframes epicCard {
+  0% { transform: scale(0.85) rotate(-2deg); filter: saturate(0.9); }
+  40% { transform: scale(1.08) rotate(1deg); filter: saturate(1.2); }
+  70% { transform: scale(1.02) rotate(0deg); }
+  100% { transform: scale(1); }
+}
+
 .result-item.rarity-legendaire {
   border-color: gold;
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
@@ -287,7 +299,13 @@ function onImageError(event) {
 
 .results-footer {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 16px;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(244,241,232,0.6) 0%, #f4f1e8 60%);
+  padding-top: 8px;
+  padding-bottom: 6px;
+  border-top: 1px solid rgba(139, 69, 19, 0.25);
 }
 
 /* Styles responsive */

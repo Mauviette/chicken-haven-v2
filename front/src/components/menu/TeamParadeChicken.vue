@@ -13,7 +13,10 @@
         @click="emitOpenDetail"
         />
   <!-- Indicateur talent activable: petit éclair en haut à droite -->
-  <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">⚡</span>
+  <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">
+    ⚡
+    <span class="badge-subtype">{{ talentSubIcon }}</span>
+  </span>
       </div>
     </Tooltip>
     <!-- Version sans tooltip pour mobile -->
@@ -27,7 +30,10 @@
       :style="{ '--dir': direction }"
       @click="emitOpenDetail"
       />
-  <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">⚡</span>
+  <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">
+    ⚡
+    <span class="badge-subtype">{{ talentSubIcon }}</span>
+  </span>
     </div>
   </div>
 </template>
@@ -163,6 +169,35 @@ const { fetchBuffs } = useBuffs()
 function especeDataFor(id) {
   return (especies.value || {})[id] || null
 }
+
+// Détermine la sous-icône à afficher sur l'éclair selon le type de capacité
+const talentSubIcon = computed(() => {
+  try {
+    const info = especeDataFor(props.especeId)
+    const talentName = info?.talent
+    if (!talentName) return '✨'
+    const calc = talents.value?.[talentName]?.calculation
+    if (!calc) return '✨'
+    const effs = Array.isArray(calc.effects) ? calc.effects : []
+    // Cas buff de stats temporaires (ex: Maligne)
+    const statMult = effs.find(e => e?.type === 'apply_stat_multiplier')
+    if (statMult?.stats) {
+      if (statMult.stats.intelligence != null) return '🧠'
+      if (statMult.stats.energie != null) return '⚡'
+      if (statMult.stats.charisme != null) return '✨'
+      return '✨'
+    }
+    // Cas buff d'income (ex: Joyeuse)
+    const income = effs.find(e => e?.type === 'apply_buff' && (e?.buff_type === 'income' || e?.buff_type === 'income_multiplier'))
+    if (income) return '💰'
+    // Cas buff de stockage (ex: Rapide)
+    const storage = effs.find(e => e?.type === 'apply_buff' && (e?.buff_type === 'storage' || e?.buff_type === 'storage_multiplier'))
+    if (storage) return '📦'
+    return '✨'
+  } catch (_) {
+    return '✨'
+  }
+})
 
 async function triggerActiveTalent(talentName) {
   try {
@@ -401,6 +436,15 @@ watch(() => props.containerWidth, () => {
   align-items: center;
   justify-content: center;
   z-index: 2;
+}
+
+.badge-activable .badge-subtype {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  font-size: 8px;
+  line-height: 1;
+  text-shadow: -1px 0 #fff, 0 1px #fff, 1px 0 #fff, 0 -1px #fff; /* lisibilité */
 }
 
 /* Variante quand la capacité n'est pas prête */

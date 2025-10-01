@@ -3,6 +3,16 @@ import { ref, computed } from 'vue'
 import { apiGet } from '@/utils/api'
 
 const buffs = ref([])
+// Ticker temporel réactif pour réévaluer les expirations sans attendre un fetch
+const nowTs = ref(Date.now())
+if (typeof window !== 'undefined') {
+  // Éviter plusieurs timers si le composable est importé plusieurs fois
+  if (!window.__buffsNowTicker) {
+    window.__buffsNowTicker = setInterval(() => {
+      nowTs.value = Date.now()
+    }, 1000)
+  }
+}
 
 export function useBuffs() {
   // Récupère les buffs actifs de l'utilisateur
@@ -20,10 +30,10 @@ export function useBuffs() {
 
   // Filtre les buffs actifs (non expirés)
   const activeBuffs = computed(() => {
-    const now = new Date()
+    const now = nowTs.value
     return buffs.value.filter(buff => {
       if (!buff.lasts_until) return false
-      const expiresAt = new Date(buff.lasts_until)
+      const expiresAt = new Date(buff.lasts_until).getTime()
       return expiresAt > now
     })
   })
@@ -165,6 +175,7 @@ export function useBuffs() {
 
   return {
     buffs,
+    nowTs,
     activeBuffs,
     fetchBuffs,
     getTimeRemaining,
