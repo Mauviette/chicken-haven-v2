@@ -223,7 +223,22 @@ const createBuffEffectAtPosition = (rect, reward) => {
   
   // Effet principal du buff
   const effectEl = document.createElement('div')
-  const percentage = Math.round((reward.multiplier - 1) * 100)
+  let percentage = 0
+  
+  // Gérer les différents types de buffs
+  if (reward.multiplier) {
+    // Ancien format avec un seul multiplicateur
+    percentage = Math.round((reward.multiplier - 1) * 100)
+  } else if (reward.income_multiplier && reward.storage_multiplier) {
+    // Nouveau format avec multiplicateurs séparés (chocolats)
+    // Afficher le multiplicateur d'income pour simplifier
+    percentage = Math.round((reward.income_multiplier - 1) * 100)
+  } else if (reward.income_multiplier) {
+    percentage = Math.round((reward.income_multiplier - 1) * 100)
+  } else if (reward.storage_multiplier) {
+    percentage = Math.round((reward.storage_multiplier - 1) * 100)
+  }
+  
   effectEl.textContent = `+${percentage}%`
   effectEl.className = 'buff-effect'
   effectEl.style.cssText = `

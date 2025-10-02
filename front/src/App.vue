@@ -51,6 +51,7 @@ import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
 import { useDataSync } from '@/composables/useDataSync'
 import { useSound } from '@/composables/useSound'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -63,9 +64,15 @@ const { logout: performLogout } = useAuth()
 const { refreshPlayer, fetchTeam } = usePlayer()
 const { syncStatus } = useDataSync()
 const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = useSound()
+const { setToastManager } = useToast()
 
 onMounted(async () => {
   window.$toast = toast
+  
+  // Enregistrer l'instance du ToastManager pour usage global
+  if (toastManager.value) {
+    setToastManager(toastManager.value)
+  }
   
   // Initialiser la synchronisation des données de jeu
   //console.log('🔄 Initialisation de la synchronisation des données...')

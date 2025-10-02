@@ -433,7 +433,7 @@ export const talentsData = {
         {
           // Multiplicateur passif de stockage
           type: 'storage_multiplier',
-          amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] } ] }
+          amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
         }
       ]
     }

@@ -77,6 +77,14 @@ const { team, fetchTeam } = usePlayer()
 const route = useRoute()
 const router = useRouter()
 
+// Définir rareteOrder avant son utilisation
+const rareteOrder = {
+  commune: 1,
+  rare: 2,
+  epique: 3,
+  legendaire: 4,
+}
+
 onMounted(async () => {
   if (localStorage.getItem('token')) {
     await fetchTeam()
@@ -171,13 +179,6 @@ const filteredPoules = computed(() => {
 })
 
 
-
-const rareteOrder = {
-  commune: 1,
-  rare: 2,
-  epique: 3,
-  legendaire: 4,
-}
 
 const usedSlots = computed(() => (team.value?.slots || []).filter(s => s?.especeId).length)
 

@@ -321,13 +321,14 @@ const teamStatsBreakdown = computed(() => {
   return { base, buffsPerMember, memberCount }
 })
 
-// Stats d'équipe effectives (base + buffs team par membre)
+// Stats d'équipe effectives (base + buffs team par membre) * multiplicateurs temporaires
 const teamStats = computed(() => {
   const br = teamStatsBreakdown.value
+  const mult = teamStatMult.value
   return {
-    intelligence: br.base.intelligence + (br.buffsPerMember.intelligence || 0) * br.memberCount,
-    energie: br.base.energie + (br.buffsPerMember.energie || 0) * br.memberCount,
-    charisme: br.base.charisme + (br.buffsPerMember.charisme || 0) * br.memberCount,
+    intelligence: (br.base.intelligence + (br.buffsPerMember.intelligence || 0) * br.memberCount) * mult.intelligence,
+    energie: (br.base.energie + (br.buffsPerMember.energie || 0) * br.memberCount) * mult.energie,
+    charisme: (br.base.charisme + (br.buffsPerMember.charisme || 0) * br.memberCount) * mult.charisme,
   }
 })
 

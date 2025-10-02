@@ -127,7 +127,14 @@ const UserSchema = new mongoose.Schema({
       createdAt: { type: Date, default: Date.now },
       expiresAt: { type: Date, required: true }
     }
-  ]
+  ],
+
+  // Derniers spawns par spawner pour gérer les cooldowns
+  lastSpawns: {
+    type: Map,
+    of: Date,
+    default: new Map()
+  }
 
 }, { timestamps: true })
 

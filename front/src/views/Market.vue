@@ -341,7 +341,16 @@ function getBoxRarityProbabilities(box) {
     }
   })
   
-  return avgProbabilities.map(prob => Math.round(prob))
+  return avgProbabilities.map(prob => {
+    // Arrondir intelligemment : si >= 1, arrondir à l'entier, sinon garder 1 décimale
+    if (prob >= 1) {
+      return Math.round(prob)
+    } else if (prob > 0) {
+      return Math.round(prob * 10) / 10
+    } else {
+      return 0
+    }
+  })
 }
 
 // Fonction pour générer le texte du tooltip du dé

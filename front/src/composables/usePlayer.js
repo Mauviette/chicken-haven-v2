@@ -109,7 +109,12 @@ export function usePlayer() {
     await fetchTeam()
     const max = team.value.maxSlots || 3
     const slots = Array.isArray(team.value.slots) ? [...team.value.slots] : []
-    // trouver un slot libre
+    
+    // Vérifier si l'équipe est pleine
+    const filledSlots = slots.filter(s => s?.especeId).length
+    const isFull = filledSlots >= max
+    
+    // Trouver un slot libre
     let placed = false
     for (let i = 0; i < max; i++) {
       if (!slots[i] || !slots[i].especeId) {
@@ -118,11 +123,14 @@ export function usePlayer() {
         break
       }
     }
+    
     if (!placed) {
-      // Remplacer le premier slot par défaut
-      slots[0] = { especeId }
+      // Équipe pleine - retourner l'information pour que l'UI puisse gérer
+      return { success: false, teamFull: true, currentTeam: slots }
     }
-    return updateTeam(slots)
+    
+    const success = await updateTeam(slots)
+    return { success, teamFull: false }
   }
 
   async function unequipChicken(especeId) {
@@ -135,6 +143,21 @@ export function usePlayer() {
       }
     }
     return updateTeam(slots)
+  }
+
+  // Nouvelle fonction pour remplacer un membre d'équipe spécifique
+  async function replaceTeamMember(slotIndex, newEspeceId) {
+    await fetchTeam()
+    const max = team.value.maxSlots || 3
+    const slots = Array.isArray(team.value.slots) ? [...team.value.slots] : []
+    
+    if (slotIndex >= 0 && slotIndex < max) {
+      slots[slotIndex] = { especeId: newEspeceId }
+      const success = await updateTeam(slots)
+      return { success }
+    }
+    
+    return { success: false }
   }
 
   function addEggs(n) {
@@ -221,6 +244,7 @@ export function usePlayer() {
     updateTeam,
     isInTeam,
     equipChicken,
-    unequipChicken
+    unequipChicken,
+    replaceTeamMember
   }
 }

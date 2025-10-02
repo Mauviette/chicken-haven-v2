@@ -7,6 +7,7 @@ import { useGameData } from './useGameData'
 import { usePlayer } from './usePlayer'
 import { usePoules } from './usePoules'
 import { useBuffs } from './useBuffs'
+import { useToast } from './useToast'
 import { apiGet, apiPost } from '@/utils/api'
 
 // État global des objets spawned
@@ -19,6 +20,7 @@ export function useSpawnables() {
   const { team, fetchTeam, eggs, refreshPlayer } = usePlayer()
   const { poules } = usePoules()
   const { fetchBuffs } = useBuffs()
+  const { showToast } = useToast()
 
   // Fonction pour vérifier les nouveaux spawnables depuis le serveur
   const checkForNewSpawnables = async () => {
@@ -87,6 +89,22 @@ export function useSpawnables() {
       }
     } catch (error) {
       console.error('Erreur lors du clic sur spawnable:', error)
+      
+      // Gestion spécifique des erreurs API
+      if (error.message && error.message.includes('400')) {
+        if (error.message.includes('pas actif ou a expiré')) {
+          showToast('Cet objet a déjà disparu !', 'warning', 3000)
+          // Retirer l'objet de la liste locale pour éviter les clics futurs
+          const index = spawnedObjects.value.findIndex(obj => obj.id === spawnable.id)
+          if (index !== -1) {
+            spawnedObjects.value.splice(index, 1)
+          }
+        } else {
+          showToast("Erreur lors de la récupération de l'objet", 'error')
+        }
+      } else {
+        showToast("Une erreur inattendue s'est produite", 'error')
+      }
     }
     return null
   }
@@ -107,11 +125,11 @@ export function useSpawnables() {
     // Vérification immédiate
     checkForNewSpawnables()
     
-    // Polling toutes les 3 secondes
+    // Polling toutes les 1 seconde pour respecter les cooldowns courts
     pollingInterval = setInterval(() => {
       checkForNewSpawnables()
       cleanupExpiredObjects()
-    }, 3000)
+    }, 1000)
   }
 
   // Arrêter le polling

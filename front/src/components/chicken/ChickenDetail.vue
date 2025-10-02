@@ -1,6 +1,7 @@
 <template>
   <Popup @close="emit('close')">
     <div class="chicken-detail" v-if="espece">
+      <!-- Contenu principal -->
       <div class="header">
         <img :src="image" class="chicken-img" />
         <div class="header-text">
@@ -74,6 +75,15 @@
       </div>
     </div>
   </Popup>
+  
+  <!-- Popup de remplacement d'équipe -->
+  <TeamReplacementPopup 
+    v-if="showTeamReplacement"
+    :currentTeam="teamReplacementData.currentTeam"
+    :newChickenId="teamReplacementData.newChickenId"
+    @close="showTeamReplacement = false"
+    @replace="handleTeamReplacement"
+  />
 </template>
 
 <script setup>
@@ -81,6 +91,7 @@ import Popup from '@/components/menu/Popup.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
 import Tooltip from '../menu/Tooltip.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
+import TeamReplacementPopup from '@/components/TeamReplacementPopup.vue'
 import { usePoules } from '@/composables/usePoules'
 import { usePlayer } from '@/composables/usePlayer'
 import { computed, ref, onMounted } from 'vue'
@@ -96,8 +107,12 @@ const props = defineProps({
 })
 
 const { getTalentDisplayNameSync, getTalentEffectSync, getTalentNextCost, upgradeTalent, poules } = usePoules()
-const { isInTeam, equipChicken, unequipChicken, eggs } = usePlayer()
+const { isInTeam, equipChicken, unequipChicken, eggs, replaceTeamMember } = usePlayer()
 const { click, confirm, close: sndClose } = useSound()
+
+// Variables pour le système de remplacement d'équipe
+const showTeamReplacement = ref(false)
+const teamReplacementData = ref({ currentTeam: [], newChickenId: '' })
 
 function getTalentDisplayName(poule) {
   return getTalentDisplayNameSync(poule)
@@ -213,14 +228,39 @@ const upgradeTooltipText = computed(() => {
 
 async function onEquip() {
   if (!currentPoule.value || !currentPoule.value.owned) return
-  const ok = await equipChicken(currentPoule.value.especeId)
-  if (ok) {
+  
+  const result = await equipChicken(currentPoule.value.especeId)
+  
+  if (result.success) {
     const name = props.espece?.nom || currentPoule.value.especeId
     window.$toast?.(`${name} équipée`, 'team-add')
     // Certains flux d'achat équipent immédiatement : rafraîchir succès
     try { window.dispatchEvent(new CustomEvent('chicken-bought', { detail: { especeId: currentPoule.value.especeId } })) } catch (_) {}
+  } else if (result.teamFull) {
+    // Équipe pleine - montrer la popup de remplacement
+    teamReplacementData.value = {
+      currentTeam: result.currentTeam,
+      newChickenId: currentPoule.value.especeId
+    }
+    showTeamReplacement.value = true
   } else {
     window.$toast?.("Impossible d'équiper.", 'error')
+  }
+}
+
+// Fonction pour gérer le remplacement d'équipe
+async function handleTeamReplacement(slotIndex) {
+  showTeamReplacement.value = false
+  
+  const result = await replaceTeamMember(slotIndex, teamReplacementData.value.newChickenId)
+  
+  if (result.success) {
+    const name = props.espece?.nom || teamReplacementData.value.newChickenId
+    window.$toast?.(`${name} équipée`, 'team-add')
+    // Rafraîchir succès
+    try { window.dispatchEvent(new CustomEvent('chicken-bought', { detail: { especeId: teamReplacementData.value.newChickenId } })) } catch (_) {}
+  } else {
+    window.$toast?.("Impossible de remplacer.", 'error')
   }
 }
 
