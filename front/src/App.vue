@@ -162,6 +162,9 @@ html, body {
   width: 100vw;
   height: 100vh;
   cursor: url('@/assets/ui/cursor/hand_point.png') 0 0, auto;
+  max-width: 100vw;
+  max-height: 100vh;
+  position: relative;
 }
 
 a, button, input[type="button"], input[type="submit"], input[type="checkbox"] select, textarea, .pointer {
