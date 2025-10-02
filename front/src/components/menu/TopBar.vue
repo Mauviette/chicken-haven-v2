@@ -21,6 +21,9 @@
             <div class="mobile-menu-item" @click="navigateTo('/collection')" :class="{ active: isActive('/collection') }">
               🐔 Collection
             </div>
+            <div class="mobile-menu-item" @click="navigateTo('/social')" :class="{ active: isActive('/social') }">
+              👥 Social
+            </div>
             <div class="mobile-menu-divider"></div>
             <div class="mobile-menu-item" @click="openAchievements">
               🏆 Succès

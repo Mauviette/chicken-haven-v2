@@ -31,12 +31,12 @@ const CLEANUP_INTERVAL = 5000 // 5 secondes
 // Configuration par type de spawnable
 const SPAWNABLE_TYPE_CONFIG = {
   white_egg: {
-    spawnChance: 0.05,
+    spawnChance: 0.005,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
   chocolate: {
-    spawnChance: 0.05,
+    spawnChance: 0.005,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   }
@@ -58,9 +58,9 @@ function getSpawnableConfigForType(objectType, talentName) {
   const talentConfig = TALENT_SPAWN_CONFIG[talentName] || {}
   
   return {
-    spawnChance: talentConfig.spawnChanceOverride || typeConfig.spawnChance || 0.05,
-    maxActivePerUser: talentConfig.maxActiveOverride || typeConfig.maxActivePerUser || 999,
-    cooldownSeconds: talentConfig.cooldownSecondsOverride || typeConfig.cooldownSeconds || 3
+    spawnChance: talentConfig.spawnChanceOverride ?? typeConfig.spawnChance ?? 0.05,
+    maxActivePerUser: talentConfig.maxActiveOverride ?? typeConfig.maxActivePerUser ?? 999,
+    cooldownSeconds: talentConfig.cooldownSecondsOverride ?? typeConfig.cooldownSeconds ?? 3
   }
 }
 
@@ -311,9 +311,6 @@ export async function checkAvailableSpawnables(req, res) {
 // POST /api/spawnables/click - Gérer le clic sur un objet spawné
 export async function clickSpawnableObject(req, res) {
   try {
-    const user = await User.findById(req.userId)
-    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
-
     const { spawnerId, objectId, talentName, especeId } = req.body
     
     if (!spawnerId || !talentName || !especeId) {
@@ -322,33 +319,54 @@ export async function clickSpawnableObject(req, res) {
 
     const userId = req.userId.toString()
 
-    // Vérifier que le spawnable est bien actif pour cet utilisateur dans la base de données
-    const activeSpawnableIndex = user.activeSpawnables.findIndex(s => s.spawnerId === spawnerId)
-    if (activeSpawnableIndex === -1) {
-      return res.status(400).json({ error: 'Ce spawnable n\'est pas actif ou a expiré' })
+    // Utiliser findOneAndUpdate avec des conditions atomiques pour éviter la duplication
+    const updateResult = await User.findOneAndUpdate(
+      {
+        _id: req.userId,
+        'activeSpawnables.spawnerId': spawnerId,
+        'activeSpawnables.expiresAt': { $gt: new Date() }
+      },
+      {
+        $pull: { 
+          activeSpawnables: { spawnerId: spawnerId }
+        }
+      },
+      { 
+        new: false, // Retourner le document avant modification
+        lean: false
+      }
+    )
+
+    // Si aucun document n'a été trouvé/modifié, c'est que le spawnable n'existe pas ou a déjà été cliqué
+    if (!updateResult) {
+      return res.status(400).json({ error: 'Ce spawnable n\'existe pas, a expiré ou a déjà été collecté' })
     }
 
-    const activeSpawnable = user.activeSpawnables[activeSpawnableIndex]
-    
-    // Vérifier l'expiration
-    if (new Date(activeSpawnable.expiresAt) < new Date()) {
-      // Nettoyer le spawnable expiré
-      user.activeSpawnables.splice(activeSpawnableIndex, 1)
-      await saveWithRetry(user)
-      return res.status(400).json({ error: 'Ce spawnable a expiré' })
-    }
+    const user = updateResult
 
     // Vérifier que l'utilisateur a bien cette poule équipée
     const teamSlots = user.team?.slots || []
     const hasChickenInTeam = teamSlots.some(slot => slot?.especeId === especeId)
     
     if (!hasChickenInTeam) {
+      // Remettre le spawnable en place si la vérification échoue
+      await User.findByIdAndUpdate(req.userId, {
+        $push: { 
+          activeSpawnables: user.activeSpawnables.find(s => s.spawnerId === spawnerId)
+        }
+      })
       return res.status(400).json({ error: 'Cette poule n\'est pas équipée' })
     }
 
     // Récupérer les données du talent
     const talentData = talentsData[talentName]
     if (!talentData || !talentData.calculation) {
+      // Remettre le spawnable en place si la vérification échoue
+      await User.findByIdAndUpdate(req.userId, {
+        $push: { 
+          activeSpawnables: user.activeSpawnables.find(s => s.spawnerId === spawnerId)
+        }
+      })
       return res.status(400).json({ error: 'Talent introuvable' })
     }
 
@@ -359,12 +377,24 @@ export async function clickSpawnableObject(req, res) {
     )
 
     if (!spawnEffect) {
+      // Remettre le spawnable en place si la vérification échoue
+      await User.findByIdAndUpdate(req.userId, {
+        $push: { 
+          activeSpawnables: user.activeSpawnables.find(s => s.spawnerId === spawnerId)
+        }
+      })
       return res.status(400).json({ error: 'Effet de spawn introuvable' })
     }
 
     // Récupérer le niveau de talent de la poule
     const poule = user.poulesPossedees?.find(p => p.especeId === especeId)
     if (!poule) {
+      // Remettre le spawnable en place si la vérification échoue
+      await User.findByIdAndUpdate(req.userId, {
+        $push: { 
+          activeSpawnables: user.activeSpawnables.find(s => s.spawnerId === spawnerId)
+        }
+      })
       return res.status(400).json({ error: 'Poule non possédée' })
     }
 
@@ -393,7 +423,11 @@ export async function clickSpawnableObject(req, res) {
         const multipliers = computeActiveBuffMultipliers(user)
         const finalAmount = Math.floor(amount * multipliers.income)
         
-        user.resources.eggs = (user.resources.eggs || 0) + finalAmount
+        // Utiliser une opération atomique pour ajouter les œufs
+        await User.findByIdAndUpdate(req.userId, {
+          $inc: { 'resources.eggs': finalAmount }
+        })
+        
         appliedReward = { type: 'resource', resource: 'eggs', amount: finalAmount }
         
         // Mettre à jour le progrès des succès pour les œufs blancs
@@ -430,8 +464,12 @@ export async function clickSpawnableObject(req, res) {
           }
         }
         
-        user.buffs = user.buffs || []
-        user.buffs.push(incomeBuffs, storageBuff)
+        // Ajouter les buffs de manière atomique
+        await User.findByIdAndUpdate(req.userId, {
+          $push: { 
+            buffs: { $each: [incomeBuffs, storageBuff] }
+          }
+        })
         
         appliedReward = { 
           type: 'buff', 
@@ -455,8 +493,10 @@ export async function clickSpawnableObject(req, res) {
           }
         }
         
-        user.buffs = user.buffs || []
-        user.buffs.push(buff)
+        // Ajouter le buff de manière atomique
+        await User.findByIdAndUpdate(req.userId, {
+          $push: { buffs: buff }
+        })
         
         appliedReward = { 
           type: 'buff', 
@@ -466,14 +506,6 @@ export async function clickSpawnableObject(req, res) {
         }
       }
     }
-
-    await saveWithRetry(user)
-
-    // Retirer le spawnable de la liste des actifs (base de données)
-    user.activeSpawnables.splice(activeSpawnableIndex, 1)
-
-    // Sauvegarder à nouveau pour retirer le spawnable
-    await saveWithRetry(user)
 
     res.json({
       success: true,

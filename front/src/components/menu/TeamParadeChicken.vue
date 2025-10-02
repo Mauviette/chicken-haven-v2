@@ -413,7 +413,8 @@ watch(() => props.containerWidth, () => {
 
 .parade-chicken {
   display: block;
-  max-height: 56px; /* adapté à la hauteur de scène (72px) */
+  width: 56px;
+  height: 56px;
   image-rendering: pixelated;
   transform: scaleX(var(--dir, 1));
   transform-origin: bottom center;

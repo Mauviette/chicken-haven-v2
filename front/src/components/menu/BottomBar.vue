@@ -56,8 +56,8 @@
         :active="route.path === '/social'"
         class="mobile-compact"
       >
-        <span class="desktop-text">🏆 Social</span>
-        <span class="mobile-text">🏆</span>
+        <span class="desktop-text">👥 Social</span>
+        <span class="mobile-text">👥</span>
       </ActionButton>
     </div>
 

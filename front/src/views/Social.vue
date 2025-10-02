@@ -1,13 +1,7 @@
 <template>
   <div class="social-view">
     <div class="header-bar">
-      <h2 class="section-title">🏆 Classements</h2>
-      <div class="refresh-button" @click="refreshLeaderboards" :disabled="loading">
-        <button class="action-button" :disabled="loading">
-          <span v-if="loading">🔄</span>
-          <span v-else>🔄 Actualiser</span>
-        </button>
-      </div>
+      <h2 class="section-title">👥 Social</h2>
     </div>
 
     <div class="loading-container" v-if="loading">
@@ -265,6 +259,7 @@ const viewPlayer = (leaderboardPlayer) => {
   overflow-y: auto;
   max-height: 100vh;
   box-sizing: border-box;
+  position: relative;
 }
 
 .header-bar {
@@ -368,6 +363,8 @@ const viewPlayer = (leaderboardPlayer) => {
   display: flex;
   gap: 24px;
   height: 100%;
+  min-height: 0;
+  flex: 1;
 }
 
 .leaderboards-column {
@@ -524,6 +521,7 @@ const viewPlayer = (leaderboardPlayer) => {
 .player-info {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .player-name {
@@ -531,6 +529,9 @@ const viewPlayer = (leaderboardPlayer) => {
   font-weight: bold;
   color: #333;
   margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .player-id {
@@ -566,10 +567,28 @@ const viewPlayer = (leaderboardPlayer) => {
   color: #666;
 }
 
-/* Responsive */
+/* Responsive Design */
+
+/* Large tablets and small desktops */
+@media (max-width: 1200px) {
+  .main-container {
+    gap: 20px;
+  }
+  
+  .unified-leaderboard-section {
+    padding: 14px;
+  }
+  
+  .leaderboard-title {
+    font-size: 18px;
+  }
+}
+
+/* Tablets */
 @media (max-width: 1024px) {
   .main-container {
     flex-direction: column;
+    gap: 20px;
   }
   
   .sidebar-column {
@@ -579,22 +598,35 @@ const viewPlayer = (leaderboardPlayer) => {
   
   .leaderboards-column {
     max-height: none;
+    overflow-y: visible;
   }
   
   .coming-soon-section {
-    min-height: 100px;
+    min-height: 80px;
+    padding: 16px;
+  }
+  
+  .unified-leaderboard-section {
+    padding: 16px;
+  }
+  
+  .individual-leaderboard + .individual-leaderboard {
+    padding-top: 20px;
   }
 }
 
+/* Small tablets and large phones */
 @media (max-width: 768px) {
   .social-view {
     padding: 16px;
+    max-height: none;
   }
   
   .header-bar {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     text-align: center;
+    margin-bottom: 20px;
   }
   
   .section-title {
@@ -605,12 +637,32 @@ const viewPlayer = (leaderboardPlayer) => {
     gap: 16px;
   }
   
-  .leaderboards-container {
-    gap: 24px;
+  .unified-leaderboard-section {
+    padding: 12px;
+    gap: 20px;
+  }
+  
+  .individual-leaderboard + .individual-leaderboard {
+    padding-top: 16px;
+  }
+  
+  .leaderboard-title {
+    font-size: 16px;
+  }
+  
+  .leaderboard-subtitle {
+    font-size: 16px;
+  }
+  
+  .user-rank {
+    font-size: 13px;
+    padding: 6px 10px;
+    margin-top: 8px;
   }
   
   .leaderboard-item {
     padding: 10px 12px;
+    border-radius: 6px;
   }
   
   .rank-badge {
@@ -629,21 +681,82 @@ const viewPlayer = (leaderboardPlayer) => {
   .avatar-img, .default-avatar {
     width: 40px;
     height: 40px;
+    border-radius: 6px;
   }
   
   .player-name {
     font-size: 14px;
+    margin-bottom: 3px;
+  }
+  
+  .player-id {
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+  
+  .last-seen {
+    font-size: 10px;
   }
   
   .player-value {
     font-size: 14px;
     min-width: 60px;
   }
+  
+  .footer-info {
+    margin-top: 24px;
+    padding: 12px;
+  }
+  
+  .meta-info {
+    font-size: 11px;
+  }
 }
 
+/* Mobile phones */
 @media (max-width: 480px) {
+  .social-view {
+    padding: 12px;
+  }
+  
+  .header-bar {
+    margin-bottom: 16px;
+  }
+  
+  .section-title {
+    font-size: 18px;
+  }
+  
+  .main-container {
+    gap: 12px;
+  }
+  
+  .unified-leaderboard-section {
+    padding: 10px;
+    gap: 16px;
+  }
+  
+  .individual-leaderboard + .individual-leaderboard {
+    padding-top: 12px;
+  }
+  
+  .leaderboard-title {
+    font-size: 14px;
+  }
+  
+  .leaderboard-subtitle {
+    font-size: 14px;
+  }
+  
+  .user-rank {
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: 6px;
+  }
+  
   .leaderboard-item {
     padding: 8px 10px;
+    border-radius: 6px;
   }
   
   .rank-badge {
@@ -662,23 +775,105 @@ const viewPlayer = (leaderboardPlayer) => {
   .avatar-img, .default-avatar {
     width: 36px;
     height: 36px;
+    border-radius: 5px;
   }
   
   .player-info {
     margin-right: 8px;
+    min-width: 0;
   }
   
   .player-name {
     font-size: 13px;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
-  .player-id, .last-seen {
+  .player-id {
     font-size: 10px;
+    margin-bottom: 2px;
+  }
+  
+  .last-seen {
+    font-size: 9px;
   }
   
   .player-value {
     font-size: 13px;
     min-width: 50px;
+    text-align: right;
+  }
+  
+  .coming-soon-section {
+    min-height: 60px;
+    padding: 12px;
+  }
+  
+  .footer-info {
+    margin-top: 20px;
+    padding: 10px;
+  }
+  
+  .meta-info {
+    font-size: 10px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+  .social-view {
+    padding: 8px;
+  }
+  
+  .unified-leaderboard-section {
+    padding: 8px;
+  }
+  
+  .leaderboard-item {
+    padding: 6px 8px;
+  }
+  
+  .rank-badge {
+    min-width: 24px;
+    height: 24px;
+    font-size: 11px;
+    margin-right: 6px;
+  }
+  
+  .player-avatar {
+    width: 32px;
+    height: 32px;
+    margin-right: 6px;
+  }
+  
+  .avatar-img, .default-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .player-name {
+    font-size: 12px;
+    max-width: 100px;
+  }
+  
+  .player-id {
+    font-size: 9px;
+  }
+  
+  .last-seen {
+    font-size: 8px;
+  }
+  
+  .player-value {
+    font-size: 12px;
+    min-width: 45px;
+  }
+  
+  .user-rank {
+    font-size: 11px;
+    padding: 4px 6px;
   }
 }
 </style>
