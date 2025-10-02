@@ -133,6 +133,13 @@
             </div>
           </div>
         </div>
+        
+        <!-- Banderole d'informations -->
+        <div class="footer-info" v-if="meta">
+          <div class="meta-info">
+            {{ meta.totalPlayers }} joueurs • Mis à jour: {{ formatDate(meta.lastUpdated) }}
+          </div>
+        </div>
       </div>
       
       <!-- Colonne de droite : Bientôt -->
@@ -150,12 +157,6 @@
       <button @click="refreshLeaderboards" class="retry-button">
         Réessayer
       </button>
-    </div>
-
-    <div class="footer-info" v-if="meta">
-      <div class="meta-info">
-        {{ meta.totalPlayers }} joueurs • Mis à jour: {{ formatDate(meta.lastUpdated) }}
-      </div>
     </div>
 
     <br/><br/><br/>
@@ -369,8 +370,6 @@ const viewPlayer = (leaderboardPlayer) => {
 
 .leaderboards-column {
   flex: 1;
-  overflow-y: auto;
-  max-height: calc(100vh - 140px);
 }
 
 .sidebar-column {
@@ -555,10 +554,11 @@ const viewPlayer = (leaderboardPlayer) => {
 }
 
 .footer-info {
-  margin-top: 32px;
+  margin-top: 16px;
   text-align: center;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.5);
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px dashed #ffd99a;
   border-radius: 8px;
 }
 
@@ -593,7 +593,7 @@ const viewPlayer = (leaderboardPlayer) => {
   
   .sidebar-column {
     width: 100%;
-    order: -1;
+    order: 1;
   }
   
   .leaderboards-column {
