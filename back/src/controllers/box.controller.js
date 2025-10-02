@@ -2,6 +2,103 @@
 import User from '../models/User.js'
 import { especeData, groupes, boxesData } from '../data/gameData.js'
 import { updateAchievementProgress } from './achievements.controller.js'
+import { executeWithRetry } from '../utils/mongoUtils.js'
+
+// Fonction utilitaire pour effectuer une opération atomique avec retry
+async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Recharger l'utilisateur à chaque tentative pour avoir la version la plus récente
+      const user = await User.findById(userId)
+      if (!user) throw new Error('Utilisateur introuvable')
+
+      const box = boxesData.find(b => b.id === boxId)
+      if (!box) throw new Error('Boîte introuvable')
+
+      // Vérifier le niveau requis
+      const playerLevel = user.experience?.level || 1
+      if ((box.unlock_level || 1) > playerLevel) {
+        throw new Error('Niveau insuffisant pour cette boîte')
+      }
+
+      // Vérifier les ressources
+      const resourceType = box.price.type === 'eggs' ? 'eggs' : 
+                          box.price.type === 'stock_token' ? 'stock_token' : 
+                          box.price.type === 'production_token' ? 'production_token' : null
+
+      if (!resourceType) throw new Error('Type de ressource invalide')
+
+      const playerResources = user.resources || {}
+      const currentAmount = playerResources[resourceType] || 0
+
+      if (currentAmount < box.price.count) {
+        throw new Error(`Ressources insuffisantes (${currentAmount}/${box.price.count})`)
+      }
+
+      // Calculer les poules déjà possédées
+      const ownedChickens = (user.poulesPossedees || [])
+        .filter(poule => poule.quantite > 0)
+        .map(poule => poule.especeId)
+
+      // Simuler l'ouverture de boîte
+      const results = simulateBoxOpening(box, ownedChickens)
+
+      // Appliquer les changements
+      playerResources[resourceType] = currentAmount - box.price.count
+      user.resources = playerResources
+
+      // Ajouter les poules obtenues
+      const addedChickens = []
+      for (const result of results) {
+        const existingPoule = user.poulesPossedees.find(p => p.especeId === result.chickenId)
+        
+        if (existingPoule) {
+          existingPoule.quantite += 1
+        } else {
+          user.poulesPossedees.push({
+            especeId: result.chickenId,
+            quantite: 1,
+            niveauTalent: 1,
+            new: true
+          })
+        }
+
+        // Préparer les données de réponse
+        const chickenData = especeData[result.chickenId]
+        addedChickens.push({
+          especeId: result.chickenId,
+          nom: chickenData?.nom || result.chickenId,
+          rarete: chickenData?.rarete || 'commune',
+          groupe: result.groupName,
+          isNew: !ownedChickens.includes(result.chickenId)
+        })
+      }
+
+      // Sauvegarder atomiquement
+      await user.save() // Ici on garde user.save() car c'est déjà dans executeWithRetry
+
+      // Retourner le résultat
+      return {
+        box: { id: box.id, name: box.name, cost: box.price },
+        results: addedChickens,
+        newBalance: { [resourceType]: playerResources[resourceType] }
+      }
+
+    } catch (error) {
+      // Si c'est un conflit de version et qu'il reste des tentatives
+      if (error.name === 'VersionError' && attempt < maxRetries) {
+        console.log(`⚠️ Conflit de version détecté lors de l'ouverture de boîte (tentative ${attempt}/${maxRetries})`)
+        
+        // Attendre un délai exponentiel avant de retenter
+        await new Promise(resolve => setTimeout(resolve, attempt * 100))
+        continue
+      }
+      
+      // Relancer l'erreur si ce n'est pas un VersionError ou si on a épuisé les tentatives
+      throw error
+    }
+  }
+}
 
 // GET /api/boxes - Récupérer les boîtes disponibles
 export async function getBoxes(req, res) {
@@ -23,108 +120,47 @@ export async function getBoxes(req, res) {
 // POST /api/boxes/:boxId/open - Ouvrir une boîte
 export async function openBox(req, res) {
   try {
-    const user = await User.findById(req.userId)
-    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
-
     const boxId = parseInt(req.params.boxId)
-    const box = boxesData.find(b => b.id === boxId)
     
-    if (!box) return res.status(404).json({ error: 'Boîte introuvable' })
+    // Exécuter l'opération atomique avec retry automatique
+    const result = await executeAtomicBoxOperation(req.userId, boxId)
 
-    // Vérifier le niveau requis
-    const playerLevel = user.experience?.level || 1
-    if ((box.unlock_level || 1) > playerLevel) {
-      return res.status(403).json({ error: 'Niveau insuffisant pour cette boîte' })
-    }
-
-    // Vérifier si le joueur a assez de ressources
-    const resourceType = box.price.type === 'eggs' ? 'eggs' : 
-                        box.price.type === 'stock_token' ? 'stock_token' : 
-                        box.price.type === 'production_token' ? 'production_token' : null
-
-    if (!resourceType) {
-      return res.status(400).json({ error: 'Type de ressource invalide' })
-    }
-
-    const playerResources = user.resources || {}
-    const currentAmount = playerResources[resourceType] || 0
-
-    if (currentAmount < box.price.count) {
-      return res.status(400).json({ 
-        error: 'Ressources insuffisantes',
-        required: box.price.count,
-        current: currentAmount
+    // Mettre à jour le progrès des succès (en dehors de l'opération atomique)
+    try {
+      await updateAchievementProgress(req.userId, 'increment', {
+        totalBoxesOpened: 1
       })
-    }
-
-    // Déduire le coût
-    playerResources[resourceType] = currentAmount - box.price.count
-    user.resources = playerResources
-
-    // Calculer les poules déjà possédées
-    const ownedChickens = (user.poulesPossedees || [])
-      .filter(poule => poule.quantite > 0)
-      .map(poule => poule.especeId)
-
-    // Simuler l'ouverture de boîte
-    const results = simulateBoxOpening(box, ownedChickens)
-
-    // Ajouter les poules obtenues au joueur
-    const addedChickens = []
-    for (const result of results) {
-      const existingPoule = user.poulesPossedees.find(p => p.especeId === result.chickenId)
       
-      if (existingPoule) {
-        // Augmenter la quantité sans marquer comme "new" si déjà possédée
-        existingPoule.quantite += 1
-        // Ne pas toucher à existingPoule.new ici
-      } else {
-        // Ajouter nouvelle poule (marquée comme nouvelle)
-        user.poulesPossedees.push({
-          especeId: result.chickenId,
-          quantite: 1,
-          niveauTalent: 1,
-          new: true
+      const userForAchievements = await User.findById(req.userId)
+      if (userForAchievements) {
+        await updateAchievementProgress(req.userId, 'max', {
+          totalChickensOwned: userForAchievements.poulesPossedees.length
         })
       }
-
-      // Préparer les données de réponse
-      const chickenData = especeData[result.chickenId]
-      addedChickens.push({
-        especeId: result.chickenId,
-        nom: chickenData?.nom || result.chickenId,
-        rarete: chickenData?.rarete || 'commune',
-        groupe: result.groupName,
-        isNew: !ownedChickens.includes(result.chickenId)
-      })
+    } catch (achievementError) {
+      // Les erreurs de succès ne doivent pas faire échouer l'ouverture de boîte
+      console.warn('Erreur lors de la mise à jour des succès:', achievementError)
     }
-
-    // Sauvegarder les changements
-    await user.save()
-
-    // Mettre à jour le progrès des succès
-    await updateAchievementProgress(req.userId, 'increment', {
-      totalBoxesOpened: 1
-    })
-    await updateAchievementProgress(req.userId, 'max', {
-      totalChickensOwned: user.poulesPossedees.length
-    })
 
     res.json({
       success: true,
-      box: {
-        id: box.id,
-        name: box.name,
-        cost: box.price
-      },
-      results: addedChickens,
-      newBalance: {
-        [resourceType]: playerResources[resourceType]
-      }
+      ...result
     })
 
   } catch (err) {
     console.error('Erreur openBox:', err)
+    
+    // Gestion d'erreurs spécifiques
+    if (err.message.includes('Ressources insuffisantes')) {
+      return res.status(400).json({ error: err.message })
+    }
+    if (err.message.includes('Niveau insuffisant')) {
+      return res.status(403).json({ error: err.message })
+    }
+    if (err.message.includes('introuvable')) {
+      return res.status(404).json({ error: err.message })
+    }
+    
     res.status(500).json({ error: 'Erreur serveur lors de l\'ouverture de la boîte' })
   }
 }

@@ -79,7 +79,7 @@
               </div>
               <div class="gains-text">
                 <Tooltip :text="storageTooltipHtml">
-                  <span>{{ Math.floor(currentGains) }} / {{ eggState.maxIncome }}</span>
+                  <span>{{ Math.floor(currentGains) }} / {{ Math.round(eggState.maxIncome) }}</span>
                 </Tooltip>
               </div>
               <div class="gains-per-click">
@@ -467,11 +467,11 @@ const storageTooltipHtml = computed(() => {
 
   let html = `<div>`
   html += `<div style="font-weight:bold;margin-bottom:4px;">Stockage maximum</div>`
-  html += `<div>Base (incl. améliorations): <strong>${base}</strong></div>`
+  html += `<div>Base (incl. améliorations): <strong>${Math.round(base)}</strong></div>`
 
   if (bonusDetails.storage.entries.length) {
     for (const e of bonusDetails.storage.entries) {
-      html += `<div>${e.talentName} — ${e.name} (niv ${roman(e.level)}): <strong>+${e.amount}</strong></div>`
+      html += `<div>${e.talentName} — ${e.name} (niv ${roman(e.level)}): <strong>+${Math.round(e.amount)}</strong></div>`
     }
   } else {
     html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
@@ -492,12 +492,12 @@ const storageTooltipHtml = computed(() => {
   }*/
 
   html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">`
-  html += `<div>Sous-total: <strong>${subtotal}</strong></div>`
+  html += `<div>Sous-total: <strong>${Math.round(subtotal)}</strong></div>`
   if (storageBuffs.length > 0) {
     const buffMultiplier = getStorageBuffMultiplier()
     html += `<div>Multiplicateur buffs: <strong>x${buffMultiplier.toFixed(2)}</strong></div>`
   }
-  html += `<div style="font-weight:bold;">Total: <strong>${effective}</strong></div>`
+  html += `<div style="font-weight:bold;">Total: <strong>${Math.round(effective)}</strong></div>`
   html += `</div>`
   html += `</div>`
   return html

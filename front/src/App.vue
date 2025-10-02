@@ -27,6 +27,7 @@
       @open-production="goProduction"
       @open-market="goMarket"
       @open-collection="goCollection"
+      @open-social="goSocial"
       @open-help="toast('Bientôt disponible !')"
       @open-options="openOptions"
       @open-achievements="toggleAchievementsWithSound"
@@ -146,6 +147,9 @@ function goMarket() {
 }
 function goCollection() {
   click(); router.push('/collection')
+}
+function goSocial() {
+  click(); router.push('/social')
 }
 function openOptions() {
   sndOpen(); showOptions.value = true

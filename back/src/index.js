@@ -14,6 +14,7 @@ import userRoutes from './routes/user.routes.js'
 import upgradesRoutes from './routes/upgrades.routes.js'
 import talentRoutes from './routes/talent.routes.js'
 import spawnablesRoutes from './routes/spawnables.routes.js'
+import socialRoutes from './routes/social.routes.js'
 
 dotenv.config()
 const app = express()
@@ -68,6 +69,7 @@ app.use('/api/user', userRoutes)
 app.use('/api/upgrades', upgradesRoutes)
 app.use('/api/talent', talentRoutes)
 app.use('/api/spawnables', spawnablesRoutes)
+app.use('/api/social', socialRoutes)
 
 app.get('/', (req, res) => {
   res.json({ 

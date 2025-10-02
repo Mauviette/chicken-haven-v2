@@ -9,8 +9,14 @@ const team = ref({ maxSlots: 3, slots: [] })
 const level = ref(1)
 const xp = ref(0)
 const xpRequired = ref(2)
+const player = ref(null)
 
 export function usePlayer() {
+  // Initialiser les données du joueur si pas déjà fait
+  if (!player.value && typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
+    refreshPlayer().catch(() => {}) // Silencieux si erreur
+  }
+
   async function refreshPlayer() {
     try {
       //console.log('🔄 refreshPlayer: début')
@@ -34,6 +40,14 @@ export function usePlayer() {
       try {
         const u = await apiGet('/api/user/me')
         if (u) {
+          // Stocker les informations de base de l'utilisateur
+          player.value = {
+            profileId: u?.profileId || u?.id || null,
+            username: u?.username || null,
+            avatar: u?.avatar || null,
+            lastSeen: u?.lastSeen || null
+          }
+          
           const prevLevel = level.value || 1
           const currentProfileId = u?.profileId || u?.id || null
           // Mémorise le dernier utilisateur pour éviter un faux level-up lors d'un switch de compte
@@ -230,6 +244,7 @@ export function usePlayer() {
     level,
     xp,
     xpRequired,
+    player,
     addEggs,
     spendEggs,
     setEggs,

@@ -358,7 +358,7 @@ const createRewardEffect = (clickedElement, amount) => {
   width: 125%;
   height: 125%;
   pointer-events: none;
-  z-index: 5;
+  z-index: 150;
 }
 
 .spawnable-object {
@@ -366,7 +366,7 @@ const createRewardEffect = (clickedElement, amount) => {
   pointer-events: auto;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
   transform: translate(-50%, -50%);
-  z-index: 10;
+  z-index: 160;
   user-select: none;
 }
 

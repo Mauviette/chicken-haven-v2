@@ -1,6 +1,7 @@
 import User from '../models/User.js'
 import { updateAchievementProgress } from './achievements.controller.js'
 import { especeData, talentsData } from '../data/sharedGameData.js'
+import { saveWithRetry } from '../utils/mongoUtils.js'
 
 // Évalue une expression DSL { op, args } ou { var } ou un nombre
 function evalExpr(expr, ctx) {
@@ -461,13 +462,13 @@ export async function getEggStatus(req, res) {
         maxIncome: 30,
         currentStocked: 0
       }
-      await user.save()
+      await saveWithRetry(user)
     }
 
     // Si lastClick n'est pas défini ou est une fonction, l'initialiser
     if (!user.clickableEgg.lastClick || typeof user.clickableEgg.lastClick === 'function') {
       user.clickableEgg.lastClick = new Date()
-      await user.save()
+      await saveWithRetry(user)
     }
 
     const now = new Date()
@@ -629,7 +630,7 @@ export async function clickEgg(req, res) {
     user.clickableEgg.maxIncome = maxIncome
     user.clickableEgg.currentStocked = 0
 
-    await user.save()
+    await saveWithRetry(user)
 
     // Mettre à jour le progrès des succès
     await updateAchievementProgress(req.userId, 'increment', {

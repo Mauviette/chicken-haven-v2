@@ -50,11 +50,15 @@
         ></span>
       </div>
 
-      <!--ActionButton
-        :onClick="() => emit('open-help')"
+      <ActionButton
+        :onClick="() => emit('open-social')"
+        :disabled="route.path === '/social'"
+        :active="route.path === '/social'"
+        class="mobile-compact"
       >
-        ❓ Aide
-      </ActionButton-->
+        <span class="desktop-text">🏆 Social</span>
+        <span class="mobile-text">🏆</span>
+      </ActionButton>
     </div>
 
     <div class="side-buttons right-side">
@@ -84,7 +88,7 @@ import { useGameData } from '@/composables/useGameData'
 import { usePoules } from '@/composables/usePoules'
 const route = useRoute()
 
-const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-help', 'open-options', 'open-achievements'])
+const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements'])
 
 // Succès non réclamés -> badge sur le bouton
 const {

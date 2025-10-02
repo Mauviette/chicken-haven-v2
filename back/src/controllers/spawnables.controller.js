@@ -15,6 +15,9 @@ import {
 // Importer la fonction de mise à jour des succès
 import { updateAchievementProgress } from './achievements.controller.js'
 
+// Importer l'utilitaire pour gérer les conflits de version
+import { saveWithRetry } from '../utils/mongoUtils.js'
+
 // ============================================
 // CONFIGURATION DES SPAWNABLES
 // ============================================
@@ -55,9 +58,9 @@ function getSpawnableConfigForType(objectType, talentName) {
   const talentConfig = TALENT_SPAWN_CONFIG[talentName] || {}
   
   return {
-    spawnChance: talentConfig.spawnChanceOverride || typeConfig.spawnChance || 0.5,
+    spawnChance: talentConfig.spawnChanceOverride || typeConfig.spawnChance || 0.05,
     maxActivePerUser: talentConfig.maxActiveOverride || typeConfig.maxActivePerUser || 999,
-    cooldownSeconds: talentConfig.cooldownSecondsOverride || typeConfig.cooldownSeconds || 10
+    cooldownSeconds: talentConfig.cooldownSecondsOverride || typeConfig.cooldownSeconds || 3
   }
 }
 
@@ -96,11 +99,15 @@ function evalExpr(expr, ctx) {
   return 0
 }
 
-// Fonction pour calculer le stockage total comme dans egg controller
+// Fonction pour calculer le stockage total comme dans egg controller (avec buffs temporaires)
 function calculateTotalStorage(user) {
   const baseMaxIncome = user.clickableEgg?.maxIncome || 100
   const storageBonus = runTalentStorage(user)
-  const effectiveMaxIncome = Math.max(0, baseMaxIncome + storageBonus.storageBonus)
+  
+  // Appliquer les buffs temporaires comme dans egg.controller.js
+  const buffMultipliers = computeActiveBuffMultipliers(user)
+  
+  const effectiveMaxIncome = Math.max(0, (baseMaxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier * buffMultipliers.storage)
   
   return effectiveMaxIncome
 }
@@ -290,7 +297,7 @@ export async function checkAvailableSpawnables(req, res) {
 
     // Sauvegarder les changements (spawnables expirés nettoyés + nouveaux spawnables)
     if (user.isModified()) {
-      await user.save()
+      await saveWithRetry(user)
     }
 
     res.json({ spawnables: availableSpawnables })
@@ -327,7 +334,7 @@ export async function clickSpawnableObject(req, res) {
     if (new Date(activeSpawnable.expiresAt) < new Date()) {
       // Nettoyer le spawnable expiré
       user.activeSpawnables.splice(activeSpawnableIndex, 1)
-      await user.save()
+      await saveWithRetry(user)
       return res.status(400).json({ error: 'Ce spawnable a expiré' })
     }
 
@@ -460,13 +467,13 @@ export async function clickSpawnableObject(req, res) {
       }
     }
 
-    await user.save()
+    await saveWithRetry(user)
 
     // Retirer le spawnable de la liste des actifs (base de données)
     user.activeSpawnables.splice(activeSpawnableIndex, 1)
 
     // Sauvegarder à nouveau pour retirer le spawnable
-    await user.save()
+    await saveWithRetry(user)
 
     res.json({
       success: true,

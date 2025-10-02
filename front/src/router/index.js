@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Production from '@/views/Production.vue'
 import Market from '@/views/Market.vue'
 import Collection from '@/views/Collection.vue'
+import Social from '@/views/Social.vue'
 import UserProfile from '@/views/UserProfile.vue'
 import Auth from '@/views/AuthView.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -36,8 +37,13 @@ const routes = [
     name: 'Collection',
     component: Collection,
     meta: { requiresAuth: true }
-  }
-  ,
+  },
+  {
+    path: '/social',
+    name: 'Social',
+    component: Social,
+    meta: { requiresAuth: true }
+  },
   {
     path: '/user/:id',
     name: 'UserProfile',
