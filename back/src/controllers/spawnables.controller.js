@@ -12,6 +12,9 @@ import {
   runTalentStorage 
 } from './egg.controller.js'
 
+// Importer la fonction de mise à jour des succès
+import { updateAchievementProgress } from './achievements.controller.js'
+
 // ============================================
 // CONFIGURATION DES SPAWNABLES
 // ============================================
@@ -163,11 +166,7 @@ export async function checkAvailableSpawnables(req, res) {
     const teamSlots = user.team?.slots || []
     const activeTeam = teamSlots.filter(slot => slot?.especeId).map(slot => slot.especeId)
 
-    console.log(`🔍 Checking spawnables for user ${req.userId}`)
-    console.log(`👥 Active team:`, activeTeam)
-
     if (activeTeam.length === 0) {
-      console.log(`❌ No active team`)
       return res.json({ spawnables: [] })
     }
 
@@ -179,47 +178,37 @@ export async function checkAvailableSpawnables(req, res) {
     const cleanedSpawnables = initialSpawnablesCount - user.activeSpawnables.length
     
     if (cleanedSpawnables > 0) {
-      console.log(`🧹 Nettoyé ${cleanedSpawnables} spawnables expirés pour l'utilisateur ${req.userId}`)
+      // Spawnables nettoyés
     }
     
     const availableSpawnables = []
 
     // Parcourir l'équipe active
     for (const especeId of activeTeam) {
-      console.log(`🐔 Checking spawnable for espèce: ${especeId}`)
-      
       const poule = user.poulesPossedees?.find(p => p.especeId === especeId)
       if (!poule) {
-        console.log(`❌ Poule ${especeId} not found in poulesPossedees`)
         continue
       }
 
       const niveau = Math.max(1, Number(poule.niveauTalent) || 1)
-      console.log(`📊 Poule ${especeId} niveau: ${niveau}`)
 
       // Trouver l'espèce et son talent dans les données partagées
       const especeInfo = especeData[especeId]
       
       if (!especeInfo || !especeInfo.talent) {
-        console.log(`❌ No espèce info or talent for ${especeId}`)
         continue
       }
 
       const talentName = especeInfo.talent
-      console.log(`🎯 Talent for ${especeId}: ${talentName}`)
-      
       const talentData = talentsData[talentName]
 
       if (!talentData || !talentData.calculation?.effects) {
-        console.log(`❌ No talent data or effects for ${talentName}`)
         continue
       }
 
       const spawnEffects = talentData.calculation.effects.filter(effect => 
         effect.type === 'spawn_clickable'
       )
-
-      console.log(`🎪 Found ${spawnEffects.length} spawn effects for ${talentName}`)
 
       for (const spawnEffect of spawnEffects) {
         const objectType = spawnEffect.spawner_id || spawnEffect.objectType || 'white_egg'
@@ -234,7 +223,6 @@ export async function checkAvailableSpawnables(req, res) {
         ).length
         
         if (activeSpawnablesOfType >= config.maxActivePerUser) {
-          console.log(`🚫 Limite globale atteinte pour ${objectType} (${activeSpawnablesOfType}/${config.maxActivePerUser})`) 
           continue
         }
         
@@ -259,20 +247,9 @@ export async function checkAvailableSpawnables(req, res) {
           // Appliquer directement le pourcentage de chance configuré
           const spawnChance = Math.random()
           
-          console.log(`🎯 Spawn check for ${objectType}:`, {
-            talentName,
-            cooldownMs: spawnInterval,
-            timeSinceLastSpawn: now - new Date(lastSpawn).getTime(),
-            spawnChance,
-            requiredChance: config.spawnChance,
-            willSpawn: spawnChance < config.spawnChance
-          })
-          
           if (spawnChance < config.spawnChance) {
             const spawnableId = `${spawnerId}_${now}`
             const expiresAt = new Date(now + SPAWNABLE_LIFETIME)
-            
-            console.log(`✨ Spawning ${objectType} for ${talentName}`)
             
             const newSpawnable = {
               id: spawnableId,
@@ -305,7 +282,7 @@ export async function checkAvailableSpawnables(req, res) {
             
             console.log(`🥚 Spawnable available: ${talentName}/${objectType} for ${especeId} (niveau ${niveau}) - Chance: ${(config.spawnChance * 100).toFixed(1)}%`)
           } else {
-            console.log(`🎲 Spawnable chance échouée: ${talentName}/${objectType} for ${especeId} (${(spawnChance * 100).toFixed(1)}% > ${(config.spawnChance * 100).toFixed(1)}%)`)
+            // Chance échouée
           }
         }
       }
@@ -397,15 +374,6 @@ export async function clickSpawnableObject(req, res) {
       teamCharisme: computeTeamCharisme(user)
     }
 
-    console.log(`💰 Calcul de récompense pour ${talentName}:`, {
-      baseStorage: user.clickableEgg?.maxIncome || 100,
-      totalStorage,
-      niveau,
-      storageBonus: runTalentStorage(user).storageBonus,
-      storageMultiplier: runTalentStorage(user).storageMultiplier,
-      activeBuffs: user.buffs?.filter(b => new Date(b.lasts_until) > new Date()).length || 0
-    })
-
     // Traiter la récompense
     const reward = spawnEffect.reward
     let appliedReward = null
@@ -418,14 +386,13 @@ export async function clickSpawnableObject(req, res) {
         const multipliers = computeActiveBuffMultipliers(user)
         const finalAmount = Math.floor(amount * multipliers.income)
         
-        console.log(`🥚 Récompense œuf calculée:`, {
-          baseAmount: amount,
-          incomeMultiplier: multipliers.income,
-          finalAmount
-        })
-        
         user.resources.eggs = (user.resources.eggs || 0) + finalAmount
         appliedReward = { type: 'resource', resource: 'eggs', amount: finalAmount }
+        
+        // Mettre à jour le progrès des succès pour les œufs blancs
+        await updateAchievementProgress(req.userId, 'increment', {
+          totalEggsCollected: finalAmount
+        })
       }
     } else if (reward.type === 'buff') {
       const duration = evalExpr(reward.duration, ctx) || 15000
@@ -466,8 +433,6 @@ export async function clickSpawnableObject(req, res) {
           income_multiplier: incomeMultiplier,
           storage_multiplier: storageMultiplier
         }
-        
-        console.log(`🍫 Buff income+storage appliqué: income x${incomeMultiplier}, storage x${storageMultiplier} pendant ${Math.round(duration/1000)}s`)
       } else {
         // Ancien système avec un seul multiplicateur
         const multiplier = evalExpr(reward.multiplier, ctx) || 1.5
@@ -492,8 +457,6 @@ export async function clickSpawnableObject(req, res) {
           duration, 
           multiplier 
         }
-        
-        console.log(`🍫 Buff appliqué: ${reward.buff_type} x${multiplier} pendant ${Math.round(duration/1000)}s`)
       }
     }
 
@@ -504,9 +467,6 @@ export async function clickSpawnableObject(req, res) {
 
     // Sauvegarder à nouveau pour retirer le spawnable
     await user.save()
-
-    // Log pour debug
-    console.log(`🎯 Spawnable clicked: ${talentName} by user ${req.userId}, reward:`, appliedReward)
 
     res.json({
       success: true,

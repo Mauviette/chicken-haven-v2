@@ -123,7 +123,7 @@ function toggleSortOrder() {
 
 const filteredPoules = computed(() => {
   // Attendre que les données soient chargées
-  if (gameDataLoading.value || !especeData || !poules.value) {
+  if (gameDataLoading.value || !especeData.value || !poules.value) {
     return []
   }
 
@@ -131,7 +131,8 @@ const filteredPoules = computed(() => {
 
   // Enrichissement avec score de pertinence et infos
   const withMeta = poules.value.map((poule) => {
-    const espece = especeData[poule.especeId]
+    const espece = especeData.value[poule.especeId]
+    
     const matchScore = query && espece
       ? [
           espece.nom,
@@ -157,17 +158,22 @@ const filteredPoules = computed(() => {
 
   // Tri des poules débloquées
   unlocked.sort((a, b) => {
-    if (b._matchScore !== a._matchScore) return b._matchScore - a._matchScore
-
-    // Prioriser les poules en équipe
-    if (a._inTeam !== b._inTeam) return a._inTeam ? -1 : 1
-
-    if (sortKey.value) {
+    // Si on recherche quelque chose, prioriser les résultats pertinents
+    if (query && b._matchScore !== a._matchScore) {
+      return b._matchScore - a._matchScore
+    }
+    
+    // Si on ne recherche rien, appliquer le tri choisi directement
+    if (!query && sortKey.value) {
       const valA = sortKey.value === 'rarete' ? a._rareteIndex : (a[sortKey.value] ?? 0)
       const valB = sortKey.value === 'rarete' ? b._rareteIndex : (b[sortKey.value] ?? 0)
       const dir = sortOrder.value === 'asc' ? 1 : -1
+      
       if (valA !== valB) return (valA - valB) * dir
     }
+    
+    // En dernier recours, prioriser les poules en équipe
+    if (a._inTeam !== b._inTeam) return a._inTeam ? -1 : 1
 
     return 0
   })

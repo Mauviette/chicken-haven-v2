@@ -53,7 +53,7 @@ const props = defineProps({
 })
 
 const { especies } = useGameData()
-const { getTalentDisplayNameSync, getImage } = usePoules()
+const { getTalentDisplayNameSync, getImage, poules } = usePoules()
 
 const selectedIndex = ref(-1)
 
@@ -71,7 +71,12 @@ const getMemberTalent = (especeId) => {
   if (!especeId) return ''
   const espece = especies.value?.[especeId]
   if (!espece) return ''
-  return getTalentDisplayNameSync({ especeId, niveauTalent: 1 })
+  
+  // Récupérer le niveau de talent réel de la poule
+  const poule = poules.value?.find(p => p.especeId === especeId)
+  const niveauTalent = Math.max(1, Number(poule?.niveauTalent) || 1)
+  
+  return getTalentDisplayNameSync({ especeId, niveauTalent })
 }
 
 const confirmReplacement = () => {

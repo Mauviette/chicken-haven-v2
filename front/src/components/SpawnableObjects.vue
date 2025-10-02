@@ -57,10 +57,8 @@ const handleClick = async (obj, event) => {
     
     // Créer l'effet visuel avec le vrai montant ou buff
     if (reward && reward.type === 'resource' && reward.resource === 'eggs') {
-      console.log('🎨 Création de l\'effet visuel pour:', reward.amount, 'œufs')
       createRewardEffectAtPosition(rect, reward.amount)
     } else if (reward && reward.type === 'buff') {
-      console.log('🍫 Création de l\'effet visuel pour buff:', reward.buff_type)
       createBuffEffectAtPosition(rect, reward)
     }
     
@@ -81,8 +79,6 @@ const handleClick = async (obj, event) => {
 
 // Fonction pour créer l'effet visuel de récompense à une position donnée
 const createRewardEffectAtPosition = (rect, amount) => {
-  console.log('🎨 createRewardEffectAtPosition appelée avec:', { rect, amount })
-  
   // Rotation aléatoire pour le texte
   const randomRotation = (Math.random() - 0.5) * 40 // Entre -20 et +20 degrés
   
@@ -106,7 +102,6 @@ const createRewardEffectAtPosition = (rect, amount) => {
     user-select: none;
   `
   
-  console.log('📍 Position de l\'effet:', { left: rect.left, top: rect.top, width: rect.width })
   document.body.appendChild(effectEl)
   
   // Créer des particules d'étoiles autour
@@ -196,8 +191,6 @@ const createRewardEffectAtPosition = (rect, amount) => {
 
 // Fonction pour créer l'effet visuel des buffs
 const createBuffEffectAtPosition = (rect, reward) => {
-  console.log('🍫 createBuffEffectAtPosition appelée avec:', { rect, reward })
-  
   // Rotation aléatoire pour le texte
   const randomRotation = (Math.random() - 0.5) * 30 // Entre -15 et +15 degrés
   
