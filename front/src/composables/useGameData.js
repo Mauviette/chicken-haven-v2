@@ -3,6 +3,7 @@
 
 import { ref, computed, onMounted } from 'vue'
 import { apiGet } from '@/utils/api.js'
+import { useAuth } from './useAuth'
 
 // État global des données de jeu
 const gameData = ref(null)
@@ -17,6 +18,7 @@ let cacheTimestamp = null
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export function useGameData() {
+  const { isLoggedIn } = useAuth()
   // Fonction pour récupérer les données depuis le backend
   async function fetchGameData(forceRefresh = false) {
     try {
@@ -69,6 +71,7 @@ export function useGameData() {
   // Fonction pour vérifier si les données locales sont à jour
   async function checkDataVersion() {
     try {
+      if (!isLoggedIn()) return false
       const result = await apiGet('/api/game-data/version')
       
       if (dataVersion.value && dataVersion.value !== result.version) {

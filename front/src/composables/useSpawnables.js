@@ -2,6 +2,7 @@
 // Composable pour gérer les objets cliquables qui apparaissent grâce aux talents
 
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useAuth } from './useAuth'
 import { useGameData } from './useGameData'
 import { usePlayer } from './usePlayer'
 import { usePoules } from './usePoules'
@@ -13,6 +14,7 @@ const spawnedObjects = ref([])
 let pollingInterval = null
 
 export function useSpawnables() {
+  const { isLoggedIn } = useAuth()
   const { talents, especies } = useGameData()
   const { team, fetchTeam, eggs, refreshPlayer } = usePlayer()
   const { poules } = usePoules()
@@ -20,6 +22,8 @@ export function useSpawnables() {
 
   // Fonction pour vérifier les nouveaux spawnables depuis le serveur
   const checkForNewSpawnables = async () => {
+    // Ne pas interroger l'API si non connecté
+    if (!isLoggedIn()) return
     try {
       const response = await apiGet('/api/spawnables/check')
       const { spawnables } = response
@@ -98,6 +102,7 @@ export function useSpawnables() {
   // Démarrer le polling
   const startPolling = () => {
     if (pollingInterval) return
+    if (!isLoggedIn()) return
 
     // Vérification immédiate
     checkForNewSpawnables()
@@ -124,11 +129,21 @@ export function useSpawnables() {
 
   // Lifecycle
   onMounted(() => {
+    // Démarrer si déjà connecté
     startPolling()
+    // Écouter les changements d'auth pour démarrer/stopper dynamiquement
+    try {
+      window.addEventListener('auth-login', startPolling)
+      window.addEventListener('auth-logout', stopPolling)
+    } catch (_) {}
   })
 
   onUnmounted(() => {
     stopPolling()
+    try {
+      window.removeEventListener('auth-login', startPolling)
+      window.removeEventListener('auth-logout', stopPolling)
+    } catch (_) {}
   })
 
   return {
