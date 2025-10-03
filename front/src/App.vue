@@ -203,10 +203,14 @@ html, body {
   overflow: hidden;
   width: 100vw;
   height: 100vh;
-  cursor: url('@/assets/ui/cursor/hand_point.png') 0 0, auto;
-  max-width: 100vw;
+  min-height: 100vh;
   max-height: 100vh;
-  position: relative;
+  cursor: url('@/assets/ui/cursor/hand_point.png') 0 0, auto;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   box-sizing: border-box;
 }
 
@@ -226,38 +230,58 @@ img,
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+  width: 100vw;
   overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .main-content {
   flex: 1 1 auto;
-  min-height: 0; /* important pour permettre le scroll interne */
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   margin-bottom: 80px; /* espace pour la BottomBar fixe */
+  position: relative;
 }
 
 /* Ajustements responsifs pour la main-content */
 @media (max-width: 768px) {
   .main-content {
     margin-bottom: 0; /* pas de BottomBar sur mobile */
+    height: calc(100vh - 60px); /* hauteur TopBar */
+    max-height: calc(100vh - 60px);
   }
   
-  body {
-    padding-bottom: 0;
-    margin-bottom: 0;
+  html, body {
+    position: fixed;
+    overflow: hidden;
+  }
+  
+  #app {
+    height: 100vh;
+    max-height: 100vh;
   }
 }
 
 @media (max-width: 480px) {
   .main-content {
     margin-bottom: 0; /* pas de BottomBar sur très petits écrans */
+    height: calc(100vh - 60px);
+    max-height: calc(100vh - 60px);
   }
   
-  body {
-    padding-bottom: 0;
-    margin-bottom: 0;
+  html, body {
+    position: fixed;
+    overflow: hidden;
+    height: 100vh;
+    max-height: 100vh;
   }
 }
 
