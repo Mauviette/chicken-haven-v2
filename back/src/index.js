@@ -24,11 +24,18 @@ app.use(cors({
     // Autoriser les requêtes sans origin (ex: mobile apps, Postman)
     if (!origin) return callback(null, true)
     
+    // En développement, autoriser toutes les origines locales/privées
+    const isDevelopment = process.env.NODE_ENV !== 'production'
+    
+    if (isDevelopment) {
+      // En mode développement, autoriser toutes les origines
+      console.log(`✅ Origin autorisé (dev mode): ${origin}`)
+      return callback(null, true)
+    }
+    
+    // En production, utiliser la liste restrictive
     const allowedOrigins = [
-      'https://chickenhaven.vercel.app',
-      'http://localhost:5173',
-      'http://localhost:3002',
-      'http://localhost:4173'
+      'https://chickenhaven.vercel.app'
     ]
     
     // Vérifier si l'origin est dans la liste ou si c'est un sous-domaine Vercel
@@ -36,7 +43,7 @@ app.use(cors({
       return callback(null, true)
     }
     
-    console.log(`❌ Origin non autorisé: ${origin}`)
+    console.log(`❌ Origin non autorisé (production): ${origin}`)
     callback(new Error('Non autorisé par CORS'))
   },
   credentials: true,
@@ -98,9 +105,9 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   console.log('✅ Connecté à MongoDB')
   const PORT = process.env.PORT || 3002
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Serveur lancé sur le port ${PORT}`)
-    console.log(`📡 CORS configuré pour: chickenhaven.vercel.app`)
+  app.listen(PORT, '::', () => {
+    console.log(`🚀 Serveur lancé sur le port ${PORT} (IPv4 + IPv6)`)
+    console.log(`📡 CORS configuré pour: chickenhaven.vercel.app + réseaux locaux`)
   })
 }).catch((err) => {
   console.error('❌ Erreur de connexion MongoDB :', err.message)

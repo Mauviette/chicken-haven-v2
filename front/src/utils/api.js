@@ -1,7 +1,47 @@
 // utils/api.js
 // Utilitaire pour les appels API avec gestion centralisée des URLs et authentification
 
-const getApiBaseUrl = () => import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002'
+const getApiBaseUrl = () => {
+  // Si une URL d'API est définie explicitement dans l'environnement, l'utiliser
+  const envApiUrl = import.meta.env.VITE_API_BASE_URL
+  if (envApiUrl && envApiUrl.trim() !== '') {
+    console.log('🔧 Using configured API URL:', envApiUrl)
+    return envApiUrl
+  }
+  
+  // Sinon, détecter automatiquement l'adresse à utiliser
+  // basée sur l'URL utilisée pour accéder au frontend
+  const currentUrl = window.location
+  let hostname = currentUrl.hostname
+  const protocol = currentUrl.protocol
+  
+  console.log('🔍 Auto-detecting API URL from:', { 
+    href: currentUrl.href, 
+    hostname, 
+    protocol 
+  })
+  
+  // Si on accède via localhost, utiliser localhost pour l'API
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    const apiUrl = 'http://localhost:3002'
+    console.log('📍 Detected localhost, using:', apiUrl)
+    return apiUrl
+  }
+  
+  // Si on accède via une adresse IPv6 (contient des ':')
+  if (hostname.includes(':')) {
+    // Retirer les crochets s'ils sont déjà présents dans hostname
+    const cleanHostname = hostname.replace(/^\[|\]$/g, '')
+    const apiUrl = `${protocol}//[${cleanHostname}]:3002`
+    console.log('📍 Detected IPv6, clean hostname:', cleanHostname, 'using:', apiUrl)
+    return apiUrl
+  }
+  
+  // Si on accède via une adresse IPv4, utiliser la même pour l'API
+  const apiUrl = `${protocol}//${hostname}:3002`
+  console.log('📍 Detected IPv4, using:', apiUrl)
+  return apiUrl
+}
 
 // Déduplication des requêtes GET concurrentes (même URL + méthode + token)
 const inFlight = new Map()
