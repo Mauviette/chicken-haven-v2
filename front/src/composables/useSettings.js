@@ -15,7 +15,15 @@ export function useSettings() {
   const { token } = useAuth()
 
   async function fetchSettings() {
-    if (!token.value) return
+    if (!token.value) {
+      // Marquer comme chargées si pas de token
+      try {
+        const { useAppLoading } = await import('./useAppLoading')
+        const { setSettingsLoading } = useAppLoading()
+        setSettingsLoading(false)
+      } catch (_) {}
+      return
+    }
     try {
       const data = await apiGet('/api/auth/me')
       // Fusionner avec des valeurs par défaut et normaliser
@@ -32,8 +40,21 @@ export function useSettings() {
       merged.animations = Boolean(merged.animations)
       settings.value = merged
       isLoaded.value = true
+      
+      // Marquer comme chargées
+      try {
+        const { useAppLoading } = await import('./useAppLoading')
+        const { setSettingsLoading } = useAppLoading()
+        setSettingsLoading(false)
+      } catch (_) {}
     } catch (err) {
       console.error('Erreur lors du chargement des settings :', err)
+      // Marquer comme chargées même en cas d'erreur
+      try {
+        const { useAppLoading } = await import('./useAppLoading')
+        const { setSettingsLoading } = useAppLoading()
+        setSettingsLoading(false)
+      } catch (_) {}
     }
   }
 

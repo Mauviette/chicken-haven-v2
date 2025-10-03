@@ -169,7 +169,7 @@ p {
   border: 2px solid;
   font-family: 'Fredoka', sans-serif;
   font-weight: bold;
-  cursor: pointer;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   transition: all 0.2s ease;
 }
 

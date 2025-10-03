@@ -17,6 +17,7 @@
             </div>
             <div class="mobile-menu-item" @click="navigateTo('/market')" :class="{ active: isActive('/market'), disabled: !isMarketUnlocked }">
               🛒 Marché
+              <span v-if="isMarketUnlocked && hasAvailableUpgrade" class="menu-badge"></span>
             </div>
             <div class="mobile-menu-item" @click="navigateTo('/collection')" :class="{ active: isActive('/collection') }">
               🐔 Collection
@@ -65,6 +66,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { usePoules } from '@/composables/usePoules'
 import { useAchievements } from '@/composables/useAchievements'
 import { apiGet } from '@/utils/api.js'
+import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
 
 const { eggs, level, xp, xpRequired } = usePlayer()
 const { levelUnlocks, getLevelRewardsBetween } = useGameData()
@@ -72,6 +74,7 @@ const router = useRouter()
 const route = useRoute()
 const { getImage, hiddenImage } = usePoules()
 const { achievements } = useAchievements()
+const { hasAvailableUpgrade, initUpgradesAvailability } = useUpgradesAvailability()
 
 const props = defineProps({
   achievementsOpen: {
@@ -134,6 +137,9 @@ onMounted(async () => {
   window.addEventListener('avatar-updated', handler)
   // Nettoyage
   onBeforeUnmount(() => window.removeEventListener('avatar-updated', handler))
+
+  // Init upgrades availability for global badge
+  try { initUpgradesAvailability() } catch (_) {}
 })
 
 function toggleMobileMenu() {
@@ -258,7 +264,7 @@ const levelTooltipHtml = () => {
   width: 40px;
   height: 40px;
   position: relative;
-  cursor: pointer;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -331,7 +337,7 @@ const levelTooltipHtml = () => {
 
 .mobile-menu-item {
   padding: 12px 16px;
-  cursor: pointer;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   color: #6d3c00;
   font-size: 14px;
   border-bottom: 1px solid rgba(255, 198, 110, 0.3);

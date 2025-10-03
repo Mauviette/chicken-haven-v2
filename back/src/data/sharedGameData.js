@@ -8,7 +8,7 @@
 export const especeData = {
   'blanchonette': {
     nom: 'Blanchonette',
-    description: 'Une poule chanceuse aux plumes blanches pures',
+    description: 'Une poule aux plumes blanches pures. Elle dit qu\'elle travaille dur pour ses oeufs, mais elle les trouve par hasard.',
     image: 'chickens/white/basic.png',
     talent: 'Chanceuse',
     groupe: 'fondamental',
@@ -18,7 +18,7 @@ export const especeData = {
   },
   'poulette-rousse': {
     nom: 'Poulette Roussette',
-    description: 'Une poule énergétique aux plumes rousses flamboyantes',
+    description: 'Une poule énergétique aux plumes rousses. C\'était la première poule du poulailler.',
     image: 'chickens/red/basic.png',
     talent: 'Énergétique',
     groupe: 'fondamental',
@@ -28,17 +28,17 @@ export const especeData = {
   },
   'noiraude': {
     nom: 'Noiraude',
-    description: 'Une poule persévérante aux plumes noires comme la nuit',
+    description: 'Une poule persévérante aux plumes noires comme la nuit. Elle passe son temps à motiver les autres membres du poulailler.',
     image: 'chickens/black/basic.png',
     talent: 'Persévérante',
     groupe: 'fondamental',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 2, energie: 3, charisme: 4 }
+    stats: { intelligence: 4, energie: 3, charisme: 2 }
   },
   'argentine': {
     nom: 'Argentine',
-    description: 'Une poule vive aux reflets argentés',
+    description: 'Une poule vive aux reflets argentés, certaines poules s\'en servent comme miroir.',
     image: 'chickens/argentine/basic.png',
     talent: 'Vive',
     groupe: 'brillant',
@@ -48,17 +48,17 @@ export const especeData = {
   },
   'aubepine': {
     nom: 'Aubépine',
-    description: 'Une poule curieuse aux couleurs douces',
+    description: 'Une poule curieuse aux couleurs douces. Elle est sociable et dit bonjour à toutes les poules tous les matins.',
     image: 'chickens/aubepine/basic.png',
     talent: 'Curieuse',
     groupe: 'brillant',
     categorie: 'eclosion',
     rarete: 'rare',
-    stats: { intelligence: 4, energie: 3, charisme: 2 }
+    stats: { intelligence: 2, energie: 3, charisme: 4 }
   },
   'cendree': {
     nom: 'Cendrée',
-    description: 'Une poule discrète aux tons cendrés',
+    description: 'Une poule discrète aux tons cendrés, silencieuse mais au coeur pur.',
     image: 'chickens/cendree/basic.png',
     talent: 'Discrète',
     groupe: 'brillant',
@@ -68,7 +68,7 @@ export const especeData = {
   },
   'choco': {
     nom: 'Poulette choco',
-    description: 'Une poule gourmande aux couleurs chocolatées',
+    description: 'Une poule gourmande aux couleurs chocolatées. Elle a le sens du goût et sait ce qui est bon.',
     image: 'chickens/choco/basic.png',
     talent: 'Gourmande',
     groupe: 'discret',
@@ -78,7 +78,7 @@ export const especeData = {
   },
   'ecailleuse': {
     nom: 'Écailleuse',
-    description: 'Une poule protectrice aux motifs écaillés sophistiqués',
+    description: 'Une poule aux motifs écaillés. Elle veille sur le poulailler.',
     image: 'chickens/ecailleuse/basic.png',
     talent: 'Protectrice',
     groupe: 'discret',
@@ -88,7 +88,7 @@ export const especeData = {
   },
   'grisette': {
     nom: 'Grisette',
-    description: 'Une poule maligne aux plumes grises',
+    description: 'Une poule maligne aux plumes grises. Elle aime apprendre des choses aux autres poules.',
     image: 'chickens/grisette/basic.png',
     talent: 'Maligne',
     groupe: 'discret',
@@ -98,7 +98,7 @@ export const especeData = {
   },
   'queuedepaon': {
     nom: 'Queue de Paon',
-    description: 'Une poule majestueuse aux plumes colorées',
+    description: 'Une poule majestueuse aux plumes colorées. Elle passe son temps à se pavaner.',
     image: 'chickens/queuedepaon/basic.png',
     talent: 'Majestueuse',
     groupe: 'chic',
@@ -108,29 +108,27 @@ export const especeData = {
   },
   'rayee': {
     nom: 'Rayée',
-    description: 'Une poule rapide aux motifs rayés élégants',
+    description: 'Une poule rapide aux motifs rayés élégants. On la voit souvent courir partout.',
     image: 'chickens/rayee/basic.png',
     talent: 'Rapide',
     groupe: 'chic',
     categorie: 'eclosion',
     rarete: 'commune',
-    stats: { intelligence: 4, energie: 4, charisme: 1 }
+    stats: { intelligence: 3, energie: 5, charisme: 1 }
   },
   'tachetee': {
     nom: 'Tachetée',
-    description: 'Une poule joyeuse aux taches colorées',
+    description: 'Une poule joyeuse aux taches colorées. Elle boit du lait pour renforcer ses os.',
     image: 'chickens/tachetee/basic.png',
     talent: 'Joyeuse',
     groupe: 'chic',
     categorie: 'eclosion',
     rarete: 'rare',
     stats: { intelligence: 4, energie: 1, charisme: 4 }
-  }
-  ,
-  // Nouvelle poule légendaire
+  },
   'space': {
     nom: 'Poulette galactique',
-    description: "Une poule venue des étoiles, qui dilate votre hangar", 
+    description: "Une poule venue des étoiles, qui distord la réalité pour avoir plus de graines à midi.", 
     image: 'chickens/space/basic.png',
     talent: 'Spaciale',
     groupe: 'chic',
@@ -138,10 +136,9 @@ export const especeData = {
     rarete: 'legendaire',
     stats: { intelligence: 4, energie: 4, charisme: 4 }
   },
-  // Nouvelle poule épique
   'duck': {
     nom: 'Canard',
-    description: "Un canard très productif, motivé par n'importe quelle stat", 
+    description: "Un canard infiltré, cependant très productif pour le poulailler.", 
     image: 'chickens/duck/basic.png',
     talent: 'Canard',
     groupe: 'discret',
@@ -172,7 +169,7 @@ export const talentsData = {
           spawner_id: 'lucky_egg',
           icon: '🥚',
           style: 'white-egg',
-          spawn_rate: { op: 'div', args: [ 15000, { var: 'niveau' } ] }, // 15s / niveau
+          spawn_rate: { op: 'div', args: [ 15000, { var: 'niveau' } ] }, // 15s / nivea
           max_concurrent: { op: 'add', args: [ 1, { var: 'niveau' } ] }, // 1 + niveau
           lifetime: 8000, // 8 secondes
           reward: {
@@ -303,15 +300,15 @@ export const talentsData = {
           spawner_id: 'chocolate',
           icon: '🍫',
           style: 'chocolate',
-          spawn_rate: { op: 'div', args: [ 20000, { var: 'niveau' } ] }, // 20s / niveau
+          spawn_rate: { op: 'div', args: [ 20000, { var: 'niveau' } ] },
           max_concurrent: 2,
-          lifetime: 10000, // 10 secondes
+          lifetime: 10000,
           reward: {
             type: 'buff',
             buff_type: 'income_storage_multiplier',
-            duration: 15000, // 15s
-            income_multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }, // 1 + niveau*0.25 (25% par niveau)
-            storage_multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] } // 1 + niveau*0.25 (25% par niveau)
+            duration: 15000,
+            income_multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] },
+            storage_multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }
           }
         }
       ]
@@ -424,14 +421,13 @@ export const talentsData = {
   ,
   'Spaciale': {
     description: "Augmente votre stockage maximum de façon multiplicative.",
-    effet: "+{niveau*10}% de stockage (multiplicatif, passif)",
+    effet: "+{niveau*15}% de stockage (multiplicatif, passif)",
     nivType: 'legend',
     icon: '🪐',
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
         {
-          // Multiplicateur passif de stockage
           type: 'storage_multiplier',
           amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
         }
@@ -629,9 +625,9 @@ export const achievementsData = {
   'first_eggs': {
     id: 'first_eggs',
     nom: 'Premiers Œufs',
-    description: 'Récoltez vos 15 premiers œufs',
+    description: 'Récoltez vos 25 premiers œufs',
     icon: '🥚',
-    objectif: 15,
+    objectif: 25,
     type: 'eggs',
     reward: {
       type: 'blueberry',

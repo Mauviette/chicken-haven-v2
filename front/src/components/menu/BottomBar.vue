@@ -22,16 +22,23 @@
         <span class="mobile-text">⚒️</span>
       </ActionButton>
 
-      <ActionButton
-        :onClick="() => emit('open-market')"
-        :disabled="route.path === '/market' || !isMarketUnlocked"
-        :active="route.path === '/market'"
-        :title="!isMarketUnlocked ? 'Débloqué au niveau 2' : ''"
-        class="mobile-compact"
-      >
-        <span class="desktop-text">🛒 Marché</span>
-        <span class="mobile-text">🛒</span>
-      </ActionButton>
+      <div class="badge-wrapper market-button">
+        <ActionButton
+          :onClick="() => emit('open-market')"
+          :disabled="route.path === '/market' || !isMarketUnlocked"
+          :active="route.path === '/market'"
+          :title="!isMarketUnlocked ? 'Débloqué au niveau 2' : ''"
+          class="mobile-compact"
+        >
+          <span class="desktop-text">🛒 Marché</span>
+          <span class="mobile-text">🛒</span>
+        </ActionButton>
+        <span
+          v-if="avalaibleUpgrade"
+          class="badge-dot badge-dot--yellow"
+          title="Amélioration disponible"
+        ></span>
+      </div>
 
       <div class="badge-wrapper collection-button">
         <ActionButton
@@ -52,8 +59,9 @@
 
       <ActionButton
         :onClick="() => emit('open-social')"
-        :disabled="route.path === '/social'"
+        :disabled="route.path === '/social' || !isSocialUnlocked"
         :active="route.path === '/social'"
+        :title="!isSocialUnlocked ? 'Débloqué au niveau 3' : ''"
         class="mobile-compact"
       >
         <span class="desktop-text">👥 Social</span>
@@ -81,11 +89,12 @@
 <script setup>
 import ActionButton from '@/components/menu/ActionButton.vue'
 import { useRoute } from 'vue-router'
-import { onMounted, onUnmounted, computed } from 'vue'
+import { onMounted, onUnmounted, computed, ref } from 'vue'
 import { useAchievements } from '@/composables/useAchievements'
 import { usePlayer } from '@/composables/usePlayer'
 import { useGameData } from '@/composables/useGameData'
 import { usePoules } from '@/composables/usePoules'
+import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
 const route = useRoute()
 
 const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements'])
@@ -120,19 +129,45 @@ const { level } = usePlayer()
 const { levelUnlocks } = useGameData()
 const { poules } = usePoules()
 const isMarketUnlocked = computed(() => {
-  // Cherche si le marché est présent dans les unlocks du niveau courant
-  // Si le joueur est au niveau N, on considère qu'il a déjà franchi les niveaux < = N
-  // Donc marché est dispo si présent dans levelUnlocks[n] pour n <= level
   const l = level.value || 1
-  for (let n = 1; n <= l; n++) {
-    const arr = (levelUnlocks?.value && levelUnlocks.value[n]) ? levelUnlocks.value[n] : []
-    if (arr.some(u => u.id === 'market')) return true
-  }
+  if (l >= 2) return true;
   return false
 })
 
-// Badge rouge sur Collection si nouvelle poule
+const isSocialUnlocked = computed(() => {
+  const l = level.value || 1
+  if (l >= 3) return true;
+  return false
+})
+
 const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
+
+// Badge d'upgrade basé sur un calcul global (indépendant de la vue Market)
+const { hasAvailableUpgrade, initUpgradesAvailability, refreshUpgradeLevels } = useUpgradesAvailability()
+const marketUpgradeAvailable = ref(false)
+
+function onMarketUpgradeEvent(e) {
+  try { marketUpgradeAvailable.value = !!(e?.detail?.available) } catch (_) {}
+}
+
+onMounted(() => {
+  try {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('market-available-upgrade-changed', onMarketUpgradeEvent)
+      // État initial si déjà calculé par la vue Marché
+      marketUpgradeAvailable.value = !!window.__marketHasAvailableUpgrade
+    }
+  } catch (_) {}
+  // Initialiser la dispo globale des upgrades au démarrage de l'app (sans ouvrir Market)
+  initUpgradesAvailability()
+})
+
+onUnmounted(() => {
+  try { window.removeEventListener('market-available-upgrade-changed', onMarketUpgradeEvent) } catch (_) {}
+})
+
+const avalaibleUpgrade = computed(() => marketUpgradeAvailable.value || !!hasAvailableUpgrade.value)
+
 </script>
 
   <style scoped>
@@ -221,6 +256,12 @@ const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
     background-color: #e53935;
     box-shadow: 0 0 6px rgba(229, 57, 53, 0.8);
     border-color: #8B0000;
+  }
+
+  .badge-dot--yellow {
+    background-color: #e59f35;
+    box-shadow: 0 0 6px rgba(229, 197, 53, 0.8);
+    border-color: #8b6b00;
   }
 
   .bottom-bar button {

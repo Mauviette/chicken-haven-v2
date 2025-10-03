@@ -29,11 +29,24 @@ export function useAuth() {
   }
 
   const logout = () => {
+    console.log('🚨 Logout initiated')
+    
+    // Nettoyer le token immédiatement
     token.value = null
     localStorage.removeItem('token')
+    
     if (typeof window !== 'undefined') {
+      // Émettre événement de déconnexion
       window.dispatchEvent(new CustomEvent('auth-logout'))
+      
+      // Nettoyer les données en cache
+      try {
+        delete window.__gameDataCache
+        delete window.__marketHasAvailableUpgrade
+      } catch (_) {}
     }
+    
+    console.log('✅ Logout completed')
   }
 
 

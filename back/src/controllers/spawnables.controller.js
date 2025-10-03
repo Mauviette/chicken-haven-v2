@@ -58,7 +58,7 @@ function getSpawnableConfigForType(objectType, talentName) {
   const talentConfig = TALENT_SPAWN_CONFIG[talentName] || {}
   
   return {
-    spawnChance: talentConfig.spawnChanceOverride ?? typeConfig.spawnChance ?? 0.05,
+    spawnChance: talentConfig.spawnChanceOverride ?? typeConfig.spawnChance ?? 0.15,
     maxActivePerUser: talentConfig.maxActiveOverride ?? typeConfig.maxActivePerUser ?? 999,
     cooldownSeconds: talentConfig.cooldownSecondsOverride ?? typeConfig.cooldownSeconds ?? 3
   }

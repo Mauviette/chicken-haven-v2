@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { apiGet, apiPut } from '@/utils/api'
 
 const eggs = ref(0)
@@ -11,7 +11,36 @@ const xp = ref(0)
 const xpRequired = ref(2)
 const player = ref(null)
 
+// Fonction de nettoyage des données
+function clearPlayerData() {
+  eggs.value = 0
+  stockTokens.value = 0
+  productionTokens.value = 0
+  wildTokens.value = 0
+  player.value = null
+  level.value = 1
+  xp.value = 0
+  xpRequired.value = 2
+  team.value = { maxSlots: 3, slots: [] }
+}
+
 export function usePlayer() {
+  // Écouter les événements de déconnexion pour nettoyer les données
+  onMounted(() => {
+    const handleLogout = () => {
+      console.log('🧹 usePlayer: nettoyage suite à déconnexion')
+      clearPlayerData()
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth-logout', handleLogout)
+      
+      onBeforeUnmount(() => {
+        window.removeEventListener('auth-logout', handleLogout)
+      })
+    }
+  })
+
   // Initialiser les données du joueur si pas déjà fait
   if (!player.value && typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
     refreshPlayer().catch(() => {}) // Silencieux si erreur
@@ -23,6 +52,8 @@ export function usePlayer() {
       const token = localStorage.getItem('token')
       if (!token) {
         //console.log('❌ refreshPlayer: pas de token')
+        // Réinitialiser les données si pas de token
+        clearPlayerData()
         return
       }
 

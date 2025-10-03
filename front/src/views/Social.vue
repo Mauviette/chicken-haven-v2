@@ -141,7 +141,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Colonne de droite : Bientôt -->
       <div class="sidebar-column">
         <div class="coming-soon-section">
@@ -560,6 +560,7 @@ const viewPlayer = (leaderboardPlayer) => {
   background: rgba(255, 255, 255, 0.3);
   border: 1px dashed #ffd99a;
   border-radius: 8px;
+  margin-bottom: 30px;
 }
 
 .meta-info {
@@ -603,6 +604,7 @@ const viewPlayer = (leaderboardPlayer) => {
   
   .coming-soon-section {
     min-height: 80px;
+    margin-bottom: 60px;
     padding: 16px;
   }
   

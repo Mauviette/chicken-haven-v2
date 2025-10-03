@@ -17,6 +17,12 @@
     ⚡
     <span class="badge-subtype">{{ talentSubIcon }}</span>
   </span>
+  <!-- Badge amélioration disponible: flèche verte en haut à gauche -->
+  <span v-if="showUpgradeBadge" class="badge-upgrade" aria-label="Amélioration disponible">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="upgrade-icon">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+    </svg>
+  </span>
       </div>
     </Tooltip>
     <!-- Version sans tooltip pour mobile -->
@@ -33,6 +39,12 @@
   <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">
     ⚡
     <span class="badge-subtype">{{ talentSubIcon }}</span>
+  </span>
+  <!-- Badge amélioration disponible pour mobile -->
+  <span v-if="showUpgradeBadge" class="badge-upgrade" aria-label="Amélioration disponible">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="upgrade-icon">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+    </svg>
   </span>
     </div>
   </div>
@@ -160,11 +172,25 @@ function emitOpenDetail() {
 }
 
 // Tooltip combinant nom en gras + effet du talent
-const { especies, poules, getTalentEffectSync } = usePoules()
+const { especies, poules, getTalentEffectSync, getTalentNextCost } = usePoules()
 const { talents } = useGameData()
 const { click: sndClick, confirm: sndOk } = useSound()
 const { eggState, fetchEggStatus } = useEgg()
 const { fetchBuffs } = useBuffs()
+
+// Badge amélioration disponible (similaire à ChickenCard)
+import { usePlayer as usePlayerComposable } from '@/composables/usePlayer'
+const { eggs } = usePlayerComposable()
+const showUpgradeBadge = computed(() => {
+  const poule = (poules.value || []).find(p => p.especeId === props.especeId)
+  if (!poule) return false
+  const cost = getTalentNextCost(poule)
+  if (!cost || cost.maxed) return false
+  const needChickens = Number(cost.chicken_cost || 0)
+  const hasEggs = Number(eggs?.value ?? 0) >= Number(cost.egg_cost || 0)
+  const hasChickens = Number(poule?.quantite || 0) >= needChickens
+  return hasEggs && hasChickens
+})
 
 function especeDataFor(id) {
   return (especies.value || {})[id] || null
@@ -452,6 +478,35 @@ watch(() => props.containerWidth, () => {
 .badge-activable.not-ready {
   filter: grayscale(1) brightness(0.8);
   opacity: 0.7;
+}
+
+/* Badge amélioration disponible (style ChickenCard) */
+.badge-upgrade {
+  position: absolute;
+  top: -4px;
+  left: -12px;
+  width: 15px;
+  height: 15px;
+  background: linear-gradient(135deg, #34e89e 0%, #0f9d58 100%);
+  border: 2px solid #0b7d46;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.upgrade-icon {
+  width: 8px;
+  height: 8px;
+  animation: upgradePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes upgradePulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 
 /* Les GIF gèrent déjà l'animation; garder un léger effet visuel si souhaité (optionnel) */

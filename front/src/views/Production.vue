@@ -684,7 +684,7 @@ watch(() => currentGains.value, (nv, ov) => {
 
 // Debug des buffs actifs
 watch(() => activeBuffs.value, (newBuffs) => {
-  console.log('Buffs actifs mis à jour:', newBuffs)
+  //console.log('Buffs actifs mis à jour:', newBuffs)
 }, { immediate: true })
 </script>
 
