@@ -29,6 +29,13 @@
         </div>
       </div>
 
+
+      <div class="section">
+        <div class="value">   
+          {{ getDescription(currentPoule || poule) }}
+        </div>
+      </div>
+
       <!-- La section coûts intégrée dans le bouton d'action plus bas -->
 
       <div class="section stats-section">
@@ -106,7 +113,7 @@ const props = defineProps({
   quantite: Number
 })
 
-const { getTalentDisplayNameSync, getTalentEffectSync, getTalentNextCost, upgradeTalent, poules } = usePoules()
+const { getTalentDisplayNameSync, getTalentEffectSync, getTalentNextCost, upgradeTalent, poules, getDescription } = usePoules()
 const { isInTeam, equipChicken, unequipChicken, eggs, replaceTeamMember } = usePlayer()
 const { click, confirm, close: sndClose } = useSound()
 

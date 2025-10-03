@@ -307,13 +307,18 @@ export function usePoules() {
     }
   }
 
+  function getDescription(poule) {
+    const especiesData = especies.value || {};
+    if (!poule || !poule.especeId) return '???';
+    const espece = especiesData[poule.especeId];
+    return espece?.description || '???';
+  }
+
   return {
     poules,
     loading,
-    // Données synchronisées (utilisez useGameData directement pour accéder aux dernières données)
     especies,
     talents,
-    // Fonctions utilitaires
     getNom,
     getImage,
     getTalent,
@@ -322,7 +327,6 @@ export function usePoules() {
   fetchPoules: fetchPoulesSingleton,
   refreshPoules: fetchPoulesSingleton, // Alias pour compatibilité
   clearNew,
-    // Système de talents :
     getTalentInfo: getTalentInfoLocal,
     getTalentLevel,
     canUpgradeTalent,
@@ -332,8 +336,8 @@ export function usePoules() {
     getTalentDisplayName,
     getTalentLevelRoman,
   getTalentNextCost,
-    // Versions synchronisées (à utiliser dans les composants)
     getTalentEffectSync,
     getTalentDisplayNameSync,
+    getDescription
   }
 }

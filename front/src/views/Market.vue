@@ -33,8 +33,14 @@
         :class="['tab-button', { active: activeTab === tab.id }]"
         @click="switchTab(tab.id)"
       >
-        {{ tab.icon }} {{ tab.name }}
+        <span class="tab-label">{{ tab.icon }} {{ tab.name }}</span>
+        <span
+          v-if="tab.id === 'upgrades' && hasAvailableUpgrade"
+          class="badge-dot badge-dot--yellow tab-badge"
+          title="Amélioration disponible"
+        ></span>
       </button>
+
     </div>
 
     <!-- Contenu des onglets -->
@@ -158,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayer } from '@/composables/usePlayer'
 import { useEgg } from '@/composables/useEgg'
@@ -413,6 +419,43 @@ const upgradeOffers = computed(() => {
   })
 })
 
+// Calcul côté Marché: existe-t-il au moins une amélioration achetable maintenant ?
+const hasAvailableUpgrade = computed(() => {
+  const list = serverUpgrades?.value || []
+  if (!Array.isArray(list) || list.length === 0) return false
+
+  return list.some(u => {
+    const currentLevel = Number(upgradeLevels.value?.[u.id] || 0)
+    // Skip si niveau max atteint
+    const isMaxed = (u.maxLevel !== null && typeof u.maxLevel === 'number' && currentLevel >= u.maxLevel)
+    if (isMaxed) return false
+    // Coût du prochain niveau et solvabilité
+    const cost = getCurrentCostForLevel(u.costs, currentLevel)
+    const price = { type: u.priceType, count: Number(cost) || 0 }
+    return Number(price.count) > 0 ? canAfford(price) : false
+  })
+})
+
+// Expose via un event global pour que la BottomBar puisse s'y abonner
+function broadcastUpgradeAvailability() {
+  try {
+    const available = !!hasAvailableUpgrade.value
+    if (typeof window !== 'undefined') {
+      window.__marketHasAvailableUpgrade = available
+      window.dispatchEvent(new CustomEvent('market-available-upgrade-changed', { detail: { available } }))
+    }
+  } catch (_) {}
+}
+
+// Publier à l'init et à chaque changement de dépendances pertinentes
+onMounted(() => {
+  broadcastUpgradeAvailability()
+})
+
+watch([serverUpgrades, upgradeLevels, stockTokens, productionTokens, wildTokens], () => {
+  broadcastUpgradeAvailability()
+})
+
 // Fonctions d'achat
 function getBulkPrice(price, qty) {
   if (typeof price === 'number') return price * qty
@@ -618,6 +661,8 @@ async function buyUpgrade(upgrade) {
   // Émettre un événement global pour que d'autres vues/composables réagissent si besoin
   try { window.dispatchEvent(new CustomEvent('upgrade-bought', { detail: { upgradeId: upgrade.id, newLevel: Number(data?.newLevel || 0) } })) } catch (_) {}
     window.$toast && window.$toast(`Vous avez acheté ${upgrade.name} !`, 'success')
+    // Recalculer et diffuser la dispo d'upgrade
+    broadcastUpgradeAvailability()
   } catch (e) {
     console.error('buyUpgrade error:', e)
     window.$toast && window.$toast('Erreur lors de l\'achat', 'error')
@@ -753,6 +798,7 @@ function triggerLegendaryFX() {
   color: #6d3c00;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .tab-button:hover {
@@ -764,6 +810,23 @@ function triggerLegendaryFX() {
   background: #ffdd57;
   border-bottom-color: #f9f3e8;
   transform: translateY(-2px);
+}
+
+.badge-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: #FFD700;
+  border: 2px solid #8B4513;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+}
+.badge-dot--yellow { background-color: #e59f35; border-color: #8b6b00; }
+/* Top-right badge on tab */
+.tab-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
 }
 
 /* Contenu */
