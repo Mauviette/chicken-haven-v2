@@ -180,8 +180,20 @@ export function useGameData() {
   onMounted(async () => {
     try {
       await fetchGameData()
+      // Marquer les données de jeu comme chargées
+      try {
+        const { useAppLoading } = await import('./useAppLoading')
+        const { setGameDataLoading } = useAppLoading()
+        setGameDataLoading(false)
+      } catch (_) {}
     } catch (err) {
       console.error('Erreur lors de l\'initialisation des données de jeu:', err)
+      // Marquer comme chargées même en cas d'erreur pour ne pas bloquer l'UI
+      try {
+        const { useAppLoading } = await import('./useAppLoading')
+        const { setGameDataLoading } = useAppLoading()
+        setGameDataLoading(false)
+      } catch (_) {}
     }
   })
 

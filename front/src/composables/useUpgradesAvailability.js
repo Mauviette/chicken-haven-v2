@@ -20,6 +20,12 @@ export function useUpgradesAvailability() {
   const hasAvailableUpgrade = computed(() => {
     const list = serverUpgrades?.value || []
     if (!Array.isArray(list) || list.length === 0) return false
+    
+    // Vérifier que les tokens sont bien chargés avant de calculer la disponibilité
+    if (stockTokens.value === null || productionTokens.value === null || wildTokens.value === null) {
+      return false
+    }
+    
     return list.some(u => {
       const currentLevel = Number(upgradeLevels.value?.[u.id] || 0)
       const isMaxed = (u.maxLevel !== null && typeof u.maxLevel === 'number' && currentLevel >= u.maxLevel)

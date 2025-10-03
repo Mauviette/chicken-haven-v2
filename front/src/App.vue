@@ -20,6 +20,7 @@
     @close="levelUpVisible = false"
   />
     <ToastManager ref="toastManager" :hasBottomBar="!isAuthPage"/>
+    <AppLoading />
     <Options :visible="showOptions" @close="showOptions = false" @logout="logout" />
   <AchievementsMenu v-if="!isAuthPage" :visible="showAchievements" @close="showAchievements = false" />
     <BottomBar
@@ -46,6 +47,7 @@ import TeamParade from '@/components/menu/TeamParade.vue'
 import SpawnableObjects from '@/components/SpawnableObjects.vue'
 import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
 import LevelUpPopup from '@/components/menu/LevelUpPopup.vue'
+import AppLoading from '@/components/menu/AppLoading.vue'
 import { getUnlocksBetween } from '@/data/unlocks.js'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -53,6 +55,7 @@ import { usePlayer } from '@/composables/usePlayer'
 import { useDataSync } from '@/composables/useDataSync'
 import { useSound } from '@/composables/useSound'
 import { useToast } from '@/composables/useToast'
+import { useAppLoading } from '@/composables/useAppLoading'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -66,6 +69,7 @@ const { refreshPlayer, fetchTeam } = usePlayer()
 const { syncStatus } = useDataSync()
 const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = useSound()
 const { setToastManager } = useToast()
+const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = useAppLoading()
 
 onMounted(async () => {
   window.$toast = toast
@@ -76,13 +80,40 @@ onMounted(async () => {
   }
   
   // Initialiser la synchronisation des données de jeu
-  //console.log('🔄 Initialisation de la synchronisation des données...')
+  setGameDataLoading(true)
   
   // Charger les données du joueur si connecté
   if (localStorage.getItem('token')) {
-    await refreshPlayer()
-    await fetchTeam()
+    setUserDataLoading(true)
+    setSettingsLoading(true)
+    
+    try {
+      await Promise.all([
+        refreshPlayer(),
+        fetchTeam()
+      ])
+      setUserDataLoading(false)
+    } catch (error) {
+      console.error('Erreur chargement données utilisateur:', error)
+      setUserDataLoading(false)
+    }
+    
+    // Charger les paramètres
+    try {
+      const { useSettings } = await import('@/composables/useSettings')
+      const { fetchSettings } = useSettings()
+      await fetchSettings()
+      setSettingsLoading(false)
+    } catch (error) {
+      console.error('Erreur chargement paramètres:', error)
+      setSettingsLoading(false)
+    }
+  } else {
+    setUserDataLoading(false)
+    setSettingsLoading(false)
   }
+  
+  setGameDataLoading(false)
 
   // Écoute de l'événement global level-up
   try {
@@ -176,6 +207,7 @@ html, body {
   max-width: 100vw;
   max-height: 100vh;
   position: relative;
+  box-sizing: border-box;
 }
 
 a, button, input[type="button"], input[type="submit"], input[type="checkbox"] select, textarea, .pointer {
@@ -211,11 +243,21 @@ img,
   .main-content {
     margin-bottom: 0; /* pas de BottomBar sur mobile */
   }
+  
+  body {
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
 }
 
 @media (max-width: 480px) {
   .main-content {
     margin-bottom: 0; /* pas de BottomBar sur très petits écrans */
+  }
+  
+  body {
+    padding-bottom: 0;
+    margin-bottom: 0;
   }
 }
 

@@ -67,7 +67,10 @@
 
   <style scoped>
   .auth-view {
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    min-height: 100vh;
     height: 100vh;
     width: 100vw;
     display: flex;
@@ -77,6 +80,9 @@
     background-color: #fef7e0;
     font-family: 'Fredoka', sans-serif;
     overflow: hidden;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
   
   .auth-header {
