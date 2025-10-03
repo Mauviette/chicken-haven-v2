@@ -868,6 +868,7 @@ function triggerLegendaryFX() {
   justify-content: center;
   max-width: 1200px;
   margin: 0 auto;
+  margin-bottom: 30px;
 }
 
 
