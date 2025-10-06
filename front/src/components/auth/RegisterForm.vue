@@ -368,7 +368,7 @@
 }
 
 .input-group input {
-  padding: 8px 70px 8px 12px;
+  padding: 8px 60px 8px 12px;
   border: 2px solid #ffc66e;
   border-radius: 8px;
   font-size: 15px;
@@ -378,7 +378,7 @@
 }
 
 .input-group input.input-with-help-only {
-  padding: 8px 40px 8px 12px;
+  padding: 8px 32px 8px 12px;
 }
 
 .input-group input:focus {
@@ -398,7 +398,7 @@
 
 .help-icon {
   position: absolute;
-  right: 12px;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
   width: 20px;
@@ -423,13 +423,13 @@
 
 .password-toggle {
   position: absolute;
-  right: 40px;
+  right: 32px;
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
   border: none;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
-  padding: 4px;
+  padding: 2px;
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -438,17 +438,17 @@
   height: 24px;
   transition: background-color 0.2s ease;
   z-index: 5;
-  color: #8a4a1c;
+  color: #7a3e10;
 }
 
 .password-toggle:hover {
   background-color: rgba(255, 198, 110, 0.3);
-  color: #421d00;
 }
 
 .eye-icon {
   width: 18px;
   height: 18px;
+  stroke: #7a3e10;
   stroke-width: 2;
 }
 
@@ -611,11 +611,15 @@
     width: 18px;
     height: 18px;
     font-size: 11px;
-    right: 10px;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
   }
   
   .password-toggle {
-    right: 35px;
+    right: 26px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 22px;
     height: 22px;
   }
