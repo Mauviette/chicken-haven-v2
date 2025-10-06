@@ -192,8 +192,8 @@ const canUpgrade = computed(() => {
   if (!p || !cost || cost.maxed) return false
   const needChickens = Number(cost.chicken_cost || 0)
   const hasEggs = Number(eggs?.value ?? 0) >= Number(cost.egg_cost || 0)
-    // Vérifier si la poule est possédée (débloquée)
-  const hasChickens = p.owned || false
+  // Pour les améliorations, vérifier la quantité réelle de poules possédées
+  const hasChickens = Number(p.quantite || 0) >= needChickens
   return hasEggs && hasChickens
 })
 

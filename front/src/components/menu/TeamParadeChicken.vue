@@ -188,8 +188,8 @@ const showUpgradeBadge = computed(() => {
   if (!cost || cost.maxed) return false
   const needChickens = Number(cost.chicken_cost || 0)
   const hasEggs = Number(eggs?.value ?? 0) >= Number(cost.egg_cost || 0)
-    // Vérifier si la poule est possédée (débloquée)
-  const hasChickens = poule?.owned || false
+  // Vérifier qu'on a assez de poules de cette espèce
+  const hasChickens = Number(poule?.quantite || 0) >= needChickens
   return hasEggs && hasChickens
 })
 

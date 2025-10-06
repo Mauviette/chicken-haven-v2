@@ -29,7 +29,14 @@
                   @keyup.escape="cancelEditDisplayName"
                   ref="displayNameInput"
                 />
-                <button class="save-btn" @click="saveDisplayName" :disabled="!newDisplayName.trim() || displayNameError">✓</button>
+                <button 
+                  class="save-btn" 
+                  @click="saveDisplayName" 
+                  :disabled="!newDisplayName.trim() || !!displayNameError || validatingDisplayName"
+                >
+                  <span v-if="validatingDisplayName">⏳</span>
+                  <span v-else>✓</span>
+                </button>
                 <button class="cancel-btn" @click="cancelEditDisplayName">✗</button>
               </div>
               <div v-if="displayNameError" class="field-error">{{ displayNameError }}</div>
@@ -121,6 +128,8 @@ const editingDisplayName = ref(false)
 const newDisplayName = ref('')
 const displayNameInput = ref(null)
 const displayNameError = ref('')
+const validatingDisplayName = ref(false)
+let validationTimeout = null
 
 // Game data for species/talents + helpers
 const { especies, talents, getImage, getNom, getTalentEffectSync, poules, hiddenImage } = usePoules()
@@ -285,58 +294,95 @@ function startEditDisplayName() {
 }
 
 function cancelEditDisplayName() {
+  if (validationTimeout) {
+    clearTimeout(validationTimeout)
+    validationTimeout = null
+  }
   editingDisplayName.value = false
   newDisplayName.value = ''
   displayNameError.value = ''
+  validatingDisplayName.value = false
 }
 
 // Validation du displayName avec les mêmes règles que l'inscription
 async function validateDisplayName() {
+  // Annuler la validation précédente si elle est en cours
+  if (validationTimeout) {
+    clearTimeout(validationTimeout)
+  }
+
   const value = newDisplayName.value.trim()
+  
   if (!value) {
     displayNameError.value = ''
+    validatingDisplayName.value = false
     return
   }
 
+  // Validations synchrones d'abord
   if (value.length < 2) {
     displayNameError.value = 'Minimum 2 caractères'
+    validatingDisplayName.value = false
     return
   }
 
   if (value.length > 30) {
     displayNameError.value = 'Maximum 30 caractères'
+    validatingDisplayName.value = false
     return
   }
 
   if (!/^[a-zA-Z0-9À-ÿ\s_-]+$/.test(value)) {
     displayNameError.value = 'Caractères alphanumériques uniquement'
+    validatingDisplayName.value = false
     return
   }
 
-  // Vérification asynchrone des mots interdits (depuis fichier forbidden-words.txt)
-  try {
-    const hasForbiddenWord = await containsForbiddenWords(value)
-    if (hasForbiddenWord) {
-      displayNameError.value = 'Nom d\'affichage non autorisé'
-      return
+  // Validation asynchrone avec debounce
+  validatingDisplayName.value = true
+  displayNameError.value = '' // Effacer l'erreur pendant la validation
+  
+  validationTimeout = setTimeout(async () => {
+    try {
+      const hasForbiddenWord = await containsForbiddenWords(value)
+      if (hasForbiddenWord) {
+        displayNameError.value = 'Nom d\'affichage non autorisé'
+      } else {
+        displayNameError.value = ''
+      }
+    } catch (error) {
+      console.warn('Erreur validation mots interdits:', error)
+      displayNameError.value = ''
     }
-  } catch (error) {
-    console.warn('Erreur validation mots interdits:', error)
-    // En cas d'erreur, continuer sans bloquer
-  }
-
-  displayNameError.value = ''
+    validatingDisplayName.value = false
+  }, 500) // Attendre 500ms après la dernière frappe
 }
 
 async function saveDisplayName() {
   try {
     if (!isOwnProfile.value || !newDisplayName.value.trim()) return
     
-    // Valider d'abord côté client (asynchrone)
-    await validateDisplayName()
-    if (displayNameError.value) {
-      window.$toast?.(displayNameError.value, 'error')
+    // Si une validation est en cours, l'attendre
+    if (validatingDisplayName.value) {
       return
+    }
+    
+    // Valider une dernière fois côté client de manière synchrone
+    const value = newDisplayName.value.trim()
+    if (value.length < 2 || value.length > 30 || !/^[a-zA-Z0-9À-ÿ\s_-]+$/.test(value)) {
+      return
+    }
+    
+    // Validation finale asynchrone des mots interdits
+    try {
+      const hasForbiddenWord = await containsForbiddenWords(value)
+      if (hasForbiddenWord) {
+        displayNameError.value = 'Nom d\'affichage non autorisé'
+        window.$toast?.(displayNameError.value, 'error')
+        return
+      }
+    } catch (error) {
+      console.warn('Erreur validation finale mots interdits:', error)
     }
     
     const token = localStorage.getItem('token')
@@ -358,6 +404,11 @@ async function saveDisplayName() {
     editingDisplayName.value = false
     newDisplayName.value = ''
     displayNameError.value = ''
+    validatingDisplayName.value = false
+    if (validationTimeout) {
+      clearTimeout(validationTimeout)
+      validationTimeout = null
+    }
     window.$toast?.('Nom d\'affichage mis à jour', 'success')
     
   } catch (e) {

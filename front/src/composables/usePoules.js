@@ -217,6 +217,15 @@ export function usePoules() {
       const idx = rawPoules.value.findIndex(p => p.especeId === poule.especeId)
       if (idx !== -1) rawPoules.value[idx] = { ...rawPoules.value[idx], ...data.poule }
       await refreshPlayer()
+      
+      // Rafraîchir les succès car l'amélioration peut débloquer des succès de niveau
+      try {
+        const { fetchAchievements } = await import('./useAchievements.js')
+        await fetchAchievements()
+      } catch (achievementError) {
+        console.warn('Erreur rafraîchissement succès après upgrade:', achievementError)
+      }
+      
       window.$toast?.('Talent amélioré !', 'success')
       return true
     } catch (e) {
