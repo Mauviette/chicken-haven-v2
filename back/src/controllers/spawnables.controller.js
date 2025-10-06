@@ -31,12 +31,12 @@ const CLEANUP_INTERVAL = 5000 // 5 secondes
 // Configuration par type de spawnable
 const SPAWNABLE_TYPE_CONFIG = {
   white_egg: {
-    spawnChance: 0.005,
+    spawnChance: 0.15,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
   chocolate: {
-    spawnChance: 0.005,
+    spawnChance: 0.1,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   }

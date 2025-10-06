@@ -1,13 +1,36 @@
 <template>
-    <div class="auth-view">
-      <div class="auth-header" @click="dropEggs">🐔 Chicken Haven</div>
-      <div class="auth-forms">
-        <RegisterForm @registered="handleRegistered" />
-        <LoginForm @logged-in="handleLogin" />
+  <div class="auth-view">
+    <div class="auth-header" @click="dropEggs">🐔 Chicken Haven</div>
+    <div class="auth-container">
+      <!--div class="auth-tabs">
+        <button 
+          :class="['tab-btn', { active: isLoginMode }]"
+          @click="isLoginMode = true"
+        >
+          Connexion
+        </button>
+        <button 
+          :class="['tab-btn', { active: !isLoginMode }]"
+          @click="isLoginMode = false"
+        >
+          Inscription
+        </button>
+      </div-->
+      <div class="auth-form-container">
+        <LoginForm 
+          v-if="isLoginMode" 
+          @logged-in="handleLogin" 
+          @switch-to-register="isLoginMode = false"
+        />
+        <RegisterForm 
+          v-else 
+          @registered="handleRegistered" 
+          @switch-to-login="isLoginMode = true"
+          @auto-login="handleAutoLogin"
+        />
       </div>
     </div>
-  
-    <div ref="eggContainer" class="falling-eggs-container"></div>
+  </div>    <div ref="eggContainer" class="falling-eggs-container"></div>
   </template>
   
   
@@ -21,8 +44,7 @@
   
   const router = useRouter()
   const { login } = useAuth()
-
-
+  const isLoginMode = ref(true)
   const eggContainer = ref(null)
 
     function dropEggs() {
@@ -54,7 +76,18 @@
 
   function handleRegistered() {
     console.log("🎉 Inscription réussie")
-    window.$toast("Inscription réussie !", 'success')
+    window.$toast("Inscription réussie ! Vous pouvez maintenant vous connecter.", 'success')
+    // Basculer vers le mode login après inscription réussie
+    setTimeout(() => {
+      isLoginMode.value = true
+    }, 1500)
+  }
+  
+  function handleAutoLogin(token) {
+    console.log("🎉 Inscription et connexion automatique réussies")
+    login(token)
+    router.push('/production')
+    window.$toast("Compte créé et connexion réussie !", 'success')
   }
   
   function handleLogin(token) {
@@ -95,9 +128,52 @@
     user-select: none;
   }
   
-  .auth-forms {
+  .auth-container {
     display: flex;
-    gap: 60px;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .auth-tabs {
+    display: flex;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+  }
+  
+  .tab-btn {
+    background: transparent;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    color: #6d3c00;
+    cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+  }
+  
+  .tab-btn.active {
+    background-color: #fff;
+    color: #4d2e00;
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .tab-btn:hover:not(.active) {
+    opacity: 0.9;
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .auth-form-container {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   </style>
   
@@ -128,12 +204,18 @@
       padding: 0 16px;
     }
 
-    .auth-forms {
-      flex-direction: column;
-      align-items: center;
-      gap: 24px;
+    .auth-container {
       width: 100%;
       padding: 0 16px;
+    }
+    
+    .tab-btn {
+      font-size: 14px;
+      padding: 10px 20px;
+    }
+    
+    .auth-form-container {
+      min-height: 250px;
     }
   }
 

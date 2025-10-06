@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
   profileId: { type: String, unique: true, sparse: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  displayName: { type: String, required: true, default : 'Utilisateur'},
 
   experience : {
     level : { type: Number, default: 1 },

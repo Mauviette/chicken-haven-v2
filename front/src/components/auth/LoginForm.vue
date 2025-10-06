@@ -4,7 +4,10 @@
       <input v-model="username" placeholder="Nom d'utilisateur" required />
       <input v-model="password" type="password" placeholder="Mot de passe" required />
       <button type="submit" class="login-btn">Se connecter</button>
-      <p v-if="message">{{ message }}</p>
+      <p class="auth-link" @click="switchToRegister">
+        Pas de compte? <span class="link-text">S'inscrire</span>
+      </p>
+      <p class="error-text" v-if="message">{{ message }}</p>
     </form>
   </template>
   
@@ -16,7 +19,7 @@
   const password = ref('')
   const message = ref('')
   
-  const emit = defineEmits(['logged-in'])
+  const emit = defineEmits(['logged-in', 'switch-to-register'])
   
   async function submit() {
     const loginBtn = document.querySelector('.login-btn');
@@ -38,6 +41,10 @@
     loginBtn.disabled = false;
     loginBtn.textContent = "Se connecter";
   }
+  
+  function switchToRegister() {
+    emit('switch-to-register')
+  }
   </script>
   
   <style scoped>
@@ -50,7 +57,8 @@
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  width: 280px;
+  width: 320px;
+  max-width: 90vw;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -98,11 +106,31 @@
     opacity: 0.7;
   }
 
+
 .auth-form p {
   text-align: center;
   font-size: 14px;
   color: #ffcc8a;
 }
 
+.auth-link {
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  transition: opacity 0.2s ease;
+}
+
+.auth-link:hover {
+  opacity: 0.8;
+}
+
+.link-text {
+  color: #ffd700;
+  font-weight: bold;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.auth-link:hover .link-text {
+  color: #ffed4e;
+}
+
   </style>
-  
