@@ -143,7 +143,7 @@
 .eye-icon {
   position: absolute;
   right: 12px;
-  top: 6px;
+  top: 10px;
   width: 20px;
   height: 20px;
   stroke: #7a3e10 !important;

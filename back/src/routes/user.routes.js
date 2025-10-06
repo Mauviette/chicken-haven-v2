@@ -1,6 +1,6 @@
 import express from 'express'
 import { verifyToken } from '../middleware/auth.middleware.js'
-import { getMe, getPublicProfile, updateAvatar, getBuffs } from '../controllers/user.controller.js'
+import { getMe, getPublicProfile, updateAvatar, getBuffs, updateDisplayName } from '../controllers/user.controller.js'
 
 const router = express.Router()
 
@@ -10,5 +10,7 @@ router.get('/buffs', verifyToken, getBuffs)
 router.get('/profile/:profileId', getPublicProfile)
 // Patch avatar (connected user)
 router.patch('/me/avatar', verifyToken, updateAvatar)
+// Patch displayName (connected user)
+router.patch('/me/displayName', verifyToken, updateDisplayName)
 
 export default router

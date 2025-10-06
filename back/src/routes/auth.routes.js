@@ -43,17 +43,6 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Le mot de passe doit contenir entre 6 et 50 caractères' })
     }
     
-    if (!/(?=.*[a-z])/.test(password)) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins une minuscule' })
-    }
-    
-    if (!/(?=.*[A-Z])/.test(password)) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins une majuscule' })
-    }
-    
-    if (!/(?=.*\d)/.test(password)) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins un chiffre' })
-    }
     
     // Mots interdits
     const forbiddenWords = [

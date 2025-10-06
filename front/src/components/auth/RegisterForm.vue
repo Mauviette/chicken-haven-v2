@@ -322,9 +322,7 @@
     confirmPassword: {
       html: `<strong>Confirmation du mot de passe</strong><br>
              Saisissez à nouveau votre mot de passe pour éviter les erreurs de frappe.<br><br>
-             <strong>Règles :</strong><br>
-             • Doit être identique au mot de passe<br>
-             • Vérification de sécurité`
+             • Doit être identique au mot de passe<br>`
     }
   }
   
@@ -434,7 +432,7 @@
 .help-icon {
   position: absolute;
   right: 6px;
-  top: 6px;
+  top: -34px;
   width: 20px;
   height: 20px;
   background: #ffd700;
@@ -456,7 +454,7 @@
 .eye-icon {
   position: absolute;
   right: 32px;
-  top: 6px;
+  top: 10px;
   width: 20px;
   height: 20px;
   stroke: #7a3e10 !important;

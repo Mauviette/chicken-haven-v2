@@ -9,6 +9,7 @@ export async function getLeaderboards(req, res) {
     // Récupérer les utilisateurs avec leurs stats
     const users = await User.find({}, {
       username: 1,
+      displayName: 1,
       profileId: 1,
       avatar: 1,
       'achievements.progress.totalEggsCollected': 1,
@@ -32,6 +33,7 @@ export async function getLeaderboards(req, res) {
       
       return {
         username: user.username || 'Joueur Anonyme',
+        displayName: user.displayName || user.username || 'Joueur Anonyme',
         profileId: user.profileId || '',
         avatar: user.avatar || '',
         lastSeen: user.lastSeen,
@@ -56,6 +58,7 @@ export async function getLeaderboards(req, res) {
       .map((user, index) => ({
         rank: index + 1,
         username: user.username,
+        displayName: user.displayName,
         profileId: user.profileId,
         avatar: user.avatar,
         value: user.stats.totalEggsCollected,
@@ -68,6 +71,7 @@ export async function getLeaderboards(req, res) {
       .map((user, index) => ({
         rank: index + 1,
         username: user.username,
+        displayName: user.displayName,
         profileId: user.profileId,
         avatar: user.avatar,
         value: user.stats.maxEggsInOneClick,
@@ -80,6 +84,7 @@ export async function getLeaderboards(req, res) {
       .map((user, index) => ({
         rank: index + 1,
         username: user.username,
+        displayName: user.displayName,
         profileId: user.profileId,
         avatar: user.avatar,
         value: user.stats.chickensFound,

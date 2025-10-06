@@ -9,7 +9,28 @@
           <img :src="avatarSrc" alt="avatar" class="avatar" draggable="false" />
         </div>
         <div class="identity">
-          <h2 class="username">{{ profile.username }}</h2>
+          <div class="name-section">
+            <h2 class="display-name" v-if="!editingDisplayName">
+              {{ profile.displayName || profile.username }}
+              <button v-if="isOwnProfile" class="edit-name-btn" @click="startEditDisplayName" title="Modifier le nom d'affichage">
+                ✏️
+              </button>
+            </h2>
+            <div v-else class="edit-name-container">
+              <input 
+                v-model="newDisplayName" 
+                class="edit-name-input" 
+                placeholder="Nom d'affichage"
+                maxlength="30"
+                @keyup.enter="saveDisplayName"
+                @keyup.escape="cancelEditDisplayName"
+                ref="displayNameInput"
+              />
+              <button class="save-btn" @click="saveDisplayName" :disabled="!newDisplayName.trim()">✓</button>
+              <button class="cancel-btn" @click="cancelEditDisplayName">✗</button>
+            </div>
+            <div class="real-username">{{ profile.username }}</div>
+          </div>
           <button class="id copyable" @click="copyId" :title="copyTooltip">
             ID: {{ profile.profileId }}
           </button>
@@ -23,6 +44,7 @@
         <div class="left">
           <h3 class="section-title">📊 Statistiques</h3>
           <div class="stats-card">
+            <div class="stat-row"><span>🏆 Succès obtenus</span><b>{{ profile.stats?.achievementsCompleted ?? 0 }}</b></div>
             <div class="stat-row"><span>🥚 Oeufs récoltés</span><b>{{ profile.stats?.totalEggsCollected ?? 0 }}</b></div>
             <div class="stat-row"><span>🐣 Poules découvertes</span><b>{{ (profile.stats?.chickenFound ?? 0) }} / {{ totalEspeces }}</b></div>
             <div class="stat-row"><span>📦 Boîtes ouvertes</span><b>{{ profile.stats?.totalBoxesOpened ?? 0 }}</b></div>
@@ -87,6 +109,11 @@ const copyTooltip = ref('Cliquer pour copier')
 const meProfileId = ref('')
 const isOwnProfile = computed(() => meProfileId.value && profile.value && String(profile.value.profileId).toUpperCase() === String(meProfileId.value).toUpperCase())
 const avatarPopup = ref(false)
+
+// Variables pour l'édition du displayName
+const editingDisplayName = ref(false)
+const newDisplayName = ref('')
+const displayNameInput = ref(null)
 
 // Game data for species/talents + helpers
 const { especies, talents, getImage, getNom, getTalentEffectSync, poules, hiddenImage } = usePoules()
@@ -238,6 +265,61 @@ function talentLabel(slot) {
     return roman ? `${tName} ${roman}` : tName
   } catch (_) { return '' }
 }
+
+function startEditDisplayName() {
+  if (!isOwnProfile.value) return
+  newDisplayName.value = profile.value?.displayName || profile.value?.username || ''
+  editingDisplayName.value = true
+  // Focus l'input au prochain tick
+  setTimeout(() => {
+    displayNameInput.value?.focus()
+  }, 100)
+}
+
+function cancelEditDisplayName() {
+  editingDisplayName.value = false
+  newDisplayName.value = ''
+}
+
+async function saveDisplayName() {
+  try {
+    if (!isOwnProfile.value || !newDisplayName.value.trim()) return
+    
+    const token = localStorage.getItem('token')
+    if (!token) {
+      window.$toast?.('Connecte-toi pour modifier ton nom', 'error')
+      return
+    }
+    
+    const trimmedName = newDisplayName.value.trim()
+    if (trimmedName.length < 2) {
+      window.$toast?.('Le nom doit faire au moins 2 caractères', 'error')
+      return
+    }
+    
+    if (trimmedName.length > 30) {
+      window.$toast?.('Le nom ne peut pas dépasser 30 caractères', 'error')
+      return
+    }
+    
+    const data = await apiPatch('/api/user/me/displayName', { displayName: trimmedName })
+    
+    if (!data?.success) {
+      window.$toast?.(data?.error || 'Impossible de modifier le nom', 'error')
+      return
+    }
+    
+    // Mettre à jour le profil local
+    profile.value = { ...profile.value, displayName: data.displayName }
+    editingDisplayName.value = false
+    newDisplayName.value = ''
+    window.$toast?.('Nom d\'affichage mis à jour', 'success')
+    
+  } catch (e) {
+    console.error(e)
+    window.$toast?.('Erreur réseau', 'error')
+  }
+}
 </script>
 
 <style scoped>
@@ -272,7 +354,101 @@ function talentLabel(slot) {
 .avatar { width: 72px; height: 72px; border-radius: 12px; border: 3px solid #ffc66e; background: #fff; object-fit: cover; user-select: none; }
 .avatar.placeholder { display: grid; place-items: center; font-size: 36px; }
 .identity { display: grid; gap: 4px; }
-.username { margin: 0; font-size: 20px; }
+.name-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.display-name {
+  margin: 0;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-name-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.edit-name-btn:hover {
+  background-color: rgba(255, 198, 110, 0.2);
+}
+
+.edit-name-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.edit-name-input {
+  padding: 6px 10px;
+  border: 2px solid #ffc66e;
+  border-radius: 6px;
+  font-size: 16px;
+  font-family: 'Fredoka', sans-serif;
+  background-color: #fff9e5;
+  color: #3a1d00;
+  flex: 1;
+  max-width: 200px;
+}
+
+.edit-name-input:focus {
+  outline: none;
+  border-color: #ffaa00;
+  box-shadow: 0 0 5px rgba(255, 170, 0, 0.3);
+}
+
+.save-btn, .cancel-btn {
+  padding: 6px 8px;
+  border: 1px solid #ffc66e;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
+  font-family: 'Fredoka', sans-serif;
+  transition: background-color 0.2s;
+}
+
+.save-btn {
+  background: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.save-btn:disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background: #f44336;
+  color: white;
+  border-color: #f44336;
+}
+
+.cancel-btn:hover {
+  background: #da190b;
+}
+
+.real-username {
+  color: #888;
+  font-size: 14px;
+  font-weight: normal;
+  font-family: monospace;
+}
 .id {
   font-family: monospace;
   background: #fffaf1;

@@ -110,12 +110,13 @@ export async function getMe(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
-    const { experience, username, resources, upgrades } = user
+    const { experience, username, displayName, resources, upgrades } = user
     const profileId = await ensureProfileId(user)
     // Update lastSeen as user is active now
     try { user.lastSeen = new Date(); await user.save() } catch (_) {}
     res.json({
       username,
+      displayName: displayName || username,
       profileId,
       avatar: user.avatar || '',
       lastSeen: user.lastSeen,
@@ -167,8 +168,12 @@ export async function getPublicProfile(req, res) {
         })
       : []
 
+    // Calculer le nombre de succès obtenus
+    const achievementsCompleted = (user.achievements?.completed || []).length
+
     res.json({
       username: user.username,
+      displayName: user.displayName || user.username,
       profileId: user.profileId,
       avatar: user.avatar || '',
       createdAt: user.createdAt,
@@ -181,9 +186,51 @@ export async function getPublicProfile(req, res) {
         totalProductionCompleted: progress.totalProductionCompleted || 0,
         totalBoxesOpened: progress.totalBoxesOpened || 0,
         maxEggsInOneClick: progress.maxEggsInOneClick || 0,
-        chickenFound
+        chickenFound,
+        achievementsCompleted
       }
     })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// PATCH /api/user/me/displayName - Mettre à jour le nom d'affichage
+export async function updateDisplayName(req, res) {
+  try {
+    const { displayName } = req.body
+    
+    if (!displayName || typeof displayName !== 'string') {
+      return res.status(400).json({ error: 'Nom d\'affichage requis' })
+    }
+    
+    const trimmed = displayName.trim()
+    
+    if (trimmed.length < 2) {
+      return res.status(400).json({ error: 'Le nom doit faire au moins 2 caractères' })
+    }
+    
+    if (trimmed.length > 30) {
+      return res.status(400).json({ error: 'Le nom ne peut pas dépasser 30 caractères' })
+    }
+    
+    // Vérifier les mots interdits
+    const forbiddenWords = ['admin', 'mod', 'moderator', 'staff', 'owner', 'root', 'system', 'bot', 'null', 'undefined']
+    const lowerName = trimmed.toLowerCase()
+    const hasForbiddenWord = forbiddenWords.some(word => lowerName.includes(word))
+    
+    if (hasForbiddenWord) {
+      return res.status(400).json({ error: 'Ce nom contient des mots interdits' })
+    }
+    
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+    
+    user.displayName = trimmed
+    await user.save()
+    
+    res.json({ success: true, displayName: user.displayName })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Erreur serveur' })

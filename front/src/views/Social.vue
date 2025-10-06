@@ -44,7 +44,7 @@
                   />
                 </div>
                 <div class="player-info">
-                  <div class="player-name">{{ leaderboardPlayer.username }}</div>
+                  <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
                   <div class="player-id">#{{ leaderboardPlayer.profileId }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
@@ -83,7 +83,7 @@
                   />
                 </div>
                 <div class="player-info">
-                  <div class="player-name">{{ leaderboardPlayer.username }}</div>
+                  <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
                   <div class="player-id">#{{ leaderboardPlayer.profileId }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
@@ -122,7 +122,7 @@
                   />
                 </div>
                 <div class="player-info">
-                  <div class="player-name">{{ leaderboardPlayer.username }}</div>
+                  <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
                   <div class="player-id">#{{ leaderboardPlayer.profileId }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
