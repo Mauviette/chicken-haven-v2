@@ -11,7 +11,9 @@
           :class="{ 'input-error': usernameError }"
           @input="validateUsername"
         />
-        <span class="help-icon" @click="showTooltip('username')" title="Aide">?</span>
+        <Tooltip :text="tooltipInfo.username.html" position="right" :followMouse="false">
+          <span class="help-icon" title="Aide">?</span>
+        </Tooltip>
         <div v-if="usernameError" class="field-error">{{ usernameError }}</div>
       </div>
       
@@ -24,7 +26,9 @@
           :class="{ 'input-error': displayNameError }"
           @input="validateDisplayName"
         />
-        <span class="help-icon" @click="showTooltip('displayName')" title="Aide">?</span>
+        <Tooltip :text="tooltipInfo.displayName.html" position="right" :followMouse="false">
+          <span class="help-icon" title="Aide">?</span>
+        </Tooltip>
         <div v-if="displayNameError" class="field-error">{{ displayNameError }}</div>
       </div>
       
@@ -38,7 +42,9 @@
           :class="{ 'input-error': passwordError }"
           @input="validatePassword"
         />
-        <span class="help-icon" @click="showTooltip('password')" title="Aide">?</span>
+        <Tooltip :text="tooltipInfo.password.html" position="right" :followMouse="false">
+          <span class="help-icon" title="Aide">?</span>
+        </Tooltip>
         <div v-if="passwordError" class="field-error">{{ passwordError }}</div>
       </div>
       
@@ -52,7 +58,9 @@
           :class="{ 'input-error': confirmPasswordError }"
           @input="validateConfirmPassword"
         />
-        <span class="help-icon" @click="showTooltip('confirmPassword')" title="Aide">?</span>
+        <Tooltip :text="tooltipInfo.confirmPassword.html" position="right" :followMouse="false">
+          <span class="help-icon" title="Aide">?</span>
+        </Tooltip>
         <div v-if="confirmPasswordError" class="field-error">{{ confirmPasswordError }}</div>
       </div>
       
@@ -61,24 +69,13 @@
         Déjà un compte? <span class="link-text">Se connecter</span>
       </p>
       <p class="error-text" v-if="message">{{ message }}</p>
-      
-      <!-- Tooltip Modal -->
-      <div v-if="showTooltipModal" class="tooltip-modal" @click="closeTooltip">
-        <div class="tooltip-content" @click.stop>
-          <h3>{{ tooltipData.title }}</h3>
-          <p>{{ tooltipData.description }}</p>
-          <ul>
-            <li v-for="rule in tooltipData.rules" :key="rule">{{ rule }}</li>
-          </ul>
-          <button @click="closeTooltip">Compris</button>
-        </div>
-      </div>
     </form>
   </template>
   
   <script setup>
   import { ref, computed } from 'vue'
   import axios from 'axios'
+  import Tooltip from '@/components/menu/Tooltip.vue'
   
   const username = ref('')
   const displayName = ref('')
@@ -91,10 +88,6 @@
   const displayNameError = ref('')
   const passwordError = ref('')
   const confirmPasswordError = ref('')
-  
-  // Tooltip
-  const showTooltipModal = ref(false)
-  const tooltipData = ref({})
   
   const emit = defineEmits(['registered', 'switch-to-login', 'auto-login'])
   
@@ -238,54 +231,41 @@
   // Données des tooltips
   const tooltipInfo = {
     username: {
-      title: 'Nom d\'utilisateur',
-      description: 'Votre identifiant unique pour vous connecter au jeu.',
-      rules: [
-        '3 à 20 caractères',
-        'Lettres, chiffres, _ et - uniquement',
-        'Pas d\'espaces',
-        'Doit être unique',
-        'Ne peut pas être modifié'
-      ]
+      html: `<strong>Nom d'utilisateur</strong><br>
+             Votre identifiant unique pour vous connecter au jeu.<br><br>
+             <strong>Règles :</strong><br>
+             • 3 à 20 caractères<br>
+             • Lettres, chiffres, _ et - uniquement<br>
+             • Pas d'espaces<br>
+             • Doit être unique<br>
+             • Ne peut pas être modifié`
     },
     displayName: {
-      title: 'Nom d\'affichage',
-      description: 'Le nom visible par les autres joueurs dans le jeu.',
-      rules: [
-        '2 à 30 caractères',
-        'Lettres, chiffres, espaces, accents autorisés',
-        'Peut être modifié plus tard',
-        'Visible dans votre profil et les classements'
-      ]
+      html: `<strong>Nom d'affichage</strong><br>
+             Le nom visible par les autres joueurs dans le jeu.<br><br>
+             <strong>Règles :</strong><br>
+             • 2 à 30 caractères<br>
+             • Lettres, chiffres, espaces, accents autorisés<br>
+             • Peut être modifié plus tard<br>
+             • Visible dans votre profil et les classements`
     },
     password: {
-      title: 'Mot de passe',
-      description: 'Protège l\'accès à votre compte. Choisissez un mot de passe fort.',
-      rules: [
-        '6 à 50 caractères minimum',
-        'Au moins une minuscule (a-z)',
-        'Au moins une majuscule (A-Z)',
-        'Au moins un chiffre (0-9)',
-        'Gardez-le secret !'
-      ]
+      html: `<strong>Mot de passe</strong><br>
+             Protège l'accès à votre compte. Choisissez un mot de passe fort.<br><br>
+             <strong>Règles :</strong><br>
+             • 6 à 50 caractères minimum<br>
+             • Au moins une minuscule (a-z)<br>
+             • Au moins une majuscule (A-Z)<br>
+             • Au moins un chiffre (0-9)<br>
+             • Gardez-le secret !`
     },
     confirmPassword: {
-      title: 'Confirmation du mot de passe',
-      description: 'Saisissez à nouveau votre mot de passe pour éviter les erreurs de frappe.',
-      rules: [
-        'Doit être identique au mot de passe',
-        'Vérification de sécurité'
-      ]
+      html: `<strong>Confirmation du mot de passe</strong><br>
+             Saisissez à nouveau votre mot de passe pour éviter les erreurs de frappe.<br><br>
+             <strong>Règles :</strong><br>
+             • Doit être identique au mot de passe<br>
+             • Vérification de sécurité`
     }
-  }
-  
-  function showTooltip(field) {
-    tooltipData.value = tooltipInfo[field]
-    showTooltipModal.value = true
-  }
-  
-  function closeTooltip() {
-    showTooltipModal.value = false
   }
   
   async function submit() {
