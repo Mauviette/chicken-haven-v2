@@ -434,7 +434,7 @@
 .help-icon {
   position: absolute;
   right: 6px;
-  top: 8px;
+  top: 6px;
   width: 20px;
   height: 20px;
   background: #ffd700;
@@ -456,7 +456,7 @@
 .eye-icon {
   position: absolute;
   right: 32px;
-  top: 8px;
+  top: 6px;
   width: 20px;
   height: 20px;
   stroke: #7a3e10 !important;
@@ -626,12 +626,12 @@
     height: 18px;
     font-size: 11px;
     right: 4px;
-    top: 6px;
+    top: 4px;
   }
   
   .eye-icon {
     right: 26px;
-    top: 6px;
+    top: 4px;
     width: 18px;
     height: 18px;
     stroke: #7a3e10 !important;
