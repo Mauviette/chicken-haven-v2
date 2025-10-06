@@ -56,7 +56,7 @@
         <div class="left">
           <h3 class="section-title">📊 Statistiques</h3>
           <div class="stats-card">
-            <div class="stat-row"><span>🏆 Succès obtenus</span><b>{{ profile.stats?.achievementsCompleted ?? 0 }}</b></div>
+            <div class="stat-row"><span>🏆 Succès obtenus</span><b>{{ profile.stats?.achievementsCompleted ?? 0 }} / {{ totalAchievements }} ({{ Math.round(((profile.stats?.achievementsCompleted ?? 0) / Math.max(1, totalAchievements)) * 100) }}%)</b></div>
             <div class="stat-row"><span>🥚 Oeufs récoltés</span><b>{{ profile.stats?.totalEggsCollected ?? 0 }}</b></div>
             <div class="stat-row"><span>🐣 Poules découvertes</span><b>{{ (profile.stats?.chickenFound ?? 0) }} / {{ totalEspeces }}</b></div>
             <div class="stat-row"><span>📦 Boîtes ouvertes</span><b>{{ profile.stats?.totalBoxesOpened ?? 0 }}</b></div>
@@ -109,6 +109,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
+import { useGameData } from '@/composables/useGameData'
 import Popup from '@/components/menu/Popup.vue'
 import { apiGet, apiPatch } from '@/utils/api.js'
 import { containsForbiddenWords } from '@/utils/forbiddenWords.js'
@@ -133,7 +134,9 @@ let validationTimeout = null
 
 // Game data for species/talents + helpers
 const { especies, talents, getImage, getNom, getTalentEffectSync, poules, hiddenImage } = usePoules()
+const { achievements } = useGameData()
 const totalEspeces = computed(() => Object.keys(especies.value || {}).length)
+const totalAchievements = computed(() => Object.keys(achievements.value || {}).length)
 const ownedPoules = computed(() => (poules.value || []).filter(p => p?.owned))
 const hiddenAvatar = computed(() => hiddenImage)
 
