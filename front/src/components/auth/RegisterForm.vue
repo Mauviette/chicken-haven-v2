@@ -10,6 +10,7 @@
           required 
           :class="{ 'input-error': usernameError }"
           @input="validateUsername"
+          class="input-with-help-only"
         />
         <Tooltip :text="tooltipInfo.username.html" position="right" :followMouse="false">
           <span class="help-icon" title="Aide">?</span>
@@ -25,6 +26,7 @@
           required 
           :class="{ 'input-error': displayNameError }"
           @input="validateDisplayName"
+          class="input-with-help-only"
         />
         <Tooltip :text="tooltipInfo.displayName.html" position="right" :followMouse="false">
           <span class="help-icon" title="Aide">?</span>
@@ -36,12 +38,20 @@
       <div class="input-group">
         <input 
           v-model="password" 
-          type="password" 
+          :type="showPassword ? 'text' : 'password'" 
           placeholder="Mot de passe" 
           required 
           :class="{ 'input-error': passwordError }"
           @input="validatePassword"
         />
+        <button 
+          type="button" 
+          class="password-toggle" 
+          @click="showPassword = !showPassword"
+          :title="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+        >
+          {{ showPassword ? '🙈' : '👁️' }}
+        </button>
         <Tooltip :text="tooltipInfo.password.html" position="right" :followMouse="false">
           <span class="help-icon" title="Aide">?</span>
         </Tooltip>
@@ -52,12 +62,20 @@
       <div class="input-group">
         <input 
           v-model="confirmPassword" 
-          type="password" 
+          :type="showConfirmPassword ? 'text' : 'password'" 
           placeholder="Confirmer le mot de passe" 
           required 
           :class="{ 'input-error': confirmPasswordError }"
           @input="validateConfirmPassword"
         />
+        <button 
+          type="button" 
+          class="password-toggle" 
+          @click="showConfirmPassword = !showConfirmPassword"
+          :title="showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+        >
+          {{ showConfirmPassword ? '🙈' : '👁️' }}
+        </button>
         <Tooltip :text="tooltipInfo.confirmPassword.html" position="right" :followMouse="false">
           <span class="help-icon" title="Aide">?</span>
         </Tooltip>
@@ -82,6 +100,10 @@
   const password = ref('')
   const confirmPassword = ref('')
   const message = ref('')
+  
+  // Visibilité des mots de passe
+  const showPassword = ref(false)
+  const showConfirmPassword = ref(false)
   
   // Erreurs de validation
   const usernameError = ref('')
@@ -343,13 +365,17 @@
 }
 
 .input-group input {
-  padding: 8px 35px 8px 12px;
+  padding: 8px 60px 8px 12px;
   border: 2px solid #ffc66e;
   border-radius: 8px;
   font-size: 15px;
   background-color: #fff9e5;
   color: #3a1d00;
   transition: border-color 0.2s ease;
+}
+
+.input-group input.input-with-help-only {
+  padding: 8px 35px 8px 12px;
 }
 
 .input-group input:focus {
@@ -370,16 +396,16 @@
 .help-icon {
   position: absolute;
   right: 10px;
-  top: 10px;
-  width: 20px;
-  height: 20px;
+  top: 12px;
+  width: 18px;
+  height: 18px;
   background: #ffd700;
   color: #421d00;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   transition: all 0.2s ease;
@@ -389,6 +415,29 @@
 .help-icon:hover {
   background: #ffed4e;
   transform: scale(1.1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 35px;
+  top: 10px;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: background-color 0.2s ease;
+  z-index: 5;
+}
+
+.password-toggle:hover {
+  background-color: rgba(255, 198, 110, 0.2);
 }
 
 .field-error {
@@ -547,11 +596,19 @@
   }
   
   .help-icon {
-    width: 18px;
-    height: 18px;
-    font-size: 11px;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
     right: 8px;
+    top: 11px;
+  }
+  
+  .password-toggle {
+    right: 30px;
     top: 9px;
+    width: 22px;
+    height: 22px;
+    font-size: 14px;
   }
 }
   </style>
