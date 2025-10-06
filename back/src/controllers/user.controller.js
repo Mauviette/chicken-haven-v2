@@ -208,20 +208,29 @@ export async function updateDisplayName(req, res) {
     const trimmed = displayName.trim()
     
     if (trimmed.length < 2) {
-      return res.status(400).json({ error: 'Le nom doit faire au moins 2 caractères' })
+      return res.status(400).json({ error: 'Minimum 2 caractères' })
     }
     
     if (trimmed.length > 30) {
-      return res.status(400).json({ error: 'Le nom ne peut pas dépasser 30 caractères' })
+      return res.status(400).json({ error: 'Maximum 30 caractères' })
     }
     
-    // Vérifier les mots interdits
-    const forbiddenWords = ['admin', 'mod', 'moderator', 'staff', 'owner', 'root', 'system', 'bot', 'null', 'undefined']
+    // Vérifier les caractères autorisés (mêmes que l'inscription)
+    if (!/^[a-zA-Z0-9À-ÿ\s_-]+$/.test(trimmed)) {
+      return res.status(400).json({ error: 'Caractères alphanumériques uniquement' })
+    }
+    
+    // Vérifier les mots interdits (mêmes que l'inscription)
+    const forbiddenWords = [
+      'admin', 'moderator', 'mod', 'bot', 'system', 'null', 'undefined', 'test',
+      'fuck', 'shit', 'bitch', 'asshole', 'damn', 'hell', 'sex', 'porn',
+      'nazi', 'hitler', 'terrorist', 'suicide', 'kill', 'death', 'murder'
+    ]
     const lowerName = trimmed.toLowerCase()
     const hasForbiddenWord = forbiddenWords.some(word => lowerName.includes(word))
     
     if (hasForbiddenWord) {
-      return res.status(400).json({ error: 'Ce nom contient des mots interdits' })
+      return res.status(400).json({ error: 'Nom d\'affichage non autorisé' })
     }
     
     const user = await User.findById(req.userId)

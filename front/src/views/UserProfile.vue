@@ -17,17 +17,22 @@
               </button>
             </h2>
             <div v-else class="edit-name-container">
-              <input 
-                v-model="newDisplayName" 
-                class="edit-name-input" 
-                placeholder="Nom d'affichage"
-                maxlength="30"
-                @keyup.enter="saveDisplayName"
-                @keyup.escape="cancelEditDisplayName"
-                ref="displayNameInput"
-              />
-              <button class="save-btn" @click="saveDisplayName" :disabled="!newDisplayName.trim()">✓</button>
-              <button class="cancel-btn" @click="cancelEditDisplayName">✗</button>
+              <div class="edit-name-input-row">
+                <input 
+                  v-model="newDisplayName" 
+                  class="edit-name-input" 
+                  :class="{ 'input-error': displayNameError }"
+                  placeholder="Nom d'affichage"
+                  maxlength="30"
+                  @input="validateDisplayName"
+                  @keyup.enter="saveDisplayName"
+                  @keyup.escape="cancelEditDisplayName"
+                  ref="displayNameInput"
+                />
+                <button class="save-btn" @click="saveDisplayName" :disabled="!newDisplayName.trim() || displayNameError">✓</button>
+                <button class="cancel-btn" @click="cancelEditDisplayName">✗</button>
+              </div>
+              <div v-if="displayNameError" class="field-error">{{ displayNameError }}</div>
             </div>
             <div class="real-username">{{ profile.username }}</div>
           </div>
@@ -114,6 +119,7 @@ const avatarPopup = ref(false)
 const editingDisplayName = ref(false)
 const newDisplayName = ref('')
 const displayNameInput = ref(null)
+const displayNameError = ref('')
 
 // Game data for species/talents + helpers
 const { especies, talents, getImage, getNom, getTalentEffectSync, poules, hiddenImage } = usePoules()
@@ -269,6 +275,7 @@ function talentLabel(slot) {
 function startEditDisplayName() {
   if (!isOwnProfile.value) return
   newDisplayName.value = profile.value?.displayName || profile.value?.username || ''
+  displayNameError.value = ''
   editingDisplayName.value = true
   // Focus l'input au prochain tick
   setTimeout(() => {
@@ -279,11 +286,57 @@ function startEditDisplayName() {
 function cancelEditDisplayName() {
   editingDisplayName.value = false
   newDisplayName.value = ''
+  displayNameError.value = ''
+}
+
+// Mots interdits (mêmes que lors de l'inscription)
+const forbiddenWords = [
+  'admin', 'moderator', 'mod', 'bot', 'system', 'null', 'undefined', 'test',
+  'fuck', 'shit', 'bitch', 'asshole', 'damn', 'hell', 'sex', 'porn',
+  'nazi', 'hitler', 'terrorist', 'suicide', 'kill', 'death', 'murder'
+]
+
+// Validation du displayName avec les mêmes règles que l'inscription
+function validateDisplayName() {
+  const value = newDisplayName.value.trim()
+  if (!value) {
+    displayNameError.value = ''
+    return
+  }
+
+  if (value.length < 2) {
+    displayNameError.value = 'Minimum 2 caractères'
+    return
+  }
+
+  if (value.length > 30) {
+    displayNameError.value = 'Maximum 30 caractères'
+    return
+  }
+
+  if (!/^[a-zA-Z0-9À-ÿ\s_-]+$/.test(value)) {
+    displayNameError.value = 'Caractères alphanumériques uniquement'
+    return
+  }
+
+  if (forbiddenWords.some(word => value.toLowerCase().includes(word))) {
+    displayNameError.value = 'Nom d\'affichage non autorisé'
+    return
+  }
+
+  displayNameError.value = ''
 }
 
 async function saveDisplayName() {
   try {
     if (!isOwnProfile.value || !newDisplayName.value.trim()) return
+    
+    // Valider d'abord côté client
+    validateDisplayName()
+    if (displayNameError.value) {
+      window.$toast?.(displayNameError.value, 'error')
+      return
+    }
     
     const token = localStorage.getItem('token')
     if (!token) {
@@ -292,16 +345,6 @@ async function saveDisplayName() {
     }
     
     const trimmedName = newDisplayName.value.trim()
-    if (trimmedName.length < 2) {
-      window.$toast?.('Le nom doit faire au moins 2 caractères', 'error')
-      return
-    }
-    
-    if (trimmedName.length > 30) {
-      window.$toast?.('Le nom ne peut pas dépasser 30 caractères', 'error')
-      return
-    }
-    
     const data = await apiPatch('/api/user/me/displayName', { displayName: trimmedName })
     
     if (!data?.success) {
@@ -313,6 +356,7 @@ async function saveDisplayName() {
     profile.value = { ...profile.value, displayName: data.displayName }
     editingDisplayName.value = false
     newDisplayName.value = ''
+    displayNameError.value = ''
     window.$toast?.('Nom d\'affichage mis à jour', 'success')
     
   } catch (e) {
@@ -384,9 +428,15 @@ async function saveDisplayName() {
 
 .edit-name-container {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 6px;
   margin-bottom: 4px;
+}
+
+.edit-name-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .edit-name-input {
@@ -405,6 +455,18 @@ async function saveDisplayName() {
   outline: none;
   border-color: #ffaa00;
   box-shadow: 0 0 5px rgba(255, 170, 0, 0.3);
+}
+
+.edit-name-input.input-error {
+  border-color: #ff4444;
+  background-color: #ffe6e6;
+}
+
+.field-error {
+  color: #ff4444;
+  font-size: 12px;
+  margin-top: 2px;
+  font-weight: 500;
 }
 
 .save-btn, .cancel-btn {
