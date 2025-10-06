@@ -35,6 +35,11 @@ const SPAWNABLE_TYPE_CONFIG = {
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
+  lucky_egg: {
+    spawnChance: 0.05,
+    maxActivePerUser: 999,
+    cooldownSeconds: 3
+  },
   chocolate: {
     spawnChance: 0.05,
     maxActivePerUser: 999,
@@ -54,6 +59,7 @@ const TALENT_SPAWN_CONFIG = {
 
 // Fonction pour obtenir la configuration d'un spawnable
 function getSpawnableConfigForType(objectType, talentName) {
+  // Utiliser la configuration spécifique ou fallback vers white_egg pour les types inconnus
   const typeConfig = SPAWNABLE_TYPE_CONFIG[objectType] || SPAWNABLE_TYPE_CONFIG.white_egg
   const talentConfig = TALENT_SPAWN_CONFIG[talentName] || {}
   
@@ -218,11 +224,18 @@ export async function checkAvailableSpawnables(req, res) {
       )
 
       for (const spawnEffect of spawnEffects) {
-        const objectType = spawnEffect.spawner_id || spawnEffect.objectType || 'white_egg'
+        // Mapper les spawner_id vers les types utilisés par le frontend
+        const spawnerIdToType = {
+          'lucky_egg': 'white_egg',
+          'chocolate': 'chocolate'
+        }
+        const rawType = spawnEffect.spawner_id || spawnEffect.objectType || 'white_egg'
+        const objectType = spawnerIdToType[rawType] || rawType
         const spawnerId = `${talentName}_${especeId}_${objectType}`
         
-        // Obtenir la configuration pour ce type de spawnable
-        const config = getSpawnableConfigForType(objectType, talentName)
+        // Obtenir la configuration pour ce type de spawnable (utiliser le type original pour la config)
+        const configType = spawnEffect.spawner_id || objectType
+        const config = getSpawnableConfigForType(configType, talentName)
         
         // Vérifier le nombre total de spawnables actifs de ce type (toutes poules confondues)
         const activeSpawnablesOfType = user.activeSpawnables.filter(s => 

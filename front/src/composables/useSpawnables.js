@@ -41,7 +41,7 @@ export function useSpawnables() {
             y: Math.random() * 60 + 20, // 20% à 80% de la hauteur
             rotation: Math.random() * 360, // Rotation aléatoire de 0 à 360 degrés
             timestamp: Date.now(),
-            lifetime: 30000 // 30 secondes de durée de vie
+            lifetime: 15000 // 15 secondes comme côté backend
           }
           
           spawnedObjects.value.push(newSpawnable)
@@ -92,7 +92,7 @@ export function useSpawnables() {
       
       // Gestion spécifique des erreurs API
       if (error.message && error.message.includes('400')) {
-        if (error.message.includes('pas actif ou a expiré')) {
+        if (error.message.includes('expiré') || error.message.includes('collecté') || error.message.includes('existe pas')) {
           showToast('Cet objet a déjà disparu !', 'warning', 3000)
           // Retirer l'objet de la liste locale pour éviter les clics futurs
           const index = spawnedObjects.value.findIndex(obj => obj.id === spawnable.id)
@@ -112,9 +112,17 @@ export function useSpawnables() {
   // Nettoyer les objets expirés
   const cleanupExpiredObjects = () => {
     const now = Date.now()
+    const beforeCount = spawnedObjects.value.length
     spawnedObjects.value = spawnedObjects.value.filter(obj => {
-      return (now - obj.timestamp) < obj.lifetime
+      const age = now - obj.timestamp
+      const isExpired = age >= obj.lifetime
+      return !isExpired
     })
+    const afterCount = spawnedObjects.value.length
+    const cleaned = beforeCount - afterCount
+    if (cleaned > 0) {
+      console.log(`🧹 Nettoyé ${cleaned} spawnable(s) expiré(s)`)
+    }
   }
 
   // Démarrer le polling
@@ -125,11 +133,11 @@ export function useSpawnables() {
     // Vérification immédiate
     checkForNewSpawnables()
     
-    // Polling toutes les 1 seconde pour respecter les cooldowns courts
+    // Polling toutes les 500ms pour une meilleure réactivité
     pollingInterval = setInterval(() => {
       checkForNewSpawnables()
       cleanupExpiredObjects()
-    }, 1000)
+    }, 500)
   }
 
   // Arrêter le polling
@@ -140,9 +148,13 @@ export function useSpawnables() {
     }
   }
 
-  // Computed pour les objets actifs
+  // Computed pour les objets actifs (filtrer les expirés en temps réel)
   const activeSpawnables = computed(() => {
-    return spawnedObjects.value
+    const now = Date.now()
+    return spawnedObjects.value.filter(obj => {
+      const age = now - obj.timestamp
+      return age < obj.lifetime
+    })
   })
 
   // Lifecycle

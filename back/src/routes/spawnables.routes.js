@@ -14,4 +14,30 @@ router.post('/click', verifyToken, clickSpawnableObject)
 // Obtenir la configuration des spawnables
 router.get('/config', verifyToken, getSpawnableConfig)
 
+// Test de synchronisation - endpoint temporaire
+router.get('/test-sync', verifyToken, (req, res) => {
+  res.json({
+    success: true,
+    synchronization: {
+      spawnerIdMapping: {
+        'lucky_egg': 'white_egg',
+        'chocolate': 'chocolate'
+      },
+      supportedTypes: ['white_egg', 'lucky_egg', 'chocolate'],
+      buffTypes: ['income_storage_multiplier', 'income', 'storage'],
+      cssClasses: ['spawnable-white_egg', 'spawnable-lucky_egg', 'spawnable-chocolate'],
+      icons: {
+        'lucky_egg': '🥚',
+        'chocolate': '🍫'
+      },
+      timings: {
+        backend_lifetime: 15000, // 15s
+        frontend_lifetime: 15000, // 15s (maintenant synchronisé)
+        frontend_polling: 500, // 500ms
+        backend_cooldown: 3000 // 3s
+      }
+    }
+  })
+})
+
 export default router

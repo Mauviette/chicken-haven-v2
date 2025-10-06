@@ -150,6 +150,7 @@
   import { ref, computed } from 'vue'
   import axios from 'axios'
   import Tooltip from '@/components/menu/Tooltip.vue'
+  import { containsForbiddenWords } from '@/utils/forbiddenWords.js'
   
   const username = ref('')
   const displayName = ref('')
@@ -169,15 +170,11 @@
   
   const emit = defineEmits(['registered', 'switch-to-login', 'auto-login'])
   
-  // Mots interdits
-  const forbiddenWords = [
-    'admin', 'moderator', 'mod', 'bot', 'system', 'null', 'undefined', 'test',
-    'fuck', 'shit', 'bitch', 'asshole', 'damn', 'hell', 'sex', 'porn',
-    'nazi', 'hitler', 'terrorist', 'suicide', 'kill', 'death', 'murder'
-  ]
+  // Variable pour indiquer si la validation asynchrone est en cours
+  const validatingForbiddenWords = ref(false)
   
   // Validation du nom d'utilisateur
-  function validateUsername() {
+  async function validateUsername() {
     const value = username.value.trim()
     if (!value) {
       usernameError.value = ''
@@ -199,16 +196,26 @@
       return
     }
     
-    if (forbiddenWords.some(word => value.toLowerCase().includes(word))) {
-      usernameError.value = 'Nom d\'utilisateur non autorisé'
-      return
+    // Vérification asynchrone des mots interdits
+    try {
+      validatingForbiddenWords.value = true
+      const hasForbiddenWord = await containsForbiddenWords(value)
+      if (hasForbiddenWord) {
+        usernameError.value = 'Nom d\'utilisateur non autorisé'
+        return
+      }
+    } catch (error) {
+      console.warn('Erreur validation mots interdits:', error)
+      // En cas d'erreur, continuer sans bloquer
+    } finally {
+      validatingForbiddenWords.value = false
     }
     
     usernameError.value = ''
   }
   
   // Validation du nom d'affichage
-  function validateDisplayName() {
+  async function validateDisplayName() {
     const value = displayName.value.trim()
     if (!value) {
       displayNameError.value = ''
@@ -230,9 +237,19 @@
       return
     }
     
-    if (forbiddenWords.some(word => value.toLowerCase().includes(word))) {
-      displayNameError.value = 'Nom d\'affichage non autorisé'
-      return
+    // Vérification asynchrone des mots interdits
+    try {
+      validatingForbiddenWords.value = true
+      const hasForbiddenWord = await containsForbiddenWords(value)
+      if (hasForbiddenWord) {
+        displayNameError.value = 'Nom d\'affichage non autorisé'
+        return
+      }
+    } catch (error) {
+      console.warn('Erreur validation mots interdits:', error)
+      // En cas d'erreur, continuer sans bloquer
+    } finally {
+      validatingForbiddenWords.value = false
     }
     
     displayNameError.value = ''

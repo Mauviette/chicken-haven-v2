@@ -23,10 +23,9 @@ export async function getLeaderboards(req, res) {
     // Fonction pour calculer les poules découvertes
     const getChickensFound = (poulesPossedees) => {
       if (!Array.isArray(poulesPossedees)) return 0
-      return poulesPossedees.filter(p => (p?.quantite || 0) > 0).length
-    }
-
-    // Préparer les données pour chaque leaderboard
+      // Compter les poules débloquées (présentes dans poulesPossedees)
+      return poulesPossedees.length
+    }    // Préparer les données pour chaque leaderboard
     const userData = users.map(user => {
       const progress = user.achievements?.progress || {}
       const chickensFound = getChickensFound(user.poulesPossedees)
@@ -182,7 +181,7 @@ export async function getPlayerProfile(req, res) {
     const levelByEspece = new Map()
     for (const p of poules) {
       if (p?.especeId) {
-        levelByEspece.set(p.especeId, Number(p.niveauTalent || 0) || (p.quantite > 0 ? 1 : 0))
+        levelByEspece.set(p.especeId, Number(p.niveauTalent || 0) || 1) // Si pas de niveau, défaut à 1 car poule débloquée
       }
     }
 

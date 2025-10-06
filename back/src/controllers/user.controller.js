@@ -1,5 +1,6 @@
 import User from '../models/User.js'
 import { updateAchievementProgress, triggerAchievementCheck } from './achievements.controller.js'
+import { containsForbiddenWords } from '../utils/forbiddenWords.js'
 
 function makeProfileId() {
   // 3 bytes random -> 6 hex uppercase
@@ -71,9 +72,9 @@ export async function updateAvatar(req, res) {
     }
 
     if (avatar !== 'hidden') {
-      // Vérifier que l'utilisateur a débloqué cette poule
+      // Vérifier que l'utilisateur a débloqué cette poule (présente dans poulesPossedees)
       const owned = Array.isArray(user.poulesPossedees) ? user.poulesPossedees.find(p => p.especeId === avatar) : null
-      if (!owned || (owned.quantite || 0) <= 0) {
+      if (!owned) {
         return res.status(400).json({ error: 'Avatar non disponible: poule non débloquée' })
       }
       user.avatar = avatar
@@ -152,12 +153,12 @@ export async function getPublicProfile(req, res) {
     // Compute derived stats
     const progress = user.achievements?.progress || {}
     const poules = Array.isArray(user.poulesPossedees) ? user.poulesPossedees : []
-    const chickenFound = poules.filter(p => (p?.quantite || 0) > 0).length
+    const chickenFound = poules.length // Nombre de poules débloquées = nombre de poules dans poulesPossedees
 
     // Enrichir les slots d'équipe avec le niveau de talent courant si connu
     const levelByEspece = new Map()
     for (const p of poules) {
-      if (p?.especeId) levelByEspece.set(p.especeId, Number(p.niveauTalent || 0) || (p.quantite > 0 ? 1 : 0))
+      if (p?.especeId) levelByEspece.set(p.especeId, Number(p.niveauTalent || 0) || 1) // Si pas de niveau, défaut à 1 car poule débloquée
     }
     const rawTeam = user.team || { maxSlots: 0, slots: [] }
     const enrichedSlots = Array.isArray(rawTeam.slots)
@@ -220,16 +221,8 @@ export async function updateDisplayName(req, res) {
       return res.status(400).json({ error: 'Caractères alphanumériques uniquement' })
     }
     
-    // Vérifier les mots interdits (mêmes que l'inscription)
-    const forbiddenWords = [
-      'admin', 'moderator', 'mod', 'bot', 'system', 'null', 'undefined', 'test',
-      'fuck', 'shit', 'bitch', 'asshole', 'damn', 'hell', 'sex', 'porn',
-      'nazi', 'hitler', 'terrorist', 'suicide', 'kill', 'death', 'murder'
-    ]
-    const lowerName = trimmed.toLowerCase()
-    const hasForbiddenWord = forbiddenWords.some(word => lowerName.includes(word))
-    
-    if (hasForbiddenWord) {
+    // Vérifier les mots interdits (depuis fichier forbidden-words.txt)
+    if (containsForbiddenWords(trimmed)) {
       return res.status(400).json({ error: 'Nom d\'affichage non autorisé' })
     }
     

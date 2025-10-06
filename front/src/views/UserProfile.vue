@@ -104,6 +104,7 @@ import Tooltip from '@/components/menu/Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
 import Popup from '@/components/menu/Popup.vue'
 import { apiGet, apiPatch } from '@/utils/api.js'
+import { containsForbiddenWords } from '@/utils/forbiddenWords.js'
 
 const route = useRoute()
 const loading = ref(true)
@@ -289,15 +290,8 @@ function cancelEditDisplayName() {
   displayNameError.value = ''
 }
 
-// Mots interdits (mêmes que lors de l'inscription)
-const forbiddenWords = [
-  'admin', 'moderator', 'mod', 'bot', 'system', 'null', 'undefined', 'test',
-  'fuck', 'shit', 'bitch', 'asshole', 'damn', 'hell', 'sex', 'porn',
-  'nazi', 'hitler', 'terrorist', 'suicide', 'kill', 'death', 'murder'
-]
-
 // Validation du displayName avec les mêmes règles que l'inscription
-function validateDisplayName() {
+async function validateDisplayName() {
   const value = newDisplayName.value.trim()
   if (!value) {
     displayNameError.value = ''
@@ -319,9 +313,16 @@ function validateDisplayName() {
     return
   }
 
-  if (forbiddenWords.some(word => value.toLowerCase().includes(word))) {
-    displayNameError.value = 'Nom d\'affichage non autorisé'
-    return
+  // Vérification asynchrone des mots interdits (depuis fichier forbidden-words.txt)
+  try {
+    const hasForbiddenWord = await containsForbiddenWords(value)
+    if (hasForbiddenWord) {
+      displayNameError.value = 'Nom d\'affichage non autorisé'
+      return
+    }
+  } catch (error) {
+    console.warn('Erreur validation mots interdits:', error)
+    // En cas d'erreur, continuer sans bloquer
   }
 
   displayNameError.value = ''
@@ -331,8 +332,8 @@ async function saveDisplayName() {
   try {
     if (!isOwnProfile.value || !newDisplayName.value.trim()) return
     
-    // Valider d'abord côté client
-    validateDisplayName()
+    // Valider d'abord côté client (asynchrone)
+    await validateDisplayName()
     if (displayNameError.value) {
       window.$toast?.(displayNameError.value, 'error')
       return

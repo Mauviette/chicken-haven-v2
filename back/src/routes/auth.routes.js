@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
 import { verifyToken } from '../middleware/auth.middleware.js'
+import { containsForbiddenWords, getForbiddenWordsList } from '../utils/forbiddenWords.js'
 
 const router = express.Router()
 const SECRET_KEY = process.env.JWT_SECRET || 'dev-secret'
@@ -43,23 +44,12 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Le mot de passe doit contenir entre 6 et 50 caractères' })
     }
     
-    
-    // Mots interdits
-    const forbiddenWords = [
-      'admin', 'moderator', 'mod', 'bot', 'system', 'null', 'undefined', 'test',
-      'fuck', 'shit', 'bitch', 'asshole', 'damn', 'hell', 'sex', 'porn',
-      'nazi', 'hitler', 'terrorist', 'suicide', 'kill', 'death', 'murder'
-    ]
-    
-    const containsForbiddenWord = (text) => {
-      return forbiddenWords.some(word => text.toLowerCase().includes(word))
-    }
-    
-    if (containsForbiddenWord(trimmedUsername)) {
+    // Vérifier les mots interdits (depuis fichier forbidden-words.txt)
+    if (containsForbiddenWords(trimmedUsername)) {
       return res.status(400).json({ error: 'Le nom d\'utilisateur contient des mots non autorisés' })
     }
     
-    if (containsForbiddenWord(trimmedDisplayName)) {
+    if (containsForbiddenWords(trimmedDisplayName)) {
       return res.status(400).json({ error: 'Le nom d\'affichage contient des mots non autorisés' })
     }
     
@@ -135,6 +125,17 @@ router.patch('/settings', verifyToken, async (req, res) => {
     res.json({ message: 'Paramètres mis à jour', settings: updatedUser.settings })
   } catch (err) {
     res.status(500).json({ error: 'Erreur lors de la mise à jour' })
+  }
+})
+
+// Endpoint pour récupérer la liste des mots interdits
+router.get('/forbidden-words', (req, res) => {
+  try {
+    const words = getForbiddenWordsList()
+    res.json({ forbiddenWords: words })
+  } catch (err) {
+    console.error('Error loading forbidden words:', err)
+    res.status(500).json({ error: 'Erreur serveur' })
   }
 })
 
