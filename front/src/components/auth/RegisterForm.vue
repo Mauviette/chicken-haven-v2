@@ -418,7 +418,6 @@
 
 .help-icon:hover {
   background: #ffed4e;
-  transform: scale(1.1);
 }
 
 .password-toggle {
@@ -426,7 +425,7 @@
   right: 32px;
   top: 50%;
   transform: translateY(-50%);
-  background: transparent;
+  background: none;
   border: none;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   padding: 2px;
@@ -436,20 +435,16 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  transition: background-color 0.2s ease;
   z-index: 5;
   color: #7a3e10;
-}
-
-.password-toggle:hover {
-  background-color: rgba(255, 198, 110, 0.3);
 }
 
 .eye-icon {
   width: 18px;
   height: 18px;
-  stroke: #7a3e10;
-  stroke-width: 2;
+  stroke: #7a3e10 !important;
+  stroke-width: 2.5;
+  fill: none;
 }
 
 .field-error {
@@ -627,6 +622,9 @@
   .eye-icon {
     width: 16px;
     height: 16px;
+    stroke: #7a3e10 !important;
+    stroke-width: 2.5;
+    fill: none;
   }
 }
   </style>
