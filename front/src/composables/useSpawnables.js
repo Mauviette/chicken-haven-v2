@@ -32,7 +32,7 @@ export function useSpawnables() {
 
       if (spawnables && spawnables.length > 0) {
         for (const spawnable of spawnables) {
-          console.log(`🥚 Un spawnable est apparu: ${spawnable.talentName} (${spawnable.type})`)
+          //console.log(`🥚 Un spawnable est apparu: ${spawnable.talentName} (${spawnable.type})`)
           
           // Ajouter le spawnable à la liste avec position et rotation aléatoires
           const newSpawnable = {

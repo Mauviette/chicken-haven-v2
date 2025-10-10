@@ -5,7 +5,7 @@ const getApiBaseUrl = () => {
   // Si une URL d'API est définie explicitement dans l'environnement, l'utiliser
   const envApiUrl = import.meta.env.VITE_API_BASE_URL
   if (envApiUrl && envApiUrl.trim() !== '') {
-    console.log('🔧 Using configured API URL:', envApiUrl)
+    //console.log('🔧 Using configured API URL:', envApiUrl)
     return envApiUrl
   }
   
