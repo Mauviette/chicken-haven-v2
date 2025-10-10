@@ -9,10 +9,6 @@ owner
 proprietaire
 root
 system
-bot
-null
-undefined
-test
 fuck
 shit
 bitch
