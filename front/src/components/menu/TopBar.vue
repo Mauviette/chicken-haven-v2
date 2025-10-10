@@ -196,11 +196,11 @@ const levelTooltipHtml = () => {
   const rewards = getLevelRewardsBetween ? getLevelRewardsBetween(l, nextLevel) : []
 
   const unlocksHtml = unlocks.length
-    ? unlocks.map(u => `${u.icon || '✨'} ${u.label}`).join('<br>')
+    ? unlocks.filter(u => u && u.label).map(u => `${u.icon || '✨'} ${u.label}`).join('<br>')
     : ''
 
   const rewardsHtml = rewards.length
-    ? rewards.map(r => `${r.icon} ${r.label}`).join('<br>')
+    ? rewards.filter(r => r && r.label).map(r => `${r.icon} ${r.label}`).join('<br>')
     : ''
 
   let html = `${current}<br><em>À venir au niveau ${nextLevel} :</em>`

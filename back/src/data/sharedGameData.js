@@ -587,7 +587,7 @@ export const levelUnlocks = {
   2: [
     { id: 'market', label: 'Marché débloqué', icon: '🛒' }
   ],
-  3: [,
+  3: [
     { id: 'social', label: 'Social débloqué', icon: '👥' }
   ]
 }
