@@ -117,15 +117,71 @@
     margin: 0;
     padding: 0;
   }
+
+  @media (max-width: 900px) {
+    .auth-view {
+      padding: 0 10px;
+      justify-content: flex-start;
+      min-height: 100vh;
+      height: auto;
+    }
+    .auth-header {
+      margin-top: 32px;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .auth-view {
+      padding: 0 0 32px 0;
+      min-height: 100vh;
+      height: auto;
+      justify-content: flex-start;
+    }
+    .auth-header {
+      font-size: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+      padding: 0 16px;
+      margin-top: 24px;
+    }
+    .auth-container {
+      width: 100%;
+      padding: 0 8px;
+      gap: 12px;
+    }
+    .auth-form-container {
+      min-height: 220px;
+      width: 100%;
+      padding: 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .auth-header {
+      font-size: 18px;
+      margin-bottom: 16px;
+      margin-top: 16px;
+      padding: 0 4px;
+    }
+    .auth-container {
+      padding: 0 2px;
+      gap: 8px;
+    }
+    .auth-form-container {
+      min-height: 160px;
+      width: 100%;
+      padding: 0;
+    }
+  }
   
   .auth-header {
     font-size: 32px;
     font-weight: bold;
     color: #4d2e00;
     margin-bottom: 40px;
-    
     text-shadow: 1px 1px 0 #fff;
     user-select: none;
+    transition: font-size 0.2s, margin 0.2s;
   }
   
   .auth-container {
@@ -133,6 +189,9 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    width: 100%;
+    max-width: 420px;
+    box-sizing: border-box;
   }
   
   .auth-tabs {
@@ -174,7 +233,53 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
   }
+  </style>
+
+  <style>
+    .falling-eggs-container {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .falling-egg {
+      position: absolute;
+      top: -40px;
+      animation: egg-drop 2.5s linear forwards;
+      user-select: none;
+      pointer-events: none;
+      z-index: 9999;
+      transform: rotate(0deg); /* point de départ */
+    }
+
+    @keyframes egg-drop {
+      to {
+          top: 100vh;
+          transform: rotate(var(--rotation));
+          opacity: 0;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .falling-eggs-container {
+        width: 100vw;
+        height: 100vh;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .falling-eggs-container {
+        width: 100vw;
+        height: 100vh;
+      }
+    }
   </style>
   
   <style>
