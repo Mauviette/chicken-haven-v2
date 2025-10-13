@@ -558,7 +558,7 @@ export const upgradesData = [
     icon: '🏠',
     priceType: 'stock_token',
     costs: [1, 1, 2, 2, 3, 4, 5, 8],
-    rewards: [5, 5, 10, 10, 15, 20, 25, 40],
+    rewards: [5, 10, 20, 30, 45, 60, 90, 200],
     effectTemplate: '+{reward} œufs de stockage maximum',
     maxLevel: null,
     // Effet appliqué côté serveur à l'achat: ajoute reward au maxIncome
@@ -571,7 +571,7 @@ export const upgradesData = [
     icon: '🌾',
     priceType: 'production_token',
     costs: [1, 1, 2, 2, 3, 4, 5, 8],
-    rewards: [0.5, 0.5, 1, 1, 1.5, 2, 2.5, 4],
+    rewards: [0.5, 1, 1.5, 2, 3, 5, 8, 10],
     effectTemplate: '+{reward} œuf(s) produit(s) par seconde',
     maxLevel: null,
     // Effet appliqué côté serveur à l'achat: ajoute reward à income de base
