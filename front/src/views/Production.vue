@@ -79,7 +79,7 @@
               </div>
               <div class="gains-text">
                 <Tooltip :text="storageTooltipHtml">
-                  <span>{{ Math.floor(currentGains) }} / {{ Math.round(eggState.maxIncome) }}</span>
+                  <span>{{ Math.round(currentGains) }} / {{ Math.round(eggState.maxIncome) }}</span>
                 </Tooltip>
               </div>
               <div class="gains-per-click">
@@ -131,8 +131,6 @@ const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
 const { activeBuffs, fetchBuffs, getTimeRemaining, formatBuffEffect, getBuffIcon, getBuffColor } = useBuffs()
-
-console.log('activeBuffs.value:', activeBuffs.value);
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -682,10 +680,7 @@ watch(() => currentGains.value, (nv, ov) => {
   _lastGains = cur
 })
 
-// Debug des buffs actifs
-watch(() => activeBuffs.value, (newBuffs) => {
-  //console.log('Buffs actifs mis à jour:', newBuffs)
-}, { immediate: true })
+
 </script>
 
 <style scoped>
