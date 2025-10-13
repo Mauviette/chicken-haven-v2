@@ -44,7 +44,7 @@ export function useEgg() {
   })
 
   const progressPercentage = computed(() => {
-    return Math.min((Math.floor(currentGains.value) / eggState.value.maxIncome) * 100, 100)
+    return Math.min((Math.round(currentGains.value) / eggState.value.maxIncome) * 100, 100)
   })
 
   // Récupérer le statut de l'œuf depuis l'API

@@ -34,7 +34,8 @@ export function useBuffs() {
     return buffs.value.filter(buff => {
       if (!buff.lasts_until) return false
       const expiresAt = new Date(buff.lasts_until).getTime()
-      return expiresAt > now
+      // Ajoute une petite marge de 100ms pour éviter les problèmes de timing
+      return expiresAt > (now + 100)
     })
   })
 
@@ -173,12 +174,65 @@ export function useBuffs() {
     }
   }
 
+  // Obtient la durée totale et restante d'un buff pour l'affichage
+  function getBuffDuration(buff) {
+    if (!buff.lasts_until) return { remaining: 'N/A', total: 'N/A', percentage: 0 }
+    
+    const now = new Date()
+    const expiresAt = new Date(buff.lasts_until)
+    const remainingMs = Math.max(0, expiresAt - now)
+    
+    // Si le buff est expiré ou sur le point d'expirer (moins de 100ms), retourner 0s
+    if (remainingMs < 100) {
+      return {
+        remaining: '0s',
+        total: 'N/A',
+        percentage: 0
+      }
+    }
+    
+    // Estimation de la durée totale basée sur l'origine du buff
+    let estimatedTotalMs = 5 * 60 * 1000 // 5 minutes par défaut
+    
+    if (buff.origin) {
+      if (buff.origin.includes('Gourmande')) {
+        estimatedTotalMs = 3 * 60 * 1000 // 3 minutes pour les buffs chocolat
+      } else if (buff.origin.includes('Alchimiste')) {
+        estimatedTotalMs = 10 * 60 * 1000 // 10 minutes pour les potions
+      } else if (buff.origin.includes('talent')) {
+        estimatedTotalMs = 30 * 60 * 1000 // 30 minutes pour les talents
+      }
+    }
+    
+    const formatTime = (ms) => {
+      const totalSeconds = Math.floor(ms / 1000)
+      const minutes = Math.floor(totalSeconds / 60)
+      const seconds = totalSeconds % 60
+      
+      if (minutes > 0) {
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`
+      } else {
+        return `${seconds}s`
+      }
+    }
+    
+    // Utilise le temps restant pour estimer le pourcentage si c'est plus précis
+    const percentage = Math.min(100, (remainingMs / estimatedTotalMs) * 100)
+    
+    return {
+      remaining: formatTime(remainingMs),
+      total: formatTime(estimatedTotalMs),
+      percentage: percentage
+    }
+  }
+
   return {
     buffs,
     nowTs,
     activeBuffs,
     fetchBuffs,
     getTimeRemaining,
+    getBuffDuration,
     formatBuffEffect,
     getBuffIcon,
     getBuffColor

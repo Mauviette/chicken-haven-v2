@@ -2,23 +2,24 @@
   <div class="production-screen">
     <!-- Bandeau des buffs actifs -->
     <div class="buffs-container" v-if="activeBuffs.length > 0">
-      <div
+      <Tooltip 
         v-for="(buff, index) in activeBuffs"
-        :key="index"
-        class="buff-badge"
-        :style="{
-          background: `linear-gradient(135deg, ${getBuffColor(buff).bg}, ${getBuffColor(buff).bg}dd)`,
-          borderColor: getBuffColor(buff).border
-        }"
+        :key="`buff-${index}-${buff.lasts_until}`"
+        :text="getBuffTooltipHtml(buff)"
+        position="bottom"
+        :followMouse="false"
       >
-        <Tooltip 
-          :text="getBuffTooltipHtml(buff)"
-          position="bottom"
-          :followMouse="false"
+        <div
+          class="buff-badge"
+          :style="{
+            background: `linear-gradient(135deg, ${getBuffColor(buff).bg}, ${getBuffColor(buff).bg}dd)`,
+            borderColor: getBuffColor(buff).border
+          }"
         >
+          <div class="buff-duration-ring">{{ getBuffDuration(buff).remaining }}</div>
           <div class="buff-icon">{{ getBuffIcon(buff) }}</div>
-        </Tooltip>
-      </div>
+        </div>
+      </Tooltip>
     </div>
 
     <!-- Bandeau des stats d'équipe -->
@@ -130,7 +131,7 @@ const { refreshPlayer, fetchTeam, team, setEggs } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
-const { activeBuffs, fetchBuffs, getTimeRemaining, formatBuffEffect, getBuffIcon, getBuffColor } = useBuffs()
+const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor } = useBuffs()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -596,7 +597,7 @@ const handleEggClick = async () => {
   if (isClickable.value) {
     // Son d'œuf cliqué
     eggClick()
-    const eggsGained = Math.floor(currentGains.value)
+    const eggsGained = Math.round(currentGains.value)
     
     // Afficher immédiatement un toast avec les gains
     if (window.$toast && eggsGained > 0) {
@@ -739,12 +740,34 @@ watch(() => currentGains.value, (nv, ov) => {
   position: relative;
 }
 
+.buff-duration-ring {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  padding: 1px 3px;
+  border-radius: 8px;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+  font-family: 'Courier New', monospace;
+  z-index: 15;
+}
+
 .buff-badge:hover {
   transform: scale(1.15);
   box-shadow: 
     0 6px 16px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
   animation-play-state: paused;
+}
+
+.buff-badge:hover .buff-duration-ring {
+  opacity: 0.8;
 }
 
 .buff-icon {
