@@ -15,7 +15,8 @@ const UserSchema = new mongoose.Schema({
   settings: {
     sound: { type: Boolean, default: true },
     animations: { type: Boolean, default: true },
-    volume: { type: Number, default: 100 }
+    volume: { type: Number, default: 100 },
+    buffsEverywhere: { type: Boolean, default: false }
   },
 
   // Avatar URL or key

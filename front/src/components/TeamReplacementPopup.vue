@@ -191,6 +191,6 @@ p {
 
 .btn:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
 }
 </style>

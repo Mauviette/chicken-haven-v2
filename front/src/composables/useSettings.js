@@ -7,6 +7,7 @@ const settings = ref({
   sound: true,
   animations: true,
   volume: 100,
+  buffsEverywhere: false, // Option pour afficher les buffs sur toutes les pages
 })
 
 const isLoaded = ref(false)
@@ -32,7 +33,8 @@ export function useSettings() {
         sound: true,
         animations: true,
         volume: 100,
-        ...incoming,
+  ...incoming,
+  buffsEverywhere: typeof incoming.buffsEverywhere === 'boolean' ? incoming.buffsEverywhere : false,
       }
       // Clamp/typer
       merged.volume = Math.max(0, Math.min(100, Number(merged.volume ?? 100)))
@@ -65,7 +67,8 @@ export function useSettings() {
         const out = {
           sound: Boolean(settings.value?.sound),
           animations: Boolean(settings.value?.animations),
-          volume: Math.max(0, Math.min(100, Number(settings.value?.volume ?? 100)))
+          volume: Math.max(0, Math.min(100, Number(settings.value?.volume ?? 100))),
+          buffsEverywhere: Boolean(settings.value?.buffsEverywhere)
         }
         await apiPatch('/api/auth/settings', { settings: out })
         

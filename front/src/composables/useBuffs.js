@@ -3,6 +3,17 @@ import { ref, computed } from 'vue'
 import { apiGet } from '@/utils/api'
 
 const buffs = ref([])
+
+// Nettoyage immédiat des buffs expirés du tableau principal (évite le clignotement)
+function cleanExpiredBuffs() {
+  const now = Date.now()
+  buffs.value = buffs.value.filter(buff => {
+    if (!buff.lasts_until) return false
+    const expiresAt = new Date(buff.lasts_until).getTime()
+    return expiresAt > (now + 100)
+  })
+}
+
 // Ticker temporel réactif pour réévaluer les expirations sans attendre un fetch
 const nowTs = ref(Date.now())
 if (typeof window !== 'undefined') {
@@ -19,7 +30,9 @@ export function useBuffs() {
   async function fetchBuffs() {
     try {
       const response = await apiGet('/api/user/buffs')
+
       buffs.value = response?.buffs || []
+      cleanExpiredBuffs()
       return buffs.value
     } catch (error) {
       console.error('Erreur lors de la récupération des buffs:', error)
@@ -31,13 +44,50 @@ export function useBuffs() {
   // Filtre les buffs actifs (non expirés)
   const activeBuffs = computed(() => {
     const now = nowTs.value
+    // Ne pas appeler cleanExpiredBuffs ici pour éviter les boucles infinies
     return buffs.value.filter(buff => {
       if (!buff.lasts_until) return false
       const expiresAt = new Date(buff.lasts_until).getTime()
-      // Ajoute une petite marge de 100ms pour éviter les problèmes de timing
       return expiresAt > (now + 100)
     })
   })
+  // Formate l'effet court d'un buff pour affichage sous le badge
+  function formatBuffShort(buff) {
+    const operation = buff.buff?.operation || 'mult'
+    const amount = buff.buff?.amount || '1'
+    const type = buff.buff_type || 'income'
+    let effectText = ''
+    if (operation === 'mult') {
+      const multiplier = parseFloat(amount)
+      const percentage = Math.round((multiplier - 1) * 100)
+      effectText = `+${percentage}%`
+    } else if (operation === 'add') {
+      effectText = `+${amount}`
+    } else {
+      effectText = `${operation} ${amount}`
+    }
+    // Emoji selon le type
+    let emoji = ''
+    switch (type) {
+      case 'income':
+      case 'income_multiplier':
+        emoji = '💰'; break
+      case 'production':
+        emoji = '⚡'; break
+      case 'storage':
+      case 'storage_multiplier':
+        emoji = '📦'; break
+      case 'team_stat_intelligence':
+        emoji = '🧠'; break
+      case 'team_stat_energie':
+        emoji = '⚡'; break
+      case 'team_stat_charisme':
+        emoji = '✨'; break
+      default:
+        emoji = getBuffIcon(buff)
+    }
+    return `${effectText} ${emoji}`
+  }
 
   // Formate la durée restante d'un buff
   function getTimeRemaining(buff) {
@@ -226,6 +276,15 @@ export function useBuffs() {
     }
   }
 
+  // Ajout : fonction utilitaire pour tooltip HTML d'un buff (pour BuffsBar.vue)
+  function getBuffTooltipHtml(buff) {
+    // Utilise formatBuffEffect pour le détail, getTimeRemaining pour la durée
+    const effect = formatBuffEffect(buff)
+    const time = getTimeRemaining(buff)
+    const origin = buff.origin ? `<br><span style='color:#aaa;font-size:12px'>${buff.origin}</span>` : ''
+    return `<b>${effect}</b><br><span style='color:#ffd700;font-size:13px'>${time}</span>${origin}`
+  }
+
   return {
     buffs,
     nowTs,
@@ -234,7 +293,9 @@ export function useBuffs() {
     getTimeRemaining,
     getBuffDuration,
     formatBuffEffect,
+    formatBuffShort,
     getBuffIcon,
-    getBuffColor
+    getBuffColor,
+    getBuffTooltipHtml
   }
 }

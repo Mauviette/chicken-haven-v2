@@ -60,13 +60,16 @@ export function useSound() {
 
   function play(key, opts = {}) {
     if (!SOUND_MAP[key]) return
+    if (isMuted.value || masterVolume.value === 0) return // Ne joue pas si mute ou volume à 0
     const audio = getAudio(key)
     if (!audio) return
     try {
       // Pour permettre les déclenchements simultanés, on clone le buffer si en cours
       const instance = audio.cloneNode(true)
       const vol = typeof opts.volume === 'number' ? opts.volume : DEFAULT_VOLUME
-      instance.volume = isMuted.value ? 0 : Math.max(0, Math.min(1, vol * masterVolume.value))
+      const finalVolume = Math.max(0, Math.min(1, vol * masterVolume.value))
+      if (finalVolume === 0) return // Ne joue pas si volume final à 0
+      instance.volume = finalVolume
       // Astuce mobile: play() doit être déclenché par un event utilisateur
       instance.currentTime = 0
       instance.play().catch(() => {})

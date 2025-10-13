@@ -15,6 +15,16 @@
       <span>{{ settings.volume }}%</span>
     </div>
 
+    <!--div class="option-line">
+      <label for="buffs-everywhere-toggle">Buffs visibles partout</label>
+      <input
+        id="buffs-everywhere-toggle"
+        type="checkbox"
+        v-model="settings.buffsEverywhere"
+        style="width: 20px; height: 20px; accent-color: #ffd700; margin-left: 8px;"
+      />
+    </div-->
+
     <br>
     <ActionButton
       :onClick="() => emit('logout')"

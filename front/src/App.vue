@@ -13,6 +13,7 @@
       <SpawnableObjects />
       <TeamParade v-if="!isAuthPage" />
     </div>
+  <!-- BuffsBar global supprimé: affichage des buffs désormais uniquement dans la vue Production -->
   <LevelUpPopup
     v-if="levelUpVisible"
     :from="levelUpFrom"
@@ -56,6 +57,7 @@ import { useDataSync } from '@/composables/useDataSync'
 import { useSound } from '@/composables/useSound'
 import { useToast } from '@/composables/useToast'
 import { useAppLoading } from '@/composables/useAppLoading'
+import { useSettings } from '@/composables/useSettings'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -70,6 +72,7 @@ const { syncStatus } = useDataSync()
 const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = useSound()
 const { setToastManager } = useToast()
 const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = useAppLoading()
+const { settings } = useSettings()
 
 onMounted(async () => {
   window.$toast = toast

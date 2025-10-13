@@ -18,6 +18,7 @@
         >
           <div class="buff-duration-ring">{{ getBuffDuration(buff).remaining }}</div>
           <div class="buff-icon">{{ getBuffIcon(buff) }}</div>
+          <div class="buff-short">{{ formatBuffShort(buff) }}</div>
         </div>
       </Tooltip>
     </div>
@@ -131,7 +132,7 @@ const { refreshPlayer, fetchTeam, team, setEggs } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
-const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor } = useBuffs()
+const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor, formatBuffShort } = useBuffs()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -756,6 +757,25 @@ watch(() => currentGains.value, (nv, ov) => {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
   font-family: 'Courier New', monospace;
   z-index: 15;
+}
+
+.buff-short {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  padding: 1px 3px;
+  border-radius: 8px;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.8);
+  font-family: 'Courier New', monospace;
+  z-index: 15;
+  pointer-events: none;
 }
 
 .buff-badge:hover {
