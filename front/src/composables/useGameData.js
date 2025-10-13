@@ -1,28 +1,26 @@
-// composables/useGameData.js
-// Composable pour gérer les données de jeu synchronisées avec le backend
-
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { apiGet } from '@/utils/api.js'
 import { useAuth } from './useAuth'
 
-// État global des données de jeu
 const gameData = ref(null)
 const dataVersion = ref(null)
 const lastUpdated = ref(null)
 const loading = ref(true)
 const error = ref(null)
+const syncStatus = ref('idle')
+const lastSyncTime = ref(null)
 
-// Cache pour éviter les appels répétés
 let cachedData = null
 let cacheTimestamp = null
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+let syncInterval = null
+const CACHE_DURATION = 5 * 60 * 1000
+const SYNC_INTERVAL = 30000
 
 export function useGameData() {
   const { isLoggedIn } = useAuth()
-  // Fonction pour récupérer les données depuis le backend
+
   async function fetchGameData(forceRefresh = false) {
     try {
-      // Vérifier le cache
       const now = Date.now()
       if (!forceRefresh && cachedData && cacheTimestamp && (now - cacheTimestamp < CACHE_DURATION)) {
         gameData.value = cachedData
@@ -31,6 +29,7 @@ export function useGameData() {
       }
 
       loading.value = true
+      syncStatus.value = 'syncing'
       error.value = null
 
       const result = await apiGet('/api/game-data')
@@ -39,27 +38,27 @@ export function useGameData() {
         throw new Error(result.error || 'Erreur lors de la récupération des données')
       }
 
-  // Mettre à jour les données
       gameData.value = result.data
       dataVersion.value = result.data.version
       lastUpdated.value = result.data.lastUpdated
-  try { if (typeof window !== 'undefined') window.__gameDataCache = result.data } catch (_) {}
+      syncStatus.value = 'success'
+      lastSyncTime.value = new Date()
+
+      try { 
+        if (typeof window !== 'undefined') window.__gameDataCache = result.data 
+      } catch (_) {}
       
-      // Mettre à jour le cache
       cachedData = result.data
       cacheTimestamp = now
-
-      //console.log(`✅ Données de jeu synchronisées - Version: ${result.data.version}`)
       
       return result.data
     } catch (err) {
-      console.error('❌ Erreur lors de la synchronisation des données:', err)
+      console.error('Erreur lors de la synchronisation des données:', err)
       error.value = err.message
+      syncStatus.value = 'error'
       
-      // En cas d'erreur, utiliser les données en cache si disponibles
       if (cachedData) {
         gameData.value = cachedData
-        //console.log('📦 Utilisation des données en cache')
       }
       
       throw err
@@ -68,26 +67,75 @@ export function useGameData() {
     }
   }
 
-  // Fonction pour vérifier si les données locales sont à jour
   async function checkDataVersion() {
     try {
       if (!isLoggedIn()) return false
       const result = await apiGet('/api/game-data/version')
       
       if (dataVersion.value && dataVersion.value !== result.version) {
-        console.log('🔄 Nouvelle version des données détectée, synchronisation...')
         await fetchGameData(true)
-        return true // Données mises à jour
+        return true
       }
       
-      return false // Pas de mise à jour nécessaire
+      return false
     } catch (err) {
       console.error('Erreur lors de la vérification de version:', err)
       return false
     }
   }
 
-  // Fonctions utilitaires pour accéder aux données spécifiques
+  function startPeriodicSync() {
+    if (syncInterval) return
+    
+    syncInterval = setInterval(async () => {
+      try {
+        const wasUpdated = await checkDataVersion()
+        if (wasUpdated) {
+          lastSyncTime.value = new Date()
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification périodique:', error)
+      }
+    }, SYNC_INTERVAL)
+  }
+
+  function stopPeriodicSync() {
+    if (syncInterval) {
+      clearInterval(syncInterval)
+      syncInterval = null
+    }
+  }
+
+  async function syncNow() {
+    try {
+      await fetchGameData(true)
+      return true
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async function initialize() {
+    try {
+      await fetchGameData()
+      startPeriodicSync()
+      
+      try {
+        const { useAppLoading } = await import('./useAppLoading')
+        const { setGameDataLoading } = useAppLoading()
+        setGameDataLoading(false)
+      } catch (_) {}
+    } catch (err) {
+      console.error('Erreur lors de l\'initialisation des données de jeu:', err)
+      
+      try {
+        const { useAppLoading } = await import('./useAppLoading')
+        const { setGameDataLoading } = useAppLoading()
+        setGameDataLoading(false)
+      } catch (_) {}
+    }
+  }
+
   const especies = computed(() => gameData.value?.especies || {})
   const talents = computed(() => gameData.value?.talents || {})
   const boxes = computed(() => gameData.value?.boxes || [])
@@ -142,14 +190,12 @@ export function useGameData() {
     return itemData ? itemData.icon : '❓'
   }
 
-  // Formate une quantité d'item selon singulier/pluriel
   function formatString(type, count) {
     const itemData = items.value[type]
     if (!itemData || typeof count !== 'number') return 'Valeur invalide'
     return `${count} ${count === 1 ? itemData.nom_singulier : itemData.nom}`
   }
 
-  // Récompenses de level-up: lecture depuis la source centralisée (sans génération auto)
   function getLevelRewardsBetween(from, to) {
     const rewards = {}
     for (let lvl = Math.max(1, from + 1); lvl <= to; lvl++) {
@@ -158,7 +204,6 @@ export function useGameData() {
         rewards[r.type] = (rewards[r.type] || 0) + (r.count || 0)
       }
     }
-    // Normaliser vers un tableau avec icône/libellé
     return Object.entries(rewards).map(([type, count]) => ({
       type,
       count,
@@ -167,7 +212,6 @@ export function useGameData() {
     }))
   }
 
-  // Déverrouillages entre deux niveaux (exclut le niveau "from")
   function getUnlocksBetween(from, to) {
     const unlocked = []
     for (let lvl = Math.max(1, from + 1); lvl <= to; lvl++) {
@@ -176,70 +220,51 @@ export function useGameData() {
     return unlocked
   }
 
-  // Initialiser les données au montage
-  onMounted(async () => {
-    try {
-      await fetchGameData()
-      // Marquer les données de jeu comme chargées
-      try {
-        const { useAppLoading } = await import('./useAppLoading')
-        const { setGameDataLoading } = useAppLoading()
-        setGameDataLoading(false)
-      } catch (_) {}
-    } catch (err) {
-      console.error('Erreur lors de l\'initialisation des données de jeu:', err)
-      // Marquer comme chargées même en cas d'erreur pour ne pas bloquer l'UI
-      try {
-        const { useAppLoading } = await import('./useAppLoading')
-        const { setGameDataLoading } = useAppLoading()
-        setGameDataLoading(false)
-      } catch (_) {}
-    }
-  })
+  onMounted(initialize)
+  onUnmounted(stopPeriodicSync)
 
   return {
-    // État
     gameData,
     dataVersion,
     lastUpdated,
     loading,
     error,
+    syncStatus,
+    lastSyncTime,
     
-    // Données spécifiques
     especies,
     talents,
     boxes,
-  upgrades,
-  talentLevelUpgradeCost,
+    upgrades,
+    talentLevelUpgradeCost,
     achievements,
     items,
     categories,
     groupes,
-  levelUnlocks,
+    levelUnlocks,
     levelRewards,
     
-    // Actions
     fetchGameData,
     checkDataVersion,
+    syncNow,
+    startPeriodicSync,
+    stopPeriodicSync,
+    initialize,
     
-    // Utilitaires
     getEspeceInfo,
     getTalentInfo,
     getBoxInfo,
     getAchievementInfo,
     getItemInfo,
     formatPrice,
-    getResourceIcon
-    ,
+    getResourceIcon,
     formatString,
-    getLevelRewardsBetween
-    ,
+    getLevelRewardsBetween,
     getUnlocksBetween
   }
 }
 
-// Fonction utilitaire pour initialiser les données globalement
 export async function initializeGameData() {
-  const { fetchGameData } = useGameData()
-  return await fetchGameData()
+  const { initialize } = useGameData()
+  return await initialize()
 }

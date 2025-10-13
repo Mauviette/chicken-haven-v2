@@ -22,13 +22,9 @@ import { saveWithRetry } from '../utils/mongoUtils.js'
 // CONFIGURATION DES SPAWNABLES
 // ============================================
 
-// Durée de vie des spawnables en millisecondes
-const SPAWNABLE_LIFETIME = 15000 // 15 secondes
+const SPAWNABLE_LIFETIME = 15000
+const CLEANUP_INTERVAL = 5000
 
-// Intervalle de nettoyage des spawnables expirés (en millisecondes)
-const CLEANUP_INTERVAL = 5000 // 5 secondes
-
-// Configuration par type de spawnable
 const SPAWNABLE_TYPE_CONFIG = {
   white_egg: {
     spawnChance: 0.05,
@@ -47,19 +43,9 @@ const SPAWNABLE_TYPE_CONFIG = {
   }
 }
 
-// Configuration par talent (peut surcharger la config par type)
-const TALENT_SPAWN_CONFIG = {
-  // Exemple de configuration spécifique par talent
-  // 'nom_du_talent': {
-  //   spawnChanceOverride: 0.9,      // Surcharge: 90% de chance
-  //   cooldownSecondsOverride: 5,    // Surcharge: cooldown de 5 secondes
-  //   maxActiveOverride: 10          // Surcharge: max 10 actifs
-  // }
-}
+const TALENT_SPAWN_CONFIG = {}
 
-// Fonction pour obtenir la configuration d'un spawnable
 function getSpawnableConfigForType(objectType, talentName) {
-  // Utiliser la configuration spécifique ou fallback vers white_egg pour les types inconnus
   const typeConfig = SPAWNABLE_TYPE_CONFIG[objectType] || SPAWNABLE_TYPE_CONFIG.white_egg
   const talentConfig = TALENT_SPAWN_CONFIG[talentName] || {}
   
@@ -70,7 +56,6 @@ function getSpawnableConfigForType(objectType, talentName) {
   }
 }
 
-// Fonction utilitaire pour obtenir les statistiques de configuration
 function getSpawnableStats() {
   return {
     spawnableLifetime: SPAWNABLE_LIFETIME,
@@ -82,7 +67,6 @@ function getSpawnableStats() {
   }
 }
 
-// Fonction pour évaluer les expressions du DSL (miroir du frontend)
 function evalExpr(expr, ctx) {
   if (expr == null) return 0
   if (typeof expr === 'number') return expr
@@ -105,12 +89,10 @@ function evalExpr(expr, ctx) {
   return 0
 }
 
-// Fonction pour calculer le stockage total comme dans egg controller (avec buffs temporaires)
 function calculateTotalStorage(user) {
   const baseMaxIncome = user.clickableEgg?.maxIncome || 100
   const storageBonus = runTalentStorage(user)
   
-  // Appliquer les buffs temporaires comme dans egg.controller.js
   const buffMultipliers = computeActiveBuffMultipliers(user)
   
   const effectiveMaxIncome = Math.max(0, (baseMaxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier * buffMultipliers.storage)
@@ -118,12 +100,10 @@ function calculateTotalStorage(user) {
   return effectiveMaxIncome
 }
 
-// Calcule les multiplicateurs des buffs temporaires actifs (copié de egg.controller.js)
 function computeActiveBuffMultipliers(user) {
   const buffs = user.buffs || []
   const now = Date.now()
   
-  // Filtrer les buffs actifs
   const activeBuffs = buffs.filter(buff => 
     buff.lasts_until && new Date(buff.lasts_until).getTime() > now
   )
@@ -135,32 +115,32 @@ function computeActiveBuffMultipliers(user) {
     teamStat: { intelligence: 1, energie: 1, charisme: 1 }
   }
   
-  // Appliquer les buffs multiplicatifs
   for (const buff of activeBuffs) {
     const operation = buff.buff?.operation || 'mult'
     const amount = parseFloat(buff.buff?.amount) || 1
     const type = buff.buff_type || 'income'
     
     if (operation === 'mult') {
-      // Mapper les types de buffs aux catégories
       switch (type) {
         case 'income':
         case 'income_multiplier':
           multipliers.income *= amount
           break
         case 'storage':
+        case 'storage_multiplier':
           multipliers.storage *= amount
           break
         case 'production':
+        case 'production_multiplier':
           multipliers.production *= amount
           break
-        case 'team_stat_intelligence':
+        case 'team_intelligence':
           multipliers.teamStat.intelligence *= amount
           break
-        case 'team_stat_energie':
+        case 'team_energie':
           multipliers.teamStat.energie *= amount
           break
-        case 'team_stat_charisme':
+        case 'team_charisme':
           multipliers.teamStat.charisme *= amount
           break
       }
@@ -185,46 +165,32 @@ export async function checkAvailableSpawnables(req, res) {
 
     const now = Date.now()
     
-    // Nettoyer les spawnables expirés dans la base de données
     const initialSpawnablesCount = user.activeSpawnables?.length || 0
     user.activeSpawnables = user.activeSpawnables?.filter(s => new Date(s.expiresAt) > new Date()) || []
     const cleanedSpawnables = initialSpawnablesCount - user.activeSpawnables.length
     
-    if (cleanedSpawnables > 0) {
-      // Spawnables nettoyés
-    }
-    
     const availableSpawnables = []
 
-    // Parcourir l'équipe active
     for (const especeId of activeTeam) {
       const poule = user.poulesPossedees?.find(p => p.especeId === especeId)
-      if (!poule) {
-        continue
-      }
+      if (!poule) continue
 
       const niveau = Math.max(1, Number(poule.niveauTalent) || 1)
 
-      // Trouver l'espèce et son talent dans les données partagées
       const especeInfo = especeData[especeId]
       
-      if (!especeInfo || !especeInfo.talent) {
-        continue
-      }
+      if (!especeInfo || !especeInfo.talent) continue
 
       const talentName = especeInfo.talent
       const talentData = talentsData[talentName]
 
-      if (!talentData || !talentData.calculation?.effects) {
-        continue
-      }
+      if (!talentData || !talentData.calculation?.effects) continue
 
       const spawnEffects = talentData.calculation.effects.filter(effect => 
         effect.type === 'spawn_clickable'
       )
 
       for (const spawnEffect of spawnEffects) {
-        // Mapper les spawner_id vers les types utilisés par le frontend
         const spawnerIdToType = {
           'lucky_egg': 'white_egg',
           'chocolate': 'chocolate'
@@ -233,24 +199,22 @@ export async function checkAvailableSpawnables(req, res) {
         const objectType = spawnerIdToType[rawType] || rawType
         const spawnerId = `${talentName}_${especeId}_${objectType}`
         
-        // Obtenir la configuration pour ce type de spawnable (utiliser le type original pour la config)
         const configType = spawnEffect.spawner_id || objectType
         const config = getSpawnableConfigForType(configType, talentName)
         
-        // Vérifier le nombre total de spawnables actifs de ce type (toutes poules confondues)
-        const activeSpawnablesOfType = user.activeSpawnables.filter(s => 
-          s.spawnableId.includes(`_${objectType}_`)
-        ).length
+        const existingSpawnable = user.activeSpawnables.find(s => 
+          s.talentName === talentName && 
+          s.especeId === especeId && 
+          s.spawnableId.includes(`_${objectType}`)
+        )
         
-        if (activeSpawnablesOfType >= config.maxActivePerUser) {
+        if (existingSpawnable) {
           continue
         }
         
-        // Utiliser la base de données pour le cooldown (anti-exploit multi-onglets)
         const cooldownKey = `${talentName}_${especeId}_${objectType}`
         const lastSpawn = user.lastSpawns?.get(cooldownKey) || new Date(0)
 
-        // Calculer l'intervalle de spawn avec le stockage total et la configuration
         const totalStorage = calculateTotalStorage(user)
         const ctx = {
           niveau,
@@ -260,20 +224,18 @@ export async function checkAvailableSpawnables(req, res) {
           teamCharisme: computeTeamCharisme(user)
         }
 
-        // Utiliser le cooldown direct de la configuration (en millisecondes)
         const spawnInterval = config.cooldownSeconds * 1000
 
         if (now - new Date(lastSpawn).getTime() >= spawnInterval) {
-          // Appliquer directement le pourcentage de chance configuré
           const spawnChance = Math.random()
           
           if (spawnChance < config.spawnChance) {
-            const spawnableId = `${spawnerId}_${now}`
+            const uniqueSpawnableId = `${spawnerId}_${now}_${Math.random().toString(36).substr(2, 9)}`
             const expiresAt = new Date(now + SPAWNABLE_LIFETIME)
             
             const newSpawnable = {
-              id: spawnableId,
-              spawnerId: spawnableId, // Utiliser un ID unique par spawnable
+              id: uniqueSpawnableId,
+              spawnerId: uniqueSpawnableId,
               talentName: talentName,
               especeId: especeId,
               type: objectType,
@@ -284,25 +246,19 @@ export async function checkAvailableSpawnables(req, res) {
             
             availableSpawnables.push(newSpawnable)
 
-            // Ajouter à la base de données avec le bon format d'ID
             user.activeSpawnables.push({
-              spawnerId: spawnableId, // Utiliser un ID unique par spawnable
-              spawnableId: `${talentName}_${especeId}_${objectType}_${now}`, // Format pour filtrage
+              spawnerId: uniqueSpawnableId,
+              spawnableId: uniqueSpawnableId,
               talentName: talentName,
               especeId: especeId,
               createdAt: new Date(now),
               expiresAt: expiresAt
             })
             
-            // Mettre à jour le cooldown en base de données (anti-exploit)
             if (!user.lastSpawns) {
               user.lastSpawns = new Map()
             }
             user.lastSpawns.set(cooldownKey, new Date(now))
-            
-            console.log(`🥚 Spawnable available: ${talentName}/${objectType} for ${especeId} (niveau ${niveau}) - Chance: ${(config.spawnChance * 100).toFixed(1)}%`)
-          } else {
-            // Chance échouée
           }
         }
       }

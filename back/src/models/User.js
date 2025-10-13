@@ -1,8 +1,6 @@
-// models/User.js
 import mongoose from 'mongoose'
 
 const UserSchema = new mongoose.Schema({
-  // Public profile identifier (6-char uppercase hex)
   profileId: { type: String, unique: true, sparse: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -90,7 +88,6 @@ const UserSchema = new mongoose.Schema({
     default: function () { return {} }
   },
 
-  // Système de succès - schéma flexible pour gérer les migrations
   achievements: {
     type: mongoose.Schema.Types.Mixed,
     default: function() {
@@ -118,7 +115,6 @@ const UserSchema = new mongoose.Schema({
     ]
   },
 
-  // Spawnables actifs pour éviter l'exploit multi-onglets
   activeSpawnables: [
     {
       spawnerId: { type: String, required: true },
@@ -130,7 +126,6 @@ const UserSchema = new mongoose.Schema({
     }
   ],
 
-  // Derniers spawns par spawner pour gérer les cooldowns
   lastSpawns: {
     type: Map,
     of: Date,

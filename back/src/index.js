@@ -20,46 +20,12 @@ dotenv.config()
 const app = express()
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Autoriser les requêtes sans origin (ex: mobile apps, Postman)
-    if (!origin) return callback(null, true)
-    
-    // En développement, autoriser toutes les origines locales/privées
-    const isDevelopment = process.env.NODE_ENV !== 'production'
-    
-    if (isDevelopment) {
-      // En mode développement, autoriser toutes les origines
-      console.log(`✅ Origin autorisé (dev mode): ${origin}`)
-      return callback(null, true)
-    }
-    
-    // En production, utiliser la liste restrictive
-    const allowedOrigins = [
-      'https://chickenhaven.vercel.app'
-    ]
-    
-    // Vérifier si l'origin est dans la liste ou si c'est un sous-domaine Vercel
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-      return callback(null, true)
-    }
-    
-    console.log(`❌ Origin non autorisé (production): ${origin}`)
-    callback(new Error('Non autorisé par CORS'))
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   optionsSuccessStatus: 200
 }))
-
-// Middleware pour logger les requêtes CORS
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`)
-  next()
-})
-
-// Supprimer la route OPTIONS générique qui cause l'erreur
-// Le middleware CORS global gère déjà les requêtes preflight
 
 app.use(express.json())
 
@@ -81,8 +47,7 @@ app.use('/api/social', socialRoutes)
 app.get('/', (req, res) => {
   res.json({ 
     message: 'API Chicken Haven OK 🐔',
-    timestamp: new Date().toISOString(),
-    cors: 'Configured for chickenhaven.vercel.app'
+    timestamp: new Date().toISOString()
   })
 })
 
@@ -93,7 +58,6 @@ app.get('/health', (req, res) => {
   })
 })
 
-// Middleware de gestion des erreurs globales
 app.use((err, req, res, next) => {
   console.error('❌ Erreur serveur:', err)
   res.status(500).json({ error: 'Erreur interne du serveur' })
@@ -107,7 +71,7 @@ mongoose.connect(process.env.MONGO_URI, {
   const PORT = process.env.PORT || 3002
   app.listen(PORT, '::', () => {
     console.log(`🚀 Serveur lancé sur le port ${PORT} (IPv4 + IPv6)`)
-    console.log(`📡 CORS configuré pour: chickenhaven.vercel.app + réseaux locaux`)
+    console.log(`📡 CORS configuré pour toutes les origines`)
   })
 }).catch((err) => {
   console.error('❌ Erreur de connexion MongoDB :', err.message)
@@ -117,7 +81,6 @@ mongoose.connect(process.env.MONGO_URI, {
   }, 5000)
 })
 
-// Gestion des erreurs de connexion après l'initialisation
 mongoose.connection.on('error', (err) => {
   console.error('❌ Erreur MongoDB :', err.message)
 })
@@ -126,7 +89,6 @@ mongoose.connection.on('disconnected', () => {
   console.log('⚠️ MongoDB déconnecté')
 })
 
-// Reconnexion automatique
 mongoose.connection.on('reconnected', () => {
   console.log('✅ MongoDB reconnecté')
 })

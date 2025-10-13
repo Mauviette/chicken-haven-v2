@@ -588,7 +588,11 @@ export const levelUnlocks = {
     { id: 'market', label: 'Marché débloqué', icon: '🛒' }
   ],
   3: [
-    { id: 'social', label: 'Social débloqué', icon: '👥' }
+    { id: 'social', label: 'Social débloqué', icon: '👥' },
+    { id: 'shiny_box', label: 'Boîte brillante débloquée', icon: '✨' }
+  ],
+  5: [
+    { id: 'noble_box', label: 'Coffret chic débloqué', icon: '💎' }
   ]
 }
 

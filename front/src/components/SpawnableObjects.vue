@@ -40,10 +40,7 @@ const handleClick = async (obj, event) => {
     // Vérifier si l'objet n'est pas expiré côté frontend avant de continuer
     const now = Date.now()
     const age = now - obj.timestamp
-    if (age >= obj.lifetime) {
-      console.log('🚫 Objet expiré côté frontend, ignore le clic')
-      return
-    }
+        if (age >= obj.lifetime) return
     
     // Jouer un son
     eggClick()
