@@ -12,11 +12,17 @@ Le curseur change en fonction de l'outil équipé lorsque la grille est survolé
 Les différents outils appliquent différents types de creusage tels que : 
 - Pelle : Inflige 3 PV sur la case visée
 - Pioche : Inflige 2 PV sur la case visée, plus 1 PV aux 4 cases adjacentes (en forme de +)
+Afficher une preview de l'impact du clic en fonction de l'outil sélectionné. Avec un contour blanc + large si le clic inflige plus de PV 
 
 L'attribution d'outils fonctionne comme une file. Sur la droite sous forme de pile sont affichés la liste d'outils à venir. L'outil actuellement utilisé est tout en bas, mis en évidence. Le suivant est juste au dessus, etc. Et le dernier est tout en haut.
+Utiliser un outil 1 fois passe au suivant.
 Lorsque le joueur est à court d'outils, le creusage est terminé et ses résultats sont affichés (récompenses récupérées)
 
 Ce qui doit être modulable :
 - Nombre de cases de la grille
 - Pool de récompenses
 - Pool d'outils
+
+Objectifs techniques :
+- Sauvegarder les données du mini jeu en back end, pour permettre à l'utilisateur de partir / revenir sur la vue sans problème.
+- Faire les calculs en back-end, pour éviter les fuites de données et la lecture-triche des données en front-end.
