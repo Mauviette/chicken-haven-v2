@@ -9,7 +9,7 @@ export const MINING_CONFIG = {
   tools: {
     shovel: {
       name: 'Pelle',
-      icon: '🔨',
+      icon: '🪏',
       damage: 3,
       pattern: 'single',
       description: 'Inflige 3 dégâts sur une case'

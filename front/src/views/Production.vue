@@ -833,8 +833,8 @@ watch(() => currentGains.value, (nv, ov) => {
   border: 2px solid #ffc66e;
   border-radius: 10px;
   padding: 4px 8px;
-  font-size: 20px;
-  cursor: pointer;
+  font-size: 20px;  
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   transition: all 0.2s ease;
   user-select: none;
   display: flex;

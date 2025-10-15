@@ -139,7 +139,7 @@ const toolConfig = {
   shovel: { 
     damage: 3, 
     pattern: 'single', 
-    icon: '🔨', 
+    icon: '🪏', 
     name: 'Pelle',
     description: 'Inflige 3 dégâts sur une case',
     cursorPath: '/src/assets/ui/cursor/tool_shovel.png' 

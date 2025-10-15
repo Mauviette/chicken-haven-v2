@@ -39,3 +39,32 @@ Style graphique :
 
 Accès au mini-jeu :
 - Dans production.vue, il y aura une petite icone de 🪨. La cliquer ouvre le popup de minage.
+
+
+
+
+
+
+
+
+
+----
+
+Améliorations du mini-jeu de creusage
+
+- Baisser la brillance du hover quand la case peut être détruite en 1 coup
+
+- Retirer entièrement l'étape du popup de "Voyons ce que vous avez trouvé" et plutot qu'un affichage abrupt des récompenses de fin de creusage, mettre un bouton "continuer" en bas de la vue quand le joueur n'a plus d'outils tout en laissant la grille affichée avant de passer aux récompenses.
+
+- Augmenter la taille que prend la grille et la rendre fixe
+
+- Faire en sorte que la pile d'outils aie une hauteur limitée (qu'elle ne dépasse pas celle de la grille)
+
+- Faire en sorte que les elements de la pile d'outil disparaissent au fil des utilisations, et que les outils restants descendent ensuite pour que l'outil actuellement utilisé soit TOUJOURS tout en bas.
+
+----
+Plus tard
+
+- Déplacer le bouton d'accès à la bottombar et rentre le popup accessible depuis partout (App.vue)
+
+- Faire en sorte que les récompenses puissent prendre plusieurs cases de taille (avec une height et width), et qu'on aie besoin de déterrer toutes les cases qui la cache pour la récupérer. La récompense doit être visible même avant l'avoir deterré complètement.
