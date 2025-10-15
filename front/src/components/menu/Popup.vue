@@ -46,6 +46,8 @@
     padding: 24px;
     width: 360px;
     max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
     font-family: 'Fredoka', sans-serif;
     color: #fff9e5;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);

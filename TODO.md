@@ -62,6 +62,10 @@ Améliorations du mini-jeu de creusage
 
 - Faire en sorte que les elements de la pile d'outil disparaissent au fil des utilisations, et que les outils restants descendent ensuite pour que l'outil actuellement utilisé soit TOUJOURS tout en bas.
 
+- Faire en sorte que tout les composants tiennent dans le pop-up et styliser la partie des outils en mettant dans une petite boite en bois (comme BottomBar)
+
+- Changer le style de l'affichage du nombre de jetons de minage, actuellement il est trop gros et il chevauche la croix (X)
+
 ----
 Plus tard
 

@@ -1,9 +1,9 @@
 <template>
-  <Popup @close="handleClose">
+  <Popup @close="handleClose" class="mining-popup">
     <div class="mining-game">
       <!-- En-tête avec jetons -->
       <div class="header">
-        <h2>⛏️ Mini-jeu de Minage</h2>
+        <h2>⛏️ Ma mine</h2>
         <div class="tokens">
           🪨 {{ miningTokens }}
         </div>
@@ -41,55 +41,59 @@
               @mouseenter="hoveredCell = { row: cell.row, col: cell.col }"
               @click="digAt(cell.row, cell.col)"
             >
-              <div v-if="cell.hp === 0 && cell.reward" class="reward">
-                {{ formatReward(cell.reward) }}
+              <div 
+                v-if="cell.hp === 0 && cell.reward" 
+                class="reward"
+                :class="{ 'large-emoji': isLargeReward(cell.reward) }"
+              >
+                {{ formatReward(cell.reward, true) }}
               </div>
             </div>
           </div>
 
           <!-- Pile d'outils -->
-          <div class="tools-stack-container">
-            <div class="tools-stack">
-              <Tooltip 
-                v-for="(tool, idx) in tools" 
-                :key="idx"
-                :text="getToolTooltip(tool)"
-                position="left"
-              >
-                <div 
-                  class="tool-item"
-                  :class="{ 
-                    'current': idx === currentToolIndex,
-                    'used': idx < currentToolIndex
-                  }"
+          <div class="tools-panel">
+            <div class="tools-stack-container">
+              <div class="tools-stack">
+                <Tooltip 
+                  v-for="(tool, idx) in visibleTools" 
+                  :key="`tool-${idx}`"
+                  :text="getToolTooltip(tool)"
+                  position="left"
                 >
-                  <span class="tool-icon">{{ getToolIcon(tool) }}</span>
-                  <span class="tool-name">{{ getToolName(tool) }}</span>
-                </div>
-              </Tooltip>
+                  <div 
+                    class="tool-item"
+                    :class="{ 
+                      'current': idx === 0,
+                      'used': idx === 0 && toolUsed
+                    }"
+                  >
+                    <span class="tool-icon">{{ getToolIcon(tool) }}</span>
+                    <span class="tool-name">{{ getToolName(tool) }}</span>
+                  </div>
+                </Tooltip>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Bouton Continuer quand tous les outils sont utilisés -->
-      <div v-else-if="gameOver && !showResults" class="continue-screen">
-        <h3>✨ Tous les outils utilisés !</h3>
-        <p>Voyons ce que vous avez trouvé...</p>
-        <ActionButton :onClick="() => showResults = true">
-          Continuer
-        </ActionButton>
+        
+        <!-- Bouton Continuer quand tous les outils sont utilisés -->
+        <div v-if="gameOver && !showResults" class="continue-button-container">
+          <ActionButton :onClick="() => showResults = true">
+            Continuer
+          </ActionButton>
+        </div>
       </div>
 
       <!-- Écran de fin avec résultats -->
       <div v-else-if="showResults" class="game-over">
         <h3>🎉 Partie terminée !</h3>
         <div class="rewards-list">
-          <p v-if="finalRewards.length === 0">Aucune récompense trouvée...</p>
+          <p v-if="aggregatedRewards.length === 0">Aucune récompense trouvée...</p>
           <div v-else>
             <p><strong>Récompenses obtenues :</strong></p>
             <ul>
-              <li v-for="(reward, idx) in finalRewards" :key="idx">
+              <li v-for="(reward, idx) in aggregatedRewards" :key="idx">
                 {{ formatReward(reward) }}
               </li>
             </ul>
@@ -100,8 +104,8 @@
         </ActionButton>
       </div>
 
-      <!-- Chargement -->
-      <div v-if="loading" class="loading">Chargement...</div>
+      <!-- Chargement initial uniquement -->
+      <div v-if="loading && !gameActive && !showResults" class="loading">Chargement...</div>
     </div>
   </Popup>
 </template>
@@ -113,7 +117,7 @@ import ActionButton from '@/components/menu/ActionButton.vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { useMining } from '@/composables/useMining'
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'game-over'])
 
 const {
   miningTokens,
@@ -133,13 +137,38 @@ const hoveredCell = ref(null)
 const gameOver = ref(false)
 const showResults = ref(false)
 const finalRewards = ref([])
+const animatingCells = ref(new Set())
+const toolUsed = ref(false)
+
+// Outils visibles (seulement ceux non utilisés)
+const visibleTools = computed(() => {
+  return tools.value.slice(currentToolIndex.value)
+})
+
+// Récompenses agrégées par type
+const aggregatedRewards = computed(() => {
+  const totals = {}
+  
+  finalRewards.value.forEach(reward => {
+    const [type, amount] = reward.split(':')
+    const qty = parseInt(amount)
+    
+    if (totals[type]) {
+      totals[type] += qty
+    } else {
+      totals[type] = qty
+    }
+  })
+  
+  return Object.entries(totals).map(([type, amount]) => `${type}:${amount}`)
+})
 
 // Configuration des outils (miroir du backend)
 const toolConfig = {
   shovel: { 
     damage: 3, 
     pattern: 'single', 
-    icon: '🪏', 
+    icon: '�', 
     name: 'Pelle',
     description: 'Inflige 3 dégâts sur une case',
     cursorPath: '/src/assets/ui/cursor/tool_shovel.png' 
@@ -164,17 +193,20 @@ onMounted(async () => {
 
 // Curseur actuel basé sur l'outil
 const currentCursor = computed(() => {
-  if (!gameActive.value || currentToolIndex.value >= tools.value.length) return 'default'
+  if (!gameActive.value || currentToolIndex.value >= tools.value.length) {
+    return "url('/src/assets/ui/cursor/hand_point.png') 16 16, pointer"
+  }
   const tool = tools.value[currentToolIndex.value]
   const config = toolConfig[tool]
   if (config?.cursorPath) {
     return `url("${config.cursorPath}") 16 16, pointer`
   }
-  return 'pointer'
+  return "url('/src/assets/ui/cursor/hand_point.png') 16 16, pointer"
 })
 
 function getCellClass(cell) {
   const classes = []
+  const cellKey = `${cell.row}-${cell.col}`
   
   if (cell.hp === 0) {
     classes.push('dug')
@@ -184,6 +216,11 @@ function getCellClass(cell) {
     classes.push('cracked-light')
   } else {
     classes.push('intact')
+  }
+
+  // Animation de creusage
+  if (animatingCells.value.has(cellKey)) {
+    classes.push('digging')
   }
 
   // Preview de l'impact
@@ -252,7 +289,23 @@ function getDamageAt(row, col) {
 async function digAt(row, col) {
   if (!gameActive.value || currentToolIndex.value >= tools.value.length) return
   
+  const cellKey = `${row}-${col}`
+  
+  // Ajouter l'animation de creusage
+  animatingCells.value.add(cellKey)
+  
+  // Animation de l'outil utilisé
+  toolUsed.value = true
+  setTimeout(() => {
+    toolUsed.value = false
+  }, 300)
+  
   const result = await dig(row, col)
+  
+  // Retirer l'animation après un court délai
+  setTimeout(() => {
+    animatingCells.value.delete(cellKey)
+  }, 300)
   
   if (result?.gameOver) {
     gameOver.value = true
@@ -265,10 +318,13 @@ async function startGame() {
   gameOver.value = false
   showResults.value = false
   finalRewards.value = []
+  gameActive.value = false // Réinitialiser pour permettre le redémarrage
   await startMiningGame()
 }
 
 function resetGame() {
+  gameOver.value = false
+  showResults.value = false
   startGame()
 }
 
@@ -290,7 +346,7 @@ function getToolTooltip(tool) {
   return `<div><strong>${config.name}</strong></div><div style="margin-top:4px;">${config.description}</div>`
 }
 
-function formatReward(reward) {
+function formatReward(reward, inCell = false) {
   const [type, amount] = reward.split(':')
   const icons = {
     eggs: '🥚',
@@ -298,7 +354,20 @@ function formatReward(reward) {
     stock_token: '📦',
     production_token: '⚡'
   }
-  return `${icons[type] || '❓'} ${amount}`
+  const icon = icons[type] || '❓'
+  const qty = parseInt(amount)
+  
+  // Dans une cellule, si quantité = 1, afficher seulement l'emoji
+  if (inCell && qty === 1) {
+    return icon
+  }
+  
+  return `${icon} ${amount}`
+}
+
+function isLargeReward(reward) {
+  const [, amount] = reward.split(':')
+  return parseInt(amount) === 1
 }
 </script>
 
@@ -306,27 +375,43 @@ function formatReward(reward) {
 .mining-game {
   font-family: 'Fredoka', sans-serif;
   color: #fff9e5;
+  width: 100%;
+}
+
+/* Style spécial pour le popup du mini-jeu */
+.mining-popup :deep(.popup-content) {
+  width: auto !important;
+  max-width: 95vw !important;
+  max-height: 95vh !important;
+  padding: 20px !important;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  gap: 16px;
+  padding-right: 30px;
 }
 
 .header h2 {
   margin: 0;
   font-size: 20px;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tokens {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
   background-color: rgba(0, 0, 0, 0.3);
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
   border: 1px solid #ffc66e;
+  flex-shrink: 0;
 }
 
 .start-screen,
@@ -349,16 +434,26 @@ function formatReward(reward) {
 .game-container {
   display: flex;
   gap: 16px;
-  align-items: stretch;
-  height: 450px;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .grid {
   display: grid;
-  gap: 4px;
-  flex: 1;
-  max-width: 400px;
-  align-content: center;
+  gap: 6px;
+  width: 500px;
+  height: 500px;
+  flex-shrink: 0;
+  background-color: #3d2817;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(90, 74, 58, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(90, 74, 58, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(60, 40, 23, 0.4) 0%, transparent 60%);
+  border: 3px solid #5a4a3a;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
 }
 
 .cell {
@@ -369,33 +464,77 @@ function formatReward(reward) {
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
-  transition: all 0.15s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
   position: relative;
   cursor: inherit;
 }
 
 .cell.intact {
-  background-color: #8b6914;
-  border: 2px solid #a17e1a;
+  background: #6d4e2d;
+  border: 2px solid #4a3018;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.cell.intact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 30% 40%, rgba(80, 60, 45, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 70% 70%, rgba(60, 45, 30, 0.12) 0%, transparent 35%);
+  pointer-events: none;
 }
 
 .cell.cracked-light {
-  background-color: #8b6914;
-  border: 2px solid #a17e1a;
-  background-image: linear-gradient(135deg, transparent 40%, rgba(0,0,0,0.2) 42%, rgba(0,0,0,0.2) 58%, transparent 60%);
+  background: #6d4e2d;
+  border: 2px solid #4a3018;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.cell.cracked-light::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(125deg, transparent 0%, transparent 35%, rgba(0,0,0,0.5) 37%, rgba(0,0,0,0.6) 39%, rgba(0,0,0,0.5) 41%, transparent 43%, transparent 100%),
+    radial-gradient(ellipse at 35% 40%, rgba(0, 0, 0, 0.3) 0%, transparent 25%);
+  pointer-events: none;
 }
 
 .cell.cracked-heavy {
-  background-color: #8b6914;
-  border: 2px solid #a17e1a;
+  background: #6d4e2d;
+  border: 2px solid #4a3018;
+  box-shadow: inset 2px 2px 3px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.cell.cracked-heavy::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-image: 
-    linear-gradient(135deg, transparent 35%, rgba(0,0,0,0.3) 38%, rgba(0,0,0,0.3) 62%, transparent 65%),
-    linear-gradient(45deg, transparent 35%, rgba(0,0,0,0.3) 38%, rgba(0,0,0,0.3) 62%, transparent 65%);
+    linear-gradient(125deg, transparent 0%, transparent 30%, rgba(0,0,0,0.6) 33%, rgba(0,0,0,0.7) 36%, rgba(0,0,0,0.6) 39%, transparent 42%, transparent 100%),
+    linear-gradient(55deg, transparent 0%, transparent 32%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.6) 38%, rgba(0,0,0,0.5) 41%, transparent 44%, transparent 100%),
+    radial-gradient(ellipse at 35% 40%, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 20%, transparent 30%),
+    radial-gradient(ellipse at 60% 65%, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.15) 18%, transparent 28%);
+  pointer-events: none;
 }
 
 .cell.dug {
-  background-color: #5a4a3a;
-  border: 2px solid #4a3a2a;
+  background: #4a3a2a;
+  border: 2px solid #2d1f12;
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.7);
 }
 
 .cell.preview {
@@ -409,14 +548,107 @@ function formatReward(reward) {
 }
 
 .cell.preview-destroy {
-  background-color: rgba(255, 255, 255, 0.4) !important;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.4);
-  outline: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6), inset 0 0 12px rgba(255, 255, 255, 0.3);
+  outline: 3px solid rgba(255, 255, 255, 0.8);
   outline-offset: -3px;
 }
 
 .cell:hover {
   transform: scale(1.05);
+}
+
+/* Animation de creusage */
+.cell.digging {
+  animation: digShake 0.3s ease;
+}
+
+@keyframes digShake {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(0.95) rotate(-3deg);
+  }
+  50% {
+    transform: scale(0.9) rotate(3deg);
+  }
+  75% {
+    transform: scale(0.95) rotate(-2deg);
+  }
+}
+
+/* Effet de particules lors du creusage - Fond lumineux */
+.cell.digging::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(139, 105, 20, 0.5) 0%, rgba(90, 74, 58, 0.3) 40%, transparent 70%);
+  animation: digFlash 0.3s ease-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Particules de terre qui volent */
+.cell.digging::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  background-image: 
+    radial-gradient(circle, #6b4423 2px, transparent 2px),
+    radial-gradient(circle, #8b6914 1.5px, transparent 1.5px),
+    radial-gradient(circle, #7a5518 2.5px, transparent 2.5px),
+    radial-gradient(circle, #5a4a3a 1px, transparent 1px);
+  background-size: 
+    50% 50%,
+    60% 60%,
+    45% 45%,
+    55% 55%;
+  background-position: 
+    10% 20%,
+    80% 30%,
+    30% 70%,
+    70% 80%;
+  animation: dirtParticles 0.4s ease-out;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+
+@keyframes digFlash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+}
+
+@keyframes dirtParticles {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.8) rotate(360deg);
+  }
 }
 
 .reward {
@@ -425,27 +657,38 @@ function formatReward(reward) {
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 14px;
-  animation: rewardAppear 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
 }
 
-@keyframes rewardAppear {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+.reward.large-emoji {
+  font-size: 28px;
+}
+
+.tools-panel {
+  display: flex;
+  flex-direction: column;
+  background-color: #7d5500;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23957339' fill-opacity='0.43' fill-rule='evenodd'/%3E%3C/svg%3E");
+  border: 3px solid #b77b3d;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  height: 475px;
+  flex-shrink: 0;
 }
 
 .tools-stack-container {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   min-width: 140px;
-  max-height: 450px;
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  padding-right: 8px;
 }
 
 .tools-stack {
@@ -463,8 +706,8 @@ function formatReward(reward) {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
-  cursor: help;
+  transition: all 0.3s ease;
+  cursor: url('/src/assets/ui/cursor/mark_question.png') 0 0, help;
   min-height: 40px;
 }
 
@@ -482,13 +725,24 @@ function formatReward(reward) {
 .tool-item.current {
   background-color: #a05a2d;
   border-color: #ffdb9f;
-  transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(255, 198, 110, 0.4);
+  transform: scale(1.05);
 }
 
 .tool-item.used {
-  opacity: 0.3;
-  filter: grayscale(1);
+  animation: toolUse 0.3s ease;
+}
+
+@keyframes toolUse {
+  0% {
+    transform: scale(1.05) translateY(0);
+  }
+  50% {
+    transform: scale(0.95) translateY(-5px);
+  }
+  100% {
+    transform: scale(1.05) translateY(0);
+  }
 }
 
 /* Styles pour la scrollbar */
@@ -508,6 +762,11 @@ function formatReward(reward) {
 
 .tools-stack-container::-webkit-scrollbar-thumb:hover {
   background: #ffdb9f;
+}
+
+.continue-button-container {
+  margin-top: 16px;
+  text-align: center;
 }
 
 .game-over h3 {
@@ -540,24 +799,99 @@ function formatReward(reward) {
   opacity: 0.7;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 1024px) {
+  .grid {
+    width: 400px;
+    height: 400px;
+  }
+
+  .tools-panel {
+    height: 380px;
+  }
+}
+
+@media (max-width: 768px) {
   .game-container {
     flex-direction: column;
-    height: auto;
-  }
-
-  .tools-stack-container {
-    max-height: 150px;
-    min-width: 100%;
-  }
-
-  .tools-stack {
-    flex-direction: row;
-    justify-content: flex-start;
+    align-items: center;
   }
 
   .grid {
-    max-width: 100%;
+    width: 70vw;
+    height: 70vw;
+    max-width: 400px;
+    max-height: 400px;
+  }
+
+  .tools-panel {
+    width: 70vw;
+    max-width: 400px;
+    height: 120px;
+  }
+
+  .tools-stack-container {
+    height: 100%;
+    min-width: 100%;
+    padding-right: 0;
+  }
+
+  .tools-stack {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .tools-stack::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+
+  /* Cacher le nom de l'outil, sauf pour l'outil actuel */
+  .tool-item:not(.current) .tool-name {
+    display: none;
+  }
+
+  .tool-item {
+    min-width: 50px;
+    justify-content: center;
+  }
+
+  .tool-item.current {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    width: 85vw;
+    height: 85vw;
+    max-width: 350px;
+    max-height: 350px;
+    gap: 4px;
+  }
+
+  .tools-panel {
+    width: 85vw;
+    max-width: 350px;
+    height: 100px;
+  }
+  
+  .header {
+    padding-right: 25px;
+  }
+  
+  .header h2 {
+    font-size: 18px;
+  }
+
+  /* En très petit écran aussi, cacher les noms sauf pour l'outil actuel */
+  .tool-item:not(.current) .tool-name {
+    display: none;
+  }
+
+  .tool-item {
+    min-width: 45px;
+    padding: 6px 8px;
   }
 }
 </style>

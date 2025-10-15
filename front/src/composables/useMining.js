@@ -74,7 +74,8 @@ export function useMining() {
         rewards.value = data.game.rewards || []
         
         if (data.gameOver) {
-          gameActive.value = false
+          // Ne pas désactiver gameActive pour garder la grille visible
+          // gameActive.value = false
           // Émettre un événement pour actualiser les ressources globales
           if (data.resources) {
             window.dispatchEvent(new CustomEvent('mining-game-over', { 

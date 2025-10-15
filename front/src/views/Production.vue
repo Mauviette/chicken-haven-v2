@@ -36,7 +36,7 @@
       </Tooltip>
       
       <!-- Icône mini-jeu de minage -->
-      <Tooltip text="Mini-jeu de minage">
+      <Tooltip text="Ma mine">
         <div class="mining-icon" @click="openMiningGame">
           🪨
         </div>
