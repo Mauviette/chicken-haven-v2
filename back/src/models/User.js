@@ -80,7 +80,25 @@ const UserSchema = new mongoose.Schema({
   resources : {
     eggs : { type : Number, default: 0},
     stock_token : { type : Number, default: 0},
-    production_token : { type : Number, default: 0}
+    production_token : { type : Number, default: 0},
+    mining_token : { type : Number, default: 3}
+  },
+
+  // Mini-jeu de minage
+  miningGame: {
+    active: { type: Boolean, default: false },
+    gridSize: { type: Number, default: 5 },
+    cells: [
+      {
+        row: { type: Number, required: true },
+        col: { type: Number, required: true },
+        hp: { type: Number, default: 3 },
+        reward: { type: String, default: null } // 'eggs:10', 'mining_token:1', etc.
+      }
+    ],
+    tools: [{ type: String }], // ['shovel', 'pickaxe', 'shovel', ...]
+    currentToolIndex: { type: Number, default: 0 },
+    rewards: [{ type: String }] // Récompenses collectées durant la partie
   },
 
   // Niveaux d'améliorations par ID (ex: { '1': 2, '2': 5 })

@@ -34,7 +34,17 @@
       <Tooltip :text="charismeTooltipHtml">
         <span class="stat-chip" :class="{ buffed: teamStatMult.charisme > 1 }">✨ {{ Math.round(teamStats.charisme) }}</span>
       </Tooltip>
+      
+      <!-- Icône mini-jeu de minage -->
+      <Tooltip text="Mini-jeu de minage">
+        <div class="mining-icon" @click="openMiningGame">
+          🪨
+        </div>
+      </Tooltip>
     </div>
+    
+    <!-- Popup du mini-jeu de minage -->
+    <MiningGame v-if="showMiningGame" @close="showMiningGame = false" />
     <div class="production-content">
 
       <div class="egg-clicker">
@@ -116,6 +126,7 @@ import { useSound } from '@/composables/useSound'
 import { useBuffs } from '@/composables/useBuffs'
 import { apiPost } from '@/utils/api'
 import Tooltip from '@/components/menu/Tooltip.vue'
+import MiningGame from '@/components/menu/MiningGame.vue'
 
 const { 
   eggState, 
@@ -643,6 +654,13 @@ const handleEggClick = async () => {
   }
 }
 
+// État du mini-jeu de minage
+const showMiningGame = ref(false)
+
+function openMiningGame() {
+  showMiningGame.value = true
+}
+
 onMounted(async () => {
   // S'assurer que l'équipe est à jour pour les stats
   await fetchTeam()
@@ -808,6 +826,32 @@ watch(() => currentGains.value, (nv, ov) => {
 .team-stats-banner .stat-chip.buffed {
   color: #c99100;
   font-weight: 700;
+}
+
+.mining-icon {
+  background: linear-gradient(135deg, #8b6914, #a17e1a);
+  border: 2px solid #ffc66e;
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+
+.mining-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 105, 20, 0.4);
+  background: linear-gradient(135deg, #a17e1a, #c99100);
+}
+
+.mining-icon:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(139, 105, 20, 0.4);
 }
 
 .production-content {

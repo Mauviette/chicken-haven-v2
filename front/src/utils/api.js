@@ -15,16 +15,16 @@ const getApiBaseUrl = () => {
   let hostname = currentUrl.hostname
   const protocol = currentUrl.protocol
   
-  console.log('🔍 Auto-detecting API URL from:', { 
-    href: currentUrl.href, 
-    hostname, 
-    protocol 
-  })
+  //console.log('🔍 Auto-detecting API URL from:', { 
+  //  href: currentUrl.href, 
+  //  hostname, 
+  //  protocol 
+  //})
   
   // Si on accède via localhost, utiliser localhost pour l'API
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     const apiUrl = 'http://localhost:3002'
-    console.log('📍 Detected localhost, using:', apiUrl)
+    //console.log('📍 Detected localhost, using:', apiUrl)
     return apiUrl
   }
   
@@ -33,13 +33,13 @@ const getApiBaseUrl = () => {
     // Retirer les crochets s'ils sont déjà présents dans hostname
     const cleanHostname = hostname.replace(/^\[|\]$/g, '')
     const apiUrl = `${protocol}//[${cleanHostname}]:3002`
-    console.log('📍 Detected IPv6, clean hostname:', cleanHostname, 'using:', apiUrl)
+    //console.log('📍 Detected IPv6, clean hostname:', cleanHostname, 'using:', apiUrl)
     return apiUrl
   }
   
   // Si on accède via une adresse IPv4, utiliser la même pour l'API
   const apiUrl = `${protocol}//${hostname}:3002`
-  console.log('📍 Detected IPv4, using:', apiUrl)
+  //console.log('📍 Detected IPv4, using:', apiUrl)
   return apiUrl
 }
 
