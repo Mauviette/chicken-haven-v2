@@ -21,7 +21,7 @@
       </div>
 
       <!-- Jeu actif -->
-      <div v-else-if="gameActive && !showResults" class="game-area">
+      <div v-else-if="gameActive && !showResults" class="game-area fixed-height">
         <div class="game-container">
           <!-- Grille de creusage -->
           <div 
@@ -168,7 +168,7 @@ const toolConfig = {
   shovel: { 
     damage: 3, 
     pattern: 'single', 
-    icon: '�', 
+    icon: '🗜️', 
     name: 'Pelle',
     description: 'Inflige 3 dégâts sur une case',
     cursorPath: '/src/assets/ui/cursor/tool_shovel.png' 
@@ -376,6 +376,8 @@ function isLargeReward(reward) {
   font-family: 'Fredoka', sans-serif;
   color: #fff9e5;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Style spécial pour le popup du mini-jeu */
@@ -384,6 +386,7 @@ function isLargeReward(reward) {
   max-width: 95vw !important;
   max-height: 95vh !important;
   padding: 20px !important;
+  height: auto !important;
 }
 
 .header {
@@ -764,9 +767,27 @@ function isLargeReward(reward) {
   background: #ffdb9f;
 }
 
+.game-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.game-area.fixed-height {
+  min-height: 550px;
+  height: 550px;
+}
+
 .continue-button-container {
   margin-top: 16px;
   text-align: center;
+}
+
+.game-area.fixed-height .continue-button-container {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .game-over h3 {

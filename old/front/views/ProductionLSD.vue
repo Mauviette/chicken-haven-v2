@@ -155,7 +155,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* � DIMENSION PARALLÈLE ULTRA-PSYCHÉDÉLIQUE � */
+/* 🗜️ DIMENSION PARALLÈLE ULTRA-PSYCHÉDÉLIQUE 🗜️ */
 .production-screen {
   flex: 1;
   width: 100%;
@@ -295,7 +295,7 @@ onUnmounted(() => {
   
   /* APOCALYPSE D'ÉMOJIS */
   &::before {
-    content: '��💥�⚡�👽🛸��🎆🎇💫🌟✨🎊🎉💀☠️👻🤯😵‍💫🥴🤪😜🤩🥳🤠👹👺🤖👾🎭🎪🎨🎬🎮🎯🎲🃏🎰🎳🏆🥇🏅🎖️🏵️🎗️🎟️🎫�';
+    content: '🗜️🗜️💥🗜️⚡🗜️👽🛸🗜️🗜️🎆🎇💫🌟✨🎊🎉💀☠️👻🤯😵‍💫🥴🤪😜🤩🥳🤠👹👺🤖👾🎭🎪🎨🎬🎮🎯🎲🃏🎰🎳🏆🥇🏅🎖️🏵️🎗️🎟️🎫🗜️';
     position: absolute;
     top: -50px;
     left: -50px;
@@ -344,7 +344,7 @@ onUnmounted(() => {
   
   /* FIN DU MONDE NUMÉRIQUE */
   &::before {
-    content: '🌋�☠️��🔥💥💀☠️👻🤯😵‍💫💀�💥���☠️🌋🔥💥💀👹☠️�💥🔥💀👺👹�💥🔥💀☠️👻🤯😵‍💫💀�💥🔥👹';
+    content: '🌋🗜️☠️🗜️🗜️🔥💥💀☠️👻🤯😵‍💫💀🗜️💥🗜️🗜️🗜️☠️🌋🔥💥💀👹☠️🗜️💥🔥💀👺👹🗜️💥🔥💀☠️👻🤯😵‍💫💀🗜️💥🔥👹';
     position: absolute;
     top: -80px;
     left: -80px;
