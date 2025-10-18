@@ -9,6 +9,14 @@
           <span class="mobile-text">⚙️</span>
         </ActionButton>
       </div>
+      <div class="mining-button" style="margin-left:8px;">
+        <ActionButton
+          :onClick="() => emit('open-mining')"
+        >
+          <span class="desktop-text">🪨</span>
+          <span class="mobile-text">🪨</span>
+        </ActionButton>
+      </div>
     </div>
 
     <div class="main-buttons">
@@ -21,6 +29,7 @@
         <span class="desktop-text">⚒️ Production</span>
         <span class="mobile-text">⚒️</span>
       </ActionButton>
+
 
       <div class="badge-wrapper market-button">
         <ActionButton
@@ -97,7 +106,7 @@ import { usePoules } from '@/composables/usePoules'
 import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
 const route = useRoute()
 
-const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements'])
+const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements', 'open-mining'])
 
 // Succès non réclamés -> badge sur le bouton
 const {

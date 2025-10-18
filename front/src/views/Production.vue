@@ -35,12 +35,7 @@
         <span class="stat-chip" :class="{ buffed: teamStatMult.charisme > 1 }">✨ {{ Math.round(teamStats.charisme) }}</span>
       </Tooltip>
       
-      <!-- Icône mini-jeu de minage -->
-      <Tooltip text="Ma mine">
-        <div class="mining-icon" @click="openMiningGame">
-          🪨
-        </div>
-      </Tooltip>
+      <!-- (Mine accessible depuis la barre du bas) -->
     </div>
     
     <!-- Popup du mini-jeu de minage -->
@@ -126,7 +121,6 @@ import { useSound } from '@/composables/useSound'
 import { useBuffs } from '@/composables/useBuffs'
 import { apiPost } from '@/utils/api'
 import Tooltip from '@/components/menu/Tooltip.vue'
-import MiningGame from '@/components/menu/MiningGame.vue'
 
 const { 
   eggState, 
@@ -654,12 +648,7 @@ const handleEggClick = async () => {
   }
 }
 
-// État du mini-jeu de minage
-const showMiningGame = ref(false)
-
-function openMiningGame() {
-  showMiningGame.value = true
-}
+// Le mini-jeu de minage est maintenant géré globalement depuis BottomBar / App.vue
 
 onMounted(async () => {
   // S'assurer que l'équipe est à jour pour les stats

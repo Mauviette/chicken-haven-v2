@@ -33,7 +33,10 @@
       @open-help="toast('Bientôt disponible !')"
       @open-options="openOptions"
       @open-achievements="toggleAchievementsWithSound"
+      @open-mining="() => showMiningGame = true"
     />
+    <!-- Mining popup global accessible depuis la BottomBar -->
+    <MiningGame v-if="showMiningGame && !isAuthPage" @close="showMiningGame = false" />
   </div>
 </template>
 
@@ -43,6 +46,7 @@ import { useRoute } from 'vue-router'
 import ToastManager from '@/components/menu/ToastManager.vue'
 import Options from '@/components/menu/Options.vue'
 import BottomBar from '@/components/menu/BottomBar.vue'
+import MiningGame from '@/components/menu/MiningGame.vue'
 import TopBar from '@/components/menu/TopBar.vue'
 import TeamParade from '@/components/menu/TeamParade.vue'
 import SpawnableObjects from '@/components/SpawnableObjects.vue'
@@ -66,6 +70,7 @@ const showAchievements = ref(false)
 const levelUpVisible = ref(false)
 const levelUpFrom = ref(1)
 const levelUpTo = ref(1)
+const showMiningGame = ref(false)
 const { logout: performLogout } = useAuth()
 const { refreshPlayer, fetchTeam } = usePlayer()
 const { syncStatus } = useDataSync()
