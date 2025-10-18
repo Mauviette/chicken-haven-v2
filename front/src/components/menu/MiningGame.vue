@@ -387,6 +387,10 @@ function isLargeReward(reward) {
   max-height: 95vh !important;
   padding: 20px !important;
   height: auto !important;
+  /* keep popup content from scrolling the whole window when internal controls appear */
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden !important;
 }
 
 .header {
@@ -776,6 +780,26 @@ function isLargeReward(reward) {
 .game-area.fixed-height {
   min-height: 550px;
   height: 550px;
+  box-sizing: border-box;
+  position: relative; /* allow absolute positioning of the continue button so it doesn't push the layout */
+}
+
+/* Reserve space inside the game container so the continue button (positioned absolute) never overlaps content */
+.game-container {
+  /* ensure inner content doesn't increase popup size; allow internal scrolls only where desired */
+  padding-bottom: 80px; /* reserve space for the continue button */
+}
+
+.game-area.fixed-height .continue-button-container {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
 }
 
 .continue-button-container {
