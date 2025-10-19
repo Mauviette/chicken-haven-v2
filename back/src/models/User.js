@@ -84,6 +84,19 @@ const UserSchema = new mongoose.Schema({
     mining_token : { type : Number, default: 3}
   },
 
+  // Artéfacts de minage: collection du joueur et emplacements équipables
+  artifacts: [
+    {
+      artifactId: { type: String, required: true },
+      quantity: { type: Number, default: 1 }
+    }
+  ],
+
+  artifactSlots: {
+    slotsCount: { type: Number, default: 2 }, // nombre total d'emplacements disponibles
+    equipped: [ { type: String, default: null } ] // array d'artifactId ou null
+  },
+
   // Mini-jeu de minage
   miningGame: {
     active: { type: Boolean, default: false },

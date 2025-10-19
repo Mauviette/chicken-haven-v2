@@ -8,6 +8,8 @@ const cells = ref([])
 const tools = ref([])
 const currentToolIndex = ref(0)
 const rewards = ref([])
+const equippedArtifacts = ref([])
+const artifactSlotsCount = ref(0)
 const loading = ref(false)
 
 export function useMining() {
@@ -18,6 +20,8 @@ export function useMining() {
       const data = await apiGet('/api/mining/state')
       miningTokens.value = data.miningTokens || 0
       gameActive.value = data.active || false
+      equippedArtifacts.value = data.equippedArtifacts || []
+      artifactSlotsCount.value = data.artifactSlotsCount || 0
       
       if (data.game) {
         gridSize.value = data.game.gridSize
@@ -25,6 +29,10 @@ export function useMining() {
         tools.value = data.game.tools
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
+        // If the server exposes equippedArtifacts for the active game, use it
+        if (data.game.equippedArtifacts) {
+          equippedArtifacts.value = data.game.equippedArtifacts
+        }
       }
       
       return data
@@ -50,6 +58,9 @@ export function useMining() {
         tools.value = data.game.tools
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
+        equippedArtifacts.value = data.game.equippedArtifacts || []
+        // server may expose artifactModifiers if needed
+        // artifactModifiers.value = data.game.artifactModifiers || {}
       }
       
       return data
@@ -72,6 +83,7 @@ export function useMining() {
         cells.value = data.game.cells
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
+        equippedArtifacts.value = data.game.equippedArtifacts || equippedArtifacts.value
         
         if (data.gameOver) {
           // Ne pas désactiver gameActive pour garder la grille visible
@@ -102,6 +114,8 @@ export function useMining() {
     tools,
     currentToolIndex,
     rewards,
+    equippedArtifacts,
+    artifactSlotsCount,
     loading,
     fetchState,
     startGame,

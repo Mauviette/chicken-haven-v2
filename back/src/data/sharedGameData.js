@@ -948,6 +948,27 @@ export const miningData = {
   toolsCount: 6
 }
 
+// ========================
+// ARTÉFACTS DE MINAGE
+// Liste d'artefacts utilisables pendant une partie de minage.
+// Chaque artefact a un effet passif appliqué lorsqu'il est équipé pour une partie.
+export const artifactsData = {
+  'lucky-shard': {
+    id: 'lucky-shard',
+    name: 'Fragment de Chance',
+    icon: '🍀',
+    description: "Augmente légèrement la probabilité d'obtenir une récompense dans chaque case.",
+    effect: { type: 'increase_reward_chance', amount: 0.05 } // +5% chance par case
+  },
+  'smith-glyph': {
+    id: 'smith-glyph',
+    name: 'Glyphe du Forgeron',
+    icon: '🔧',
+    description: "Augmente les dégâts des outils équipés de +1 pendant la partie.",
+    effect: { type: 'increase_tool_damage', amount: 1 }
+  }
+}
+
 // Fonction pour formater un prix avec la bonne unité
 export function formatPrice(price) {
   if (typeof price === 'number') {

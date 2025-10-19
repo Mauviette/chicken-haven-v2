@@ -23,6 +23,17 @@
       <!-- Jeu actif -->
       <div v-else-if="gameActive && !showResults" class="game-area fixed-height">
         <div class="game-container">
+          <!-- Barre d'artefacts équipés -->
+          <div class="artifacts-bar" v-if="equippedArtifacts && equippedArtifacts.length >= 0" style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">
+            <div style="font-size:14px; font-weight:600;">Artefacts :</div>
+            <Tooltip v-for="(aid, idx) in equippedArtifacts" :key="`art-${idx}`" :text="getArtifactTooltip(aid)" position="top">
+              <div class="artifact-item" :class="{ empty: !aid }" style="display:flex; align-items:center; gap:6px; padding:6px 8px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:6px;">
+                <span class="artifact-icon">{{ getArtifactIcon(aid) }}</span>
+                <span class="artifact-name" v-if="aid">{{ getArtifactName(aid) }}</span>
+                <span v-else style="opacity:0.6">(vide)</span>
+              </div>
+            </Tooltip>
+          </div>
           <!-- Grille de creusage -->
           <div 
             class="grid" 
@@ -128,6 +139,8 @@ const {
   tools,
   currentToolIndex,
   rewards,
+  equippedArtifacts,
+  artifactSlotsCount,
   loading,
   fetchState,
   startGame: startMiningGame,
@@ -350,6 +363,35 @@ function getToolTooltip(tool) {
   const config = toolConfig[tool]
   if (!config) return 'Outil inconnu'
   return `<div><strong>${config.name}</strong></div><div style="margin-top:4px;">${config.description}</div>`
+}
+
+// Helpers pour les artefacts — lire depuis MINING_CONFIG côté client (fallback déjà fourni)
+function getArtifactData(artifactId) {
+  try {
+    const server = (typeof window !== 'undefined' && window.__gameDataCache && window.__gameDataCache.mining && window.__gameDataCache.mining.artifacts) ? window.__gameDataCache.mining.artifacts : null
+    if (server && artifactId) return server[artifactId] || null
+  } catch (_) {}
+  // fallback: si front n'a pas les données d'artefacts, chercher dans global MINING_CONFIG (rare)
+  try {
+    if (MINING_CONFIG && MINING_CONFIG.artifacts && artifactId) return MINING_CONFIG.artifacts[artifactId] || null
+  } catch (_) {}
+  return null
+}
+
+function getArtifactIcon(aid) {
+  const d = getArtifactData(aid)
+  return d ? (d.icon || '❖') : '❖'
+}
+
+function getArtifactName(aid) {
+  const d = getArtifactData(aid)
+  return d ? (d.name || aid) : aid || 'Vide'
+}
+
+function getArtifactTooltip(aid) {
+  const d = getArtifactData(aid)
+  if (!d) return 'Aucun artefact équipé'
+  return `<div><strong>${d.name}</strong></div><div style="margin-top:4px;">${d.description || ''}</div>`
 }
 
 function formatReward(reward, inCell = false) {
