@@ -1,23 +1,8 @@
 import User from '../models/User.js'
+import { miningData } from '../data/sharedGameData.js'
 
-// Configuration du jeu (peut être déplacée dans gameData.js)
-const MINING_CONFIG = {
-  gridSize: 5,
-  defaultHP: 3,
-  tools: {
-    shovel: { damage: 3, pattern: 'single' }, // Frappe une seule case
-    pickaxe: { damage: 2, pattern: 'cross' }  // Frappe en croix (case + 4 adjacentes)
-  },
-  rewardPool: [
-    { type: 'eggs', amount: 10, weight: 40 },
-    { type: 'eggs', amount: 25, weight: 25 },
-    { type: 'eggs', amount: 50, weight: 15 },
-    { type: 'mining_token', amount: 1, weight: 10 },
-    { type: 'stock_token', amount: 1, weight: 8 },
-    { type: 'production_token', amount: 1, weight: 2 }
-  ],
-  toolPool: ['shovel', 'shovel', 'pickaxe', 'shovel', 'pickaxe', 'shovel']
-}
+// Utiliser la source unique de vérité pour la configuration du mini-jeu
+const MINING_CONFIG = miningData
 
 // Génère une récompense aléatoire basée sur le pool pondéré
 function generateReward() {
@@ -53,8 +38,24 @@ function generateGrid(size) {
 }
 
 // Génère une liste d'outils aléatoires
+// Effectue un tirage pondéré avec remise pour générer la liste d'outils
 function generateTools() {
-  return [...MINING_CONFIG.toolPool].sort(() => Math.random() - 0.5)
+  const totalWeight = MINING_CONFIG.toolPool.reduce((s, t) => s + t.weight, 0)
+  const picks = []
+
+  for (let i = 0; i < (MINING_CONFIG.toolsCount || 6); i++) {
+    let rand = Math.random() * totalWeight
+    for (const entry of MINING_CONFIG.toolPool) {
+      rand -= entry.weight
+      if (rand <= 0) {
+        picks.push(entry.type)
+        break
+      }
+    }
+  }
+
+  // Mélanger légèrement l'ordre pour un peu d'aléa visuel
+  return picks.sort(() => Math.random() - 0.5)
 }
 
 // GET /api/mining/state - Récupère l'état actuel du jeu de minage
@@ -169,6 +170,16 @@ export async function digCell(req, res) {
       affectedCells.push({ row: row + 1, col, damage: 1 })
       affectedCells.push({ row, col: col - 1, damage: 1 })
       affectedCells.push({ row, col: col + 1, damage: 1 })
+    } else if (tool.pattern === 'square') {
+      // 3x3 centered on (row, col) : centre reçoit tool.damage, voisins reçoivent 1
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = row + dr
+          const c = col + dc
+          const dmg = (dr === 0 && dc === 0) ? tool.damage : 1
+          affectedCells.push({ row: r, col: c, damage: dmg })
+        }
+      }
     }
 
     const newRewards = []

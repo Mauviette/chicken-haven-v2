@@ -116,6 +116,7 @@ import Popup from '@/components/menu/Popup.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { useMining } from '@/composables/useMining'
+import { MINING_CONFIG } from '@/data/mining'
 
 const emit = defineEmits(['close', 'game-over'])
 
@@ -163,25 +164,22 @@ const aggregatedRewards = computed(() => {
   return Object.entries(totals).map(([type, amount]) => `${type}:${amount}`)
 })
 
-// Configuration des outils (miroir du backend)
-const toolConfig = {
-  shovel: { 
-    damage: 3, 
-    pattern: 'single', 
-    icon: '🗜️', 
-    name: 'Pelle',
-    description: 'Inflige 3 dégâts sur une case',
-    cursorPath: '/src/assets/ui/cursor/tool_shovel.png' 
-  },
-  pickaxe: { 
-    damage: 2, 
-    pattern: 'cross', 
-    icon: '⛏️', 
-    name: 'Pioche',
-    description: 'Inflige 2 dégâts sur la case ciblée et 1 dégât sur les cases adjacentes',
-    cursorPath: '/src/assets/ui/cursor/tool_pickaxe.png' 
-  }
-}
+// Construire dynamiquement la config des outils à partir des données synchronisées
+const toolConfig = (() => {
+  const cfg = {}
+  const shared = MINING_CONFIG && MINING_CONFIG.tools ? MINING_CONFIG.tools : {}
+  Object.entries(shared).forEach(([key, v]) => {
+    cfg[key] = {
+      damage: v.damage,
+      pattern: v.pattern,
+      icon: v.icon || '🔧',
+      name: v.name || key,
+      description: v.desc || v.description || '',
+      cursorPath: `/src/assets/ui/cursor/tool_${key}.png`
+    }
+  })
+  return cfg
+})()
 
 onMounted(async () => {
   await fetchState()
@@ -263,6 +261,9 @@ function willBeAffected(row, col) {
     if (row === hRow && col === hCol - 1) return true
     if (row === hRow && col === hCol + 1) return true
   }
+  else if (config.pattern === 'square') {
+    return Math.abs(row - hRow) <= 1 && Math.abs(col - hCol) <= 1
+  }
   
   return false
 }
@@ -282,7 +283,12 @@ function getDamageAt(row, col) {
     if (row === hRow && col === hCol) return config.damage
     return 1
   }
-  
+  else if (config.pattern === 'square') {
+    if (row === hRow && col === hCol) return config.damage
+    if (Math.abs(row - hRow) <= 1 && Math.abs(col - hCol) <= 1) return 1
+    return 0
+  }
+
   return 0
 }
 

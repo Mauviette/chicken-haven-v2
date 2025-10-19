@@ -897,7 +897,55 @@ export function getAllGameData() {
     achievements: achievementsData,
     items: itemsData,
     categories: achievementCategories
+    ,
+    // Configuration du mini-jeu de minage
+    mining: miningData
   }
+}
+
+// ========================
+// CONFIGURATION DU MINI-JEU DE MINAGE
+// ========================
+export const miningData = {
+  gridSize: 5,
+  defaultHP: 3,
+  tools: {
+    shovel: {
+      name: 'Pelle',
+      icon: '🪚',
+      desc: 'Inflige 3 dégâts sur une case',
+      damage: 3,
+      pattern: 'single'
+    },
+    pickaxe: {
+      name: 'Pioche',
+      icon: '⛏️',
+      desc: 'Inflige 2 dégâts sur la case ciblée et 1 dégât sur les cases adjacentes',
+      damage: 2,
+      pattern: 'cross'
+    },
+    hammer: {
+      name: 'Marteau',
+      icon: '🔨',
+      desc: 'Inflige 1 dégât au centre et 1 dégât aux cases voisines (3x3)',
+      damage: 1,
+      pattern: 'square'
+    }
+  },
+  rewardPool: [
+    { type: 'eggs', amount: 10, weight: 40 },
+    { type: 'eggs', amount: 25, weight: 25 },
+    { type: 'eggs', amount: 50, weight: 15 },
+    { type: 'mining_token', amount: 1, weight: 10 },
+    { type: 'stock_token', amount: 1, weight: 8 },
+    { type: 'production_token', amount: 1, weight: 2 }
+  ],
+  toolPool: [
+    { type: 'shovel', weight: 4 },
+    { type: 'pickaxe', weight: 4 },
+    { type: 'hammer', weight: 4 }
+  ],
+  toolsCount: 6
 }
 
 // Fonction pour formater un prix avec la bonne unité
