@@ -142,8 +142,23 @@ export async function startMining(req, res) {
     // Consommer un jeton
     user.resources.mining_token -= 1
 
+    // S'assurer que artifactSlots existe et est initialisé
+    if (!user.artifactSlots) {
+      user.artifactSlots = { slotsCount: 2, equipped: [] }
+    }
+    if (!user.artifactSlots.equipped) {
+      user.artifactSlots.equipped = []
+    }
+
     // Préparer les artefacts équipés (on lit depuis artifactSlots.equipped)
-    const equipped = (user.artifactSlots && Array.isArray(user.artifactSlots.equipped)) ? user.artifactSlots.equipped.slice(0) : []
+    // S'assurer que equipped a la bonne longueur avec des nulls si nécessaire
+    const slotsCount = user.artifactSlots.slotsCount || 2
+    let equipped = Array.isArray(user.artifactSlots.equipped) ? [...user.artifactSlots.equipped] : []
+    
+    // Compléter avec des null si le tableau est trop court
+    while (equipped.length < slotsCount) {
+      equipped.push(null)
+    }
 
     // Calculer les modificateurs provenant des artefacts
     const mods = computeArtifactModifiers(equipped)
@@ -173,6 +188,7 @@ export async function startMining(req, res) {
     res.json({
       success: true,
       miningTokens: user.resources.mining_token,
+      artifactSlotsCount: user.artifactSlots?.slotsCount || 0,
       game: {
         gridSize: user.miningGame.gridSize,
         cells: user.miningGame.cells,

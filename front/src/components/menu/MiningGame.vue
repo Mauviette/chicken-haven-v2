@@ -5,17 +5,17 @@
       <div class="header">
         <div class="header-left">
           <h2>⛏️ Ma mine</h2>
-          <!-- Artefacts équipés -->
-          <div class="equipped-artifacts" v-if="artifactSlotsCount > 0">
+          <!-- Artefacts équipés (seulement pendant le jeu) -->
+          <div class="equipped-artifacts" v-if="gameActive && artifactSlotsCount > 0">
             <template v-for="idx in artifactSlotsCount" :key="`artifact-slot-${idx}`">
               <Tooltip 
-                v-if="displayedArtifacts[idx - 1]"
-                :text="getArtifactTooltip(displayedArtifacts[idx - 1])"
+                v-if="localEquippedArtifacts[idx - 1]"
+                :text="getArtifactTooltip(localEquippedArtifacts[idx - 1])"
                 position="bottom"
                 :followMouse="false"
               >
                 <div class="artifact-badge">
-                  {{ getArtifactIcon(displayedArtifacts[idx - 1]) }}
+                  {{ getArtifactIcon(localEquippedArtifacts[idx - 1]) }}
                 </div>
               </Tooltip>
             </template>
@@ -128,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import Popup from '@/components/menu/Popup.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
@@ -153,18 +153,20 @@ const {
   dig
 } = useMining()
 
+// Copie locale pour forcer la réactivité
+const localEquippedArtifacts = ref([])
+
+// Watcher pour synchroniser les artefacts
+watch([equippedArtifacts, artifactSlotsCount], ([artifacts, count]) => {
+  localEquippedArtifacts.value = [...(artifacts || [])]
+}, { immediate: true, deep: true })
+
 const hoveredCell = ref(null)
 const gameOver = ref(false)
 const showResults = ref(false)
 const finalRewards = ref([])
 const animatingCells = ref(new Set())
 const toolUsed = ref(false)
-
-// Artefacts affichés - capture au démarrage et reste stable pendant la partie
-const displayedArtifacts = computed(() => {
-  // Toujours afficher les artefacts équipés, même pendant la partie
-  return equippedArtifacts.value || []
-})
 
 // Outils visibles (seulement ceux non utilisés)
 const visibleTools = computed(() => {
@@ -349,7 +351,6 @@ async function startGame() {
   gameOver.value = false
   showResults.value = false
   finalRewards.value = []
-  gameActive.value = false // Réinitialiser pour permettre le redémarrage
   await startMiningGame()
 }
 

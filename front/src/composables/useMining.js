@@ -59,6 +59,7 @@ export function useMining() {
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
         equippedArtifacts.value = data.game.equippedArtifacts || []
+        artifactSlotsCount.value = data.artifactSlotsCount || 0
         // server may expose artifactModifiers if needed
         // artifactModifiers.value = data.game.artifactModifiers || {}
       }

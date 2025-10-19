@@ -111,7 +111,12 @@ const UserSchema = new mongoose.Schema({
     ],
     tools: [{ type: String }], // ['shovel', 'pickaxe', 'shovel', ...]
     currentToolIndex: { type: Number, default: 0 },
-    rewards: [{ type: String }] // Récompenses collectées durant la partie
+    rewards: [{ type: String }], // Récompenses collectées durant la partie
+    equippedArtifacts: [{ type: String }], // IDs des artefacts équipés (peut contenir des null)
+    artifactModifiers: {
+      type: mongoose.Schema.Types.Mixed,
+      default: function () { return {} }
+    }
   },
 
   // Niveaux d'améliorations par ID (ex: { '1': 2, '2': 5 })
