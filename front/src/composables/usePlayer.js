@@ -6,6 +6,7 @@ const stockTokens = ref(0)
 const productionTokens = ref(0)
 const wildTokens = ref(0)
 const team = ref({ maxSlots: 3, slots: [] })
+const artifactSlots = ref({ slotsCount: 2, equipped: [] })
 const level = ref(1)
 const xp = ref(0)
 const xpRequired = ref(2)
@@ -22,6 +23,7 @@ function clearPlayerData() {
   xp.value = 0
   xpRequired.value = 2
   team.value = { maxSlots: 3, slots: [] }
+  artifactSlots.value = { slotsCount: 2, equipped: [] }
 }
 
 export function usePlayer() {
@@ -266,12 +268,71 @@ export function usePlayer() {
 
   function getLevel() { return level.value }
 
+  // === Artefacts ===
+  async function fetchArtifactSlots() {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      const data = await apiGet('/api/user/artifact-slots')
+      if (data) {
+        artifactSlots.value = data
+      }
+    } catch (err) {
+      console.error('Erreur fetchArtifactSlots:', err)
+    }
+  }
+
+  async function equipArtifact(artifactId) {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return false
+      
+      await fetchArtifactSlots()
+      const equipped = artifactSlots.value.equipped || []
+      const slotsCount = artifactSlots.value.slotsCount || 0
+      
+      // Vérifier s'il y a de la place
+      const usedSlots = equipped.filter(id => id !== null && id !== '').length
+      if (usedSlots >= slotsCount) {
+        throw new Error('Tous les emplacements sont occupés')
+      }
+      
+      const result = await apiPut('/api/user/artifact/equip/' + artifactId)
+      if (result && result.success) {
+        artifactSlots.value = result.artifactSlots
+        return true
+      }
+    } catch (err) {
+      console.error('Erreur equipArtifact:', err)
+      throw err
+    }
+    return false
+  }
+
+  async function unequipArtifact(artifactId) {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return false
+      
+      const result = await apiPut('/api/user/artifact/unequip/' + artifactId)
+      if (result && result.success) {
+        artifactSlots.value = result.artifactSlots
+        return true
+      }
+    } catch (err) {
+      console.error('Erreur unequipArtifact:', err)
+      throw err
+    }
+    return false
+  }
+
   return {
     eggs,
     stockTokens,
     productionTokens,
     wildTokens,
     team,
+    artifactSlots,
     level,
     xp,
     xpRequired,
@@ -291,6 +352,10 @@ export function usePlayer() {
     isInTeam,
     equipChicken,
     unequipChicken,
-    replaceTeamMember
+    replaceTeamMember,
+    // Artifacts
+    fetchArtifactSlots,
+    equipArtifact,
+    unequipArtifact
   }
 }

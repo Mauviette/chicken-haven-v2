@@ -896,10 +896,9 @@ export function getAllGameData() {
     levelRewards,
     achievements: achievementsData,
     items: itemsData,
-    categories: achievementCategories
-    ,
-    // Configuration du mini-jeu de minage
-    mining: miningData
+    categories: achievementCategories,
+    mining: miningData,
+    artifacts: artifactsData
   }
 }
 
@@ -952,20 +951,55 @@ export const miningData = {
 // ARTÉFACTS DE MINAGE
 // Liste d'artefacts utilisables pendant une partie de minage.
 // Chaque artefact a un effet passif appliqué lorsqu'il est équipé pour une partie.
+// Structure similaire aux espèces: id, name, icon, description, rarity, effect
 export const artifactsData = {
   'lucky-shard': {
     id: 'lucky-shard',
     name: 'Fragment de Chance',
     icon: '🍀',
     description: "Augmente légèrement la probabilité d'obtenir une récompense dans chaque case.",
-    effect: { type: 'increase_reward_chance', amount: 0.05 } // +5% chance par case
+    rarete: 'commune',
+    effect: { type: 'increase_reward_chance', amount: 0.05 }
+  },
+  'rich-vein': {
+    id: 'rich-vein',
+    name: 'Veine Riche',
+    icon: '💎',
+    description: "Augmente la quantité des récompenses obtenues de 20%.",
+    rarete: 'rare',
+    effect: { type: 'increase_reward_amount_percent', percent: 20 }
   },
   'smith-glyph': {
     id: 'smith-glyph',
     name: 'Glyphe du Forgeron',
     icon: '🔧',
     description: "Augmente les dégâts des outils équipés de +1 pendant la partie.",
+    rarete: 'epique',
     effect: { type: 'increase_tool_damage', amount: 1 }
+  },
+  'ancient-compass': {
+    id: 'ancient-compass',
+    name: 'Boussole Antique',
+    icon: '🧭',
+    description: "Révèle les cases avec récompenses au début de la partie.",
+    rarete: 'legendaire',
+    effect: { type: 'reveal_rewards' }
+  },
+  'miners-luck': {
+    id: 'miners-luck',
+    name: 'Chance du Mineur',
+    icon: '⭐',
+    description: "Augmente la probabilité d'obtenir une récompense de 10%.",
+    rarete: 'rare',
+    effect: { type: 'increase_reward_chance', amount: 0.1 }
+  },
+  'reinforced-handle': {
+    id: 'reinforced-handle',
+    name: 'Manche Renforcé',
+    icon: '🪓',
+    description: "Les outils infligent +2 dégâts.",
+    rarete: 'epique',
+    effect: { type: 'increase_tool_damage', amount: 2 }
   }
 }
 

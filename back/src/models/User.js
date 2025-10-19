@@ -85,10 +85,10 @@ const UserSchema = new mongoose.Schema({
   },
 
   // Artéfacts de minage: collection du joueur et emplacements équipables
+  // Les artefacts n'ont pas de quantité - une fois débloqué, débloqué pour toujours
   artifacts: [
     {
-      artifactId: { type: String, required: true },
-      quantity: { type: Number, default: 1 }
+      artifactId: { type: String, required: true }
     }
   ],
 
