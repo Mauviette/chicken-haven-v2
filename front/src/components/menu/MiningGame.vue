@@ -1,9 +1,26 @@
 <template>
   <Popup @close="handleClose" class="mining-popup">
     <div class="mining-game">
-      <!-- En-tête avec jetons -->
+      <!-- En-tête avec jetons et artefacts -->
       <div class="header">
-        <h2>⛏️ Ma mine</h2>
+        <div class="header-left">
+          <h2>⛏️ Ma mine</h2>
+          <!-- Artefacts équipés -->
+          <div class="equipped-artifacts" v-if="artifactSlotsCount > 0">
+            <template v-for="idx in artifactSlotsCount" :key="`artifact-slot-${idx}`">
+              <Tooltip 
+                v-if="displayedArtifacts[idx - 1]"
+                :text="getArtifactTooltip(displayedArtifacts[idx - 1])"
+                position="bottom"
+                :followMouse="false"
+              >
+                <div class="artifact-badge">
+                  {{ getArtifactIcon(displayedArtifacts[idx - 1]) }}
+                </div>
+              </Tooltip>
+            </template>
+          </div>
+        </div>
         <div class="tokens">
           🪨 {{ miningTokens }}
         </div>
@@ -23,17 +40,6 @@
       <!-- Jeu actif -->
       <div v-else-if="gameActive && !showResults" class="game-area fixed-height">
         <div class="game-container">
-          <!-- Barre d'artefacts équipés -->
-          <div class="artifacts-bar" v-if="equippedArtifacts && equippedArtifacts.length >= 0" style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">
-            <div style="font-size:14px; font-weight:600;">Artefacts :</div>
-            <Tooltip v-for="(aid, idx) in equippedArtifacts" :key="`art-${idx}`" :text="getArtifactTooltip(aid)" position="top">
-              <div class="artifact-item" :class="{ empty: !aid }" style="display:flex; align-items:center; gap:6px; padding:6px 8px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:6px;">
-                <span class="artifact-icon">{{ getArtifactIcon(aid) }}</span>
-                <span class="artifact-name" v-if="aid">{{ getArtifactName(aid) }}</span>
-                <span v-else style="opacity:0.6">(vide)</span>
-              </div>
-            </Tooltip>
-          </div>
           <!-- Grille de creusage -->
           <div 
             class="grid" 
@@ -98,7 +104,7 @@
 
       <!-- Écran de fin avec résultats -->
       <div v-else-if="showResults" class="game-over">
-        <h3>🎉 Partie terminée !</h3>
+        <h3>Partie terminée !</h3>
         <div class="rewards-list">
           <p v-if="aggregatedRewards.length === 0">Aucune récompense trouvée...</p>
           <div v-else>
@@ -153,6 +159,12 @@ const showResults = ref(false)
 const finalRewards = ref([])
 const animatingCells = ref(new Set())
 const toolUsed = ref(false)
+
+// Artefacts affichés - capture au démarrage et reste stable pendant la partie
+const displayedArtifacts = computed(() => {
+  // Toujours afficher les artefacts équipés, même pendant la partie
+  return equippedArtifacts.value || []
+})
 
 // Outils visibles (seulement ceux non utilisés)
 const visibleTools = computed(() => {
@@ -365,13 +377,14 @@ function getToolTooltip(tool) {
   return `<div><strong>${config.name}</strong></div><div style="margin-top:4px;">${config.description}</div>`
 }
 
-// Helpers pour les artefacts — lire depuis MINING_CONFIG côté client (fallback déjà fourni)
+// Helpers pour les artefacts — lire depuis window.__gameDataCache.artifacts
 function getArtifactData(artifactId) {
   try {
-    const server = (typeof window !== 'undefined' && window.__gameDataCache && window.__gameDataCache.mining && window.__gameDataCache.mining.artifacts) ? window.__gameDataCache.mining.artifacts : null
+    // Les artefacts sont dans window.__gameDataCache.artifacts (pas .mining.artifacts)
+    const server = (typeof window !== 'undefined' && window.__gameDataCache && window.__gameDataCache.artifacts) ? window.__gameDataCache.artifacts : null
     if (server && artifactId) return server[artifactId] || null
   } catch (_) {}
-  // fallback: si front n'a pas les données d'artefacts, chercher dans global MINING_CONFIG (rare)
+  // fallback: chercher dans MINING_CONFIG si disponible
   try {
     if (MINING_CONFIG && MINING_CONFIG.artifacts && artifactId) return MINING_CONFIG.artifacts[artifactId] || null
   } catch (_) {}
@@ -389,9 +402,21 @@ function getArtifactName(aid) {
 }
 
 function getArtifactTooltip(aid) {
+  if (!aid) return '<div style="opacity:0.7;">Emplacement vide</div>'
+  
   const d = getArtifactData(aid)
-  if (!d) return 'Aucun artefact équipé'
-  return `<div><strong>${d.name}</strong></div><div style="margin-top:4px;">${d.description || ''}</div>`
+  if (!d) return '<div>Artefact inconnu</div>'
+  
+  return `
+    <div style="max-width: 250px;">
+      <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">
+        ${d.icon || '❖'} ${d.name}
+      </div>
+      <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
+        ${d.description || 'Aucune description'}
+      </div>
+    </div>
+  `
 }
 
 function formatReward(reward, inCell = false) {
@@ -470,6 +495,13 @@ function isLargeReward(reward) {
   padding-right: 30px;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
 .header h2 {
   margin: 0;
   font-size: 20px;
@@ -477,6 +509,31 @@ function isLargeReward(reward) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.equipped-artifacts {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.artifact-badge {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: rgba(255, 198, 110, 0.2);
+  border: 2px solid #ffc66e;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+}
+
+.artifact-badge:hover {
+  background: rgba(255, 198, 110, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .tokens {

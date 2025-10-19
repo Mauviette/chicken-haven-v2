@@ -94,18 +94,27 @@ export async function getMiningState(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
 
+    // S'assurer que equipped a la bonne longueur avec des nulls si nécessaire
+    const slotsCount = user.artifactSlots?.slotsCount || 2
+    let equipped = user.artifactSlots?.equipped || []
+    
+    // Compléter avec des null si le tableau est trop court
+    while (equipped.length < slotsCount) {
+      equipped.push(null)
+    }
+    
     res.json({
       miningTokens: user.resources.mining_token || 0,
       active: user.miningGame?.active || false,
-      equippedArtifacts: user.artifactSlots?.equipped || [],
-      artifactSlotsCount: (user.artifactSlots?.slotsCount || 0) + (user.artifactSlots?.equipped ? 0 : 0),
+      equippedArtifacts: equipped,
+      artifactSlotsCount: slotsCount,
       game: user.miningGame?.active ? {
         gridSize: user.miningGame.gridSize,
         cells: user.miningGame.cells,
         tools: user.miningGame.tools,
         currentToolIndex: user.miningGame.currentToolIndex,
         rewards: user.miningGame.rewards,
-        equippedArtifacts: user.miningGame.equippedArtifacts || []
+        equippedArtifacts: user.miningGame.equippedArtifacts || equipped
       } : null
     })
   } catch (err) {
@@ -169,7 +178,8 @@ export async function startMining(req, res) {
         cells: user.miningGame.cells,
         tools: user.miningGame.tools,
         currentToolIndex: user.miningGame.currentToolIndex,
-        rewards: user.miningGame.rewards
+        rewards: user.miningGame.rewards,
+        equippedArtifacts: user.miningGame.equippedArtifacts || []
       }
     })
   } catch (err) {

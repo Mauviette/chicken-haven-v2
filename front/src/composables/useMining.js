@@ -83,7 +83,7 @@ export function useMining() {
         cells.value = data.game.cells
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
-        equippedArtifacts.value = data.game.equippedArtifacts || equippedArtifacts.value
+        // Ne pas mettre à jour equippedArtifacts - ils restent constants pendant une partie
         
         if (data.gameOver) {
           // Ne pas désactiver gameActive pour garder la grille visible

@@ -38,8 +38,6 @@
       <!-- (Mine accessible depuis la barre du bas) -->
     </div>
     
-    <!-- Popup du mini-jeu de minage -->
-    <MiningGame v-if="showMiningGame" @close="showMiningGame = false" />
     <div class="production-content">
 
       <div class="egg-clicker">
