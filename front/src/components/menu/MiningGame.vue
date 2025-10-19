@@ -353,26 +353,46 @@ function getToolTooltip(tool) {
 }
 
 function formatReward(reward, inCell = false) {
-  const [type, amount] = reward.split(':')
+  if (!reward) return ''
+
+  // support string 'type:amount' or object { type, amount }
+  let type, amount
+  if (typeof reward === 'string') {
+    const parts = reward.split(':')
+    type = parts[0]
+    amount = parts[1]
+  } else if (typeof reward === 'object') {
+    type = reward.type
+    amount = reward.amount != null ? String(reward.amount) : undefined
+  }
+
+  if (!type) return ''
+
   const icons = {
     eggs: '🥚',
     mining_token: '🪨',
     stock_token: '📦',
     production_token: '⚡'
   }
-  const icon = icons[type] || '❓'
-  const qty = parseInt(amount)
-  
-  // Dans une cellule, si quantité = 1, afficher seulement l'emoji
-  if (inCell && qty === 1) {
-    return icon
-  }
-  
+  const icon = icons[type] || (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[type]?.icon) || '❓'
+  const qty = amount ? parseInt(amount) : NaN
+
+  if (inCell && !isNaN(qty) && qty === 1) return icon
+
+  // fallback when amount missing
+  if (!amount) return icon
+
   return `${icon} ${amount}`
 }
 
 function isLargeReward(reward) {
-  const [, amount] = reward.split(':')
+  if (!reward) return false
+  let amount
+  if (typeof reward === 'string') {
+    amount = reward.split(':')[1]
+  } else if (typeof reward === 'object') {
+    amount = reward.amount
+  }
   return parseInt(amount) === 1
 }
 </script>

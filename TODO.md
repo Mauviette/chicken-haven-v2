@@ -72,3 +72,9 @@ Plus tard
 - Déplacer le bouton d'accès à la bottombar et rentre le popup accessible depuis partout (App.vue)
 
 - Faire en sorte que les récompenses puissent prendre plusieurs cases de taille (avec une height et width), et qu'on aie besoin de déterrer toutes les cases qui la cache pour la récupérer. La récompense doit être visible même avant l'avoir deterré complètement.
+
+Système d'artefacts de minage (similaire au système de poules):
+- Le jeu a une liste d'artefacts avec leurs effets passifs fixes. (stockés dans sharedGameData)
+- Chaque joueur a une collection d'artefacts. (Stockés dans la database User.js)
+- Chaque joueur a un certain nombre d'emplacements, et équiper un artefact sur un emplacement déclenchera son effet pour la partie en cours.
+- Les artéfacts équipés sont affichés en haut du popup de minage pendant une partie, avec une ToolTip.vue de son effet.
