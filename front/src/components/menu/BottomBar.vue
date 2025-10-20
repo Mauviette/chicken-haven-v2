@@ -9,9 +9,10 @@
           <span class="mobile-text">⚙️</span>
         </ActionButton>
       </div>
-      <div class="mining-button" style="margin-left:8px;">
+      <div class="mining-button" style="margin-left:8px;" v-if="isMiningUnlocked">
         <ActionButton
           :onClick="() => emit('open-mining')"
+          :title="!isMiningUnlocked ? 'Débloqué au niveau 5' : ''"
         >
           <span class="desktop-text">🪨</span>
           <span class="mobile-text">🪨</span>
@@ -146,6 +147,12 @@ const isMarketUnlocked = computed(() => {
 const isSocialUnlocked = computed(() => {
   const l = level.value || 1
   if (l >= 3) return true;
+  return false
+})
+
+const isMiningUnlocked = computed(() => {
+  const l = level.value || 1
+  if (l >= 5) return true;
   return false
 })
 

@@ -14,6 +14,11 @@ export function useArtifacts() {
       artifacts.value = data.artifacts || []
       return data
     } catch (err) {
+      // Gérer silencieusement les erreurs d'accès interdit (niveau insuffisant)
+      if (err.message.includes('Access forbidden')) {
+        artifacts.value = []
+        return { artifacts: [] }
+      }
       console.error('Erreur lors de la récupération des artefacts:', err)
       throw err
     } finally {

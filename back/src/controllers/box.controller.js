@@ -22,6 +22,11 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
         throw new Error('Niveau insuffisant pour cette boîte')
       }
 
+      // Vérification spéciale pour les boîtes d'artefacts (niveau 5 minimum)
+      if (box.category === 'artifacts' && playerLevel < 5) {
+        throw new Error('Vous devez atteindre le niveau 5 pour ouvrir des boîtes d\'artefacts')
+      }
+
       // Vérifier les ressources
       const resourceType = box.price.type === 'eggs' ? 'eggs' : 
                           box.price.type === 'stock_token' ? 'stock_token' : 
@@ -219,25 +224,66 @@ function calculateAdjustedArtifactChances(ownedArtifacts) {
 
 // Fonction pour ajuster les chances des groupes d'une boîte
 function calculateAdjustedBoxChances(box, ownedArtifacts) {
-  // Vérifier s'il reste des artefacts à obtenir
-  const allArtifacts = Object.keys(artifactsData)
-  const availableArtifacts = allArtifacts.filter(id => !ownedArtifacts.includes(id))
-  
-  // Si tous les artefacts sont obtenus, ajuster les chances des groupes
-  if (availableArtifacts.length === 0) {
-    const adjustedGroups = box.dropGroups.map(group => {
-      if (group.name === 'artifacts') {
-        return { ...group, chance: 0 }
-      } else if (group.name === 'eggs_bonus') {
-        return { ...group, chance: 100 }
-      }
-      return group
-    })
-    
-    return { ...box, dropGroups: adjustedGroups }
+  // Trouver le groupe artifacts dans la boîte
+  const artifactsGroupIndex = box.dropGroups.findIndex(group => group.name === 'artifacts')
+  if (artifactsGroupIndex === -1) return box // Pas de groupe artifacts dans cette boîte
+
+  // Calculer la probabilité réelle d'obtenir un artefact disponible
+  const rarityOrder = ['commune', 'rare', 'epique', 'legendaire']
+  const baseRarityWeights = [40, 35, 20, 5] // Poids du groupe artifacts
+
+  // Grouper les artefacts par rareté
+  const artifactsByRarity = {
+    commune: [],
+    rare: [],
+    epique: [],
+    legendaire: []
   }
-  
-  return box
+
+  for (const [artifactId, data] of Object.entries(artifactsData)) {
+    const rarity = data.rarete || 'commune'
+    if (artifactsByRarity[rarity]) {
+      artifactsByRarity[rarity].push(artifactId)
+    }
+  }
+
+  // Calculer les artefacts disponibles par rareté
+  const availableByRarity = {}
+  for (const rarity of rarityOrder) {
+    availableByRarity[rarity] = artifactsByRarity[rarity].filter(id => !ownedArtifacts.includes(id))
+  }
+
+  // Calculer la probabilité pondérée d'obtenir un artefact disponible
+  let totalAvailableProbability = 0
+  const totalRarityWeight = baseRarityWeights.reduce((sum, weight) => sum + weight, 0)
+
+  for (let i = 0; i < rarityOrder.length; i++) {
+    const rarity = rarityOrder[i]
+    const weight = baseRarityWeights[i]
+    const hasAvailable = availableByRarity[rarity].length > 0
+
+    if (hasAvailable) {
+      totalAvailableProbability += weight / totalRarityWeight
+    }
+  }
+
+  // Ajuster les chances du groupe artifacts
+  const originalArtifactsChance = box.dropGroups[artifactsGroupIndex].chance
+  const adjustedArtifactsChance = originalArtifactsChance * totalAvailableProbability
+
+  // Calculer les nouvelles chances pour tous les groupes
+  const adjustedGroups = box.dropGroups.map((group, index) => {
+    if (index === artifactsGroupIndex) {
+      return { ...group, chance: adjustedArtifactsChance }
+    } else if (group.name === 'eggs_bonus') {
+      // Redistribuer la différence aux œufs
+      const redistribution = originalArtifactsChance - adjustedArtifactsChance
+      return { ...group, chance: group.chance + redistribution }
+    }
+    return group
+  })
+
+  return { ...box, dropGroups: adjustedGroups }
 }
 
 // POST /api/boxes/:boxId/open - Ouvrir une boîte

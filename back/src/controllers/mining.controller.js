@@ -93,6 +93,12 @@ export async function getMiningState(req, res) {
   try {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
+    
+    // Vérifier que l'utilisateur a le niveau requis pour le minage
+    const playerLevel = user.experience?.level || 1
+    if (playerLevel < 5) {
+      return res.status(403).json({ error: 'Niveau 5 requis pour accéder au minage' })
+    }
 
     // S'assurer que equipped a la bonne longueur avec des nulls si nécessaire
     const slotsCount = user.artifactSlots?.slotsCount || 2
@@ -128,6 +134,12 @@ export async function startMining(req, res) {
   try {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
+    
+    // Vérifier que l'utilisateur a le niveau requis pour le minage
+    const playerLevel = user.experience?.level || 1
+    if (playerLevel < 5) {
+      return res.status(403).json({ error: 'Niveau 5 requis pour accéder au minage' })
+    }
 
     // Vérifier si une partie est déjà active
     if (user.miningGame?.active) {
@@ -209,6 +221,12 @@ export async function digCell(req, res) {
   try {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
+    
+    // Vérifier que l'utilisateur a le niveau requis pour le minage
+    const playerLevel = user.experience?.level || 1
+    if (playerLevel < 5) {
+      return res.status(403).json({ error: 'Niveau 5 requis pour accéder au minage' })
+    }
 
     if (!user.miningGame?.active) {
       return res.status(400).json({ error: 'Aucune partie en cours' })

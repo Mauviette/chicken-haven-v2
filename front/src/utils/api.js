@@ -84,8 +84,9 @@ export async function apiCall(endpoint, options = {}) {
     }
     const p = fetch(url, { ...options, headers })
       .then(response => {
-        // Gérer les erreurs d'authentification globalement
-        if (response.status === 401 || response.status === 403) {
+        // Gérer seulement les vraies erreurs d'authentification (401)
+        // 403 = Accès interdit mais token valide (ex: niveau insuffisant)
+        if (response.status === 401) {
           console.warn('⚠️ Authentication error detected, clearing token')
           localStorage.removeItem('token')
         }
@@ -100,8 +101,9 @@ export async function apiCall(endpoint, options = {}) {
     ...options,
     headers
   }).then(response => {
-    // Gérer les erreurs d'authentification pour tous les types de requêtes
-    if (response.status === 401 || response.status === 403) {
+    // Gérer seulement les vraies erreurs d'authentification (401)
+    // 403 = Accès interdit mais token valide (ex: niveau insuffisant)
+    if (response.status === 401) {
       console.warn('⚠️ Authentication error detected, clearing token')
       localStorage.removeItem('token')
     }
@@ -120,10 +122,13 @@ export async function apiCallJSON(endpoint, options = {}) {
     const response = await apiCall(endpoint, options)
     
     if (!response.ok) {
-      // Ne pas lancer d'erreur pour les codes d'auth si on est déjà en train de gérer la déconnexion
-      if (response.status === 401 || response.status === 403) {
+      // Distinguer les erreurs d'auth (401) des erreurs d'autorisation (403)
+      if (response.status === 401) {
         console.warn(`🔐 Auth error ${response.status} for ${endpoint}, token likely invalid`)
         throw new Error(`Authentication required`)
+      } else if (response.status === 403) {
+        console.warn(`🚫 Access forbidden ${response.status} for ${endpoint}, insufficient permissions`)
+        throw new Error(`Access forbidden`)
       }
       
       const error = await response.clone().text()
@@ -133,8 +138,8 @@ export async function apiCallJSON(endpoint, options = {}) {
     // Utiliser une copie pour éviter l'erreur "body stream already read" en cas de déduplication
     return response.clone().json()
   } catch (error) {
-    // Log silencieux pour les erreurs d'auth pendant la déconnexion
-    if (!error.message.includes('Authentication required')) {
+    // Log silencieux pour les erreurs d'auth et d'autorisation
+    if (!error.message.includes('Authentication required') && !error.message.includes('Access forbidden')) {
       console.error(`❌ API call failed for ${endpoint}:`, error.message)
     }
     throw error

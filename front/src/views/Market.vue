@@ -236,6 +236,7 @@ import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
 import { useBoxes } from '@/composables/useBoxes'
 import { useAchievements } from '@/composables/useAchievements'
+import { useArtifacts } from '@/composables/useArtifacts'
 import { useSound } from '@/composables/useSound'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
@@ -252,7 +253,8 @@ const { fetchEggStatus } = useEgg()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
 const { checkAchievements } = useAchievements()
-const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes } = useGameData()
+const { artifacts: ownedArtifacts, fetchArtifacts } = useArtifacts()
+const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes, artifacts: artifactsData } = useGameData()
 const router = useRouter()
 const { click, open: sndOpen, close: sndClose, confirm: sndConfirm, boxOpen: sndBoxOpen, boxResults: sndBoxResults, legendaryDrop: sndLegend, epicDrop: sndEpic } = useSound()
 
@@ -435,6 +437,38 @@ function getBoxRarityProbabilities(box) {
   })
 }
 
+// Fonction pour compter les éléments disponibles par rareté
+function getAvailableCountByRarity(groupName) {
+  const rarities = ['commune', 'rare', 'epique', 'legendaire']
+  const counts = [0, 0, 0, 0]
+  
+  if (groupName === 'artifacts') {
+    // Pour les artefacts, utiliser les données du jeu et la liste des artefacts possédés
+    // Créer un Set des IDs possédés pour une recherche rapide
+    const ownedArtifactIds = new Set(ownedArtifacts.value.map(a => a.artifactId))
+    
+    // Parcourir tous les artefacts du jeu
+    Object.values(artifactsData.value || {}).forEach(artifact => {
+      const rarityIndex = rarities.indexOf(artifact.rarete || 'commune')
+      if (rarityIndex !== -1 && !ownedArtifactIds.has(artifact.id)) {
+        counts[rarityIndex]++
+      }
+    })
+  } else {
+    // Pour les poules, compter TOUTES les poules du groupe par rareté (pas seulement les non possédées)
+    Object.entries(especeData.value || {}).forEach(([id, chicken]) => {
+      if (chicken.groupe === groupName) {
+        const rarityIndex = rarities.indexOf(chicken.rarete || 'commune')
+        if (rarityIndex !== -1) {
+          counts[rarityIndex]++
+        }
+      }
+    })
+  }
+  
+  return counts
+}
+
 // Fonction pour générer le texte du tooltip du dé
 function getDiceTooltipText(box) {
   const totalChance = box.dropGroups.reduce((sum, group) => sum + group.chance, 0)
@@ -457,15 +491,22 @@ function getDiceTooltipText(box) {
       rarityChances = box.adjustedRarityChances
     }
     
-    // Si le groupe a des chances de rareté, les afficher
+    // Obtenir le nombre d'éléments disponibles par rareté
+    const availableCounts = getAvailableCountByRarity(group.name)
+    
+    // Si le groupe a des chances de rareté, les afficher avec les comptes
     if (rarityChances) {
       rarities.forEach((rarity, index) => {
         const rarityChance = rarityChances[index]
-        if (rarityChance > 0) {
+        const availableCount = availableCounts[index]
+        
+        if (rarityChance > 0 || availableCount > 0) {
           // Calculer le pourcentage final : (chance du groupe dans la boîte) * (chance de rareté dans le groupe) / 100
           const finalPercent = Math.round((group.chance / totalChance) * (rarityChance / 100) * 100)
-          if (finalPercent > 0) {
-            tooltip.push(`  <span style="color: ${colors[index]};">${rarity}: ${finalPercent}%</span>`)
+          
+          // Afficher même si le pourcentage est 0 mais qu'il y a des éléments disponibles
+          if (finalPercent > 0 || availableCount > 0) {
+            tooltip.push(`  <span style="color: ${colors[index]};">${rarity}: ${finalPercent}% (${availableCount})</span>`)
           }
         }
       })
@@ -827,6 +868,10 @@ onMounted(async () => {
         }
       }
     } catch (e) { console.warn('Chargement upgrades échoué:', e) }
+    
+    // Charger les artefacts possédés
+    try { await fetchArtifacts() } catch (_) {}
+    
     availableBoxes.value = await getAvailableBoxes()
   } catch (error) {
     console.error('Erreur lors du chargement des boîtes:', error)

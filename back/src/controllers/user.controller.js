@@ -250,6 +250,12 @@ export async function getArtifacts(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
+    // Vérifier le niveau pour accéder aux artefacts
+    const playerLevel = user.experience?.level || 1
+    if (playerLevel < 5) {
+      return res.status(403).json({ error: 'Vous devez atteindre le niveau 5 pour accéder aux artefacts' })
+    }
+
     const artifacts = user.artifacts || []
     res.json({ artifacts })
   } catch (err) {
@@ -264,6 +270,12 @@ export async function getArtifactSlots(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
+    // Vérifier le niveau pour accéder aux artefacts
+    const playerLevel = user.experience?.level || 1
+    if (playerLevel < 5) {
+      return res.status(403).json({ error: 'Vous devez atteindre le niveau 5 pour accéder aux artefacts' })
+    }
+
     const artifactSlots = user.artifactSlots || { slotsCount: 2, equipped: [] }
     res.json(artifactSlots)
   } catch (err) {
@@ -277,6 +289,12 @@ export async function equipArtifact(req, res) {
   try {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    // Vérifier le niveau pour accéder aux artefacts
+    const playerLevel = user.experience?.level || 1
+    if (playerLevel < 5) {
+      return res.status(403).json({ error: 'Vous devez atteindre le niveau 5 pour accéder aux artefacts' })
+    }
 
     const { artifactId } = req.params
     if (!artifactId) {
@@ -335,6 +353,12 @@ export async function unequipArtifact(req, res) {
   try {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    // Vérifier le niveau pour accéder aux artefacts
+    const playerLevel = user.experience?.level || 1
+    if (playerLevel < 5) {
+      return res.status(403).json({ error: 'Vous devez atteindre le niveau 5 pour accéder aux artefacts' })
+    }
 
     const { artifactId } = req.params
     if (!artifactId) {

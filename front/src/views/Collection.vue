@@ -16,6 +16,7 @@
             🐔 Poules
           </button>
           <button 
+            v-if="getLevel() >= 5"
             :class="['tab-btn', { active: activeTab === 'artifacts' }]"
             @click="activeTab = 'artifacts'"
           >
@@ -123,7 +124,7 @@ const {
 } = usePoules()
 
 const { especies: especeData, loading: gameDataLoading } = useGameData()
-const { team, fetchTeam, artifactSlots, fetchArtifactSlots } = usePlayer()
+const { team, fetchTeam, artifactSlots, fetchArtifactSlots, level, getLevel } = usePlayer()
 const { artifacts, fetchArtifacts, enrichArtifacts } = useArtifacts()
 const route = useRoute()
 const router = useRouter()
@@ -139,8 +140,15 @@ const rareteOrder = {
 onMounted(async () => {
   if (localStorage.getItem('token')) {
     await fetchTeam()
-    await fetchArtifacts()
-    await fetchArtifactSlots()
+    if (getLevel() >= 5) {
+      await fetchArtifacts()
+      await fetchArtifactSlots()
+    }
+    
+    // Rediriger vers l'onglet poules si on est sur artefacts mais niveau < 5
+    if (activeTab.value === 'artifacts' && getLevel() < 5) {
+      activeTab.value = 'chickens'
+    }
   }
 })
 

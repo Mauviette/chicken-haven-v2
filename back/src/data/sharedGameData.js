@@ -629,7 +629,8 @@ export const levelUnlocks = {
     { id: 'shiny_box', label: 'Boîte brillante débloquée', icon: '✨' }
   ],
   5: [
-    { id: 'noble_box', label: 'Coffret chic débloqué', icon: '💎' }
+    { id: 'noble_box', label: 'Coffret chic débloqué', icon: '💎' },
+    { id: 'mining', label: 'Mini-jeu de minage débloqué', icon: '🪨' }
   ]
 }
 
