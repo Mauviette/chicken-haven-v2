@@ -306,6 +306,8 @@ export async function digCell(req, res) {
           user.resources.stock_token = (user.resources.stock_token || 0) + amt
         } else if (type === 'production_token') {
           user.resources.production_token = (user.resources.production_token || 0) + amt
+        } else if (type === 'chest_key') {
+          user.resources.chest_key = (user.resources.chest_key || 0) + amt
         }
       }
 
@@ -332,7 +334,8 @@ export async function digCell(req, res) {
         eggs: user.resources.eggs,
         mining_token: user.resources.mining_token,
         stock_token: user.resources.stock_token,
-        production_token: user.resources.production_token
+        production_token: user.resources.production_token,
+        chest_key: user.resources.chest_key
       } : undefined
     })
   } catch (err) {

@@ -34,6 +34,20 @@ export const achievementsData = {
     nom_singulier: 'myrtille',
     icon: '🫐',
     description: 'Fruits délicieux qui augmentent votre niveau! Survolez votre icone de profil pour plus d\'infos.'
+  },
+  'chest_key': {
+    id: 'chest_key',
+    nom: 'clés à coffre',
+    nom_singulier: 'clé à coffre',
+    icon: '🗝️',
+    description: 'Clés spéciales permettant d\'ouvrir des coffres de trésors contenant des artefacts de minage.'
+  },
+  'mining_token': {
+    id: 'mining_token',
+    nom: 'jetons de minage',
+    nom_singulier: 'jeton de minage',
+    icon: '🪨',
+    description: 'Jetons nécessaires pour démarrer une partie de minage et découvrir des trésors souterrains.'
   }
 }
 

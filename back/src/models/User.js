@@ -81,7 +81,8 @@ const UserSchema = new mongoose.Schema({
     eggs : { type : Number, default: 0},
     stock_token : { type : Number, default: 0},
     production_token : { type : Number, default: 0},
-    mining_token : { type : Number, default: 3}
+    mining_token : { type : Number, default: 3},
+    chest_key : { type : Number, default: 0}
   },
 
   // Artéfacts de minage: collection du joueur et emplacements équipables

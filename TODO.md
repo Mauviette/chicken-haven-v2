@@ -78,3 +78,6 @@ Système d'artefacts de minage (similaire au système de poules):
 - Chaque joueur a une collection d'artefacts. (Stockés dans la database User.js)
 - Chaque joueur a un certain nombre d'emplacements, et équiper un artefact sur un emplacement déclenchera son effet pour la partie en cours.
 - Les artéfacts équipés sont affichés en haut du popup de minage pendant une partie, avec une ToolTip.vue de son effet.
+
+
+

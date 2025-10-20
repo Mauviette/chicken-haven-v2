@@ -5,6 +5,7 @@ const eggs = ref(0)
 const stockTokens = ref(0)
 const productionTokens = ref(0)
 const wildTokens = ref(0)
+const chestKeys = ref(0)
 const team = ref({ maxSlots: 3, slots: [] })
 const artifactSlots = ref({ slotsCount: 2, equipped: [] })
 const level = ref(1)
@@ -18,6 +19,7 @@ function clearPlayerData() {
   stockTokens.value = 0
   productionTokens.value = 0
   wildTokens.value = 0
+  chestKeys.value = 0
   player.value = null
   level.value = 1
   xp.value = 0
@@ -34,11 +36,25 @@ export function usePlayer() {
       clearPlayerData()
     }
     
+    const handleMiningGameOver = (event) => {
+      const resources = event.detail?.resources
+      if (resources) {
+        console.log('🪨 usePlayer: mise à jour des ressources après minage:', resources)
+        if (resources.eggs !== undefined) eggs.value = resources.eggs
+        if (resources.stock_token !== undefined) stockTokens.value = resources.stock_token
+        if (resources.production_token !== undefined) productionTokens.value = resources.production_token
+        if (resources.wild_token !== undefined) wildTokens.value = resources.wild_token
+        if (resources.chest_key !== undefined) chestKeys.value = resources.chest_key
+      }
+    }
+    
     if (typeof window !== 'undefined') {
       window.addEventListener('auth-logout', handleLogout)
+      window.addEventListener('mining-game-over', handleMiningGameOver)
       
       onBeforeUnmount(() => {
         window.removeEventListener('auth-logout', handleLogout)
+        window.removeEventListener('mining-game-over', handleMiningGameOver)
       })
     }
   })
@@ -66,6 +82,7 @@ export function usePlayer() {
         stockTokens.value = data.stockTokens || 0
         productionTokens.value = data.productionTokens || 0
         wildTokens.value = data.wildTokens || 0
+        chestKeys.value = data.chestKeys || 0
         //console.log('✅ refreshPlayer: œufs mis à jour:', eggs.value)
       }
 
@@ -95,6 +112,7 @@ export function usePlayer() {
             stockTokens.value = Number(u.resources.stock_token ?? stockTokens.value)
             productionTokens.value = Number(u.resources.production_token ?? productionTokens.value)
             wildTokens.value = Number(u.resources.wild_token ?? wildTokens.value)
+            chestKeys.value = Number(u.resources.chest_key ?? chestKeys.value)
           }
           try {
             if (typeof window !== 'undefined') {
@@ -230,6 +248,8 @@ export function usePlayer() {
       productionTokens.value += amount
     } else if (type === 'wild_token') {
       wildTokens.value += amount
+    } else if (type === 'chest_key') {
+      chestKeys.value += amount
     }
   }
 
@@ -242,6 +262,9 @@ export function usePlayer() {
       return true
     } else if (type === 'wild_token' && wildTokens.value >= amount) {
       wildTokens.value -= amount
+      return true
+    } else if (type === 'chest_key' && chestKeys.value >= amount) {
+      chestKeys.value -= amount
       return true
     }
     return false
@@ -261,6 +284,8 @@ export function usePlayer() {
         return productionTokens.value >= price.count
       case 'wild_token':
         return wildTokens.value >= price.count
+      case 'chest_key':
+        return chestKeys.value >= price.count
       default:
         return false
     }
@@ -331,6 +356,7 @@ export function usePlayer() {
     stockTokens,
     productionTokens,
     wildTokens,
+    chestKeys,
     team,
     artifactSlots,
     level,

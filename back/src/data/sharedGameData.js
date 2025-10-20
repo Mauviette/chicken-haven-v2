@@ -483,6 +483,22 @@ export const groupes = [
     description: 'Groupe chic', 
     // Très faible chance de légendaire pour Spaciale
     rarityDropChance: [64, 25, 10, 1]
+  },
+  {
+    name: 'artifacts',
+    description: 'Artefacts de minage',
+    type: 'artifacts',
+    rarityDropChance: [40, 35, 20, 5]
+  },
+  {
+    name: 'eggs_bonus',
+    description: 'Œufs',
+    type: 'items',
+    items: [
+      { id: 'eggs', amount: 100, weight: 60 },
+      { id: 'eggs', amount: 250, weight: 30 },
+      { id: 'eggs', amount: 500, weight: 10 }
+    ]
   }
 ]
 
@@ -541,6 +557,27 @@ export const boxesData = [
         chance: 50,
         quantity: 1
       },
+    ],
+    unlock_level: 5
+  },
+  {
+    id: 5,
+    name: 'Coffre de Trésors',
+    description: 'Contient un artefact de minage que vous ne possédez pas encore, ou des œufs',
+    icon: '🗝️',
+    price: { type: 'chest_key', count: 1 },
+    category: 'artifacts',
+    dropGroups: [
+      {
+        name: 'artifacts',
+        chance: 70,
+        quantity: 1
+      },
+      {
+        name: 'eggs_bonus',
+        chance: 30,
+        quantity: 1
+      }
     ],
     unlock_level: 5
   }
@@ -824,6 +861,18 @@ export const itemsData = {
     nom_singulier: 'jeton joker',
     icon: '🃏'
   },
+  'mining_token': {
+    id: 'mining_token',
+    nom: 'jetons de minage',
+    nom_singulier: 'jeton de minage',
+    icon: '🪨'
+  },
+  'chest_key': {
+    id: 'chest_key',
+    nom: 'clés à coffre',
+    nom_singulier: 'clé à coffre',
+    icon: '🗝️'
+  },
   'blueberry': {
     id: 'blueberry',
     nom: 'myrtilles',
@@ -937,7 +986,8 @@ export const miningData = {
     { type: 'eggs', amount: 50, weight: 15 },
     { type: 'mining_token', amount: 1, weight: 10 },
     { type: 'stock_token', amount: 1, weight: 8 },
-    { type: 'production_token', amount: 1, weight: 2 }
+    { type: 'production_token', amount: 1, weight: 2 },
+    { type: 'chest_key', amount: 1, weight: 10 }
   ],
   toolPool: [
     { type: 'shovel', weight: 4 },
