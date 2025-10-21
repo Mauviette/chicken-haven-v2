@@ -232,6 +232,17 @@ export async function updateDisplayName(req, res) {
     
     user.displayName = trimmed
     await user.save()
+
+    // Mettre à jour les succès pour le changement de nom
+    try {
+      console.log(`👤 Display name changed for user ${req.userId}: ${user.displayName}`)
+      await updateAchievementProgress(req.userId, 'increment', {
+        nameChanged: 1
+      })
+      await triggerAchievementCheck(req.userId)
+    } catch (achievementError) {
+      console.warn('Erreur mise à jour succès nom:', achievementError)
+    }
     
     res.json({ success: true, displayName: user.displayName })
   } catch (err) {

@@ -303,10 +303,10 @@ const artifactBoxes = computed(() => {
   return allBoxes.value.filter(box => box.category === 'artifacts')
 })
 
-// Poules débloquées (uniquement les poules obtenues par le joueur)
+// Poules débloquées (uniquement les poules obtenues par le joueur avec quantité > 0)
 const unlockedChickens = computed(() => {
   const ownedChickens = poules.value
-    .filter(poule => poule.owned)
+    .filter(poule => poule.owned && (poule.quantite || 0) > 0)
     .map(poule => poule.especeId)
   
   return ownedChickens

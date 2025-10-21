@@ -405,15 +405,7 @@ const tooltipHtml = computed(() => {
   return parts.join('<br>')
 })
 
-onMounted(() => {
-  initPosition()
-  applyImage()
-  rafId = requestAnimationFrame(step)
-})
 
-onUnmounted(() => {
-  if (rafId) cancelAnimationFrame(rafId)
-})
 
 watch(() => props.containerWidth, () => {
   // recaler dans les bornes si la zone change

@@ -13,31 +13,37 @@
             <h2 class="display-name" v-if="!editingDisplayName">
               {{ profile.displayName || profile.username }}
               <button v-if="isOwnProfile" class="edit-name-btn" @click="startEditDisplayName" title="Modifier le nom d'affichage">
-                ✏️
+                <span class="edit-icon">✏️</span>
+                Modifier
               </button>
             </h2>
             <div v-else class="edit-name-container">
-              <div class="edit-name-input-row">
+              <div class="edit-name-form">
                 <input 
                   v-model="newDisplayName" 
                   class="edit-name-input" 
                   :class="{ 'input-error': displayNameError }"
-                  placeholder="Nom d'affichage"
+                  placeholder="Nouveau nom d'affichage"
                   maxlength="30"
                   @input="validateDisplayName"
                   @keyup.enter="saveDisplayName"
                   @keyup.escape="cancelEditDisplayName"
                   ref="displayNameInput"
                 />
-                <button 
-                  class="save-btn" 
-                  @click="saveDisplayName" 
-                  :disabled="!newDisplayName.trim() || !!displayNameError || validatingDisplayName"
-                >
-                  <span v-if="validatingDisplayName">⏳</span>
-                  <span v-else>✓</span>
-                </button>
-                <button class="cancel-btn" @click="cancelEditDisplayName">✗</button>
+                <div class="edit-name-buttons">
+                  <button 
+                    class="action-button save-btn" 
+                    @click="saveDisplayName" 
+                    :class="{ disabled: !newDisplayName.trim() || !!displayNameError || validatingDisplayName }"
+                    :disabled="!newDisplayName.trim() || !!displayNameError || validatingDisplayName"
+                  >
+                    <span v-if="validatingDisplayName">⏳ Validation...</span>
+                    <span v-else>✓ Confirmer</span>
+                  </button>
+                  <button class="action-button cancel-btn" @click="cancelEditDisplayName">
+                    ✗ Annuler
+                  </button>
+                </div>
               </div>
               <div v-if="displayNameError" class="field-error">{{ displayNameError }}</div>
             </div>
@@ -468,96 +474,141 @@ async function saveDisplayName() {
 }
 
 .edit-name-btn {
-  background: none;
-  border: none;
-  font-size: 14px;
+  background-color: #7a3e10;
+  border: 2px solid #ffc66e;
+  color: #fff9e5;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: 'Fredoka', sans-serif;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  transition: transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
 }
 
 .edit-name-btn:hover {
-  background-color: rgba(255, 198, 110, 0.2);
+  background-color: #8a4a1c;
+  transform: translateY(-1px);
+}
+
+.edit-name-btn:active {
+  transform: translateY(1px);
+}
+
+.edit-icon {
+  font-size: 11px;
 }
 
 .edit-name-container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 4px;
 }
 
-.edit-name-input-row {
+.edit-name-form {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .edit-name-input {
-  padding: 6px 10px;
+  padding: 10px 12px;
   border: 2px solid #ffc66e;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 8px;
+  font-size: 14px;
   font-family: 'Fredoka', sans-serif;
-  background-color: #fff9e5;
-  color: #3a1d00;
-  flex: 1;
-  max-width: 200px;
+  background-color: #fffaf1;
+  color: #4b2e06;
+  width: 100%;
+  max-width: 280px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .edit-name-input:focus {
   outline: none;
   border-color: #ffaa00;
-  box-shadow: 0 0 5px rgba(255, 170, 0, 0.3);
+  box-shadow: 0 0 8px rgba(255, 170, 0, 0.3);
+  background-color: #fff;
 }
 
 .edit-name-input.input-error {
-  border-color: #ff4444;
-  background-color: #ffe6e6;
+  border-color: #ff6b6b;
+  background-color: #fff5f5;
+}
+
+.edit-name-input.input-error:focus {
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+}
+
+.edit-name-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .field-error {
-  color: #ff4444;
+  color: #ff6b6b;
   font-size: 12px;
-  margin-top: 2px;
+  margin-top: -4px;
   font-weight: 500;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 3px solid #ff6b6b;
 }
 
-.save-btn, .cancel-btn {
-  padding: 6px 8px;
-  border: 1px solid #ffc66e;
-  border-radius: 4px;
+/* Utiliser le style ActionButton pour les boutons de confirmation */
+.action-button {
+  background-color: #7a3e10;
+  border: 2px solid #ffc66e;
+  color: #fff9e5;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-family: 'Fredoka', sans-serif;
   font-size: 14px;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
-  font-family: 'Fredoka', sans-serif;
-  transition: background-color 0.2s;
+  transition: transform 0.1s ease;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.action-button:hover:not(.disabled) {
+  background-color: #8a4a1c;
+  transform: translateY(-1px);
+}
+
+.action-button:active:not(.disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0px 0 #5c2c08;
+}
+
+.action-button.disabled {
+  background-color: #5c2c08;
+  color: #bbb;
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+  opacity: 0.7;
 }
 
 .save-btn {
-  background: #4CAF50;
-  color: white;
-  border-color: #4CAF50;
+  background-color: #2e8b57;
+  border-color: #90ee90;
 }
 
-.save-btn:hover:not(:disabled) {
-  background: #45a049;
-}
-
-.save-btn:disabled {
-  background: #ccc;
-  color: #666;
-  cursor: not-allowed;
+.save-btn:hover:not(.disabled) {
+  background-color: #3cb371;
 }
 
 .cancel-btn {
-  background: #f44336;
-  color: white;
-  border-color: #f44336;
+  background-color: #cd5c5c;
+  border-color: #ffa07a;
 }
 
-.cancel-btn:hover {
-  background: #da190b;
+.cancel-btn:hover:not(.disabled) {
+  background-color: #dc143c;
 }
 
 .real-username {

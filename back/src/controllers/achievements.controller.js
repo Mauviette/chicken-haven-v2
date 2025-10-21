@@ -29,6 +29,8 @@ Object.entries(achievementsData).forEach(([id, data]) => {
           return poules.some(poule => (poule.niveauTalent || 1) >= data.objectif)
         case 'avatar_change':
           return progress.avatarChanged >= data.objectif
+        case 'name_change':
+          return progress.nameChanged >= data.objectif
         default:
           return false
       }
@@ -51,7 +53,8 @@ export async function getAchievementsStatus(req, res) {
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          nameChanged: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -93,7 +96,8 @@ export async function checkAchievements(req, res) {
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          nameChanged: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -285,7 +289,8 @@ export async function updateAchievementProgress(userId, progressType, value) {
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          nameChanged: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -346,7 +351,8 @@ export async function triggerAchievementCheck(userId) {
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          nameChanged: 0
         },
         completed: [],
         lastChecked: new Date()
