@@ -418,6 +418,10 @@ async function saveDisplayName() {
       clearTimeout(validationTimeout)
       validationTimeout = null
     }
+    
+    // Déclencher l'événement pour les achievements
+    window.dispatchEvent(new CustomEvent('name-changed'))
+    
     window.$toast?.('Nom d\'affichage mis à jour', 'success')
     
   } catch (e) {

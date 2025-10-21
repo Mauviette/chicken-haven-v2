@@ -1,4 +1,5 @@
 import User from '../models/User.js'
+import { triggerAchievementCheck } from './achievements.controller.js'
 
 // GET /api/poules — déjà existant
 export async function getPoulesPossedees(req, res) {
@@ -77,6 +78,10 @@ export async function updatePoule(req, res) {
       }
 
     await user.save()
+    
+    // Déclencher la vérification des succès après mise à jour des poules
+    await triggerAchievementCheck(userId)
+    
     res.json(current)
   } catch (err) {
     console.error('Erreur updatePoule :', err)

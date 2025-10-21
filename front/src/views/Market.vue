@@ -16,7 +16,7 @@
           <span class="balance-amount">{{ productionTokens }}</span>
         </div>
       </Tooltip>
-      <Tooltip text="<strong>Clés à coffre</strong><br>Ouvrez des coffres de trésors pour obtenir des artefacts de minage" position="bottom">
+      <Tooltip v-if="getLevel() >= 5" text="<strong>Clés à coffre</strong><br>Ouvrez des coffres de trésors pour obtenir des artefacts de minage" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">🗝️</span>
           <span class="balance-amount">{{ chestKeys }}</span>
@@ -218,6 +218,7 @@
       :boxName="lastOpenedBoxName"
       @close="closeBoxResults"
     />
+    
   </div>
 </template>
 
@@ -270,6 +271,8 @@ const lastOpenedBoxName = ref('')
 const availableBoxes = ref([])
 const showOpenAnim = ref(false)
 const currentBoxIcon = ref('📦')
+
+// Animation d'achat d'amélioration (supprimée)
 
 // Configuration des onglets
 const tabs = computed(() => {
@@ -496,7 +499,17 @@ function getDiceTooltipText(box) {
         
         if (rarityChance > 0 || availableCount > 0) {
           // Calculer le pourcentage final : (chance du groupe dans la boîte) * (chance de rareté dans le groupe) / 100
-          const finalPercent = Math.round((group.chance / totalChance) * (rarityChance / 100) * 100)
+          const rawPercent = (group.chance / totalChance) * (rarityChance / 100) * 100
+          
+          // Arrondir intelligemment : si >= 1, arrondir à l'entier, sinon garder 1 décimale
+          let finalPercent
+          if (rawPercent >= 1) {
+            finalPercent = Math.round(rawPercent)
+          } else if (rawPercent > 0) {
+            finalPercent = Math.round(rawPercent * 10) / 10
+          } else {
+            finalPercent = 0
+          }
           
           // Afficher même si le pourcentage est 0 mais qu'il y a des éléments disponibles
           if (finalPercent > 0 || availableCount > 0) {
@@ -804,18 +817,48 @@ async function buyUpgrade(upgrade) {
       window.$toast && window.$toast('Vous devez être connecté(e)', 'error')
       return
     }
+    
+    sndConfirm(0.8) // Son d'achat
+    
     const data = await apiPost('/api/upgrades/buy', { upgradeId: upgrade.id })
+    
     // Mettre à jour le niveau courant localement
     upgradeLevels.value = { ...upgradeLevels.value, [upgrade.id]: Number(data?.newLevel || 0) }
     // Forcer le recalcul des offres
     upgradesVersion.value++
+    
+    // Créer un message personnalisé basé sur l'amélioration
+    let toastMessage = `${upgrade.name} amélioré !`
+    let toastType = 'power'
+    
+    // Déterminer le type de bonus basé sur l'upgrade
+    if (upgrade.nextReward && upgrade.nextReward > 0) {
+      if (upgrade.name.toLowerCase().includes('production') || upgrade.name.toLowerCase().includes('producteur')) {
+        toastMessage = `+${upgrade.nextReward} de production !`
+        toastType = 'power'
+      } else if (upgrade.name.toLowerCase().includes('stockage') || upgrade.name.toLowerCase().includes('stock')) {
+        toastMessage = `+${upgrade.nextReward} de stockage !`
+        toastType = 'power'
+      } else if (upgrade.name.toLowerCase().includes('vitesse') || upgrade.name.toLowerCase().includes('speed')) {
+        toastMessage = `Vitesse +${upgrade.nextReward}% !`
+        toastType = 'power'
+      } else if (upgrade.name.toLowerCase().includes('revenu') || upgrade.name.toLowerCase().includes('income')) {
+        toastMessage = `Revenu +${upgrade.nextReward} !`
+        toastType = 'power'
+      } else {
+        toastMessage = `${upgrade.name} +${upgrade.nextReward} !`
+        toastType = 'power'
+      }
+    }
+    
     // Rafraîchir les soldes (tokens)
   try { await refreshPlayerData() } catch (_) {}
   // Rafraîchir immédiatement le statut de l'œuf (income / maxIncome)
   try { await fetchEggStatus() } catch (_) {}
   // Émettre un événement global pour que d'autres vues/composables réagissent si besoin
   try { window.dispatchEvent(new CustomEvent('upgrade-bought', { detail: { upgradeId: upgrade.id, newLevel: Number(data?.newLevel || 0) } })) } catch (_) {}
-    window.$toast && window.$toast(`Vous avez acheté ${upgrade.name} !`, 'success')
+    
+    window.$toast && window.$toast(toastMessage, toastType)
     // Recalculer et diffuser la dispo d'upgrade
     broadcastUpgradeAvailability()
   } catch (e) {

@@ -855,6 +855,78 @@ export const achievementsData = {
       type: 'blueberry',
       quantite: 5
     }
+  },
+  'team_stat_50': {
+    id: 'team_stat_50',
+    nom: 'Équipe Solide',
+    description: 'Atteignez au moins 50 points dans une stat d\'équipe',
+    icon: '💪',
+    objectif: 50,
+    type: 'team_stats',
+    reward: {
+      type: 'blueberry',
+      quantite: 2
+    }
+  },
+  'team_stat_100': {
+    id: 'team_stat_100',
+    nom: 'Équipe Puissante',
+    description: 'Atteignez au moins 100 points dans une stat d\'équipe',
+    icon: '🔥',
+    objectif: 100,
+    type: 'team_stats',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'team_stat_200': {
+    id: 'team_stat_200',
+    nom: 'Équipe Légendaire',
+    description: 'Atteignez au moins 200 points dans une stat d\'équipe',
+    icon: '⭐',
+    objectif: 200,
+    type: 'team_stats',
+    reward: {
+      type: 'blueberry',
+      quantite: 10
+    }
+  },
+  'mega_click_500': {
+    id: 'mega_click_500',
+    nom: 'Récolte Généreuse',
+    description: 'Récoltez 500 œufs en un clic',
+    icon: '🥚',
+    objectif: 500,
+    type: 'mega_click',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'mega_click_1000': {
+    id: 'mega_click_1000',
+    nom: 'Récolte Massive',
+    description: 'Récoltez 1000 œufs en un clic',
+    icon: '🍳',
+    objectif: 1000,
+    type: 'mega_click',
+    reward: {
+      type: 'blueberry',
+      quantite: 10
+    }
+  },
+  'mega_click_5000': {
+    id: 'mega_click_5000',
+    nom: 'Récolte Titanesque',
+    description: 'Récoltez 5000 œufs en un clic',
+    icon: '🌟',
+    objectif: 5000,
+    type: 'mega_click',
+    reward: {
+      type: 'blueberry',
+      quantite: 15
+    }
   }
 }
 
@@ -934,10 +1006,25 @@ export const achievementCategories = {
     icon: '👤',
     color: '#795548'
   },
+  'name_change': {
+    nom: 'Personnalisation',
+    icon: '👤',
+    color: '#795548'
+  },
   'boxes_opened': {
     nom: 'Ouvertures',
     icon: '📦',
     color: '#673AB7'
+  },
+  'team_stats': {
+    nom: 'Équipe',
+    icon: '💪',
+    color: '#FF5722'
+  },
+  'mega_click': {
+    nom: 'Récolte',
+    icon: '🥚',
+    color: '#FFC107'
   }
 }
 

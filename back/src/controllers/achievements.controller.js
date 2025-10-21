@@ -1,5 +1,6 @@
 import User from '../models/User.js'
 import { achievementsData, levelRewards as LEVEL_REWARDS } from '../data/sharedGameData.js'
+import * as sharedGameData from '../data/sharedGameData.js'
 
 // Configuration des succès basée sur les données centralisées
 const achievementsConfig = {}
@@ -31,6 +32,10 @@ Object.entries(achievementsData).forEach(([id, data]) => {
           return progress.avatarChanged >= data.objectif
         case 'name_change':
           return progress.nameChanged >= data.objectif
+        case 'team_stats':
+          return progress.maxTeamStat >= data.objectif
+        case 'mega_click':
+          return progress.maxMegaClick >= data.objectif
         default:
           return false
       }
@@ -54,7 +59,9 @@ export async function getAchievementsStatus(req, res) {
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
           avatarChanged: 0,
-          nameChanged: 0
+          nameChanged: 0,
+          maxTeamStat: 0,
+          maxMegaClick: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -97,7 +104,9 @@ export async function checkAchievements(req, res) {
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
           avatarChanged: 0,
-          nameChanged: 0
+          nameChanged: 0,
+          maxTeamStat: 0,
+          maxMegaClick: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -128,6 +137,28 @@ export async function checkAchievements(req, res) {
       currentChickensProgress,
       currentChickens
     )
+
+    // S'assurer que tous les nouveaux champs existent (pour utilisateurs existants)
+    if (!user.achievements.progress.hasOwnProperty('maxTeamStat')) {
+      user.achievements.progress.maxTeamStat = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('maxMegaClick')) {
+      user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('nameChanged')) {
+      user.achievements.progress.nameChanged = 0
+    }
+
+    // Calculer et mettre à jour les stats d'équipe avec les fonctions dédiées
+    // Importer les fonctions depuis egg.controller.js
+    const { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme } = await import('./egg.controller.js');
+
+    const teamEnergy = computeTeamEnergy(user);
+    const teamIntelligence = computeTeamIntelligence(user);
+    const teamCharisme = computeTeamCharisme(user);
+
+    user.achievements.progress.maxTeamStat = Math.max(teamEnergy, teamIntelligence, teamCharisme);
+    user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
 
     // Vérifier chaque succès
     const newAchievements = []
@@ -164,7 +195,8 @@ export async function checkAchievements(req, res) {
   }
 }
 
-// POST /api/achievements/claim/:achievementId - Réclamer la récompense d'un succès
+
+// POST /api/achievements/claim/:id - Réclame la récompense d'un succès
 export async function claimReward(req, res) {
   try {
     const user = await User.findById(req.userId)
@@ -290,7 +322,9 @@ export async function updateAchievementProgress(userId, progressType, value) {
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
           avatarChanged: 0,
-          nameChanged: 0
+          nameChanged: 0,
+          maxTeamStat: 0,
+          maxMegaClick: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -304,6 +338,17 @@ export async function updateAchievementProgress(userId, progressType, value) {
       )
       
       user.achievements = updatedUser.achievements
+    }
+
+    // S'assurer que tous les champs requis existent (pour les utilisateurs existants)
+    if (!user.achievements.progress.hasOwnProperty('maxTeamStat')) {
+      user.achievements.progress.maxTeamStat = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('maxMegaClick')) {
+      user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('nameChanged')) {
+      user.achievements.progress.nameChanged = 0
     }
 
     // Mettre à jour le progrès
@@ -325,6 +370,12 @@ export async function updateAchievementProgress(userId, progressType, value) {
           const newValue = Number(amount) || 0
           user.achievements.progress[key] = Math.max(currentValue, newValue)
           console.log(`🔍 Achievement progress updated (max): ${key} ${currentValue} -> ${user.achievements.progress[key]}`)
+          
+          // Synchroniser maxMegaClick avec maxEggsInOneClick
+          if (key === 'maxEggsInOneClick') {
+            user.achievements.progress.maxMegaClick = user.achievements.progress[key]
+            console.log(`🔍 maxMegaClick synchronized: ${user.achievements.progress.maxMegaClick}`)
+          }
         }
       }
     }
@@ -352,7 +403,9 @@ export async function triggerAchievementCheck(userId) {
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
           avatarChanged: 0,
-          nameChanged: 0
+          nameChanged: 0,
+          maxTeamStat: 0,
+          maxMegaClick: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -366,6 +419,30 @@ export async function triggerAchievementCheck(userId) {
       
       user.achievements = updatedUser.achievements
     }
+
+    // Calculer et mettre à jour les stats d'équipe
+    const poules = user.poulesPossedees || []
+    let totalProduction = 0, totalStockage = 0
+    
+    poules.forEach(poule => {
+      if (poule.especeId && poule.quantite > 0) {
+        const espece = sharedGameData.especeData[poule.especeId]
+        if (espece && espece.stats) {
+          const niveau = poule.niveauTalent || 1
+          const quantite = poule.quantite || 1
+          
+          const baseProduction = (espece.stats.intelligence + espece.stats.energie) || 1
+          const baseStockage = (espece.stats.charisme + espece.stats.intelligence) || 1
+          
+          totalProduction += baseProduction * niveau * quantite
+          totalStockage += baseStockage * niveau * quantite
+        }
+      }
+    })
+    
+    // Mettre à jour les valeurs de progrès calculées
+    user.achievements.progress.maxTeamStat = Math.max(totalProduction, totalStockage)
+    user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
 
     console.log(`🔍 Current achievement progress for user ${userId}:`, user.achievements.progress)
 

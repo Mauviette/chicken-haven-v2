@@ -1,7 +1,6 @@
 // controllers/box.controller.js
 import User from '../models/User.js'
-import { especeData, groupes, boxesData } from '../data/gameData.js'
-import { artifactsData } from '../data/sharedGameData.js'
+import { especeData, groupes, boxesData, artifactsData } from '../data/sharedGameData.js'
 import { updateAchievementProgress } from './achievements.controller.js'
 import { executeWithRetry } from '../utils/mongoUtils.js'
 
@@ -56,29 +55,55 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
       // Simuler l'ouverture de boîte
       const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts)
 
-      // Appliquer les changements
-      playerResources[resourceType] = currentAmount - box.price.count
-      user.resources = playerResources
+      // Décrémenter le coût d'abord
+      const costUpdate = await User.findByIdAndUpdate(
+        userId,
+        { $inc: { [`resources.${resourceType}`]: -box.price.count } },
+        { new: true }
+      )
+      
+      if (!costUpdate) {
+        throw new Error('Échec de la déduction du coût')
+      }
 
-      // Appliquer les résultats selon le type
       const responseResults = []
+      
+      // Traiter les résultats un par un de manière atomique
       for (const result of results) {
         if (result.type === 'chicken') {
-          const existingPoule = user.poulesPossedees.find(p => p.especeId === result.chickenId)
-          
-          if (existingPoule) {
-            existingPoule.quantite += 1
+          // Tenter d'incrémenter la quantité si la poule existe déjà
+          // Vérifier l'existence de la poule avant d'ajouter
+          const alreadyHasChicken = await User.findOne({
+            _id: userId,
+            'poulesPossedees.especeId': result.chickenId
+          });
+
+          // Logique classique : si la poule existe, on incrémente la quantité, sinon on ajoute
+          const user = await User.findById(userId);
+          const pouleIndex = user.poulesPossedees.findIndex(p => p.especeId === result.chickenId);
+          if (pouleIndex !== -1) {
+            await User.updateOne(
+              { _id: userId, [`poulesPossedees.${pouleIndex}.especeId`]: result.chickenId },
+              { $inc: { [`poulesPossedees.${pouleIndex}.quantite`]: 1 } }
+            );
           } else {
-            user.poulesPossedees.push({
-              especeId: result.chickenId,
-              quantite: 1,
-              niveauTalent: 1,
-              new: true
-            })
+            await User.updateOne(
+              { _id: userId },
+              {
+                $push: {
+                  poulesPossedees: {
+                    especeId: result.chickenId,
+                    quantite: 1,
+                    niveauTalent: 1,
+                    new: true
+                  }
+                }
+              }
+            );
           }
 
           // Préparer les données de réponse
-          const chickenData = especeData[result.chickenId]
+          const chickenData = especeData[result.chickenId];
           responseResults.push({
             type: 'chicken',
             especeId: result.chickenId,
@@ -86,18 +111,17 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
             rarete: chickenData?.rarete || 'commune',
             groupe: result.groupName,
             isNew: !ownedChickens.includes(result.chickenId)
-          })
+          });
         } else if (result.type === 'artifact') {
-          // S'assurer que le tableau artifacts existe
-          if (!user.artifacts) {
-            user.artifacts = []
-          }
-          
-          // Ajouter l'artefact s'il n'est pas déjà possédé
-          const existingArtifact = user.artifacts.find(a => a.artifactId === result.artifactId)
-          if (!existingArtifact) {
-            user.artifacts.push({ artifactId: result.artifactId })
-          }
+          // Utiliser $addToSet pour éviter les doublons d'artefacts
+          await User.updateOne(
+            { _id: userId },
+            {
+              $addToSet: {
+                artifacts: { artifactId: result.artifactId }
+              }
+            }
+          )
 
           // Préparer les données de réponse
           const artifactData = artifactsData[result.artifactId]
@@ -111,9 +135,11 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
             isNew: !ownedArtifacts.includes(result.artifactId)
           })
         } else if (result.type === 'item') {
-          // Ajouter les ressources
-          playerResources[result.itemId] = (playerResources[result.itemId] || 0) + result.amount
-          user.resources = playerResources
+          // Ajouter les ressources de manière atomique
+          await User.updateOne(
+            { _id: userId },
+            { $inc: { [`resources.${result.itemId}`]: result.amount } }
+          )
 
           responseResults.push({
             type: 'item',
@@ -123,14 +149,15 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
         }
       }
 
-      // Sauvegarder atomiquement
-      await user.save() // Ici on garde user.save() car c'est déjà dans executeWithRetry
+      // Récupérer l'utilisateur mis à jour pour les nouvelles ressources
+      const updatedUser = await User.findById(userId)
+      const newBalance = updatedUser.resources[resourceType]
 
       // Retourner le résultat
       return {
         box: { id: box.id, name: box.name, cost: box.price },
         results: responseResults,
-        newBalance: { [resourceType]: playerResources[resourceType] }
+        newBalance: { [resourceType]: newBalance }
       }
 
     } catch (error) {

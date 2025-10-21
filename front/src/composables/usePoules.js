@@ -226,6 +226,9 @@ export function usePoules() {
         console.warn('Erreur rafraîchissement succès après upgrade:', achievementError)
       }
       
+      // Émettre un événement pour le système d'achievements
+      window.dispatchEvent(new CustomEvent('chicken-upgraded'))
+      
       window.$toast?.('Talent amélioré !', 'success')
       return true
     } catch (e) {

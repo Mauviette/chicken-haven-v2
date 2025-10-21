@@ -11,7 +11,10 @@ const userAchievements = ref({
     totalProductionCompleted: 0,
     totalBoxesOpened: 0,
     maxEggsInOneClick: 0,
-    avatarChanged: 0
+    avatarChanged: 0,
+    nameChanged: 0,
+    maxTeamStat: 0,
+    maxMegaClick: 0
   },
   completed: [],
   lastChecked: new Date()
@@ -81,6 +84,12 @@ export function useAchievements() {
         return completedEntry ? achievement.objectif : 0
       case 'avatar_change':
         return Math.min(userAchievements.value.progress.avatarChanged, achievement.objectif)
+      case 'name_change':
+        return Math.min(userAchievements.value.progress.nameChanged, achievement.objectif)
+      case 'team_stats':
+        return Math.min(userAchievements.value.progress.maxTeamStat, achievement.objectif)
+      case 'mega_click':
+        return Math.min(userAchievements.value.progress.maxMegaClick, achievement.objectif)
       default:
         return 0
     }
@@ -106,7 +115,11 @@ export function useAchievements() {
       if (response.ok) {
         const data = await response.json()
         userAchievements.value = {
-          progress: data.progress || userAchievements.value.progress,
+          progress: {
+            // Fusionner les données existantes avec les nouvelles pour éviter de perdre des champs
+            ...userAchievements.value.progress,
+            ...(data.progress || {})
+          },
           completed: data.completed || [],
           lastChecked: new Date(data.lastChecked || Date.now())
         }
@@ -258,6 +271,8 @@ export function useAchievements() {
       const onChickenBought = () => setTimeout(checkAchievements, 250)
       const onEggClicked = () => setTimeout(checkAchievements, 250)
       const onAvatarUpdated = () => setTimeout(checkAchievements, 250)
+      const onNameChanged = () => setTimeout(checkAchievements, 250)
+      const onChickenUpgraded = () => setTimeout(checkAchievements, 250)
       const onAuthLogin = async () => {
         // Réinitialiser puis recharger les succès pour le nouveau compte
         try { notifiedAchievements.clear() } catch (_) {}
@@ -268,7 +283,10 @@ export function useAchievements() {
             totalProductionCompleted: 0,
             totalBoxesOpened: 0,
             maxEggsInOneClick: 0,
-            avatarChanged: 0
+            avatarChanged: 0,
+            nameChanged: 0,
+            maxTeamStat: 0,
+            maxMegaClick: 0
           },
           completed: [],
           lastChecked: new Date()
@@ -288,7 +306,10 @@ export function useAchievements() {
             totalProductionCompleted: 0,
             totalBoxesOpened: 0,
             maxEggsInOneClick: 0,
-            avatarChanged: 0
+            avatarChanged: 0,
+            nameChanged: 0,
+            maxTeamStat: 0,
+            maxMegaClick: 0
           },
           completed: [],
           lastChecked: new Date()
@@ -297,12 +318,16 @@ export function useAchievements() {
       window.addEventListener('chicken-bought', onChickenBought)
       window.addEventListener('egg-clicked', onEggClicked)
       window.addEventListener('avatar-updated', onAvatarUpdated)
+      window.addEventListener('name-changed', onNameChanged)
+      window.addEventListener('chicken-upgraded', onChickenUpgraded)
       window.addEventListener('auth-login', onAuthLogin)
       window.addEventListener('auth-logout', onAuthLogout)
       // Stocker les handlers pour pouvoir les retirer si besoin
       startAutoCheck._onChickenBought = onChickenBought
       startAutoCheck._onEggClicked = onEggClicked
       startAutoCheck._onAvatarUpdated = onAvatarUpdated
+      startAutoCheck._onNameChanged = onNameChanged
+      startAutoCheck._onChickenUpgraded = onChickenUpgraded
       startAutoCheck._onAuthLogin = onAuthLogin
       startAutoCheck._onAuthLogout = onAuthLogout
     }
@@ -325,6 +350,14 @@ export function useAchievements() {
       if (startAutoCheck._onAvatarUpdated) {
         window.removeEventListener('avatar-updated', startAutoCheck._onAvatarUpdated)
         startAutoCheck._onAvatarUpdated = null
+      }
+      if (startAutoCheck._onNameChanged) {
+        window.removeEventListener('name-changed', startAutoCheck._onNameChanged)
+        startAutoCheck._onNameChanged = null
+      }
+      if (startAutoCheck._onChickenUpgraded) {
+        window.removeEventListener('chicken-upgraded', startAutoCheck._onChickenUpgraded)
+        startAutoCheck._onChickenUpgraded = null
       }
       if (startAutoCheck._onAuthLogin) {
         window.removeEventListener('auth-login', startAutoCheck._onAuthLogin)
