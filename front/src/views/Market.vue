@@ -16,12 +16,6 @@
           <span class="balance-amount">{{ productionTokens }}</span>
         </div>
       </Tooltip>
-      <Tooltip :text="`<strong>${achievementsData.wild_token.nom.charAt(0).toUpperCase() + achievementsData.wild_token.nom.slice(1)}</strong><br>${achievementsData.wild_token.description}`" position="bottom">
-        <div class="balance-item">
-          <span class="balance-icon">🃏</span>
-          <span class="balance-amount">{{ wildTokens }}</span>
-        </div>
-      </Tooltip>
       <Tooltip text="<strong>Clés à coffre</strong><br>Ouvrez des coffres de trésors pour obtenir des artefacts de minage" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">🗝️</span>

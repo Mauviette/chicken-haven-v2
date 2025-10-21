@@ -728,7 +728,7 @@ export const achievementsData = {
     id: 'first_chicken',
     nom: 'Première Poule',
     description: 'Obtenez votre première poule',
-    icon: '🐔',
+    icon: '🐓',
     objectif: 1,
     type: 'chickens',
     reward: {
@@ -745,7 +745,19 @@ export const achievementsData = {
     type: 'chickens',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 2
+    }
+  },
+  'chicken_interested': {
+    id: 'chicken_interested',
+    nom: 'Éleveur Interessé',
+    description: 'Possédez 10 poules différentes',
+    icon: '🐓',
+    objectif: 10,
+    type: 'chickens',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
     }
   },
   'talent_apprentice': {
@@ -757,7 +769,7 @@ export const achievementsData = {
     type: 'talent_level',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 2
     }
   },
   'talent_expert': {
@@ -769,7 +781,7 @@ export const achievementsData = {
     type: 'talent_level',
     reward: {
       type: 'blueberry',
-      quantite: 2
+      quantite: 3
     }
   },
   'talent_master': {
@@ -781,18 +793,30 @@ export const achievementsData = {
     type: 'talent_level',
     reward: {
       type: 'blueberry',
-      quantite: 3
+      quantite: 5
     }
   },
   'avatar_changed': {
     id: 'avatar_changed',
     nom: 'Nouveau Look',
-    description: 'Changez votre avatar pour la première fois',
-    icon: '👤',
+    description: 'Changez votre avatar.',
+    icon: '🖼️',
     objectif: 1,
     type: 'avatar_change',
     reward: {
       type: 'stock_token',
+      quantite: 1
+    }
+  },
+  'name_changed': {
+    id: 'name_changed',
+    nom: 'Nouveau Moi',
+    description: 'Changez votre pseudo.',
+    icon: '👤',
+    objectif: 1,
+    type: 'name_change',
+    reward: {
+      type: 'production_token',
       quantite: 1
     }
   },
@@ -855,12 +879,6 @@ export const itemsData = {
     nom: 'jetons de production',
     nom_singulier: 'jeton de production',
     icon: '⚡'
-  },
-  'wild_token': {
-    id: 'wild_token',
-    nom: 'jetons joker',
-    nom_singulier: 'jeton joker',
-    icon: '🃏'
   },
   'mining_token': {
     id: 'mining_token',

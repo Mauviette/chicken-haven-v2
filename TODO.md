@@ -81,3 +81,31 @@ Système d'artefacts de minage (similaire au système de poules):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+- Ajouter des effets visuels pour l'amélioration de poules
+- Effet visuel pour achat d'amélioration (marché)
+- Marché : N'afficher les clés de coffre que si le joueur est niv 5+
+- Les nouveaux succès ne marchent pas (nouveau moi, éleveur interessé)
+- Marché : Arrondir les probas à la virgle si necessaire
+---
+Marché : Problème : Drop une poule qui a été déjà obtenue dont la quantité est 0 s'affiche comme 'Nouveau'.
+BottomBar : Problème : Le badge du bouton marché (d'indication d'amélioration disponible) s'affiche alors qu'aucune amélioration n'est disponible
+TeamParadeChicken : Problème : Quand une poule se fait améliorer depuis ChickenDetail, elle se téleporte. Il ne faut pas changer sa position à ce moment.
+---
+Social : Limiter la taille des leaderboards à 10. S'il y a au moins 10 personnes sur la leaderboard, mettre un bouton "Plus" qui lorsque cliqué ouvrira un popup (Popup.vue) qui affichera la leaderboard entière.
