@@ -403,6 +403,11 @@ export async function clickSpawnableObject(req, res) {
         await updateAchievementProgress(req.userId, 'increment', {
           totalEggsCollected: finalAmount
         })
+        
+        // Mettre à jour le max œufs en un clic pour les spawnables
+        await updateAchievementProgress(req.userId, 'max', {
+          maxEggsInOneClick: finalAmount
+        })
       }
     } else if (reward.type === 'buff') {
       const duration = evalExpr(reward.duration, ctx) || 15000
