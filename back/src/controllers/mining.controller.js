@@ -4,6 +4,51 @@ import { miningData, artifactsData } from '../data/sharedGameData.js'
 // Utiliser la source unique de vérité pour la configuration du mini-jeu
 const MINING_CONFIG = miningData
 
+// NOUVEAU : helpers pour vérifier si l'utilisateur a une partie de minage active
+export async function isUserMining(userId) {
+  try {
+    const user = await User.findById(userId).select('miningGame')
+    if (!user) return false
+    return !!(user.miningGame && user.miningGame.active)
+  } catch (err) {
+    console.warn('isUserMining error for', userId, err)
+    return false
+  }
+}
+
+/**
+ * Assert helper à appeler avant d'autoriser equip/unequip d'artefacts côté serveur.
+ * Lance une erreur (Error) si l'utilisateur a une partie de minage active.
+ * Le controller d'équipement doit attraper cette erreur et renvoyer un 400/409 approprié.
+ */
+export async function assertUserCanModifyArtifacts(userId) {
+  const active = await isUserMining(userId)
+  if (active) {
+    const e = new Error('Impossible de modifier les artefacts pendant une partie de minage active')
+    e.code = 'MINING_ACTIVE'
+    throw e
+  }
+  return true
+}
+
+// NOUVEAU : middleware Express réutilisable (optionnel)
+export function checkCanModifyArtifactsMiddleware(req, res, next) {
+  ;(async () => {
+    try {
+      const userId = req.userId || (req.user && req.user._id)
+      if (!userId) return res.status(401).json({ error: 'Non authentifié' })
+      const active = await isUserMining(userId)
+      if (active) {
+        return res.status(409).json({ error: 'Impossible de modifier les artefacts pendant une partie de minage active' })
+      }
+      next()
+    } catch (err) {
+      console.error('checkCanModifyArtifactsMiddleware error:', err)
+      res.status(500).json({ error: 'Erreur serveur' })
+    }
+  })()
+}
+
 // Helper : calcule les modificateurs appliqués par une liste d'artefacts équipés
 function computeArtifactModifiers(equipped = []) {
   const modifiers = {

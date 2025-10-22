@@ -23,9 +23,10 @@
           v-if="!isEquipped"
           class="btn equip" 
           @click="onEquip"
-          :disabled="!canEquip"
+          :disabled="!canEquip || miningActive"
+          :title="miningActive ? 'Impossible d\'équiper pendant une partie de minage active' : (!canEquip ? 'Emplacements pleins' : '')"
         >
-          {{ canEquip ? '⛏️ Équiper' : 'Emplacements pleins' }}
+          {{ miningActive ? 'Minage en cours' : (canEquip ? '⛏️ Équiper' : 'Emplacements pleins') }}
         </button>
         <button 
           v-else
@@ -44,6 +45,8 @@ import Popup from '@/components/menu/Popup.vue'
 import { computed } from 'vue'
 import { usePlayer } from '@/composables/usePlayer'
 import { useSound } from '@/composables/useSound'
+
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const emit = defineEmits(['close', 'updated'])
 
@@ -69,6 +72,24 @@ const canEquip = computed(() => {
   return usedSlots < slotsCount
 })
 
+// NOUVEAU : état local pour savoir si le minage est actif (écoute évènement global)
+const miningActive = ref(!!(typeof window !== 'undefined' && window.__miningActive))
+
+function onMiningActiveChanged(e) {
+  miningActive.value = !!(e?.detail?.active)
+}
+
+onMounted(() => {
+  try {
+    window.addEventListener('mining-active-changed', onMiningActiveChanged)
+    miningActive.value = !!(window.__miningActive)
+  } catch (_) {}
+})
+
+onUnmounted(() => {
+  try { window.removeEventListener('mining-active-changed', onMiningActiveChanged) } catch (_) {}
+})
+
 function formatRareté(r) {
   const map = {
     commune: 'Commun',
@@ -80,6 +101,12 @@ function formatRareté(r) {
 }
 
 async function onEquip() {
+  // Bloquer côté UI si on sait qu'une partie est active
+  if (miningActive.value) {
+    try { window.$toast?.("Impossible d'équiper pendant une partie de minage active", 'error') } catch (_) {}
+    return
+  }
+
   if (!canEquip.value) return
   try {
     click()
@@ -87,7 +114,19 @@ async function onEquip() {
     confirm()
     emit('updated')
   } catch (err) {
+    // Si le serveur refuse parce qu'une partie est active, afficher un message clair.
+    try {
+      const status = err?.response?.status
+      const data = err?.response?.data
+      if (status === 409 || (data && (data.error || '').toLowerCase().includes('minage'))) {
+        window.$toast?.("Impossible d'équiper pendant une partie de minage active", 'error')
+        // mettre à jour l'état local si le backend précise l'état (optionnel)
+        miningActive.value = true
+        return
+      }
+    } catch (_) {}
     console.error('Erreur lors de l\'équipement:', err)
+    window.$toast?.(err?.response?.data?.error || 'Erreur lors de l\'équipement', 'error')
   }
 }
 

@@ -1,9 +1,9 @@
+Popup : Appuyer sur échap ferme le popup le plus récent ouvert.
 
+sharedGameData, tools de minage : Prendre en compte secondary_damage dans mining.controller.js, le secondary_damage correspond aux dégats que fait un outil sur les autres cases que la case cliquée.
 
-Marché : Les probas doivent être mises à jour 
-
-Artefacts : Changer la couleur du fond des artefacts sur la MiningGame.vue dépendant de leur rareté
-Collection : Empêcher de changer les artéfacts si une partie de minage est en cours.
+Coder les effets de tous les artefacts (de artifactsData). 
+La logique doit être implémentée dans mining.controller.js.
 
 Ajouter un système d'onglets au menu de succès; 2 catégories. Succès classiques, et de la mine.
 Tous les succès déjà existants vont dans l'onglet classique.

@@ -14,7 +14,10 @@
                 position="bottom"
                 :followMouse="false"
               >
-                <div class="artifact-badge">
+                <div 
+                  class="artifact-badge"
+                  :style="getArtifactBadgeStyle(localEquippedArtifacts[idx - 1])"
+                >
                   {{ getArtifactIcon(localEquippedArtifacts[idx - 1]) }}
                 </div>
               </Tooltip>
@@ -128,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import Popup from '@/components/menu/Popup.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
@@ -160,6 +163,16 @@ const localEquippedArtifacts = ref([])
 watch([equippedArtifacts, artifactSlotsCount], ([artifacts, count]) => {
   localEquippedArtifacts.value = [...(artifacts || [])]
 }, { immediate: true, deep: true })
+
+// NOUVEAU : exposer un flag global pour indiquer qu'une partie est active
+watch(gameActive, (val) => {
+  try {
+    if (typeof window !== 'undefined') {
+      window.__miningActive = !!val
+      window.dispatchEvent(new CustomEvent('mining-active-changed', { detail: { active: !!val } }))
+    }
+  } catch (_) {}
+}, { immediate: true })
 
 const hoveredCell = ref(null)
 const gameOver = ref(false)
@@ -219,14 +232,16 @@ onMounted(async () => {
 // Curseur actuel basé sur l'outil
 const currentCursor = computed(() => {
   if (!gameActive.value || currentToolIndex.value >= tools.value.length) {
-    return "url('/src/assets/ui/cursor/hand_point.png') 16 16, pointer"
+    // hotspot 0 0 pour éviter offset bizarre
+    return "url('/src/assets/ui/cursor/hand_point.png') 0 0, pointer"
   }
   const tool = tools.value[currentToolIndex.value]
   const config = toolConfig[tool]
   if (config?.cursorPath) {
-    return `url("${config.cursorPath}") 16 16, pointer`
+    // hotspot 0 0 pour le curseur d'outil personnalisé
+    return `url("${config.cursorPath}") 0 0, pointer`
   }
-  return "url('/src/assets/ui/cursor/hand_point.png') 16 16, pointer"
+  return "url('/src/assets/ui/cursor/hand_point.png') 0 0, pointer"
 })
 
 function getCellClass(cell) {
@@ -463,6 +478,37 @@ function isLargeReward(reward) {
   }
   return parseInt(amount) === 1
 }
+
+// NOUVEAU : style dynamique en fonction de la rareté
+function getArtifactBadgeStyle(aid) {
+  const d = getArtifactData(aid)
+  const rarity = d?.rarete || 'commune'
+  const borderColors = {
+    commune: 'rgba(194,194,194,0.55)',
+    rare: 'rgba(123,192,255,0.45)',
+    epique: 'rgba(201,139,255,0.44)',
+    legendaire: 'rgba(212,175,55,0.7)'
+  }
+  const textColors = {
+    commune: '#5c2c08',
+    rare: '#0b4a66',
+    epique: '#4b1e5a',
+    legendaire: '#5c2c08'
+  }
+  const bgMap = {
+    commune: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(194,194,194,0.08))',
+    rare: 'linear-gradient(180deg, rgba(123,192,255,0.10), rgba(255,255,255,0.02))',
+    epique: 'linear-gradient(180deg, rgba(201,139,255,0.10), rgba(255,255,255,0.02))',
+    legendaire: 'linear-gradient(180deg, rgba(212,175,55,0.10), rgba(255,255,255,0.03))'
+  }
+
+  return {
+    background: bgMap[rarity] || bgMap.commune,
+    color: textColors[rarity] || textColors.commune,
+    border: `2.5px solid ${borderColors[rarity] || borderColors.commune}`,
+    boxShadow: 'inset 0 0 6px rgba(0,0,0,0.04)'
+  }
+}
 </script>
 
 <style scoped>
@@ -525,16 +571,13 @@ function isLargeReward(reward) {
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  background: rgba(255, 198, 110, 0.2);
-  border: 2px solid #ffc66e;
   border-radius: 8px;
-  transition: all 0.2s ease;
-  cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+  transition: all 0.18s ease;
 }
 
-.artifact-badge:hover {
-  background: rgba(255, 198, 110, 0.3);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+/* override minimal style pour le badge afin d'accepter le style inline */
+.artifact-badge {
+  /* styles dynamiques appliqués ici */
 }
 
 .tokens {
@@ -804,7 +847,7 @@ function isLargeReward(reward) {
   display: flex;
   flex-direction: column;
   background-color: #7d5500;
-  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23957339' fill-opacity='0.43' fill-rule='evenodd'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2zm0 4h20v2H20v-2z' fill='%23957339' fill-opacity='0.43' fill-rule='evenodd'/%3E%3C/svg%3E");
   border: 3px solid #b77b3d;
   border-radius: 12px;
   padding: 12px;

@@ -1239,7 +1239,3 @@ export function formatString(type, count) {
   if (!itemData || typeof count !== 'number') return 'Valeur invalide'
   return `${count} ${count === 1 ? itemData.nom_singulier : itemData.nom}`
 }
-
-/*
-Code tous les effets des artefacts de minage (de artifactsData). La logique doit être implémentée dans mining.controller.js.
-En cas de doute demande moi.*/

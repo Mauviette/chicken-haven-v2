@@ -1,4 +1,3 @@
-
 <template>
   <div class="market-view">
     <div class="header-bar">
@@ -639,17 +638,25 @@ async function openBox(box) {
     console.log('Achat boîte:', box)
     // Lancer l'animation d'ouverture
     currentBoxIcon.value = box.icon || '📦'
-  showOpenAnim.value = true
-  // Son pendant l'ouverture (error_004.mp3 demandé) – déclenche immédiatement
-  sndBoxOpen(0.95)
+    showOpenAnim.value = true
+    sndBoxOpen(0.95)
 
-    // Simuler un court délai pour laisser l'anim démarrer (si réseau ultra-rapide)
     const minAnim = new Promise(res => setTimeout(res, 600))
     const apiCall = openBoxAPI(box.id)
     const result = await Promise.all([minAnim, apiCall]).then(([, r]) => r)
-    
-  // Arrêter l'animation et préparer l'affichage des résultats
-  showOpenAnim.value = false
+
+    // Arrêter l'animation et préparer l'affichage des résultats
+    showOpenAnim.value = false
+
+    // --- NOUVEAU : rafraîchir la liste des artefacts possédés et les boîtes dispo
+    try {
+      await fetchArtifacts()
+    } catch (e) { console.warn('fetchArtifacts after openBox failed:', e) }
+    try {
+      availableBoxes.value = await getAvailableBoxes()
+    } catch (e) { console.warn('getAvailableBoxes after openBox failed:', e) }
+    // --- FIN NOUVEAU
+
     // Trier les résultats par rareté (les plus rares en haut)
     const singleResults = Array.isArray(result.results) ? [...result.results] : []
     const rarityOrder = { legendaire: 4, légendaire: 4, epique: 3, épique: 3, rare: 2, commune: 1 }
@@ -738,11 +745,10 @@ async function openBoxMultiple(box, times = 10) {
     showOpenAnim.value = true
     sndBoxOpen(0.95)
 
-  const combined = []
+    const combined = []
     let opened = 0
     for (let i = 0; i < affordable; i++) {
       try {
-        // Assure un petit délai pour laisser l'anim respirer sur la première ouverture
         if (i === 0) {
           await new Promise(res => setTimeout(res, 600))
         }
@@ -752,7 +758,6 @@ async function openBoxMultiple(box, times = 10) {
         }
         opened++
       } catch (err) {
-        // Arrête si l'API renvoie une erreur (p.ex. fonds épuisés)
         console.warn('Ouverture interrompue à', i + 1, err)
         break
       }
@@ -760,6 +765,15 @@ async function openBoxMultiple(box, times = 10) {
 
     showOpenAnim.value = false
     if (opened > 0) {
+      // --- NOUVEAU : rafraîchir artefacts et boîtes après les ouvertures
+      try {
+        await fetchArtifacts()
+      } catch (e) { console.warn('fetchArtifacts after openBoxMultiple failed:', e) }
+      try {
+        availableBoxes.value = await getAvailableBoxes()
+      } catch (e) { console.warn('getAvailableBoxes after openBoxMultiple failed:', e) }
+      // --- FIN NOUVEAU
+
       // Trier par rareté (les plus rares en haut)
       const rarityOrder = { legendaire: 4, légendaire: 4, epique: 3, épique: 3, rare: 2, commune: 1 }
       combined.sort((a, b) => (rarityOrder[b?.rarete] || 0) - (rarityOrder[a?.rarete] || 0))

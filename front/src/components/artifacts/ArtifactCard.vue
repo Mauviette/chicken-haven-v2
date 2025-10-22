@@ -65,8 +65,10 @@ function formatRareté(r) {
 <style scoped>
 .artifact-card {
   width: 160px;
-  background: #fffaf1;
-  border: 3px solid #ffc66e;
+  /* fond légèrement opaque et plus doux */
+  background: rgba(255, 250, 241, 0.92);
+  /* bord restauré à 2px (valeur standard) */
+  border: 2px solid rgba(255, 198, 110, 0.65);
   border-radius: 16px;
   padding: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
@@ -133,55 +135,40 @@ function formatRareté(r) {
 }
 
 .artifact-card.commune {
-  border-color: #c2c2c2;
+  border-color: rgba(194,194,194,0.6);
 }
 .artifact-card.rare {
-  border-color: #7bc0ff;
+  border-color: rgba(123,192,255,0.5);
 }
 .artifact-card.epique {
-  border-color: #c98bff;
+  border-color: rgba(201,139,255,0.48);
 }
 .artifact-card.legendaire {
-  border-color: gold;
+  border-color: rgba(212,175,55,0.85);
 }
 
-.artifact-card.commune .badge-equipped { background: #c2c2c2; border: 2px solid #c2c2c2; }
-.artifact-card.rare .badge-equipped { background: #7bc0ff; border: 2px solid #7bc0ff; }
-.artifact-card.epique .badge-equipped { background: #c98bff; border: 2px solid #c98bff; }
-.artifact-card.legendaire .badge-equipped { background: gold; border: 2px solid gold; color: #5c2c08; }
+/* Badges équipés plus doux et semi-transparents */
+.artifact-card.commune .badge-equipped { background: rgba(194,194,194,0.85); border: 2px solid rgba(194,194,194,0.85); }
+.artifact-card.rare .badge-equipped { background: rgba(123,192,255,0.9); border: 2px solid rgba(123,192,255,0.9); }
+.artifact-card.epique .badge-equipped { background: rgba(201,139,255,0.9); border: 2px solid rgba(201,139,255,0.9); }
+.artifact-card.legendaire .badge-equipped { background: rgba(212,175,55,0.9); border: 2px solid rgba(212,175,55,0.9); color: #5c2c08; }
 
-.artifact-name {
-  font-weight: bold;
-  font-size: 14px;
-  color: #5c2c08;
-  margin-bottom: 4px;
-}
-
-.rarete {
-  margin: 6px 0;
-  padding: 2px 8px;
-  border-radius: 8px;
-  display: inline-block;
-  font-weight: bold;
-  font-size: 13px;
-  background: #ececec;
-}
-
+/* Rareté : fond adouci (moins saturé, légèrement opaque) */
 .artifact-card.commune .rarete {
-  background: #e6e6e6;
-  color: #6d6d6d;
+  background: rgba(230,230,230,0.6);
+  color: rgba(109,109,109,0.95);
 }
 .artifact-card.rare .rarete {
-  background: #e0f2ff;
-  color: #2176ae;
+  background: rgba(224,242,255,0.38);
+  color: rgba(33,118,174,0.95);
 }
 .artifact-card.epique .rarete {
-  background: #f3e6ff;
-  color: #8e44ad;
+  background: rgba(243,230,255,0.36);
+  color: rgba(142,68,173,0.94);
 }
 .artifact-card.legendaire .rarete {
-  background: #fffbe6;
-  color: #b8860b;
+  background: rgba(255,251,230,0.5);
+  color: rgba(184,134,11,0.95);
 }
 
 .effect {
