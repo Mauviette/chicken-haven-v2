@@ -305,7 +305,7 @@ export async function startMining(req, res) {
     }
 
     // Mélanger légèrement la pile pour conserver un peu d'aléa
-    appliedTools = appliedTools.sort(() => Math.random() - 0.5)
+    //appliedTools = appliedTools.sort(() => Math.random() - 0.5)
 
     const tools = appliedTools
 

@@ -1,8 +1,13 @@
+
+A tester : mining_token gagnés lors du lvl up
+
 Ajouter ces succès :
 > Trouver 1, 3, 5 artefact
 > Miner 10, 25, 100 cases au total
 > Finir une grille sans avoir aucune récompense
 > Casser toute la grille de 5x5
+
+Comptabiliser dans le stat de joueur "max en un clic" les spawnables (tel que l'oeuf blanc)
 
 Ajouter des effets visuels pour l'amélioration de poules
 Faire en sorte que l'instance de poule en bas ne soit pas reset dans ce cas

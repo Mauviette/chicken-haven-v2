@@ -52,23 +52,25 @@
             }"
             @mouseleave="hoveredCell = null"
           >
-            <div
-              v-for="cell in cells"
-              :key="`${cell.row}-${cell.col}`"
-              class="cell"
-              :class="getCellClass(cell)"
-              :style="getCellStyle(cell)"
-              @mouseenter="hoveredCell = { row: cell.row, col: cell.col }"
-              @click="digAt(cell.row, cell.col)"
-            >
-              <div 
-                v-if="cell.hp === 0 && cell.reward" 
-                class="reward"
-                :class="{ 'large-emoji': isLargeReward(cell.reward) }"
+              <!-- overlay d'explosion (affiché pendant l'animation 'explosion') -->
+              <div v-if="explosionActive" class="explosion-effect" aria-hidden="true"></div>
+              <div
+                v-for="cell in cells"
+                :key="`${cell.row}-${cell.col}`"
+                class="cell"
+                :class="getCellClass(cell)"
+                :style="getCellStyle(cell)"
+                @mouseenter="hoveredCell = { row: cell.row, col: cell.col }"
+                @click="digAt(cell.row, cell.col)"
               >
-                {{ formatReward(cell.reward, true) }}
+                <div 
+                  v-if="cell.hp === 0 && cell.reward" 
+                  class="reward"
+                  :class="{ 'large-emoji': isLargeReward(cell.reward) }"
+                >
+                  {{ formatReward(cell.reward, true) }}
+                </div>
               </div>
-            </div>
           </div>
 
           <!-- Pile d'outils -->
@@ -159,6 +161,10 @@ const {
 // Copie locale pour forcer la réactivité
 const localEquippedArtifacts = ref([])
 
+// NOUVEAU : animation explosion
+const animatingExplosions = ref(new Set())
+const explosionActive = ref(false)
+
 // Watcher pour synchroniser les artefacts
 watch([equippedArtifacts, artifactSlotsCount], ([artifacts, count]) => {
   localEquippedArtifacts.value = [...(artifacts || [])]
@@ -217,7 +223,9 @@ const toolConfig = (() => {
       description: v.desc || v.description || '',
       cursorPath: `/src/assets/ui/cursor/tool_${key}.png`,
       // inclure secondary_damage (fallback 1) pour que la preview utilise la bonne valeur
-      secondaryDamage: (typeof v.secondary_damage === 'number') ? v.secondary_damage : 1
+      secondaryDamage: (typeof v.secondary_damage === 'number') ? v.secondary_damage : 1,
+      // exposer le type d'animation (mining | explosion | null)
+      animation: v.animation || null
     }
   })
   return cfg
@@ -260,9 +268,14 @@ function getCellClass(cell) {
     classes.push('intact')
   }
 
-  // Animation de creusage
+  // Animation de creusage classique
   if (animatingCells.value.has(cellKey)) {
     classes.push('digging')
+  }
+
+  // Animation explosion (classe spécifique)
+  if (animatingExplosions.value.has(cellKey)) {
+    classes.push('explosion')
   }
 
   // Preview de l'impact
@@ -342,10 +355,36 @@ async function digAt(row, col) {
   
   const cellKey = `${row}-${col}`
   
-  // Ajouter l'animation de creusage
-  animatingCells.value.add(cellKey)
-  
-  // Animation de l'outil utilisé
+  // Récupérer le type d'outil et sa config pour savoir quelle animation jouer
+  const toolType = tools.value[currentToolIndex.value]
+  const config = toolConfig[toolType]
+
+  // Ajouter l'animation de creusage (classique) si animation === 'mining'
+  if (!config || config.animation === 'mining' || !config.animation) {
+    animatingCells.value.add(cellKey)
+  }
+
+  // Si l'outil a une animation 'explosion', marquer toutes les cases affectées pour l'animation explosion
+  if (config && config.animation === 'explosion') {
+    // marquer overlay global et cellules
+    explosionActive.value = true
+    // déterminer les cellules affectées localement (utilise willBeAffected qui se base sur hoveredCell)
+    // fallback: inclure la case ciblée si hoveredCell absent
+    const affected = []
+    if (hoveredCell.value) {
+      for (const c of cells.value) {
+        if (willBeAffected(c.row, c.col)) affected.push(c)
+      }
+    } else {
+      // au moins la case ciblée
+      affected.push({ row, col })
+    }
+    for (const a of affected) {
+      animatingExplosions.value.add(`${a.row}-${a.col}`)
+    }
+  }
+
+  // Animation de l'outil utilisé (visuel pile)
   toolUsed.value = true
   setTimeout(() => {
     toolUsed.value = false
@@ -353,10 +392,17 @@ async function digAt(row, col) {
   
   const result = await dig(row, col)
   
-  // Retirer l'animation après un court délai
-  setTimeout(() => {
-    animatingCells.value.delete(cellKey)
-  }, 300)
+  // Retirer l'animation après un court délai (différent si explosion)
+  if (config && config.animation === 'explosion') {
+    setTimeout(() => {
+      animatingExplosions.value.clear()
+      explosionActive.value = false
+    }, 600) // explosion slightly longer
+  } else {
+    setTimeout(() => {
+      animatingCells.value.delete(cellKey)
+    }, 300)
+  }
   
   if (result?.gameOver) {
     gameOver.value = true
@@ -618,6 +664,7 @@ function getArtifactBadgeStyle(aid) {
   width: 500px;
   height: 500px;
   flex-shrink: 0;
+  position: relative; /* <-- nécessaire pour overlay d'explosion */
   background-color: #3d2817;
   background-image: 
     radial-gradient(circle at 20% 30%, rgba(90, 74, 58, 0.3) 0%, transparent 50%),
@@ -1105,5 +1152,37 @@ function getArtifactBadgeStyle(aid) {
     min-width: 45px;
     padding: 6px 8px;
   }
+}
+
+/* Ajout : style pour les cases affectées par une explosion */
+.cell.explosion {
+  /* flash + glow plus prononcé */
+  box-shadow: 0 0 18px rgba(255, 150, 50, 0.9), inset 0 0 10px rgba(255,200,120,0.15);
+  transform: scale(1.06);
+  z-index: 5;
+  animation: explosionFlash 550ms ease-out;
+}
+
+@keyframes explosionFlash {
+  0% { transform: scale(0.95); opacity: 0.0; filter: blur(0px); }
+  30% { transform: scale(1.12); opacity: 1; filter: blur(1px); }
+  100% { transform: scale(1.0); opacity: 1; filter: blur(0); }
+}
+
+/* Overlay global d'explosion (effet lumineux central) */
+.explosion-effect {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  background: radial-gradient(circle at 50% 50%, rgba(255,200,80,0.14) 0%, rgba(255,140,40,0.08) 20%, rgba(0,0,0,0) 50%);
+  animation: explosionOverlay 600ms ease-out forwards;
+  mix-blend-mode: screen;
+}
+
+@keyframes explosionOverlay {
+  0% { opacity: 0; transform: scale(0.9); }
+  30% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.15); }
 }
 </style>
