@@ -575,11 +575,6 @@ function getArtifactBadgeStyle(aid) {
   transition: all 0.18s ease;
 }
 
-/* override minimal style pour le badge afin d'accepter le style inline */
-.artifact-badge {
-  /* styles dynamiques appliqués ici */
-}
-
 .tokens {
   font-size: 14px;
   font-weight: 600;

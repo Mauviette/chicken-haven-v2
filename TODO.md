@@ -1,5 +1,3 @@
-Popup : Appuyer sur échap ferme le popup le plus récent ouvert.
-
 sharedGameData, tools de minage : Prendre en compte secondary_damage dans mining.controller.js, le secondary_damage correspond aux dégats que fait un outil sur les autres cases que la case cliquée.
 
 Coder les effets de tous les artefacts (de artifactsData). 
