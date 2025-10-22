@@ -26,6 +26,8 @@
         </div>
         <div class="tokens">
           🪨 {{ miningTokens }}
+          <!-- Debug rapide: nombre de cases révélées (hint) -->
+          <span v-if="hintCount > 0" class="hint-counter" title="Cases révélées"> ❓ {{ hintCount }}</span>
         </div>
       </div>
 
@@ -63,6 +65,8 @@
                 @mouseenter="hoveredCell = { row: cell.row, col: cell.col }"
                 @click="digAt(cell.row, cell.col)"
               >
+                <!-- Indicateur reveal_rewards : point d'interrogation si le backend a marqué la cellule -->
+                <div v-if="hasHint(cell) && cell.hp > 0" class="cell-hint" aria-hidden="true">❓</div>
                 <div 
                   v-if="cell.hp === 0 && cell.reward" 
                   class="reward"
@@ -188,6 +192,30 @@ const showResults = ref(false)
 const finalRewards = ref([])
 const animatingCells = ref(new Set())
 const toolUsed = ref(false)
+
+// Normaliser la détection du hint (peut être boolean, string "true", number 1, etc.)
+function hasHint(cell) {
+  if (!cell) return false
+  const v = cell.hint
+  if (v === true) return true
+  if (v === 'true') return true
+  if (v === 1) return true
+  if (v === '1') return true
+  // parfois backend peut renvoyer 'yes' ou autre, tolérer toute valeur truthy non vide
+  return !!v
+}
+
+// computed: nombre de cases marquées "hint" (non creusées)
+const hintCount = computed(() => {
+  try {
+    return Array.isArray(cells.value) ? cells.value.filter(c => hasHint(c) && (c.hp == null ? true : c.hp > 0)).length : 0
+  } catch (_) { return 0 }
+})
+
+// debug : log lorsque hintCount change (utile pour diagnostiquer si le backend n'envoie rien)
+watch(hintCount, (n) => {
+  try { console.debug('[MiningGame] hintCount ->', n) } catch (_) {}
+})
 
 // Outils visibles (seulement ceux non utilisés)
 const visibleTools = computed(() => {
@@ -672,6 +700,19 @@ function getArtifactBadgeStyle(aid) {
   border-radius: 6px;
   border: 1px solid #ffc66e;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Petit badge compteur de hints pour debug / visibilité */
+.hint-counter {
+  font-size: 13px;
+  background: rgba(0,0,0,0.45);
+  color: #fffbe5;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,198,110,0.35);
 }
 
 .start-screen,
@@ -728,6 +769,7 @@ function getArtifactBadgeStyle(aid) {
   transition: background-color 0.3s ease, border-color 0.3s ease;
   position: relative;
   cursor: inherit;
+  overflow: hidden;
 }
 
 .cell.intact {
@@ -1224,5 +1266,34 @@ function getArtifactBadgeStyle(aid) {
   0% { opacity: 0; transform: scale(0.9); }
   30% { opacity: 1; transform: scale(1.05); }
   100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* Hint visual for revealed reward cells (from artifacts reveal_rewards) */
+.cell-hint {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
+  background: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.35));
+  color: #fffbe5;
+  border-radius: 6px;
+  border: 1px solid rgba(255,198,110,0.5);
+  z-index: 60; /* s'assurer au dessus */
+  pointer-events: none;
+  transform-origin: center;
+  animation: hintPulse 1200ms ease-in-out infinite;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+  opacity: 0.98;
+}
+
+@keyframes hintPulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
 }
 </style>

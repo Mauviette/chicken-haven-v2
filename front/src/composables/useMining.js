@@ -13,12 +13,32 @@ const artifactSlotsCount = ref(0)
 const loading = ref(false)
 const artifactModifiers = ref({}) // <-- nouveau état pour modifs d'artefacts
 
+// Normalise les cellules reçues du serveur : assure que cell.hint soit un booléen
+function normalizeCells(arr) {
+  if (!Array.isArray(arr)) return arr
+  const normalized = arr.map(c => {
+    const nc = { ...(c || {}) }
+    // normaliser hint (true, 'true', 1, '1', 'yes' => true)
+    const v = nc.hint
+    nc.hint = !!(v === true || v === 'true' || v === 1 || v === '1' || v === 'yes' || (!!v && v !== 'false'))
+    return nc
+  })
+  // Debug: combien de cellules avec hint ont été signalées
+  try {
+    const hints = normalized.filter(c => !!c.hint).length
+    console.debug('[useMining] normalizeCells -> cells:', normalized.length, 'hints:', hints)
+  } catch (_) {}
+  return normalized
+}
+
 export function useMining() {
   // Récupère l'état actuel du jeu de minage
   async function fetchState() {
     loading.value = true
     try {
       const data = await apiGet('/api/mining/state')
+      // DEBUG: log réponse brute du serveur pour diagnostiquer presence de artifactModifiers / hints
+      try { console.debug('[useMining] fetchState raw response:', data) } catch (_) {}
       miningTokens.value = data.miningTokens || 0
       gameActive.value = data.active || false
       equippedArtifacts.value = data.equippedArtifacts || []
@@ -26,7 +46,9 @@ export function useMining() {
       
       if (data.game) {
         gridSize.value = data.game.gridSize
-        cells.value = data.game.cells
+        cells.value = normalizeCells(data.game.cells || [])
+        // debug
+        try { console.debug('[useMining] fetchState: hintCount=', cells.value.filter(c=>c.hint).length) } catch(_) {}
         tools.value = data.game.tools
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
@@ -53,12 +75,15 @@ export function useMining() {
     loading.value = true
     try {
       const data = await apiPost('/api/mining/start')
+      // DEBUG: log réponse brute du serveur avant toute transformation
+      try { console.debug('[useMining] startGame raw response:', data) } catch (_) {}
       
       if (data.success) {
         miningTokens.value = data.miningTokens
         gameActive.value = true
         gridSize.value = data.game.gridSize
-        cells.value = data.game.cells
+        cells.value = normalizeCells(data.game.cells || [])
+        try { console.debug('[useMining] startGame: hintCount=', cells.value.filter(c=>c.hint).length) } catch(_) {}
         tools.value = data.game.tools
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
@@ -86,7 +111,8 @@ export function useMining() {
       
       if (data.success) {
         // Mettre à jour l'état local
-        cells.value = data.game.cells
+        cells.value = normalizeCells(data.game.cells || [])
+        try { console.debug('[useMining] dig: hintCount=', cells.value.filter(c=>c.hint).length) } catch(_) {}
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
         artifactModifiers.value = data.game.artifactModifiers || {} // <-- mise à jour depuis le serveur (si fournie)

@@ -107,7 +107,8 @@ const UserSchema = new mongoose.Schema({
         row: { type: Number, required: true },
         col: { type: Number, required: true },
         hp: { type: Number, default: 3 },
-        reward: { type: String, default: null } // 'eggs:10', 'mining_token:1', etc.
+        reward: { type: String, default: null }, // 'eggs:10', 'mining_token:1', etc.
+        hint: { type: Boolean, default: false } // <- permettre la persistance du flag reveal depuis le serveur
       }
     ],
     tools: [{ type: String }], // ['shovel', 'pickaxe', 'shovel', ...]

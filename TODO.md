@@ -1,6 +1,5 @@
-L'effet d'artéfact reveal_rewards ne fonctionne pas du tout. Il faut qu'il 
+A la fin d'une partie de minage, quand le bouton "continuer" s'affiche, afficher également les récompenses non obtenues en semi-transparent.
 
-L'affichage de capacité active de TeamParadeChicken ne fonctionne pas lorsqu'on est sur la page de Production
 
 Ajouter ces succès :
 > Trouver 1, 3, 5 artefact
@@ -8,7 +7,10 @@ Ajouter ces succès :
 > Finir une grille sans avoir aucune récompense
 > Casser toute la grille de 5x5
 
+
 Comptabiliser dans le stat de joueur "max en un clic" les spawnables (tel que l'oeuf blanc)
+
+L'affichage de capacité active de TeamParadeChicken ne fonctionne pas lorsqu'on est sur la page de Production
 
 Ajouter des effets visuels pour l'amélioration de poules
 Faire en sorte que l'instance de poule en bas ne soit pas reset dans ce cas

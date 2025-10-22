@@ -64,8 +64,17 @@ function computeArtifactModifiers(equipped = []) {
     revealRewardsChance: 0 // probabilité cumulée de révéler des cases avec récompense
   }
 
-  for (const id of equipped) {
-    if (!id) continue
+  // Normaliser les entrées "equipped" : accepter string id ou objets { artifactId } / { id }
+  const normalizedIds = (Array.isArray(equipped) ? equipped : [])
+    .map(item => {
+      if (!item) return null
+      if (typeof item === 'string') return item
+      if (typeof item === 'object') return item.artifactId || item.id || null
+      return null
+    })
+    .filter(Boolean)
+
+  for (const id of normalizedIds) {
     const art = artifactsData[id]
     if (!art || !art.effect) continue
     const e = art.effect
@@ -90,6 +99,11 @@ function computeArtifactModifiers(equipped = []) {
     }
     // autres types futurs possibles...
   }
+
+  // DEBUG: lister les IDs normalisés et modificateurs calculés (utile pour diagnostics)
+  try {
+    console.debug('[mining] computeArtifactModifiers -> normalizedIds:', normalizedIds, 'modifiers:', modifiers)
+  } catch (_) {}
 
   return modifiers
 }
@@ -121,7 +135,8 @@ function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0) {
         row,
         col,
         hp: MINING_CONFIG.defaultHP,
-        reward: Math.random() < rewardChance ? generateReward(rewardAmountPercent) : null
+        reward: Math.random() < rewardChance ? generateReward(rewardAmountPercent) : null,
+        hint: false // <- explicit default so front-side normalization / debug shows presence
       })
     }
   }
@@ -237,19 +252,35 @@ export async function startMining(req, res) {
     // Calculer les modificateurs provenant des artefacts
     const mods = computeArtifactModifiers(equipped)
 
-    // Générer une nouvelle partie en appliquant les modificateurs
-    const gridSize = MINING_CONFIG.gridSize
-    const rewardChanceBase = 0.4
-    const rewardChance = Math.max(0, rewardChanceBase + (mods.extraRewardChance || 0))
-    const cells = generateGrid(gridSize, rewardChance, mods.rewardAmountPercent)
+    // DEBUG: log des artefacts équipés et des modificateurs calculés
+    try {
+      console.debug('[mining] startMining - equippedArtifacts:', equipped)
+      console.debug('[mining] startMining - computed modifiers:', mods)
+    } catch (_) {}
+    
+     // Générer une nouvelle partie en appliquant les modificateurs
+     const gridSize = MINING_CONFIG.gridSize
+     const rewardChanceBase = 0.4
+     const rewardChance = Math.max(0, rewardChanceBase + (mods.extraRewardChance || 0))
+     const cells = generateGrid(gridSize, rewardChance, mods.rewardAmountPercent)
 
+    // DEBUG: combien de cellules ont une reward avant reveal
+    try {
+      const rewardCellsCount = Array.isArray(cells) ? cells.filter(c => !!c.reward).length : 0
+      console.debug('[mining] startMining - generated gridSize=', gridSize, 'rewardCells=', rewardCellsCount, 'rewardChance=', rewardChance)
+    } catch (_) {}
+    
     // Appliquer reveal_rewards : marquer certaines cases contenant une récompense
     if (mods.revealRewardsChance && mods.revealRewardsChance > 0) {
+      let revealMarked = 0
       for (const cell of cells) {
         if (cell.reward && Math.random() < mods.revealRewardsChance) {
           cell.hint = true // front pourra afficher un indicateur visuel (sans révéler le type)
+          revealMarked++
         }
       }
+      // DEBUG: log du nombre de cellules marquées
+      try { console.debug('[mining] startMining - reveal_rewardsChance=', mods.revealRewardsChance, 'markedHints=', revealMarked) } catch(_) {}
     }
 
     // Générer outils (on conserve la liste des types) - les dégâts additionnels seront appliqués dynamiquement lors du dig
