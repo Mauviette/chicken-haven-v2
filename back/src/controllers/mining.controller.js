@@ -489,3 +489,68 @@ export async function digCell(req, res) {
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }
+
+// POST /api/mining/finish - Clôture une partie si tous les outils ont été utilisés
+export async function finishMining(req, res) {
+  try {
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
+
+    if (!user.miningGame || !user.miningGame.active) {
+      return res.status(400).json({ error: 'Aucune partie en cours' })
+    }
+
+    const toolIndex = user.miningGame.currentToolIndex || 0
+    const toolsList = user.miningGame.tools || []
+    // Si tous les outils ont été consommés, considérer la partie finie
+    if (toolIndex < toolsList.length) {
+      return res.status(400).json({ error: 'La partie n\'est pas encore terminée' })
+    }
+
+    // Appliquer les récompenses accumulées
+    for (const reward of user.miningGame.rewards || []) {
+      const [type, amount] = (reward || '').split(':')
+      const amt = parseInt(amount) || 0
+      if (!type) continue
+      if (type === 'eggs') {
+        user.resources.eggs = (user.resources.eggs || 0) + amt
+      } else if (type === 'mining_token') {
+        user.resources.mining_token = (user.resources.mining_token || 0) + amt
+      } else if (type === 'stock_token') {
+        user.resources.stock_token = (user.resources.stock_token || 0) + amt
+      } else if (type === 'production_token') {
+        user.resources.production_token = (user.resources.production_token || 0) + amt
+      } else if (type === 'chest_key') {
+        user.resources.chest_key = (user.resources.chest_key || 0) + amt
+      }
+    }
+
+    // Marquer la partie terminée
+    user.miningGame.active = false
+    await user.save()
+
+    res.json({
+      success: true,
+      gameOver: true,
+      game: {
+        gridSize: user.miningGame.gridSize,
+        cells: user.miningGame.cells,
+        tools: user.miningGame.tools,
+        currentToolIndex: user.miningGame.currentToolIndex,
+        rewards: user.miningGame.rewards || [],
+        equippedArtifacts: user.miningGame.equippedArtifacts || [],
+        artifactModifiers: user.miningGame.artifactModifiers || {}
+      },
+      resources: {
+        eggs: user.resources.eggs,
+        mining_token: user.resources.mining_token,
+        stock_token: user.resources.stock_token,
+        production_token: user.resources.production_token,
+        chest_key: user.resources.chest_key
+      }
+    })
+  } catch (err) {
+    console.error('finishMining error:', err)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}

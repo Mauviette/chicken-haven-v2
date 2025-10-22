@@ -139,6 +139,7 @@ import ActionButton from '@/components/menu/ActionButton.vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { useMining } from '@/composables/useMining'
 import { MINING_CONFIG } from '@/data/mining'
+import { apiPost } from '@/utils/api' // <-- nouveau import
 
 const emit = defineEmits(['close', 'game-over'])
 
@@ -425,8 +426,43 @@ function resetGame() {
 }
 
 function handleClose() {
-  emit('close')
-}
+  ;(async () => {
+    try {
+      // Si la partie est active ET que tous les outils ont déjà été utilisés,
+      // considérer la partie terminée côté serveur avant de fermer le popup.
+      const toolsCount = (tools.value || []).length
+      if (gameActive.value && toolsCount > 0 && currentToolIndex.value >= toolsCount) {
+        try {
+          const resp = await apiPost('/api/mining/finish')
+          if (resp && resp.success) {
+            // Mettre à jour l'état local d'après la réponse serveur
+            gameActive.value = false
+            gameOver.value = true
+            finalRewards.value = resp.game?.rewards || []
+            if (resp.game) {
+              // Synchroniser grille / outils côté client
+              cells.value = resp.game.cells || cells.value
+              currentToolIndex.value = resp.game.currentToolIndex || currentToolIndex.value
+            }
+            if (resp.resources) {
+              // informer le reste de l'app que des ressources ont été créditées
+              window.dispatchEvent(new CustomEvent('mining-game-over', { detail: { resources: resp.resources } }))
+            }
+            // Mettre à jour le flag global mining
+            if (typeof window !== 'undefined') {
+              window.__miningActive = false
+              window.dispatchEvent(new CustomEvent('mining-active-changed', { detail: { active: false } }))
+            }
+          }
+        } catch (err) {
+          console.warn('Erreur lors de la clôture de la partie sur le serveur:', err)
+          // continuer et fermer le popup même si l'appel échoue
+        }
+      }
+    } catch (_) {}
+    emit('close')
+  })()
+ }
 
 function getToolIcon(tool) {
   return toolConfig[tool]?.icon || '🔧'

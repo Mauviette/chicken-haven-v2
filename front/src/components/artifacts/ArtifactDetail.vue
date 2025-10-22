@@ -23,19 +23,19 @@
           v-if="!isEquipped"
           class="btn equip" 
           @click="onEquip"
-          :disabled="!canEquip || miningActive"
-          :title="miningActive ? 'Impossible d\'équiper pendant une partie de minage active' : (!canEquip ? 'Emplacements pleins' : '')"
+          :disabled="!canEquip || miningLocked"
+          :title="miningLocked ? 'Impossible d\'équiper pendant une partie de minage active' : (!canEquip ? 'Emplacements pleins' : '')"
         >
-          {{ miningActive ? 'Minage en cours' : (canEquip ? '⛏️ Équiper' : 'Emplacements pleins') }}
+          {{ miningLocked ? 'Minage en cours' : (canEquip ? '⛏️ Équiper' : 'Emplacements pleins') }}
         </button>
         <button 
           v-else
           class="btn unequip" 
           @click="onUnequip"
-          :disabled="miningActive"
-          :title="miningActive ? 'Impossible de déséquiper pendant une partie de minage active' : 'Déséquiper cet artefact'"
+          :disabled="miningLocked"
+          :title="miningLocked ? 'Impossible de déséquiper pendant une partie de minage active' : 'Déséquiper cet artefact'"
         >
-          {{ miningActive ? 'Minage en cours' : '❌ Déséquiper' }}
+          {{ miningLocked ? 'Minage en cours' : '❌ Déséquiper' }}
         </button>
       </div>
     </div>
@@ -47,6 +47,7 @@ import Popup from '@/components/menu/Popup.vue'
 import { computed } from 'vue'
 import { usePlayer } from '@/composables/usePlayer'
 import { useSound } from '@/composables/useSound'
+import { apiGet } from '@/utils/api' // <-- nouveau
 
 import { ref, onMounted, onUnmounted } from 'vue'
 
@@ -74,23 +75,66 @@ const canEquip = computed(() => {
   return usedSlots < slotsCount
 })
 
-// NOUVEAU : état local pour savoir si le minage est actif (écoute évènement global)
-const miningActive = ref(!!(typeof window !== 'undefined' && window.__miningActive))
+// NOUVEAU : état local pour savoir si le minage bloque l'équipement (vérifié côté serveur)
+const miningLocked = ref(!!(typeof window !== 'undefined' && window.__miningActive))
 
 function onMiningActiveChanged(e) {
-  miningActive.value = !!(e?.detail?.active)
+  // si on reçoit active=false => on libère immédiatement
+  // si active=true => re-vérifier côté serveur (car il faut distinguer "active mais terminée")
+  try {
+    const active = !!(e?.detail?.active)
+    if (!active) {
+      miningLocked.value = false
+      return
+    }
+    // re-vérifier l'état réel côté serveur
+    checkMiningLock()
+  } catch (_) {}
 }
 
 onMounted(() => {
   try {
     window.addEventListener('mining-active-changed', onMiningActiveChanged)
-    miningActive.value = !!(window.__miningActive)
+    // initial server-side check to be authoritative
+    checkMiningLock().catch(()=>{ miningLocked.value = !!(window.__miningActive) })
   } catch (_) {}
 })
 
 onUnmounted(() => {
   try { window.removeEventListener('mining-active-changed', onMiningActiveChanged) } catch (_) {}
 })
+
+// Vérifie côté serveur si le minage doit vraiment bloquer l'équipement.
+// On considère que le minage bloque seulement si server.active === true ET
+// que currentToolIndex < tools.length (il reste des outils à jouer).
+async function checkMiningLock() {
+  try {
+    const data = await apiGet('/api/mining/state')
+    if (!data) {
+      miningLocked.value = !!(window.__miningActive)
+      return
+    }
+    const serverActive = !!data.active
+    const game = data.game
+    if (!serverActive) {
+      miningLocked.value = false
+      return
+    }
+    // Si la partie expose une structure game, considérer finie si currentToolIndex >= tools.length
+    if (game && Array.isArray(game.tools)) {
+      const idx = Number(game.currentToolIndex || 0)
+      const total = (game.tools || []).length
+      miningLocked.value = !(idx >= total)
+    } else {
+      // fallback : si server dit active mais pas de détail, on considère bloqué
+      miningLocked.value = true
+    }
+  } catch (err) {
+    console.warn('checkMiningLock failed:', err)
+    // en cas d'erreur réseau, ne pas autoriser une opération dangereuse : conserver heuristique locale
+    miningLocked.value = !!(window.__miningActive)
+  }
+}
 
 function formatRareté(r) {
   const map = {
@@ -103,8 +147,9 @@ function formatRareté(r) {
 }
 
 async function onEquip() {
-  // Bloquer côté UI si on sait qu'une partie est active
-  if (miningActive.value) {
+  // Re-vérifier côté serveur avant d'appeler l'API d'équipement
+  await checkMiningLock()
+  if (miningLocked.value) {
     try { window.$toast?.("Impossible d'équiper pendant une partie de minage active", 'error') } catch (_) {}
     return
   }
@@ -123,7 +168,7 @@ async function onEquip() {
       if (status === 409 || (data && (data.error || '').toLowerCase().includes('minage'))) {
         window.$toast?.("Impossible d'équiper pendant une partie de minage active", 'error')
         // mettre à jour l'état local si le backend précise l'état (optionnel)
-        miningActive.value = true
+        miningLocked.value = true
         return
       }
     } catch (_) {}
@@ -133,8 +178,8 @@ async function onEquip() {
 }
 
 async function onUnequip() {
-  // Bloquer côté UI si une partie de minage est active
-  if (miningActive.value) {
+  await checkMiningLock()
+  if (miningLocked.value) {
     try { window.$toast?.("Impossible de déséquiper pendant une partie de minage active", 'error') } catch (_) {}
     return
   }

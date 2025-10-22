@@ -1,5 +1,9 @@
 
-A tester : mining_token gagnés lors du lvl up
+
+Lors du lvl up, le gain de mining_token ne semble pas marcher
+
+L'effet d'artéfact reveal_rewards ne fonctionne pas du tout.
+
 
 Ajouter ces succès :
 > Trouver 1, 3, 5 artefact
@@ -17,3 +21,5 @@ Social : Limiter la taille des leaderboards à 10. S'il y a au moins 10 personne
 
 Ajouter un système d'onglets au menu de succès; 2 catégories. Succès classiques, et de la mine.
 Tous les succès déjà existants vont dans l'onglet classique.
+
+Problème : une poule dont la quantité est 0 est affichée comme non obtenue dans les possibilités du marché alors qu'il faut se baser sur si elle est dans poulesPossede tout court
