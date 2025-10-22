@@ -1207,7 +1207,7 @@ export const artifactsData = {
     icon: '🕳️',
     description: "Chaque pelle se duplique au début de la partie.",
     rarete: 'commune',
-    effect: { type: 'tool_change', origin:'shovel', dest:'pickaxe' }
+    effect: { type: 'when_tool_add_another', detect:'shovel', add:'shovel' }
   }
 }
 
@@ -1239,3 +1239,7 @@ export function formatString(type, count) {
   if (!itemData || typeof count !== 'number') return 'Valeur invalide'
   return `${count} ${count === 1 ? itemData.nom_singulier : itemData.nom}`
 }
+
+/*
+Code tous les effets des artefacts de minage (de artifactsData). La logique doit être implémentée dans mining.controller.js.
+En cas de doute demande moi.*/
