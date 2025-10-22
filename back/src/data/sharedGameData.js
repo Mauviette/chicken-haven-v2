@@ -904,7 +904,7 @@ export const achievementsData = {
     type: 'mega_click',
     reward: {
       type: 'blueberry',
-      quantite: 5
+      quantite: 3
     }
   },
   'mega_click_1000': {
@@ -916,7 +916,7 @@ export const achievementsData = {
     type: 'mega_click',
     reward: {
       type: 'blueberry',
-      quantite: 10
+      quantite: 5
     }
   },
   'mega_click_5000': {
@@ -928,7 +928,7 @@ export const achievementsData = {
     type: 'mega_click',
     reward: {
       type: 'blueberry',
-      quantite: 15
+      quantite: 10
     }
   }
 }

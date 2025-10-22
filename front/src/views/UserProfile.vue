@@ -67,6 +67,11 @@
             <div class="stat-row"><span>🐣 Poules découvertes</span><b>{{ (profile.stats?.chickenFound ?? 0) }} / {{ totalEspeces }}</b></div>
             <div class="stat-row"><span>📦 Boîtes ouvertes</span><b>{{ profile.stats?.totalBoxesOpened ?? 0 }}</b></div>
             <div class="stat-row"><span>🥚 Max en un clic</span><b>{{ profile.stats?.maxEggsInOneClick ?? 0 }}</b></div>
+
+            <!-- NOUVEAU : afficher les meilleures stats d'équipe historiques provenant des achievements.progress -->
+            <div class="stat-row"><span>⚡ Meilleure énergie d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamEnergy ?? 0 }}</b></div>
+            <div class="stat-row"><span>🧠 Meilleure intelligence d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamIntelligence ?? 0 }}</b></div>
+            <div class="stat-row"><span>✨ Meilleur charisme d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamCharisme ?? 0 }}</b></div>
           </div>
         </div>
         <div class="right">
@@ -187,6 +192,19 @@ async function loadProfile(id) {
   }
 }
 
+// NOUVEAU : charger le statut des achievements pour l'utilisateur courant et merger dans profile
+async function loadAchievementsStatusIfOwn() {
+  try {
+    if (!isOwnProfile.value) return
+    const data = await apiGet('/api/achievements/status')
+    if (data && profile.value) {
+      profile.value = { ...profile.value, achievements: data }
+    }
+  } catch (e) {
+    console.warn('Impossible de charger achievements status:', e)
+  }
+}
+
 onMounted(() => {
   const id = String(route.params.id || '').toUpperCase()
   loadProfile(id)
@@ -197,9 +215,18 @@ onMounted(() => {
       if (!token) return
       const me = await apiGet('/api/user/me')
       meProfileId.value = String(me.profileId || '').toUpperCase()
+      // Après avoir obtenu mon profileId, tenter de charger les achievements si c'est mon profil
+      await loadAchievementsStatusIfOwn()
     } catch (_) {}
   })()
 })
+
+// Appeler aussi la récupération des achievements quand on devient "own profile" ou que le profil est rechargé
+watch([isOwnProfile, () => profile.value?.profileId], async ([own]) => {
+  if (own) {
+    await loadAchievementsStatusIfOwn()
+  }
+}, { immediate: false })
 
 watch(() => route.params.id, (newId) => {
   if (!newId) return

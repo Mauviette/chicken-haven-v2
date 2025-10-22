@@ -60,6 +60,11 @@ export async function getAchievementsStatus(req, res) {
           maxEggsInOneClick: 0,
           avatarChanged: 0,
           nameChanged: 0,
+          // NOUVEAU : champs "best" persistés pour les 3 stats d'équipe (meilleures valeurs historiques)
+          bestTeamEnergy: 0,
+          bestTeamIntelligence: 0,
+          bestTeamCharisme: 0,
+          // Max global utilisé par les succès 'team_stats'
           maxTeamStat: 0,
           maxMegaClick: 0
         },
@@ -105,6 +110,9 @@ export async function checkAchievements(req, res) {
           maxEggsInOneClick: 0,
           avatarChanged: 0,
           nameChanged: 0,
+          bestTeamEnergy: 0,
+          bestTeamIntelligence: 0,
+          bestTeamCharisme: 0,
           maxTeamStat: 0,
           maxMegaClick: 0
         },
@@ -139,6 +147,15 @@ export async function checkAchievements(req, res) {
     )
 
     // S'assurer que tous les nouveaux champs existent (pour utilisateurs existants)
+    if (!user.achievements.progress.hasOwnProperty('bestTeamEnergy')) {
+      user.achievements.progress.bestTeamEnergy = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('bestTeamIntelligence')) {
+      user.achievements.progress.bestTeamIntelligence = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('bestTeamCharisme')) {
+      user.achievements.progress.bestTeamCharisme = 0
+    }
     if (!user.achievements.progress.hasOwnProperty('maxTeamStat')) {
       user.achievements.progress.maxTeamStat = 0
     }
@@ -157,7 +174,18 @@ export async function checkAchievements(req, res) {
     const teamIntelligence = computeTeamIntelligence(user);
     const teamCharisme = computeTeamCharisme(user);
 
-    user.achievements.progress.maxTeamStat = Math.max(teamEnergy, teamIntelligence, teamCharisme);
+    // Mettre à jour les meilleurs historiques (persistés)
+    user.achievements.progress.bestTeamEnergy = Math.max(Number(user.achievements.progress.bestTeamEnergy) || 0, Math.floor(teamEnergy));
+    user.achievements.progress.bestTeamIntelligence = Math.max(Number(user.achievements.progress.bestTeamIntelligence) || 0, Math.floor(teamIntelligence));
+    user.achievements.progress.bestTeamCharisme = Math.max(Number(user.achievements.progress.bestTeamCharisme) || 0, Math.floor(teamCharisme));
+
+    // Mettre à jour le max global utilisé par les succès
+    user.achievements.progress.maxTeamStat = Math.max(
+      user.achievements.progress.bestTeamEnergy || 0,
+      user.achievements.progress.bestTeamIntelligence || 0,
+      user.achievements.progress.bestTeamCharisme || 0
+    );
+
     user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
 
     // Vérifier chaque succès
@@ -313,6 +341,7 @@ export async function updateAchievementProgress(userId, progressType, value) {
     const user = await User.findById(userId)
     if (!user) return
 
+    // Initialisation si nécessaire (identique à ci-dessus)
     if (!user.achievements || Array.isArray(user.achievements) || !user.achievements.progress) {
       const achievementsObject = {
         progress: {
@@ -323,6 +352,9 @@ export async function updateAchievementProgress(userId, progressType, value) {
           maxEggsInOneClick: 0,
           avatarChanged: 0,
           nameChanged: 0,
+          bestTeamEnergy: 0,
+          bestTeamIntelligence: 0,
+          bestTeamCharisme: 0,
           maxTeamStat: 0,
           maxMegaClick: 0
         },
@@ -341,6 +373,15 @@ export async function updateAchievementProgress(userId, progressType, value) {
     }
 
     // S'assurer que tous les champs requis existent (pour les utilisateurs existants)
+    if (!user.achievements.progress.hasOwnProperty('bestTeamEnergy')) {
+      user.achievements.progress.bestTeamEnergy = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('bestTeamIntelligence')) {
+      user.achievements.progress.bestTeamIntelligence = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('bestTeamCharisme')) {
+      user.achievements.progress.bestTeamCharisme = 0
+    }
     if (!user.achievements.progress.hasOwnProperty('maxTeamStat')) {
       user.achievements.progress.maxTeamStat = 0
     }
@@ -351,7 +392,7 @@ export async function updateAchievementProgress(userId, progressType, value) {
       user.achievements.progress.nameChanged = 0
     }
 
-    // Mettre à jour le progrès
+    // Mettre à jour le progrès selon le type (inchangé)
     if (progressType === 'increment') {
       // Pour les incréments (ex: +1 boîte ouverte)
       for (const [key, amount] of Object.entries(value)) {
@@ -380,6 +421,26 @@ export async function updateAchievementProgress(userId, progressType, value) {
       }
     }
 
+    // --- NOUVEAU : recalculer et mettre à jour les bestTeam* en se basant sur l'état courant de l'équipe
+    try {
+      const { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme } = await import('./egg.controller.js')
+      const teamEnergy = computeTeamEnergy(user)
+      const teamIntelligence = computeTeamIntelligence(user)
+      const teamCharisme = computeTeamCharisme(user)
+
+      user.achievements.progress.bestTeamEnergy = Math.max(Number(user.achievements.progress.bestTeamEnergy) || 0, Math.floor(teamEnergy))
+      user.achievements.progress.bestTeamIntelligence = Math.max(Number(user.achievements.progress.bestTeamIntelligence) || 0, Math.floor(teamIntelligence))
+      user.achievements.progress.bestTeamCharisme = Math.max(Number(user.achievements.progress.bestTeamCharisme) || 0, Math.floor(teamCharisme))
+
+      user.achievements.progress.maxTeamStat = Math.max(
+        user.achievements.progress.bestTeamEnergy || 0,
+        user.achievements.progress.bestTeamIntelligence || 0,
+        user.achievements.progress.bestTeamCharisme || 0
+      )
+    } catch (e) {
+      console.warn('Erreur lors de la mise à jour des bestTeam*:', e)
+    }
+
     try { user.markModified && user.markModified('achievements') } catch (_) {}
     await user.save()
   } catch (error) {
@@ -404,6 +465,11 @@ export async function triggerAchievementCheck(userId) {
           maxEggsInOneClick: 0,
           avatarChanged: 0,
           nameChanged: 0,
+          // NOUVEAU : champs "best" persistés pour les 3 stats d'équipe (meilleures valeurs historiques)
+          bestTeamEnergy: 0,
+          bestTeamIntelligence: 0,
+          bestTeamCharisme: 0,
+          // Max global utilisé par les succès 'team_stats'
           maxTeamStat: 0,
           maxMegaClick: 0
         },
@@ -421,27 +487,22 @@ export async function triggerAchievementCheck(userId) {
     }
 
     // Calculer et mettre à jour les stats d'équipe
-    const poules = user.poulesPossedees || []
-    let totalProduction = 0, totalStockage = 0
-    
-    poules.forEach(poule => {
-      if (poule.especeId && poule.quantite > 0) {
-        const espece = sharedGameData.especeData[poule.especeId]
-        if (espece && espece.stats) {
-          const niveau = poule.niveauTalent || 1
-          const quantite = poule.quantite || 1
-          
-          const baseProduction = (espece.stats.intelligence + espece.stats.energie) || 1
-          const baseStockage = (espece.stats.charisme + espece.stats.intelligence) || 1
-          
-          totalProduction += baseProduction * niveau * quantite
-          totalStockage += baseStockage * niveau * quantite
-        }
-      }
-    })
-    
-    // Mettre à jour les valeurs de progrès calculées
-    user.achievements.progress.maxTeamStat = Math.max(totalProduction, totalStockage)
+    const { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme } = await import('./egg.controller.js');
+    const teamEnergy = computeTeamEnergy(user);
+    const teamIntelligence = computeTeamIntelligence(user);
+    const teamCharisme = computeTeamCharisme(user);
+
+    // Mettre à jour les meilleurs historiques (persistés)
+    user.achievements.progress.bestTeamEnergy = Math.max(Number(user.achievements.progress.bestTeamEnergy) || 0, Math.floor(teamEnergy));
+    user.achievements.progress.bestTeamIntelligence = Math.max(Number(user.achievements.progress.bestTeamIntelligence) || 0, Math.floor(teamIntelligence));
+    user.achievements.progress.bestTeamCharisme = Math.max(Number(user.achievements.progress.bestTeamCharisme) || 0, Math.floor(teamCharisme));
+
+    // Mettre à jour le max global utilisé par les succès
+    user.achievements.progress.maxTeamStat = Math.max(
+      user.achievements.progress.bestTeamEnergy || 0,
+      user.achievements.progress.bestTeamIntelligence || 0,
+      user.achievements.progress.bestTeamCharisme || 0
+    )
     user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
 
     console.log(`🔍 Current achievement progress for user ${userId}:`, user.achievements.progress)
