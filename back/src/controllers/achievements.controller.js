@@ -292,6 +292,8 @@ export async function claimReward(req, res) {
         for (const r of rewardsForLevel) {
           const qty = Number(r.count || r.quantite || 0)
           if (!qty) continue
+          // Gérer explicitement tous les types de ressources courants,
+          // y compris mining_token qui était manquant.
           if (r.type === 'eggs') {
             user.resources.eggs = (user.resources.eggs || 0) + qty
           } else if (r.type === 'stock_token') {
@@ -300,6 +302,13 @@ export async function claimReward(req, res) {
             user.resources.production_token = (user.resources.production_token || 0) + qty
           } else if (r.type === 'wild_token') {
             user.resources.wild_token = (user.resources.wild_token || 0) + qty
+          } else if (r.type === 'mining_token') {
+            user.resources.mining_token = (user.resources.mining_token || 0) + qty
+          } else if (r.type === 'chest_key') {
+            user.resources.chest_key = (user.resources.chest_key || 0) + qty
+          } else {
+            // fallback generic: try to set by key if exists
+            user.resources[r.type] = (user.resources[r.type] || 0) + qty
           }
           appliedLevelRewards.push({ type: r.type, quantite: qty, level: lvl })
         }
