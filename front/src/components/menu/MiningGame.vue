@@ -215,7 +215,9 @@ const toolConfig = (() => {
       icon: v.icon || '🔧',
       name: v.name || key,
       description: v.desc || v.description || '',
-      cursorPath: `/src/assets/ui/cursor/tool_${key}.png`
+      cursorPath: `/src/assets/ui/cursor/tool_${key}.png`,
+      // inclure secondary_damage (fallback 1) pour que la preview utilise la bonne valeur
+      secondaryDamage: (typeof v.secondary_damage === 'number') ? v.secondary_damage : 1
     }
   })
   return cfg
@@ -318,16 +320,17 @@ function getDamageAt(row, col) {
   if (!config) return 0
   
   const { row: hRow, col: hCol } = hoveredCell.value
-  
+  const sec = Number(config.secondaryDamage || 1)
+
   if (config.pattern === 'single') {
     return (row === hRow && col === hCol) ? config.damage : 0
   } else if (config.pattern === 'cross') {
     if (row === hRow && col === hCol) return config.damage
-    return 1
+    return sec
   }
   else if (config.pattern === 'square') {
     if (row === hRow && col === hCol) return config.damage
-    if (Math.abs(row - hRow) <= 1 && Math.abs(col - hCol) <= 1) return 1
+    if (Math.abs(row - hRow) <= 1 && Math.abs(col - hCol) <= 1) return sec
     return 0
   }
 

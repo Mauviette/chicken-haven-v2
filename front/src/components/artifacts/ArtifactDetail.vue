@@ -32,8 +32,10 @@
           v-else
           class="btn unequip" 
           @click="onUnequip"
+          :disabled="miningActive"
+          :title="miningActive ? 'Impossible de déséquiper pendant une partie de minage active' : 'Déséquiper cet artefact'"
         >
-          ❌ Déséquiper
+          {{ miningActive ? 'Minage en cours' : '❌ Déséquiper' }}
         </button>
       </div>
     </div>
@@ -131,6 +133,12 @@ async function onEquip() {
 }
 
 async function onUnequip() {
+  // Bloquer côté UI si une partie de minage est active
+  if (miningActive.value) {
+    try { window.$toast?.("Impossible de déséquiper pendant une partie de minage active", 'error') } catch (_) {}
+    return
+  }
+
   try {
     click()
     await unequipArtifact(props.artifact.artifactId)
@@ -138,6 +146,7 @@ async function onUnequip() {
     emit('updated')
   } catch (err) {
     console.error('Erreur lors du déséquipement:', err)
+    window.$toast?.(err?.response?.data?.error || 'Erreur lors du déséquipement', 'error')
   }
 }
 </script>
