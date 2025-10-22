@@ -486,7 +486,7 @@ export const groupes = [
     name: 'artifacts',
     description: 'Artefacts de minage',
     type: 'artifacts',
-    rarityDropChance: [40, 35, 20, 5]
+    rarityDropChance: [40, 38, 20, 2]
   },
   {
     name: 'eggs_bonus',
@@ -1151,7 +1151,7 @@ export const artifactsData = {
     icon: '🍀',
     description: "Augmente légèrement la probabilité d'obtenir une récompense dans chaque case.",
     rarete: 'commune',
-    effect: { type: 'increase_reward_chance', amount: 0.05 }
+    effect: { type: 'increase_reward_chance', amount: 0.1 }
   },
   'smith-glyph': {
     id: 'smith-glyph',

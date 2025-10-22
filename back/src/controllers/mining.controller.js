@@ -54,8 +54,14 @@ function computeArtifactModifiers(equipped = []) {
   const modifiers = {
     extraRewardChance: 0, // ajout en probabilité absolue (ex: +0.05)
     rewardAmountPercent: 0, // somme en pourcentage (ex: 20 => +20%)
-    toolDamageAdd: 0, // ajout plat aux dégâts d'outil
-    extraSlotsFromArtifacts: 0
+    toolDamageAdd: 0, // ajout plat aux dégâts d'outil (appliqué au centre)
+    extraSlotsFromArtifacts: 0,
+    // Nouveaux champs pour effets d'outils
+    extraToolCount: 0, // nombre d'outils supplémentaires à ajouter
+    lastDynamite: false, // forcer le dernier outil à être une dynamite
+    toolChanges: [], // list of { origin, dest } to map tool types
+    duplicates: [], // list of { detect, add } pour dupliquer certains outils
+    revealRewardsChance: 0 // probabilité cumulée de révéler des cases avec récompense
   }
 
   for (const id of equipped) {
@@ -71,7 +77,18 @@ function computeArtifactModifiers(equipped = []) {
       modifiers.toolDamageAdd += (e.amount || 0)
     } else if (e.type === 'add_artifact_slot') {
       modifiers.extraSlotsFromArtifacts += (e.amount || 0)
+    } else if (e.type === 'increase_tool_count') {
+      modifiers.extraToolCount += (e.amount || 0)
+    } else if (e.type === 'last_dynamite') {
+      modifiers.lastDynamite = true
+    } else if (e.type === 'tool_change') {
+      if (e.origin && e.dest) modifiers.toolChanges.push({ origin: e.origin, dest: e.dest })
+    } else if (e.type === 'when_tool_add_another') {
+      if (e.detect && e.add) modifiers.duplicates.push({ detect: e.detect, add: e.add })
+    } else if (e.type === 'reveal_rewards') {
+      modifiers.revealRewardsChance += (e.chance || 0)
     }
+    // autres types futurs possibles...
   }
 
   return modifiers
@@ -226,8 +243,71 @@ export async function startMining(req, res) {
     const rewardChance = Math.max(0, rewardChanceBase + (mods.extraRewardChance || 0))
     const cells = generateGrid(gridSize, rewardChance, mods.rewardAmountPercent)
 
+    // Appliquer reveal_rewards : marquer certaines cases contenant une récompense
+    if (mods.revealRewardsChance && mods.revealRewardsChance > 0) {
+      for (const cell of cells) {
+        if (cell.reward && Math.random() < mods.revealRewardsChance) {
+          cell.hint = true // front pourra afficher un indicateur visuel (sans révéler le type)
+        }
+      }
+    }
+
     // Générer outils (on conserve la liste des types) - les dégâts additionnels seront appliqués dynamiquement lors du dig
-    const tools = generateTools()
+    const baseTools = generateTools()
+
+    // Appliquer les effets liés aux artefacts sur la liste d'outils
+    let appliedTools = [...baseTools]
+
+    // 1) Duplication : when_tool_add_another (ex: hole-ace : duplicate shovels)
+    if (mods.duplicates && mods.duplicates.length > 0) {
+      for (const dup of mods.duplicates) {
+        const tmp = []
+        for (const t of appliedTools) {
+          tmp.push(t)
+          if (t === dup.detect) tmp.push(dup.add)
+        }
+        appliedTools = tmp
+      }
+    }
+
+    // 2) Add extra tools (increase_tool_count)
+    if (mods.extraToolCount && mods.extraToolCount > 0) {
+      const totalWeight = MINING_CONFIG.toolPool.reduce((s, t) => s + t.weight, 0)
+      for (let i = 0; i < mods.extraToolCount; i++) {
+        let rand = Math.random() * totalWeight
+        for (const entry of MINING_CONFIG.toolPool) {
+          rand -= entry.weight
+          if (rand <= 0) {
+            appliedTools.push(entry.type)
+            break
+          }
+        }
+      }
+    }
+
+    // 3) Forcer dernier outil = dynamite si demandé (avant application des tool_change,
+    //    afin que les tool_change puissent transformer éventuellement cette dynamite)
+    if (mods.lastDynamite) {
+      if (appliedTools.length === 0) {
+        appliedTools.push('dynamite')
+      } else {
+        appliedTools[appliedTools.length - 1] = 'dynamite'
+      }
+    }
+
+    // 4) Appliquer les remplacements d'outils (tool_change) (ex: dynamite -> bomb, shovel -> pickaxe)
+    if (mods.toolChanges && mods.toolChanges.length > 0) {
+      const mapping = new Map()
+      for (const tc of mods.toolChanges) mapping.set(tc.origin, tc.dest)
+      for (let i = 0; i < appliedTools.length; i++) {
+        if (mapping.has(appliedTools[i])) appliedTools[i] = mapping.get(appliedTools[i])
+      }
+    }
+
+    // Mélanger légèrement la pile pour conserver un peu d'aléa
+    appliedTools = appliedTools.sort(() => Math.random() - 0.5)
+
+    const tools = appliedTools
 
     user.miningGame = {
       active: true,
@@ -298,22 +378,25 @@ export async function digCell(req, res) {
 
     // Calculer les cases affectées selon le pattern de l'outil (en appliquant le bonus de dégât si présent)
     const affectedCells = []
+    // secondary_damage correspond aux dégâts sur les cases autres que la case cliquée (fallback = 1)
+    const secondaryDamage = (typeof tool.secondary_damage === 'number') ? tool.secondary_damage : 1
+    const centerDamage = tool.damage + (artifactMods.toolDamageAdd || 0)
     if (tool.pattern === 'single') {
-      affectedCells.push({ row, col, damage: tool.damage + (artifactMods.toolDamageAdd || 0) })
+      affectedCells.push({ row, col, damage: centerDamage })
     } else if (tool.pattern === 'cross') {
-      affectedCells.push({ row, col, damage: tool.damage + (artifactMods.toolDamageAdd || 0) })
-      affectedCells.push({ row: row - 1, col, damage: 1 })
-      affectedCells.push({ row: row + 1, col, damage: 1 })
-      affectedCells.push({ row, col: col - 1, damage: 1 })
-      affectedCells.push({ row, col: col + 1, damage: 1 })
+      affectedCells.push({ row, col, damage: centerDamage })
+      affectedCells.push({ row: row - 1, col, damage: secondaryDamage })
+      affectedCells.push({ row: row + 1, col, damage: secondaryDamage })
+      affectedCells.push({ row, col: col - 1, damage: secondaryDamage })
+      affectedCells.push({ row, col: col + 1, damage: secondaryDamage })
     } else if (tool.pattern === 'square') {
-      // 3x3 centered on (row, col) : centre reçoit tool.damage (+artifact), voisins reçoivent 1
+      // 3x3 centered on (row, col) : centre reçoit tool.damage (+artifact), voisins reçoivent secondaryDamage
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
           const r = row + dr
           const c = col + dc
           const isCenter = (dr === 0 && dc === 0)
-          const base = isCenter ? tool.damage + (artifactMods.toolDamageAdd || 0) : 1
+          const base = isCenter ? centerDamage : secondaryDamage
           affectedCells.push({ row: r, col: c, damage: base })
         }
       }
