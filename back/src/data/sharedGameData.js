@@ -464,24 +464,22 @@ export const talentsData = {
 export const groupes = [
   { 
     name: 'fondamental', 
-    description: 'Groupe fondamental', 
+    description: 'Poule du groupe fondamental', 
     rarityDropChance: [75, 25, 0, 0]
   },
   { 
     name: 'brillant', 
-    description: 'Groupe brillant', 
+    description: 'Poule du groupe brillant', 
     rarityDropChance: [75, 25, 0, 0]
   },
   { 
     name: 'discret', 
-    description: 'Groupe discret', 
-    // Légère chance d'épique pour permettre l'obtention de Canard
+    description: 'Poule du groupe discret', 
     rarityDropChance: [70, 25, 5, 0]
   },
   { 
     name: 'chic', 
-    description: 'Groupe chic', 
-    // Très faible chance de légendaire pour Spaciale
+    description: 'Poule du groupe chic', 
     rarityDropChance: [64, 25, 10, 1]
   },
   {
@@ -558,7 +556,7 @@ export const boxesData = [
         quantity: 1
       },
     ],
-    unlock_level: 5
+    unlock_level: 4
   },
   {
     id: 5,
@@ -619,7 +617,7 @@ export const upgradesData = [
 // ========================
 // DÉBLOCAGES PAR NIVEAU
 // ========================
-// Centralise ce qui se débloque à chaque niveau (ex: fonctionnalités UI)
+// Centralise ce qui se débloque à chaque niveau
 export const levelUnlocks = {
   2: [
     { id: 'market', label: 'Marché débloqué', icon: '🛒' }
@@ -628,8 +626,10 @@ export const levelUnlocks = {
     { id: 'social', label: 'Social débloqué', icon: '👥' },
     { id: 'shiny_box', label: 'Boîte brillante débloquée', icon: '✨' }
   ],
+  4: [
+    { id: 'noble_box', label: 'Coffret chic débloqué', icon: '💎' }
+  ],
   5: [
-    { id: 'noble_box', label: 'Coffret chic débloqué', icon: '💎' },
     { id: 'mining', label: 'Mini-jeu de minage débloqué', icon: '🪨' }
   ]
 }
@@ -642,9 +642,12 @@ export const levelUnlocks = {
 export const levelRewards = {
   3: [ { type: 'production_token', count: 1 } ],
   4: [ { type: 'stock_token', count: 1 } ],
-  5: [ { type: 'production_token', count: 1 } ],
-  6: [ { type: 'stock_token', count: 1 } ]
-  // Ajoutez d'autres niveaux selon la progression désirée
+  5: [ { type: 'production_token', count: 2 }, { type: 'mining_token', count: 3 } ],
+  6: [ { type: 'stock_token', count: 2 }, { type: 'mining_token', count: 3 } ],
+  7: [ { type: 'production_token', count: 3 }, { type: 'mining_token', count: 3 } ],
+  8: [ { type: 'stock_token', count: 3 }, { type: 'mining_token', count: 3 } ],
+  9: [ { type: 'production_token', count: 5 }, { type: 'mining_token', count: 3 } ],
+  10: [ { type: 'stock_token', count: 5 }, { type: 'mining_token', count: 3 } ],
 }
 
 export const talentLevelUpgradeCost = {
@@ -685,7 +688,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 2
     }
   },
   'egg_master': {
@@ -697,7 +700,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 2
+      quantite: 3
     }
   },
   'egg_king': {
@@ -709,7 +712,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 3
+      quantite: 5
     }
   },
   'egg_god': {
@@ -721,7 +724,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 4
+      quantite: 10
     }
   },
   'first_chicken': {
@@ -938,37 +941,43 @@ export const itemsData = {
     id: 'eggs',
     nom: 'œufs',
     nom_singulier: 'œuf',
-    icon: '🥚'
+    icon: '🥚',
+    description: 'La monnaie principale de votre ferme. Récoltez-les sur la page de production et utilisez-les pour acheter des boîtes et améliorer vos poules.'
   },
   'stock_token': {
     id: 'stock_token',
     nom: 'jetons de stock',
     nom_singulier: 'jeton de stock',
-    icon: '📦'
+    icon: '📦',
+    description: 'Jetons permettant d\'acheter des améliorations de stockage.'
   },
   'production_token': {
     id: 'production_token',
     nom: 'jetons de production',
     nom_singulier: 'jeton de production',
-    icon: '⚡'
+    icon: '⚡',
+    description: 'Jetons permettant d\'acheter des améliorations de production.'
   },
   'mining_token': {
     id: 'mining_token',
     nom: 'jetons de minage',
     nom_singulier: 'jeton de minage',
-    icon: '🪨'
+    icon: '🪨',
+    description: 'Jetons nécessaires pour démarrer une partie de minage et découvrir des trésors souterrains.'
   },
   'chest_key': {
     id: 'chest_key',
     nom: 'clés à coffre',
     nom_singulier: 'clé à coffre',
-    icon: '🗝️'
+    icon: '🗝️',
+    description: 'Clés spéciales permettant d\'ouvrir des coffres de trésors contenant des artefacts de minage.'
   },
   'blueberry': {
     id: 'blueberry',
     nom: 'myrtilles',
     nom_singulier: 'myrtille',
-    icon: '🫐'
+    icon: '🫐',
+    description: 'Fruits délicieux qui augmentent votre niveau! Survolez votre icone de profil pour plus d\'infos.'
   }
 }
 
@@ -1069,36 +1078,63 @@ export const miningData = {
       icon: '🪚',
       desc: 'Inflige 3 dégâts sur une case',
       damage: 3,
-      pattern: 'single'
+      pattern: 'single',
+      secondary_damage: 1,
+      animation: 'mining'
     },
     pickaxe: {
       name: 'Pioche',
       icon: '⛏️',
       desc: 'Inflige 2 dégâts sur la case ciblée et 1 dégât sur les cases adjacentes',
       damage: 2,
-      pattern: 'cross'
+      pattern: 'cross',
+      secondary_damage: 1,
+      animation: 'mining'
     },
     hammer: {
       name: 'Marteau',
       icon: '🔨',
       desc: 'Inflige 1 dégât au centre et 1 dégât aux cases voisines (3x3)',
       damage: 1,
-      pattern: 'square'
+      pattern: 'square',
+      secondary_damage: 1,
+      animation: 'mining'
+    },
+    dynamite: {
+      name: 'Dynamite',
+      icon: '🧨',
+      desc: 'BOOM! (en croix)',
+      damage: 3,
+      pattern: 'cross',
+      secondary_damage: 3,
+      animation: 'explosion'
+    },
+    bomb: {
+      name: 'Bombe',
+      icon: '💣',
+      desc: 'BOOOOOOM! (3x3)',
+      damage: 3,
+      pattern: 'square',
+      secondary_damage: 3,
+      animation: 'explosion'
     }
   },
   rewardPool: [
-    { type: 'eggs', amount: 10, weight: 40 },
     { type: 'eggs', amount: 25, weight: 25 },
     { type: 'eggs', amount: 50, weight: 15 },
+    { type: 'eggs', amount: 100, weight: 5 },
+    { type: 'eggs', amount: 1000, weight: 1 },
+    { type: 'eggs', amount: 10000, weight: 0.1 },
     { type: 'mining_token', amount: 1, weight: 10 },
-    { type: 'stock_token', amount: 1, weight: 8 },
-    { type: 'production_token', amount: 1, weight: 2 },
+    { type: 'stock_token', amount: 1, weight: 6 },
+    { type: 'production_token', amount: 1, weight: 6 },
     { type: 'chest_key', amount: 1, weight: 10 }
   ],
   toolPool: [
-    { type: 'shovel', weight: 4 },
-    { type: 'pickaxe', weight: 4 },
-    { type: 'hammer', weight: 4 }
+    { type: 'shovel', weight: 33 },
+    { type: 'pickaxe', weight: 33 },
+    { type: 'hammer', weight: 33 },
+    { type: 'dynamite', weight: 1 }
   ],
   toolsCount: 6
 }
@@ -1117,45 +1153,61 @@ export const artifactsData = {
     rarete: 'commune',
     effect: { type: 'increase_reward_chance', amount: 0.05 }
   },
-  'rich-vein': {
-    id: 'rich-vein',
-    name: 'Veine Riche',
-    icon: '💎',
-    description: "Augmente la quantité des récompenses obtenues de 20%.",
-    rarete: 'rare',
-    effect: { type: 'increase_reward_amount_percent', percent: 20 }
-  },
   'smith-glyph': {
     id: 'smith-glyph',
     name: 'Glyphe du Forgeron',
     icon: '🔧',
-    description: "Augmente les dégâts des outils équipés de +1 pendant la partie.",
-    rarete: 'epique',
-    effect: { type: 'increase_tool_damage', amount: 1 }
+    description: "+1 outil pendant une partie.",
+    rarete: 'commune',
+    effect: { type: 'increase_tool_count', amount: 1 }
   },
   'ancient-compass': {
     id: 'ancient-compass',
     name: 'Boussole Antique',
     icon: '🧭',
-    description: "Révèle les cases avec récompenses au début de la partie.",
+    description: "Révèle 50% des cases avec récompenses au début de la partie.",
     rarete: 'legendaire',
-    effect: { type: 'reveal_rewards' }
+    effect: { type: 'reveal_rewards', chance: 0.5 }
   },
-  'miners-luck': {
-    id: 'miners-luck',
-    name: 'Chance du Mineur',
-    icon: '⭐',
-    description: "Augmente la probabilité d'obtenir une récompense de 10%.",
+  'explosive-fan': {
+    id: 'explosive-fan',
+    name: 'Fan d\'explosif',
+    icon: '🧨',
+    description: "Le dernier outil est toujours une dynamite.",
     rarete: 'rare',
-    effect: { type: 'increase_reward_chance', amount: 0.1 }
+    effect: { type: 'last_dynamite' }
+  },
+  'pyromaniac': {
+    id: 'pyromaniac',
+    name: 'Pyromane',
+    icon: '💣',
+    description: "Les dynamites deviennent des bombes, qui affectent une zone de 3x3.",
+    rarete: 'epique',
+    effect: { type: 'tool_change', origin:'dynamite', dest:'bomb' }
   },
   'reinforced-handle': {
     id: 'reinforced-handle',
     name: 'Manche Renforcé',
     icon: '🪓',
-    description: "Les outils infligent +2 dégâts.",
+    description: "Les outils infligent +1 dégat à l'endroit cliqué.",
     rarete: 'epique',
-    effect: { type: 'increase_tool_damage', amount: 2 }
+    effect: { type: 'increase_tool_damage', amount: 1 }
+  },
+  'mining-master': {
+    id: 'mining-master',
+    name: 'Maître mineur',
+    icon: '⚒️',
+    description: "Les pelles deviennent des pioches.",
+    rarete: 'rare',
+    effect: { type: 'tool_change', origin:'shovel', dest:'pickaxe' }
+  },
+  'hole-ace': {
+    id: 'hole-ace',
+    name: 'As du trou',
+    icon: '🕳️',
+    description: "Chaque pelle se duplique au début de la partie.",
+    rarete: 'commune',
+    effect: { type: 'tool_change', origin:'shovel', dest:'pickaxe' }
   }
 }
 
