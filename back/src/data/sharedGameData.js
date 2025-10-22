@@ -951,7 +951,7 @@ export const achievementsData = {
     objectif: 3,
     type: 'mining_artifacts',
     reward: {
-      type: 'mining_token',
+      type: 'blueberry',
       quantite: 3
     }
   },

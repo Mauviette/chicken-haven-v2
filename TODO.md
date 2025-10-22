@@ -11,3 +11,5 @@ Market : Résultat d'ouverture d'une boite : Hover l'image de la poule pour affi
 
 Ajouter un système d'onglets au menu de succès; 2 catégories. Succès classiques, et de la mine.
 Tous les succès déjà existants vont dans l'onglet classique.
+
+Responsive accès mine
