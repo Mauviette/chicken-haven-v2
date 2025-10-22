@@ -156,7 +156,8 @@ const {
   loading,
   fetchState,
   startGame: startMiningGame,
-  dig
+  dig,
+  artifactModifiers
 } = useMining()
 
 // Copie locale pour forcer la réactivité
@@ -335,15 +336,18 @@ function getDamageAt(row, col) {
   
   const { row: hRow, col: hCol } = hoveredCell.value
   const sec = Number(config.secondaryDamage || 1)
+  // Prendre en compte le bonus de dégâts central provenant des artefacts
+  const centralBonus = Number(artifactModifiers.value?.toolDamageAdd || 0)
+  const centerDamage = Number(config.damage || 0) + centralBonus
 
   if (config.pattern === 'single') {
-    return (row === hRow && col === hCol) ? config.damage : 0
+    return (row === hRow && col === hCol) ? centerDamage : 0
   } else if (config.pattern === 'cross') {
-    if (row === hRow && col === hCol) return config.damage
+    if (row === hRow && col === hCol) return centerDamage
     return sec
   }
   else if (config.pattern === 'square') {
-    if (row === hRow && col === hCol) return config.damage
+    if (row === hRow && col === hCol) return centerDamage
     if (Math.abs(row - hRow) <= 1 && Math.abs(col - hCol) <= 1) return sec
     return 0
   }

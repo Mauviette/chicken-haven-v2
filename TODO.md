@@ -1,10 +1,6 @@
+L'effet d'artéfact reveal_rewards ne fonctionne pas du tout. Il faut qu'il 
 
-
-Lors du lvl up, le gain de mining_token ne semble pas marcher
-
-L'effet d'artéfact reveal_rewards ne fonctionne pas du tout.
-
-L'affichage de capacité active de TeamParadeChicken ne fonctionne pas sur Production
+L'affichage de capacité active de TeamParadeChicken ne fonctionne pas lorsqu'on est sur la page de Production
 
 Ajouter ces succès :
 > Trouver 1, 3, 5 artefact

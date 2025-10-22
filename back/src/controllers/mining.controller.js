@@ -332,7 +332,8 @@ export async function startMining(req, res) {
         tools: user.miningGame.tools,
         currentToolIndex: user.miningGame.currentToolIndex,
         rewards: user.miningGame.rewards,
-        equippedArtifacts: user.miningGame.equippedArtifacts || []
+        equippedArtifacts: user.miningGame.equippedArtifacts || [],
+        artifactModifiers: user.miningGame.artifactModifiers || {} // <-- exposer les modifs dès le start
       }
     })
   } catch (err) {

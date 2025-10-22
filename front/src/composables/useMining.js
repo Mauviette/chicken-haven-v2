@@ -11,6 +11,7 @@ const rewards = ref([])
 const equippedArtifacts = ref([])
 const artifactSlotsCount = ref(0)
 const loading = ref(false)
+const artifactModifiers = ref({}) // <-- nouveau état pour modifs d'artefacts
 
 export function useMining() {
   // Récupère l'état actuel du jeu de minage
@@ -29,10 +30,13 @@ export function useMining() {
         tools.value = data.game.tools
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
+        artifactModifiers.value = data.game.artifactModifiers || {} // <-- hydrate les modifs
         // If the server exposes equippedArtifacts for the active game, use it
         if (data.game.equippedArtifacts) {
           equippedArtifacts.value = data.game.equippedArtifacts
         }
+      } else {
+        artifactModifiers.value = {}
       }
       
       return data
@@ -60,6 +64,7 @@ export function useMining() {
         rewards.value = data.game.rewards || []
         equippedArtifacts.value = data.game.equippedArtifacts || []
         artifactSlotsCount.value = data.artifactSlotsCount || 0
+        artifactModifiers.value = data.game.artifactModifiers || {} // <-- hydrate après start
         // server may expose artifactModifiers if needed
         // artifactModifiers.value = data.game.artifactModifiers || {}
       }
@@ -84,6 +89,7 @@ export function useMining() {
         cells.value = data.game.cells
         currentToolIndex.value = data.game.currentToolIndex
         rewards.value = data.game.rewards || []
+        artifactModifiers.value = data.game.artifactModifiers || {} // <-- mise à jour depuis le serveur (si fournie)
         // Ne pas mettre à jour equippedArtifacts - ils restent constants pendant une partie
         
         if (data.gameOver) {
@@ -118,6 +124,7 @@ export function useMining() {
     equippedArtifacts,
     artifactSlotsCount,
     loading,
+    artifactModifiers,
     fetchState,
     startGame,
     dig
