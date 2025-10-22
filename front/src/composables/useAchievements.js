@@ -14,7 +14,13 @@ const userAchievements = ref({
     avatarChanged: 0,
     nameChanged: 0,
     maxTeamStat: 0,
-    maxMegaClick: 0
+    maxMegaClick: 0,
+    miningGamesPlayed: 0,
+    miningArtifactsFound: 0,
+    miningCellsBroken: 0,
+    miningNoRewardGame: false,
+    miningFullGridBroken: false,
+    miningBestCellsInGame: 0
   },
   completed: [],
   lastChecked: new Date()
@@ -90,6 +96,22 @@ export function useAchievements() {
         return Math.min(userAchievements.value.progress.maxTeamStat, achievement.objectif)
       case 'mega_click':
         return Math.min(userAchievements.value.progress.maxMegaClick, achievement.objectif)
+      case 'mining_artifacts':
+        return Math.min(userAchievements.value.progress.miningArtifactsFound, achievement.objectif)
+      case 'mining_cells':
+        return Math.min(userAchievements.value.progress.miningCellsBroken, achievement.objectif)
+      case 'mining_no_reward':
+        const noRewardCompleted = userAchievements.value.completed.find(
+          c => c.achievementId === achievement.id
+        )
+        return noRewardCompleted ? achievement.objectif : 0
+      case 'mining_full_grid':
+        const fullGridCompleted = userAchievements.value.completed.find(
+          c => c.achievementId === achievement.id
+        )
+        return fullGridCompleted ? achievement.objectif : 0
+      case 'mining_best_cells_in_game':
+        return Math.min(userAchievements.value.progress.miningBestCellsInGame, achievement.objectif)
       default:
         return 0
     }
@@ -273,6 +295,8 @@ export function useAchievements() {
       const onAvatarUpdated = () => setTimeout(checkAchievements, 250)
       const onNameChanged = () => setTimeout(checkAchievements, 250)
       const onChickenUpgraded = () => setTimeout(checkAchievements, 250)
+      const onMiningAction = () => setTimeout(checkAchievements, 500) // Délai plus long pour le minage
+      const onChestOpened = () => setTimeout(checkAchievements, 250) // Pour les artéfacts obtenus
       const onAuthLogin = async () => {
         // Réinitialiser puis recharger les succès pour le nouveau compte
         try { notifiedAchievements.clear() } catch (_) {}
@@ -286,7 +310,13 @@ export function useAchievements() {
             avatarChanged: 0,
             nameChanged: 0,
             maxTeamStat: 0,
-            maxMegaClick: 0
+            maxMegaClick: 0,
+            miningGamesPlayed: 0,
+            miningArtifactsFound: 0,
+            miningCellsBroken: 0,
+            miningNoRewardGame: false,
+            miningFullGridBroken: false,
+            miningBestCellsInGame: 0
           },
           completed: [],
           lastChecked: new Date()
@@ -309,7 +339,13 @@ export function useAchievements() {
             avatarChanged: 0,
             nameChanged: 0,
             maxTeamStat: 0,
-            maxMegaClick: 0
+            maxMegaClick: 0,
+            miningGamesPlayed: 0,
+            miningArtifactsFound: 0,
+            miningCellsBroken: 0,
+            miningNoRewardGame: false,
+            miningFullGridBroken: false,
+            miningBestCellsInGame: 0
           },
           completed: [],
           lastChecked: new Date()
@@ -320,6 +356,8 @@ export function useAchievements() {
       window.addEventListener('avatar-updated', onAvatarUpdated)
       window.addEventListener('name-changed', onNameChanged)
       window.addEventListener('chicken-upgraded', onChickenUpgraded)
+      window.addEventListener('mining-action', onMiningAction)
+      window.addEventListener('chest-opened', onChestOpened)
       window.addEventListener('auth-login', onAuthLogin)
       window.addEventListener('auth-logout', onAuthLogout)
       // Stocker les handlers pour pouvoir les retirer si besoin
@@ -328,6 +366,8 @@ export function useAchievements() {
       startAutoCheck._onAvatarUpdated = onAvatarUpdated
       startAutoCheck._onNameChanged = onNameChanged
       startAutoCheck._onChickenUpgraded = onChickenUpgraded
+      startAutoCheck._onMiningAction = onMiningAction
+      startAutoCheck._onChestOpened = onChestOpened
       startAutoCheck._onAuthLogin = onAuthLogin
       startAutoCheck._onAuthLogout = onAuthLogout
     }
@@ -358,6 +398,14 @@ export function useAchievements() {
       if (startAutoCheck._onChickenUpgraded) {
         window.removeEventListener('chicken-upgraded', startAutoCheck._onChickenUpgraded)
         startAutoCheck._onChickenUpgraded = null
+      }
+      if (startAutoCheck._onMiningAction) {
+        window.removeEventListener('mining-action', startAutoCheck._onMiningAction)
+        startAutoCheck._onMiningAction = null
+      }
+      if (startAutoCheck._onChestOpened) {
+        window.removeEventListener('chest-opened', startAutoCheck._onChestOpened)
+        startAutoCheck._onChestOpened = null
       }
       if (startAutoCheck._onAuthLogin) {
         window.removeEventListener('auth-login', startAutoCheck._onAuthLogin)

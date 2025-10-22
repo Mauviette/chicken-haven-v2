@@ -137,7 +137,12 @@ const UserSchema = new mongoose.Schema({
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: 0,
+          miningFullGridBroken: 0
         },
         completed: [],
         lastChecked: new Date()

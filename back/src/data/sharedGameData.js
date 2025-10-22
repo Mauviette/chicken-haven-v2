@@ -930,12 +930,104 @@ export const achievementsData = {
       type: 'blueberry',
       quantite: 10
     }
+  },
+  'mining_artifact_1': {
+    id: 'mining_artifact_1',
+    nom: 'Premier Artefact',
+    description: 'Trouvez votre premier artefact de minage',
+    icon: '🪨',
+    objectif: 1,
+    type: 'mining_artifacts',
+    reward: {
+      type: 'blueberry',
+      quantite: 1
+    }
+  },
+  'mining_artifact_3': {
+    id: 'mining_artifact_3',
+    nom: 'Collectionneur d\'Artefacts',
+    description: 'Trouvez 3 artefacts de minage différents',
+    icon: '💎',
+    objectif: 3,
+    type: 'mining_artifacts',
+    reward: {
+      type: 'mining_token',
+      quantite: 3
+    }
+  },
+  'mining_artifact_5': {
+    id: 'mining_artifact_5',
+    nom: 'Maître des Artefacts',
+    description: 'Trouvez 5 artefacts de minage différents',
+    icon: '⭐',
+    objectif: 5,
+    type: 'mining_artifacts',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'mining_cells_10': {
+    id: 'mining_cells_10',
+    nom: 'Mineur Débutant',
+    description: 'Brisez 10 cases au total en minage',
+    icon: '⛏️',
+    objectif: 10,
+    type: 'mining_cells',
+    reward: {
+      type: 'blueberry',
+      quantite: 1
+    }
+  },
+  'mining_cells_25': {
+    id: 'mining_cells_25',
+    nom: 'Mineur Expérimenté',
+    description: 'Brisez 25 cases au total en minage',
+    icon: '⚒️',
+    objectif: 25,
+    type: 'mining_cells',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'mining_cells_100': {
+    id: 'mining_cells_100',
+    nom: 'Mineur Légendaire',
+    description: 'Brisez 100 cases au total en minage',
+    icon: '💥',
+    objectif: 100,
+    type: 'mining_cells',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'mining_no_reward': {
+    id: 'mining_no_reward',
+    nom: 'Malchance',
+    description: 'Finissez une grille de minage sans avoir collecté de récompense',
+    icon: '😞',
+    objectif: 1,
+    type: 'mining_no_reward',
+    reward: {
+      type: 'chest_key',
+      quantite: 3
+    }
+  },
+  'mining_full_grid': {
+    id: 'mining_full_grid',
+    nom: 'Mineur Expert',
+    description: 'Cassez toutes les cases d\'une grille de 5x5',
+    icon: '💎',
+    objectif: 25,
+    type: 'mining_best_cells_in_game',
+    reward: {
+      type: 'chest_key',
+      quantite: 5
+    }
   }
 }
-
-// ========================
-// DONNÉES DES RESSOURCES
-// ========================
 export const itemsData = {
   'eggs': {
     id: 'eggs',
@@ -1034,6 +1126,26 @@ export const achievementCategories = {
     nom: 'Récolte',
     icon: '🥚',
     color: '#FFC107'
+  },
+  'mining_artifacts': {
+    nom: 'Artefacts',
+    icon: '🪨',
+    color: '#8B4513'
+  },
+  'mining_cells': {
+    nom: 'Minage',
+    icon: '⛏️',
+    color: '#696969'
+  },
+  'mining_no_reward': {
+    nom: 'Malchance',
+    icon: '😞',
+    color: '#FF6347'
+  },
+  'mining_full_grid': {
+    nom: 'Expertise',
+    icon: '💎',
+    color: '#FFD700'
   }
 }
 

@@ -92,6 +92,9 @@ export function useMining() {
         artifactModifiers.value = data.game.artifactModifiers || {} // <-- hydrate après start
         // server may expose artifactModifiers if needed
         // artifactModifiers.value = data.game.artifactModifiers || {}
+        
+        // Émettre un événement pour les achievements après le démarrage d'une partie
+        window.dispatchEvent(new CustomEvent('mining-action'))
       }
       
       return data
@@ -127,6 +130,9 @@ export function useMining() {
               detail: { resources: data.resources } 
             }))
           }
+        } else {
+          // Émettre un événement pour les achievements après chaque creusage réussi
+          window.dispatchEvent(new CustomEvent('mining-action'))
         }
       }
       

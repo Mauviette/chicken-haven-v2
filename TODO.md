@@ -1,4 +1,7 @@
-
+Traquer ces stats sur le joueur, en rapport avec la mine, et les afficher sur le UserProfile : 
+> Nombre de parties jouées
+> Nombre d'artéfacts de minage trouvés "X/Y (Z%)"
+> Nombre de cases brisées
 
 Ajouter ces succès :
 > Trouver 1, 3, 5 artefact

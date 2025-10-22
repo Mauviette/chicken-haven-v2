@@ -36,8 +36,16 @@ Object.entries(achievementsData).forEach(([id, data]) => {
           return progress.maxTeamStat >= data.objectif
         case 'mega_click':
           return progress.maxMegaClick >= data.objectif
-        default:
-          return false
+        case 'mining_artifacts':
+          return (progress.miningArtifactsFound || 0) >= data.objectif
+        case 'mining_cells':
+          return (progress.miningCellsBroken || 0) >= data.objectif
+        case 'mining_no_reward':
+          return !!(progress.miningNoRewardGame)
+        case 'mining_full_grid':
+          return !!(progress.miningFullGridBroken)
+        case 'mining_best_cells_in_game':
+          return (progress.miningBestCellsInGame || 0) >= data.objectif
       }
     }
   }
@@ -66,7 +74,13 @@ export async function getAchievementsStatus(req, res) {
           bestTeamCharisme: 0,
           // Max global utilisé par les succès 'team_stats'
           maxTeamStat: 0,
-          maxMegaClick: 0
+          maxMegaClick: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: false,
+          miningFullGridBroken: false,
+          miningBestCellsInGame: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -114,7 +128,13 @@ export async function checkAchievements(req, res) {
           bestTeamIntelligence: 0,
           bestTeamCharisme: 0,
           maxTeamStat: 0,
-          maxMegaClick: 0
+          maxMegaClick: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: false,
+          miningFullGridBroken: false,
+          miningBestCellsInGame: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -165,6 +185,24 @@ export async function checkAchievements(req, res) {
     if (!user.achievements.progress.hasOwnProperty('nameChanged')) {
       user.achievements.progress.nameChanged = 0
     }
+    if (!user.achievements.progress.hasOwnProperty('miningGamesPlayed')) {
+      user.achievements.progress.miningGamesPlayed = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningArtifactsFound')) {
+      user.achievements.progress.miningArtifactsFound = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningCellsBroken')) {
+      user.achievements.progress.miningCellsBroken = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningNoRewardGame')) {
+      user.achievements.progress.miningNoRewardGame = false
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningFullGridBroken')) {
+      user.achievements.progress.miningFullGridBroken = false
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningBestCellsInGame')) {
+      user.achievements.progress.miningBestCellsInGame = 0
+    }
 
     // Calculer et mettre à jour les stats d'équipe avec les fonctions dédiées
     // Importer les fonctions depuis egg.controller.js
@@ -187,6 +225,13 @@ export async function checkAchievements(req, res) {
     );
 
     user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
+
+    // Synchroniser miningArtifactsFound avec l'inventaire actuel du joueur
+    const currentUniqueArtifacts = user.artifacts?.length || 0
+    user.achievements.progress.miningArtifactsFound = Math.max(
+      Number(user.achievements.progress.miningArtifactsFound) || 0,
+      currentUniqueArtifacts
+    )
 
     // Vérifier chaque succès
     const newAchievements = []
@@ -273,6 +318,8 @@ export async function claimReward(req, res) {
       user.resources.stock_token = (user.resources.stock_token || 0) + reward.quantite
     } else if (reward.type === 'production_token') {
       user.resources.production_token = (user.resources.production_token || 0) + reward.quantite
+    } else if (reward.type === 'chest_key') {
+      user.resources.chest_key = (user.resources.chest_key || 0) + reward.quantite
     } else if (reward.type === 'blueberry') {
       // Les myrtilles donnent de l'XP et déclenchent le level up selon la règle: myrtilles nécessaires = level * 2
       user.experience = user.experience || { level: 1, points: 0, required_points: 2 }
@@ -365,7 +412,13 @@ export async function updateAchievementProgress(userId, progressType, value) {
           bestTeamIntelligence: 0,
           bestTeamCharisme: 0,
           maxTeamStat: 0,
-          maxMegaClick: 0
+          maxMegaClick: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: false,
+          miningFullGridBroken: false,
+          miningBestCellsInGame: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -399,6 +452,24 @@ export async function updateAchievementProgress(userId, progressType, value) {
     }
     if (!user.achievements.progress.hasOwnProperty('nameChanged')) {
       user.achievements.progress.nameChanged = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningGamesPlayed')) {
+      user.achievements.progress.miningGamesPlayed = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningArtifactsFound')) {
+      user.achievements.progress.miningArtifactsFound = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningCellsBroken')) {
+      user.achievements.progress.miningCellsBroken = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningNoRewardGame')) {
+      user.achievements.progress.miningNoRewardGame = false
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningFullGridBroken')) {
+      user.achievements.progress.miningFullGridBroken = false
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningBestCellsInGame')) {
+      user.achievements.progress.miningBestCellsInGame = 0
     }
 
     // Mettre à jour le progrès selon le type (inchangé)
@@ -480,7 +551,13 @@ export async function triggerAchievementCheck(userId) {
           bestTeamCharisme: 0,
           // Max global utilisé par les succès 'team_stats'
           maxTeamStat: 0,
-          maxMegaClick: 0
+          maxMegaClick: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: false,
+          miningFullGridBroken: false,
+          miningBestCellsInGame: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -513,6 +590,13 @@ export async function triggerAchievementCheck(userId) {
       user.achievements.progress.bestTeamCharisme || 0
     )
     user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
+
+    // Synchroniser miningArtifactsFound avec l'inventaire actuel du joueur
+    const currentUniqueArtifacts = user.artifacts?.length || 0
+    user.achievements.progress.miningArtifactsFound = Math.max(
+      Number(user.achievements.progress.miningArtifactsFound) || 0,
+      currentUniqueArtifacts
+    )
 
     console.log(`🔍 Current achievement progress for user ${userId}:`, user.achievements.progress)
 

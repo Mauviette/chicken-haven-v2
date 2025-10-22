@@ -3,6 +3,7 @@ import { miningData, artifactsData } from '../data/sharedGameData.js'
 
 // Utiliser la source unique de vérité pour la configuration du mini-jeu
 const MINING_CONFIG = miningData
+import { updateAchievementProgress } from './achievements.controller.js'
 
 // NOUVEAU : helpers pour vérifier si l'utilisateur a une partie de minage active
 export async function isUserMining(userId) {
@@ -353,6 +354,14 @@ export async function startMining(req, res) {
 
     await user.save()
 
+    // Incrémenter le nombre de parties jouées
+    await updateAchievementProgress(req.userId, 'increment', { miningGamesPlayed: 1 })
+
+    // Déclencher un événement pour notifier le frontend
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mining-game-started'))
+    }
+
     res.json({
       success: true,
       miningTokens: user.resources.mining_token,
@@ -435,6 +444,7 @@ export async function digCell(req, res) {
     }
 
     const newRewards = []
+    let cellsBroken = 0
 
     // Appliquer les dégâts aux cases
     for (const affected of affectedCells) {
@@ -445,20 +455,25 @@ export async function digCell(req, res) {
       if (cell && cell.hp > 0) {
         cell.hp = Math.max(0, cell.hp - affected.damage)
         
-        // Si la case est détruite et a une récompense
-        if (cell.hp === 0 && cell.reward) {
-          // Si un multiplicateur de quantité a été appliqué, on peut reformater la récompense
-          const rewardPercent = artifactMods.rewardAmountPercent || 0
-          if (rewardPercent && typeof cell.reward === 'string') {
-            const [t, a] = cell.reward.split(':')
-            const baseAmt = parseInt(a) || 1
-            const finalAmt = Math.max(1, Math.round(baseAmt * (1 + rewardPercent / 100)))
-            const formatted = `${t}:${finalAmt}`
-            newRewards.push(formatted)
-            user.miningGame.rewards.push(formatted)
-          } else {
-            newRewards.push(cell.reward)
-            user.miningGame.rewards.push(cell.reward)
+        // Si la case est détruite
+        if (cell.hp === 0) {
+          cellsBroken++
+          
+          // Si la case a une récompense
+          if (cell.reward) {
+            // Si un multiplicateur de quantité a été appliqué, on peut reformater la récompense
+            const rewardPercent = artifactMods.rewardAmountPercent || 0
+            if (rewardPercent && typeof cell.reward === 'string') {
+              const [t, a] = cell.reward.split(':')
+              const baseAmt = parseInt(a) || 1
+              const finalAmt = Math.max(1, Math.round(baseAmt * (1 + rewardPercent / 100)))
+              const formatted = `${t}:${finalAmt}`
+              newRewards.push(formatted)
+              user.miningGame.rewards.push(formatted)
+            } else {
+              newRewards.push(cell.reward)
+              user.miningGame.rewards.push(cell.reward)
+            }
           }
         }
       }
@@ -494,6 +509,21 @@ export async function digCell(req, res) {
     }
 
     await user.save()
+
+    // Mettre à jour les progrès des succès
+    const progressUpdates = { miningCellsBroken: cellsBroken }
+    if (gameOver) {
+      const totalCellsBroken = user.miningGame.cells.filter(c => c.hp === 0).length
+      if (totalCellsBroken === 25) {
+        await updateAchievementProgress(req.userId, 'max', { miningFullGridBroken: 1 })
+      }
+      if (user.miningGame.rewards.length === 0) {
+        await updateAchievementProgress(req.userId, 'max', { miningNoRewardGame: 1 })
+      }
+      // Mettre à jour le meilleur score de cellules cassées dans une partie
+      await updateAchievementProgress(req.userId, 'max', { miningBestCellsInGame: totalCellsBroken })
+    }
+    await updateAchievementProgress(req.userId, 'increment', progressUpdates)
 
     res.json({
       success: true,
@@ -560,6 +590,17 @@ export async function finishMining(req, res) {
     // Marquer la partie terminée
     user.miningGame.active = false
     await user.save()
+
+    // Mettre à jour les progrès des succès pour la fin de partie
+    const totalCellsBroken = user.miningGame.cells.filter(c => c.hp === 0).length
+    if (totalCellsBroken === 25) {
+      await updateAchievementProgress(req.userId, 'max', { miningFullGridBroken: 1 })
+    }
+    if ((user.miningGame.rewards || []).length === 0) {
+      await updateAchievementProgress(req.userId, 'max', { miningNoRewardGame: 1 })
+    }
+    // Mettre à jour le meilleur score de cellules cassées dans une partie
+    await updateAchievementProgress(req.userId, 'max', { miningBestCellsInGame: totalCellsBroken })
 
     res.json({
       success: true,

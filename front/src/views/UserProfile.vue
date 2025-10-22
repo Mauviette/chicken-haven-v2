@@ -68,10 +68,31 @@
             <div class="stat-row"><span>📦 Boîtes ouvertes</span><b>{{ profile.stats?.totalBoxesOpened ?? 0 }}</b></div>
             <div class="stat-row"><span>🥚 Max en un clic</span><b>{{ profile.stats?.maxEggsInOneClick ?? 0 }}</b></div>
 
+            <!-- NOUVELLES STATS DE MINAGE -->
+            <div class="stat-row"><span>🎮 Parties de minage jouées</span><b>{{ profile.achievements?.progress?.miningGamesPlayed ?? 0 }}</b></div>
+            <div class="stat-row"><span>💎 Artéfacts de minage trouvés</span><b>{{ profile.achievements?.progress?.miningArtifactsFound ?? 0 }} / 8 ({{ Math.round(((profile.achievements?.progress?.miningArtifactsFound ?? 0) / 8) * 100) }}%)</b></div>
+            <div class="stat-row"><span>⛏️ Cases brisées</span><b>{{ profile.achievements?.progress?.miningCellsBroken ?? 0 }}</b></div>
+
             <!-- NOUVEAU : afficher les meilleures stats d'équipe historiques provenant des achievements.progress -->
             <div class="stat-row"><span>⚡ Meilleure énergie d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamEnergy ?? 0 }}</b></div>
             <div class="stat-row"><span>🧠 Meilleure intelligence d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamIntelligence ?? 0 }}</b></div>
             <div class="stat-row"><span>✨ Meilleur charisme d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamCharisme ?? 0 }}</b></div>
+            
+            <!-- TEMPORAIRE : Section test ouverture coffres -->
+            <div v-if="isOwnProfile" class="stat-row chest-section">
+              <span>🗝️ Clés de coffre</span>
+              <div class="chest-controls">
+                <b>{{ chestKeys }}</b>
+                <button 
+                  class="action-button open-chest-btn" 
+                  :class="{ disabled: chestKeys <= 0 || openingChest }"
+                  @click="handleOpenChest"
+                  :disabled="chestKeys <= 0 || openingChest"
+                >
+                  {{ openingChest ? 'Ouverture...' : 'Ouvrir coffre' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="right">
@@ -119,8 +140,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Tooltip from '@/components/menu/Tooltip.vue'
-import { usePoules } from '@/composables/usePoules'
-import { useGameData } from '@/composables/useGameData'
+import { useChest } from '@/composables/useChest'
 import Popup from '@/components/menu/Popup.vue'
 import { apiGet, apiPatch } from '@/utils/api.js'
 import { containsForbiddenWords } from '@/utils/forbiddenWords.js'
@@ -146,6 +166,9 @@ let validationTimeout = null
 // Game data for species/talents + helpers
 const { especies, talents, getImage, getNom, getTalentEffectSync, poules, hiddenImage } = usePoules()
 const { achievements } = useGameData()
+const { openChest } = useChest()
+const chestKeys = ref(0)
+const openingChest = ref(false)
 const totalEspeces = computed(() => Object.keys(especies.value || {}).length)
 const totalAchievements = computed(() => Object.keys(achievements.value || {}).length)
 const ownedPoules = computed(() => (poules.value || []).filter(p => p?.owned))
@@ -199,6 +222,8 @@ async function loadAchievementsStatusIfOwn() {
     const data = await apiGet('/api/achievements/status')
     if (data && profile.value) {
       profile.value = { ...profile.value, achievements: data }
+      // TEMPORAIRE : donner des clés de coffre pour tester
+      chestKeys.value = profile.value.chestKeys || 3 // Donner 3 clés par défaut pour tester
     }
   } catch (e) {
     console.warn('Impossible de charger achievements status:', e)
@@ -316,6 +341,29 @@ function talentLabel(slot) {
     const roman = lvl ? toRoman(lvl) : ''
     return roman ? `${tName} ${roman}` : tName
   } catch (_) { return '' }
+}
+
+async function handleOpenChest() {
+  if (!isOwnProfile.value || chestKeys.value <= 0 || openingChest.value) return
+  
+  try {
+    openingChest.value = true
+    const result = await openChest()
+    
+    if (result?.success) {
+      chestKeys.value = Math.max(0, chestKeys.value - 1)
+      // Recharger les achievements pour voir les mises à jour
+      await loadAchievementsStatusIfOwn()
+      window.$toast?.(`Coffre ouvert ! Artéfact trouvé : ${result.artifact?.name || 'Inconnu'}`, 'success')
+    } else {
+      window.$toast?.(result?.error || 'Erreur lors de l\'ouverture du coffre', 'error')
+    }
+  } catch (e) {
+    console.error('Erreur ouverture coffre:', e)
+    window.$toast?.('Erreur réseau', 'error')
+  } finally {
+    openingChest.value = false
+  }
 }
 
 function startEditDisplayName() {
@@ -687,6 +735,30 @@ async function saveDisplayName() {
 .stat-row + .stat-row { border-top: 1px dashed #ffd99a; }
 .stat-row span { opacity: .85; }
 .stat-row b { font-size: 16px; }
+
+.chest-section {
+  background: rgba(255, 198, 110, 0.1);
+  border-radius: 8px;
+  padding: 12px 10px;
+}
+
+.chest-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.open-chest-btn {
+  font-size: 12px;
+  padding: 6px 10px;
+  background-color: #ff8c00;
+  border-color: #ffa500;
+  min-width: 100px;
+}
+
+.open-chest-btn:hover:not(.disabled) {
+  background-color: #ff9f00;
+}
 
 .two-cols {
   display: grid;
