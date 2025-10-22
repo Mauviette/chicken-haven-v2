@@ -67,9 +67,20 @@
               >
                 <!-- Indicateur reveal_rewards : point d'interrogation si le backend a marqué la cellule -->
                 <div v-if="hasHint(cell) && cell.hp > 0" class="cell-hint" aria-hidden="true">❓</div>
+
+                <!-- Récompense récupérée (case creusée) -->
                 <div 
                   v-if="cell.hp === 0 && cell.reward" 
                   class="reward"
+                  :class="{ 'large-emoji': isLargeReward(cell.reward) }"
+                >
+                  {{ formatReward(cell.reward, true) }}
+                </div>
+
+                <!-- Récompense non obtenue : afficher en semi‑transparent quand la partie est terminée et le bouton 'Continuer' visible -->
+                <div
+                  v-else-if="gameOver && !showResults && cell.reward && (cell.hp == null || cell.hp > 0)"
+                  class="reward unobtained"
                   :class="{ 'large-emoji': isLargeReward(cell.reward) }"
                 >
                   {{ formatReward(cell.reward, true) }}
@@ -1295,5 +1306,18 @@ function getArtifactBadgeStyle(aid) {
   0% { transform: scale(1); opacity: 0.9; }
   50% { transform: scale(1.12); opacity: 1; }
   100% { transform: scale(1); opacity: 0.9; }
+}
+
+/* Récompenses non obtenues (semi‑transparentes) */
+.reward.unobtained {
+  opacity: 0.45;
+  transform: translate(-50%, -50%) scale(0.95);
+  filter: grayscale(30%) brightness(1.05);
+  pointer-events: none;
+  font-size: 13px;
+}
+
+.reward.unobtained.large-emoji {
+  font-size: 22px;
 }
 </style>
