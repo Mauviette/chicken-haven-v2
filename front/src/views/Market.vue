@@ -83,7 +83,7 @@
               <div class="box-contents" v-if="!isBoxLocked(box)">
                 <div class="drop-groups">
                   <div v-for="group in box.dropGroups" :key="group.name" class="drop-group">
-                    <span class="group-label">{{ getGroupDescription(group.name) }} ({{ group.chance }}%)</span>
+                    <span class="group-label">{{ getGroupDescription(group.name) }} ({{ Math.round(group.chance * 10) / 10 }}%)</span>
                     <span class="group-quantity" v-if="group.quantity > 1">x{{ group.quantity }}</span>
                   </div>
                 </div>
@@ -140,7 +140,7 @@
                 <div class="box-contents" v-if="!isBoxLocked(box)">
                   <div class="drop-groups">
                     <div v-for="group in box.dropGroups" :key="group.name" class="drop-group">
-                      <span class="group-label">{{ getGroupDescription(group.name) }} ({{ group.chance }}%)</span>
+                      <span class="group-label">{{ getGroupDescription(group.name) }} ({{ Math.round(group.chance * 10) / 10 }}%)</span>
                       <span class="group-quantity" v-if="group.quantity > 1">x{{ group.quantity }}</span>
                     </div>
                   </div>
@@ -469,7 +469,7 @@ function getDiceTooltipText(box) {
   
   box.dropGroups.forEach(group => {
     const groupData = groupes.value?.find(g => g.name === group.name)
-    const groupPercent = Math.round((group.chance / totalChance) * 100)
+    const groupPercent = Math.round((group.chance / totalChance) * 100 * 10) / 10
     const groupDescription = getGroupDescription(group.name)
     
     // Titre du groupe en gras avec pourcentage
