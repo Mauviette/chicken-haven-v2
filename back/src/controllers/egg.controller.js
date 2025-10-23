@@ -509,6 +509,10 @@ export async function getEggStatus(req, res) {
       currentStocked,
       lastClick,
       totalEggs: user.resources?.eggs || 0,
+      stockTokens: user.resources?.stock_token || 0,
+      productionTokens: user.resources?.production_token || 0,
+      wildTokens: user.resources?.wild_token || 0,
+      chestKeys: user.resources?.chest_key || 0,
       // Optionnel: debug serveur pour le front si besoin
       incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
   storageBonus: { storageBonus: storageBonus.storageBonus, storageMultiplier: storageBonus.storageMultiplier, breakdown: storageBonus.breakdown },

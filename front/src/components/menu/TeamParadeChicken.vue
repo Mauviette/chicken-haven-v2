@@ -6,12 +6,18 @@
         <img
         v-if="currentImg"
         :src="currentImg"
+        ref="chickenRef"
         class="parade-chicken"
-        :class="[state, isFallback ? 'fallback' : '']"
+        :class="[state, isFallback ? 'fallback' : '', isUpgrading ? 'upgrading' : '']"
         :alt="name"
+        :data-espece-id="especeId"
         :style="{ '--dir': direction }"
         @click="emitOpenDetail"
         />
+        <!-- Particules d'amélioration -->
+        <div v-if="isUpgrading" class="upgrade-particles">
+          <span class="particle" v-for="i in 8" :key="i" :style="{ '--delay': (i * 0.1) + 's', '--angle': (i * 45) + 'deg' }">✨</span>
+        </div>
   <!-- Indicateur talent activable: petit éclair en haut à droite -->
   <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">
     ⚡
@@ -23,6 +29,10 @@
       <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
     </svg>
   </span>
+  <!-- Indicateur cadeau disponible: brillance et icône cadeau -->
+  <div v-if="hasChickenGift" class="gift-indicator">
+    <span class="gift-icon">🎁</span>
+  </div>
       </div>
     </Tooltip>
     <!-- Version sans tooltip pour mobile -->
@@ -30,12 +40,18 @@
       <img
       v-if="currentImg && isMobile"
       :src="currentImg"
+      ref="chickenRef"
       class="parade-chicken"
-      :class="[state, isFallback ? 'fallback' : '']"
+      :class="[state, isFallback ? 'fallback' : '', isUpgrading ? 'upgrading' : '']"
       :alt="name"
+      :data-espece-id="especeId"
       :style="{ '--dir': direction }"
       @click="emitOpenDetail"
       />
+      <!-- Particules d'amélioration pour mobile -->
+      <div v-if="isUpgrading" class="upgrade-particles">
+        <span class="particle" v-for="i in 8" :key="i" :style="{ '--delay': (i * 0.1) + 's', '--angle': (i * 45) + 'deg' }">✨</span>
+      </div>
   <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">
     ⚡
     <span class="badge-subtype">{{ talentSubIcon }}</span>
@@ -46,6 +62,10 @@
       <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
     </svg>
   </span>
+  <!-- Indicateur cadeau disponible pour mobile -->
+  <div v-if="hasChickenGift" class="gift-indicator">
+    <span class="gift-icon">🎁</span>
+  </div>
     </div>
   </div>
 </template>
@@ -59,6 +79,7 @@ import { apiCall } from '@/utils/api'
 import { useSound } from '@/composables/useSound'
 import { useEgg } from '@/composables/useEgg'
 import { useBuffs } from '@/composables/useBuffs'
+import { useChickenGifts } from '@/composables/useChickenGifts'
 
 const props = defineProps({
   especeId: String,
@@ -80,6 +101,9 @@ const stateUntil = ref(Date.now() + 2000)
 const isFallback = ref(false)
 const isActivating = ref(false)
 
+// Référence à l'élément poule pour obtenir sa position
+const chickenRef = ref(null)
+
 // Détection mobile
 const isMobile = ref(window.innerWidth <= 768)
 
@@ -88,8 +112,23 @@ function updateMobileState() {
   isMobile.value = window.innerWidth <= 768
 }
 
+const isUpgrading = ref(false)
+
+// Écouter l'événement d'amélioration de poule
+function onChickenUpgraded(event) {
+  // Vérifier si c'est cette poule qui a été améliorée
+  if (event.detail?.especeId === props.especeId) {
+    isUpgrading.value = true
+    // Réinitialiser après l'animation (0.8 secondes)
+    setTimeout(() => {
+      isUpgrading.value = false
+    }, 800)
+  }
+}
+
 onMounted(() => {
   window.addEventListener('resize', updateMobileState)
+  window.addEventListener('chicken-upgraded', onChickenUpgraded)
   initPosition()
   applyImage()
   rafId = requestAnimationFrame(step)
@@ -97,6 +136,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateMobileState)
+  window.removeEventListener('chicken-upgraded', onChickenUpgraded)
   if (rafId) cancelAnimationFrame(rafId)
 })
 
@@ -157,6 +197,21 @@ function initPosition() {
 }
 
 function emitOpenDetail() {
+  // Vérifier d'abord si cette poule a un cadeau actif
+  if (hasChickenGift.value) {
+    // Récupérer la position de la poule pour l'animation
+    let position = null
+    if (chickenRef.value) {
+      const rect = chickenRef.value.getBoundingClientRect()
+      position = {
+        x: rect.left + rect.width / 2,
+        y: rect.top - 20 // Un peu au-dessus de la poule
+      }
+    }
+    collectGift(props.especeId, position)
+    return
+  }
+
   if (!props.especeId) return
   const talent = especeDataFor(props.especeId)?.talent
   if (talent === 'Maligne' || talent === 'Joyeuse' || talent === 'Rapide') {
@@ -177,6 +232,13 @@ const { talents } = useGameData()
 const { click: sndClick, confirm: sndOk } = useSound()
 const { eggState, fetchEggStatus } = useEgg()
 const { fetchBuffs } = useBuffs()
+const { hasActiveGift, collectGift } = useChickenGifts()
+
+// État des cadeaux pour cette poule
+const hasChickenGift = computed(() => {
+  const hasGift = props.especeId ? hasActiveGift(props.especeId) : false
+  return hasGift
+})
 
 // Badge amélioration disponible (similaire à ChickenCard)
 import { usePlayer as usePlayerComposable } from '@/composables/usePlayer'
@@ -405,15 +467,7 @@ const tooltipHtml = computed(() => {
   return parts.join('<br>')
 })
 
-onMounted(() => {
-  initPosition()
-  applyImage()
-  rafId = requestAnimationFrame(step)
-})
 
-onUnmounted(() => {
-  if (rafId) cancelAnimationFrame(rafId)
-})
 
 watch(() => props.containerWidth, () => {
   // recaler dans les bornes si la zone change
@@ -500,8 +554,8 @@ watch(() => props.containerWidth, () => {
 }
 
 .upgrade-icon {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   animation: upgradePulse 1.2s ease-in-out infinite;
 }
 
@@ -514,4 +568,103 @@ watch(() => props.containerWidth, () => {
 .parade-chicken.walk { filter: brightness(1); }
 .parade-chicken.idle { filter: saturate(0.99); }
 .parade-chicken.peck { filter: contrast(1.02); }
+
+/* Animation d'amélioration */
+.parade-chicken.upgrading {
+  animation: upgrade-explosion 0.8s ease-out;
+}
+
+/* Particules d'amélioration */
+.upgrade-particles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  font-size: 12px;
+  animation: particle-explosion 0.8s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+  transform-origin: center;
+}
+
+@keyframes upgrade-explosion {
+  0% { 
+    transform: scaleX(var(--dir, 1)) scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  20% { 
+    transform: scaleX(var(--dir, 1)) scale(1.3);
+    filter: brightness(1.8) saturate(1.5) hue-rotate(45deg);
+  }
+  40% { 
+    transform: scaleX(var(--dir, 1)) scale(0.9);
+    filter: brightness(2.2) saturate(2) hue-rotate(90deg);
+  }
+  60% { 
+    transform: scaleX(var(--dir, 1)) scale(1.4);
+    filter: brightness(2.5) saturate(2.5) hue-rotate(180deg);
+  }
+  80% { 
+    transform: scaleX(var(--dir, 1)) scale(1.1);
+    filter: brightness(1.8) saturate(1.8) hue-rotate(270deg);
+  }
+  100% { 
+    transform: scaleX(var(--dir, 1)) scale(1);
+    filter: brightness(1.2) saturate(1.2) hue-rotate(360deg);
+  }
+}
+
+@keyframes particle-explosion {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(calc(cos(var(--angle)) * 10px), calc(sin(var(--angle)) * 10px)) scale(1);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(calc(cos(var(--angle)) * 25px), calc(sin(var(--angle)) * 25px)) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(cos(var(--angle)) * 35px), calc(sin(var(--angle)) * 35px)) scale(0.8);
+  }
+}
+
+/* Indicateur de cadeau actif */
+.gift-indicator {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.gift-icon {
+  position: relative;
+  font-size: 32px;
+  animation: gift-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+  text-shadow: 0 0 10px rgba(255,255,255,0.8);
+}
+
+@keyframes gift-float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: translateY(-6px) scale(1.08);
+    opacity: 1;
+  }
+}
 </style>

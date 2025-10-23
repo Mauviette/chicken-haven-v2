@@ -46,7 +46,10 @@ export function useSpawnables() {
         }
       }
     } catch (error) {
-      console.error('Erreur lors de la vérification des spawnables:', error)
+      // Ignorer silencieusement les erreurs d'auth/autorisation
+      if (!error.message.includes('Authentication required') && !error.message.includes('Access forbidden') && !error.message.includes('Non authentifié')) {
+        console.error('Erreur lors de la vérification des spawnables:', error)
+      }
     }
   }
 

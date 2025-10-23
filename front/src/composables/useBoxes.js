@@ -1,7 +1,6 @@
 // composables/useBoxes.js
 import { ref } from 'vue'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+import { apiGet, apiPost } from '@/utils/api'
 
 export function useBoxes() {
   const loading = ref(false)
@@ -13,23 +12,7 @@ export function useBoxes() {
     error.value = null
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) throw new Error('Token manquant')
-
-      const response = await fetch(`${API_BASE_URL}/api/boxes`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erreur lors de la récupération des boîtes')
-      }
-
-      const boxes = await response.json()
+      const boxes = await apiGet('/api/boxes')
       return boxes
     } catch (err) {
       error.value = err.message
@@ -46,23 +29,7 @@ export function useBoxes() {
     error.value = null
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) throw new Error('Token manquant')
-
-      const response = await fetch(`${API_BASE_URL}/api/boxes/${boxId}/open`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erreur lors de l\'ouverture de la boîte')
-      }
-
-      const result = await response.json()
+      const result = await apiPost(`/api/boxes/${boxId}/open`)
       return result
     } catch (err) {
       error.value = err.message

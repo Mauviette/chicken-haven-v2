@@ -1,4 +1,3 @@
-
 <template>
   <div class="market-view">
     <div class="header-bar">
@@ -12,14 +11,14 @@
       </Tooltip>
       <Tooltip :text="`<strong>${achievementsData.production_token.nom.charAt(0).toUpperCase() + achievementsData.production_token.nom.slice(1)}</strong><br>${achievementsData.production_token.description}`" position="bottom">
         <div class="balance-item">
-          <span class="balance-icon">⚡</span>
+          <span class="balance-icon">⚙️</span>
           <span class="balance-amount">{{ productionTokens }}</span>
         </div>
       </Tooltip>
-      <Tooltip :text="`<strong>${achievementsData.wild_token.nom.charAt(0).toUpperCase() + achievementsData.wild_token.nom.slice(1)}</strong><br>${achievementsData.wild_token.description}`" position="bottom">
+      <Tooltip v-if="getLevel() >= 5" text="<strong>Clés à coffre</strong><br>Ouvrez des coffres de trésors pour obtenir des artefacts de minage" position="bottom">
         <div class="balance-item">
-          <span class="balance-icon">🃏</span>
-          <span class="balance-amount">{{ wildTokens }}</span>
+          <span class="balance-icon">🗝️</span>
+          <span class="balance-amount">{{ chestKeys }}</span>
         </div>
       </Tooltip>
       </div>
@@ -84,7 +83,7 @@
               <div class="box-contents" v-if="!isBoxLocked(box)">
                 <div class="drop-groups">
                   <div v-for="group in box.dropGroups" :key="group.name" class="drop-group">
-                    <span class="group-label">{{ getGroupDescription(group.name) }} ({{ group.chance }}%)</span>
+                    <span class="group-label">{{ getGroupDescription(group.name) }} ({{ Math.round(group.chance * 10) / 10 }}%)</span>
                     <span class="group-quantity" v-if="group.quantity > 1">x{{ group.quantity }}</span>
                   </div>
                 </div>
@@ -108,12 +107,70 @@
             </div>
           </div>
         </div>
+
+        <!-- Sous-section Coffres de Trésors (visible à partir du niveau 5) -->
+        <div v-if="getLevel() >= 5 && artifactBoxes.length > 0" style="margin-top: 40px;">
+          <div class="section-header">
+            <h3>🗝️ Coffres de Trésors</h3>
+            <p class="section-description">Découvrez des artefacts de minage pour améliorer vos expéditions souterraines !</p>
+          </div>
+          
+          <div class="market-grid">
+            <div 
+              v-for="box in artifactBoxes" 
+              :key="box.id"
+              class="market-item box-item"
+              :class="{ 'locked': (box.unlock_level && getLevel() < box.unlock_level) }"
+            >
+              <div v-if="box.unlock_level && getLevel() < box.unlock_level" class="locked-overlay">
+                <div class="locked-content">🔒 Débloqué au niveau {{ box.unlock_level }}</div>
+              </div>
+              <div class="dice-counter" v-if="!isBoxLocked(box)">
+                <Tooltip :text="getDiceTooltipText(box)">
+                  <div class="dice-badge">
+                    🎲
+                  </div>
+                </Tooltip>
+              </div>
+              <div class="box-icon-container">
+                <div class="box-icon">{{ isBoxLocked(box) ? '❓' : box.icon }}</div>
+              </div>
+              <div class="item-info">
+                <h4 class="item-name">{{ isBoxLocked(box) ? 'Boîte mystère' : box.name }}</h4>
+                <div class="box-contents" v-if="!isBoxLocked(box)">
+                  <div class="drop-groups">
+                    <div v-for="group in box.dropGroups" :key="group.name" class="drop-group">
+                      <span class="group-label">{{ getGroupDescription(group.name) }} ({{ Math.round(group.chance * 10) / 10 }}%)</span>
+                      <span class="group-quantity" v-if="group.quantity > 1">x{{ group.quantity }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="item-purchase item-purchase-big">
+                <BuyButton
+                  :price="box.price"
+                  :onClick="() => openBox(box)"
+                  :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(box.price)"
+                >
+                  Ouvrir
+                </BuyButton>
+                <BuyButton
+                  :price="getBulkPrice(box.price, 10)"
+                  :onClick="() => openBoxMultiple(box, 10)"
+                  :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(getBulkPrice(box.price, 10))"
+                >
+                  Ouvrir x10
+                </BuyButton>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Onglet Améliorations -->
       <div v-if="activeTab === 'upgrades'" class="market-section">
         <div class="section-header">
-          <h3>⚡ Améliorations</h3>
+          <h3>⚙️ Améliorations</h3>
           <p class="section-description">Améliorez votre ferme et vos capacités de production !</p>
         </div>
         
@@ -160,6 +217,7 @@
       :boxName="lastOpenedBoxName"
       @close="closeBoxResults"
     />
+    
   </div>
 </template>
 
@@ -172,6 +230,7 @@ import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
 import { useBoxes } from '@/composables/useBoxes'
 import { useAchievements } from '@/composables/useAchievements'
+import { useArtifacts } from '@/composables/useArtifacts'
 import { useSound } from '@/composables/useSound'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
@@ -183,12 +242,13 @@ import { formatPrice, achievementsData } from '@/data/items.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
 
-const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
+const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, chestKeys, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
 const { fetchEggStatus } = useEgg()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
 const { checkAchievements } = useAchievements()
-const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes } = useGameData()
+const { artifacts: ownedArtifacts, fetchArtifacts } = useArtifacts()
+const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes, artifacts: artifactsData } = useGameData()
 const router = useRouter()
 const { click, open: sndOpen, close: sndClose, confirm: sndConfirm, boxOpen: sndBoxOpen, boxResults: sndBoxResults, legendaryDrop: sndLegend, epicDrop: sndEpic } = useSound()
 
@@ -211,14 +271,18 @@ const availableBoxes = ref([])
 const showOpenAnim = ref(false)
 const currentBoxIcon = ref('📦')
 
+// Animation d'achat d'amélioration (supprimée)
+
 // Configuration des onglets
-const tabs = [
-  { id: 'boxes', name: 'Boîtes', icon: '🧰' },
-  { id: 'upgrades', name: 'Améliorations', icon: '⚡' }
-]
+const tabs = computed(() => {
+  return [
+    { id: 'boxes', name: 'Boîtes', icon: '🧰' },
+    { id: 'upgrades', name: 'Améliorations', icon: '⚙️' }
+  ]
+})
 
 // Données des boîtes: fusionne la source jeu (toutes les boîtes) avec l'API (celles dispo)
-const boxOffers = computed(() => {
+const allBoxes = computed(() => {
   const all = (gameBoxes?.value && gameBoxes.value.length) ? gameBoxes.value : boxesData
   const avail = Array.isArray(availableBoxes.value) ? availableBoxes.value : []
   if (avail.length === 0) return all
@@ -229,6 +293,16 @@ const boxOffers = computed(() => {
     if (!merged.find(x => x.id === b.id)) merged.push(b)
   }
   return merged
+})
+
+// Boîtes de poules traditionnelles
+const boxOffers = computed(() => {
+  return allBoxes.value.filter(box => box.category !== 'artifacts')
+})
+
+// Boîtes d'artefacts
+const artifactBoxes = computed(() => {
+  return allBoxes.value.filter(box => box.category === 'artifacts')
 })
 
 // Poules débloquées (uniquement les poules obtenues par le joueur)
@@ -348,31 +422,91 @@ function getBoxRarityProbabilities(box) {
   })
   
   return avgProbabilities.map(prob => {
-    // Arrondir intelligemment : si >= 1, arrondir à l'entier, sinon garder 1 décimale
-    if (prob >= 1) {
-      return Math.round(prob)
-    } else if (prob > 0) {
-      return Math.round(prob * 10) / 10
-    } else {
-      return 0
-    }
+    // Arrondir à 1 décimale maximum pour éviter les erreurs de précision
+    return Math.round(prob * 10) / 10
   })
+}
+
+// Fonction pour compter les éléments disponibles par rareté
+function getAvailableCountByRarity(groupName) {
+  const rarities = ['commune', 'rare', 'epique', 'legendaire']
+  const counts = [0, 0, 0, 0]
+  
+  if (groupName === 'artifacts') {
+    // Pour les artefacts, utiliser les données du jeu et la liste des artefacts possédés
+    // Créer un Set des IDs possédés pour une recherche rapide
+    const ownedArtifactIds = new Set(ownedArtifacts.value.map(a => a.artifactId))
+    
+    // Parcourir tous les artefacts du jeu
+    Object.values(artifactsData.value || {}).forEach(artifact => {
+      const rarityIndex = rarities.indexOf(artifact.rarete || 'commune')
+      if (rarityIndex !== -1 && !ownedArtifactIds.has(artifact.id)) {
+        counts[rarityIndex]++
+      }
+    })
+  } else {
+    // Pour les poules, compter TOUTES les poules du groupe par rareté (pas seulement les non possédées)
+    Object.entries(especeData.value || {}).forEach(([id, chicken]) => {
+      if (chicken.groupe === groupName) {
+        const rarityIndex = rarities.indexOf(chicken.rarete || 'commune')
+        if (rarityIndex !== -1) {
+          counts[rarityIndex]++
+        }
+      }
+    })
+  }
+  
+  return counts
 }
 
 // Fonction pour générer le texte du tooltip du dé
 function getDiceTooltipText(box) {
-  const probs = getBoxRarityProbabilities(box)
+  const totalChance = box.dropGroups.reduce((sum, group) => sum + group.chance, 0)
   const rarities = ['Commune', 'Rare', 'Épique', 'Légendaire']
   const colors = ['#95a5a6', '#3498db', '#9b59b6', '#f39c12']
   
-  return rarities
-    .map((rarity, index) => 
-      probs[index] > 0 
-        ? `<span style="color: ${colors[index]}; font-weight: bold;">${rarity}: ${probs[index]}%</span>`
-        : null
-    )
-    .filter(Boolean)
-    .join('<br>')
+  let tooltip = []
+  
+  box.dropGroups.forEach(group => {
+    const groupData = groupes.value?.find(g => g.name === group.name)
+    const groupPercent = Math.round((group.chance / totalChance) * 100 * 10) / 10
+    const groupDescription = getGroupDescription(group.name)
+    
+    // Titre du groupe en gras avec pourcentage
+    tooltip.push(`<span style="font-weight: bold;">${groupDescription} (${groupPercent}%)</span>`)
+    
+    // Pour les artefacts, utiliser les chances ajustées de la boîte si disponibles
+    let rarityChances = groupData?.rarityDropChance
+    if (group.name === 'artifacts' && box.adjustedRarityChances) {
+      rarityChances = box.adjustedRarityChances
+    }
+    
+    // Obtenir le nombre d'éléments disponibles par rareté
+    const availableCounts = getAvailableCountByRarity(group.name)
+    
+    // Si le groupe a des chances de rareté, les afficher avec les comptes
+    if (rarityChances) {
+      rarities.forEach((rarity, index) => {
+        const rarityChance = rarityChances[index]
+        const availableCount = availableCounts[index]
+        
+        if (rarityChance > 0 || availableCount > 0) {
+          // Calculer le pourcentage final : (chance du groupe dans la boîte) * (chance de rareté dans le groupe) / 100
+          const rawPercent = (group.chance / totalChance) * (rarityChance / 100) * 100
+          
+          // Arrondir à 1 décimale maximum pour éviter les erreurs de précision
+          const finalPercent = Math.round(rawPercent * 10) / 10
+          
+          // Afficher même si le pourcentage est 0 mais qu'il y a des éléments disponibles
+          if (finalPercent > 0 || availableCount > 0) {
+            tooltip.push(`  <span style="color: ${colors[index]};">${rarity}: ${finalPercent}% (${availableCount})</span>`)
+          }
+        }
+      })
+    }
+  })
+  
+  return tooltip.join('<br>')
 }
 
 // Données des améliorations avec progression (forcer recalcul via une version)
@@ -481,26 +615,34 @@ function getMaxAffordableOpens(price, desiredQty) {
   else if (type === 'stock_token') balance = Number(stockTokens.value) || 0
   else if (type === 'production_token') balance = Number(productionTokens.value) || 0
   else if (type === 'wild_token') balance = Number(wildTokens.value) || 0
+  else if (type === 'chest_key') balance = Number(chestKeys.value) || 0
   else balance = 0
   return Math.min(qty, Math.floor(balance / count))
 }
 
 async function openBox(box) {
   try {
-    console.log('Achat boîte:', box)
     // Lancer l'animation d'ouverture
     currentBoxIcon.value = box.icon || '📦'
-  showOpenAnim.value = true
-  // Son pendant l'ouverture (error_004.mp3 demandé) – déclenche immédiatement
-  sndBoxOpen(0.95)
+    showOpenAnim.value = true
+    sndBoxOpen(0.95)
 
-    // Simuler un court délai pour laisser l'anim démarrer (si réseau ultra-rapide)
     const minAnim = new Promise(res => setTimeout(res, 600))
     const apiCall = openBoxAPI(box.id)
     const result = await Promise.all([minAnim, apiCall]).then(([, r]) => r)
-    
-  // Arrêter l'animation et préparer l'affichage des résultats
-  showOpenAnim.value = false
+
+    // Arrêter l'animation et préparer l'affichage des résultats
+    showOpenAnim.value = false
+
+    // --- NOUVEAU : rafraîchir la liste des artefacts possédés et les boîtes dispo
+    try {
+      await fetchArtifacts()
+    } catch (e) { console.warn('fetchArtifacts after openBox failed:', e) }
+    try {
+      availableBoxes.value = await getAvailableBoxes()
+    } catch (e) { console.warn('getAvailableBoxes after openBox failed:', e) }
+    // --- FIN NOUVEAU
+
     // Trier les résultats par rareté (les plus rares en haut)
     const singleResults = Array.isArray(result.results) ? [...result.results] : []
     const rarityOrder = { legendaire: 4, légendaire: 4, epique: 3, épique: 3, rare: 2, commune: 1 }
@@ -527,6 +669,15 @@ async function openBox(box) {
       refreshPlayerData(),
       refreshPoules()
     ])
+
+    // Si c'est une boîte d'artefacts, recharger les boîtes pour mettre à jour les pourcentages
+    if (box.category === 'artifacts') {
+      try {
+        availableBoxes.value = await getAvailableBoxes()
+      } catch (err) {
+        console.warn('Erreur lors du rechargement des boîtes:', err)
+      }
+    }
 
     // Émettre des événements pour que les succès se rafraîchissent immédiatement
     try {
@@ -564,7 +715,6 @@ async function openBox(box) {
 
 function buyChicken(offer) {
   // Cette fonction n'est plus utilisée car on achète des boîtes maintenant
-  console.log('Achat direct de poule désactivé - utilisez les boîtes')
 }
 
 async function openBoxMultiple(box, times = 10) {
@@ -580,11 +730,10 @@ async function openBoxMultiple(box, times = 10) {
     showOpenAnim.value = true
     sndBoxOpen(0.95)
 
-  const combined = []
+    const combined = []
     let opened = 0
     for (let i = 0; i < affordable; i++) {
       try {
-        // Assure un petit délai pour laisser l'anim respirer sur la première ouverture
         if (i === 0) {
           await new Promise(res => setTimeout(res, 600))
         }
@@ -594,7 +743,6 @@ async function openBoxMultiple(box, times = 10) {
         }
         opened++
       } catch (err) {
-        // Arrête si l'API renvoie une erreur (p.ex. fonds épuisés)
         console.warn('Ouverture interrompue à', i + 1, err)
         break
       }
@@ -602,6 +750,15 @@ async function openBoxMultiple(box, times = 10) {
 
     showOpenAnim.value = false
     if (opened > 0) {
+      // --- NOUVEAU : rafraîchir artefacts et boîtes après les ouvertures
+      try {
+        await fetchArtifacts()
+      } catch (e) { console.warn('fetchArtifacts after openBoxMultiple failed:', e) }
+      try {
+        availableBoxes.value = await getAvailableBoxes()
+      } catch (e) { console.warn('getAvailableBoxes after openBoxMultiple failed:', e) }
+      // --- FIN NOUVEAU
+
       // Trier par rareté (les plus rares en haut)
       const rarityOrder = { legendaire: 4, légendaire: 4, epique: 3, épique: 3, rare: 2, commune: 1 }
       combined.sort((a, b) => (rarityOrder[b?.rarete] || 0) - (rarityOrder[a?.rarete] || 0))
@@ -622,6 +779,16 @@ async function openBoxMultiple(box, times = 10) {
       showBoxResults.value = true
       // Rafraîchir les données du joueur et les poules
       await Promise.all([refreshPlayerData(), refreshPoules()])
+      
+      // Si c'est une boîte d'artefacts, recharger les boîtes pour mettre à jour les pourcentages
+      if (box.category === 'artifacts') {
+        try {
+          availableBoxes.value = await getAvailableBoxes()
+        } catch (err) {
+          console.warn('Erreur lors du rechargement des boîtes:', err)
+        }
+      }
+      
       // Événements succès pour chaque poule obtenue
       try {
         for (const r of combined) {
@@ -649,18 +816,48 @@ async function buyUpgrade(upgrade) {
       window.$toast && window.$toast('Vous devez être connecté(e)', 'error')
       return
     }
+    
+    sndConfirm(0.8) // Son d'achat
+    
     const data = await apiPost('/api/upgrades/buy', { upgradeId: upgrade.id })
+    
     // Mettre à jour le niveau courant localement
     upgradeLevels.value = { ...upgradeLevels.value, [upgrade.id]: Number(data?.newLevel || 0) }
     // Forcer le recalcul des offres
     upgradesVersion.value++
+    
+    // Créer un message personnalisé basé sur l'amélioration
+    let toastMessage = `${upgrade.name} amélioré !`
+    let toastType = 'power'
+    
+    // Déterminer le type de bonus basé sur l'upgrade
+    if (upgrade.nextReward && upgrade.nextReward > 0) {
+      if (upgrade.name.toLowerCase().includes('production') || upgrade.name.toLowerCase().includes('producteur')) {
+        toastMessage = `+${upgrade.nextReward} de production !`
+        toastType = 'power'
+      } else if (upgrade.name.toLowerCase().includes('stockage') || upgrade.name.toLowerCase().includes('stock')) {
+        toastMessage = `+${upgrade.nextReward} de stockage !`
+        toastType = 'power'
+      } else if (upgrade.name.toLowerCase().includes('vitesse') || upgrade.name.toLowerCase().includes('speed')) {
+        toastMessage = `Vitesse +${upgrade.nextReward}% !`
+        toastType = 'power'
+      } else if (upgrade.name.toLowerCase().includes('revenu') || upgrade.name.toLowerCase().includes('income')) {
+        toastMessage = `Revenu +${upgrade.nextReward} !`
+        toastType = 'power'
+      } else {
+        toastMessage = `${upgrade.name} +${upgrade.nextReward} !`
+        toastType = 'power'
+      }
+    }
+    
     // Rafraîchir les soldes (tokens)
   try { await refreshPlayerData() } catch (_) {}
   // Rafraîchir immédiatement le statut de l'œuf (income / maxIncome)
   try { await fetchEggStatus() } catch (_) {}
   // Émettre un événement global pour que d'autres vues/composables réagissent si besoin
   try { window.dispatchEvent(new CustomEvent('upgrade-bought', { detail: { upgradeId: upgrade.id, newLevel: Number(data?.newLevel || 0) } })) } catch (_) {}
-    window.$toast && window.$toast(`Vous avez acheté ${upgrade.name} !`, 'success')
+    
+    window.$toast && window.$toast(toastMessage, toastType)
     // Recalculer et diffuser la dispo d'upgrade
     broadcastUpgradeAvailability()
   } catch (e) {
@@ -707,6 +904,10 @@ onMounted(async () => {
         }
       }
     } catch (e) { console.warn('Chargement upgrades échoué:', e) }
+    
+    // Charger les artefacts possédés
+    try { await fetchArtifacts() } catch (_) {}
+    
     availableBoxes.value = await getAvailableBoxes()
   } catch (error) {
     console.error('Erreur lors du chargement des boîtes:', error)

@@ -29,8 +29,6 @@ export function useAuth() {
   }
 
   const logout = () => {
-    console.log('🚨 Logout initiated')
-    
     // Nettoyer le token immédiatement
     token.value = null
     localStorage.removeItem('token')
@@ -45,8 +43,6 @@ export function useAuth() {
         delete window.__marketHasAvailableUpgrade
       } catch (_) {}
     }
-    
-    console.log('✅ Logout completed')
   }
 
 

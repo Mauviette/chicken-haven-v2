@@ -1,5 +1,6 @@
 import User from '../models/User.js'
 import { achievementsData, levelRewards as LEVEL_REWARDS } from '../data/sharedGameData.js'
+import * as sharedGameData from '../data/sharedGameData.js'
 
 // Configuration des succès basée sur les données centralisées
 const achievementsConfig = {}
@@ -29,14 +30,28 @@ Object.entries(achievementsData).forEach(([id, data]) => {
           return poules.some(poule => (poule.niveauTalent || 1) >= data.objectif)
         case 'avatar_change':
           return progress.avatarChanged >= data.objectif
-        default:
-          return false
+        case 'name_change':
+          return progress.nameChanged >= data.objectif
+        case 'team_stats':
+          return progress.maxTeamStat >= data.objectif
+        case 'mega_click':
+          return progress.maxMegaClick >= data.objectif
+        case 'mining_artifacts':
+          return (progress.miningArtifactsFound || 0) >= data.objectif
+        case 'mining_cells':
+          return (progress.miningCellsBroken || 0) >= data.objectif
+        case 'mining_no_reward':
+          return !!(progress.miningNoRewardGame)
+        case 'mining_full_grid':
+          return !!(progress.miningFullGridBroken)
+        case 'mining_best_cells_in_game':
+          return (progress.miningBestCellsInGame || 0) >= data.objectif
+        case 'chickenGiftsCollected':
+          return (progress.chickenGiftsCollected || 0) >= data.objectif
       }
     }
   }
 })
-
-// GET /api/achievements/status - Récupère le statut des succès de l'utilisateur
 export async function getAchievementsStatus(req, res) {
   try {
     const user = await User.findById(req.userId)
@@ -51,7 +66,22 @@ export async function getAchievementsStatus(req, res) {
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          nameChanged: 0,
+          // NOUVEAU : champs "best" persistés pour les 3 stats d'équipe (meilleures valeurs historiques)
+          bestTeamEnergy: 0,
+          bestTeamIntelligence: 0,
+          bestTeamCharisme: 0,
+          // Max global utilisé par les succès 'team_stats'
+          maxTeamStat: 0,
+          maxMegaClick: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: false,
+          miningFullGridBroken: false,
+          miningBestCellsInGame: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -93,7 +123,20 @@ export async function checkAchievements(req, res) {
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          nameChanged: 0,
+          bestTeamEnergy: 0,
+          bestTeamIntelligence: 0,
+          bestTeamCharisme: 0,
+          maxTeamStat: 0,
+          maxMegaClick: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: false,
+          miningFullGridBroken: false,
+          miningBestCellsInGame: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -123,6 +166,76 @@ export async function checkAchievements(req, res) {
     user.achievements.progress.totalChickensOwned = Math.max(
       currentChickensProgress,
       currentChickens
+    )
+
+    // S'assurer que tous les nouveaux champs existent (pour utilisateurs existants)
+    if (!user.achievements.progress.hasOwnProperty('bestTeamEnergy')) {
+      user.achievements.progress.bestTeamEnergy = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('bestTeamIntelligence')) {
+      user.achievements.progress.bestTeamIntelligence = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('bestTeamCharisme')) {
+      user.achievements.progress.bestTeamCharisme = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('maxTeamStat')) {
+      user.achievements.progress.maxTeamStat = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('maxMegaClick')) {
+      user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('nameChanged')) {
+      user.achievements.progress.nameChanged = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningGamesPlayed')) {
+      user.achievements.progress.miningGamesPlayed = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningArtifactsFound')) {
+      user.achievements.progress.miningArtifactsFound = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningCellsBroken')) {
+      user.achievements.progress.miningCellsBroken = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningNoRewardGame')) {
+      user.achievements.progress.miningNoRewardGame = false
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningFullGridBroken')) {
+      user.achievements.progress.miningFullGridBroken = false
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningBestCellsInGame')) {
+      user.achievements.progress.miningBestCellsInGame = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('chickenGiftsCollected')) {
+      user.achievements.progress.chickenGiftsCollected = 0
+    }
+
+    // Calculer et mettre à jour les stats d'équipe avec les fonctions dédiées
+    // Importer les fonctions depuis egg.controller.js
+    const { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme } = await import('./egg.controller.js');
+
+    const teamEnergy = computeTeamEnergy(user);
+    const teamIntelligence = computeTeamIntelligence(user);
+    const teamCharisme = computeTeamCharisme(user);
+
+    // Mettre à jour les meilleurs historiques (persistés)
+    user.achievements.progress.bestTeamEnergy = Math.max(Number(user.achievements.progress.bestTeamEnergy) || 0, Math.floor(teamEnergy));
+    user.achievements.progress.bestTeamIntelligence = Math.max(Number(user.achievements.progress.bestTeamIntelligence) || 0, Math.floor(teamIntelligence));
+    user.achievements.progress.bestTeamCharisme = Math.max(Number(user.achievements.progress.bestTeamCharisme) || 0, Math.floor(teamCharisme));
+
+    // Mettre à jour le max global utilisé par les succès
+    user.achievements.progress.maxTeamStat = Math.max(
+      user.achievements.progress.bestTeamEnergy || 0,
+      user.achievements.progress.bestTeamIntelligence || 0,
+      user.achievements.progress.bestTeamCharisme || 0
+    );
+
+    user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
+
+    // Synchroniser miningArtifactsFound avec l'inventaire actuel du joueur
+    const currentUniqueArtifacts = user.artifacts?.length || 0
+    user.achievements.progress.miningArtifactsFound = Math.max(
+      Number(user.achievements.progress.miningArtifactsFound) || 0,
+      currentUniqueArtifacts
     )
 
     // Vérifier chaque succès
@@ -160,7 +273,8 @@ export async function checkAchievements(req, res) {
   }
 }
 
-// POST /api/achievements/claim/:achievementId - Réclamer la récompense d'un succès
+
+// POST /api/achievements/claim/:id - Réclame la récompense d'un succès
 export async function claimReward(req, res) {
   try {
     const user = await User.findById(req.userId)
@@ -209,6 +323,8 @@ export async function claimReward(req, res) {
       user.resources.stock_token = (user.resources.stock_token || 0) + reward.quantite
     } else if (reward.type === 'production_token') {
       user.resources.production_token = (user.resources.production_token || 0) + reward.quantite
+    } else if (reward.type === 'chest_key') {
+      user.resources.chest_key = (user.resources.chest_key || 0) + reward.quantite
     } else if (reward.type === 'blueberry') {
       // Les myrtilles donnent de l'XP et déclenchent le level up selon la règle: myrtilles nécessaires = level * 2
       user.experience = user.experience || { level: 1, points: 0, required_points: 2 }
@@ -228,6 +344,8 @@ export async function claimReward(req, res) {
         for (const r of rewardsForLevel) {
           const qty = Number(r.count || r.quantite || 0)
           if (!qty) continue
+          // Gérer explicitement tous les types de ressources courants,
+          // y compris mining_token qui était manquant.
           if (r.type === 'eggs') {
             user.resources.eggs = (user.resources.eggs || 0) + qty
           } else if (r.type === 'stock_token') {
@@ -236,6 +354,13 @@ export async function claimReward(req, res) {
             user.resources.production_token = (user.resources.production_token || 0) + qty
           } else if (r.type === 'wild_token') {
             user.resources.wild_token = (user.resources.wild_token || 0) + qty
+          } else if (r.type === 'mining_token') {
+            user.resources.mining_token = (user.resources.mining_token || 0) + qty
+          } else if (r.type === 'chest_key') {
+            user.resources.chest_key = (user.resources.chest_key || 0) + qty
+          } else {
+            // fallback generic: try to set by key if exists
+            user.resources[r.type] = (user.resources[r.type] || 0) + qty
           }
           appliedLevelRewards.push({ type: r.type, quantite: qty, level: lvl })
         }
@@ -277,6 +402,7 @@ export async function updateAchievementProgress(userId, progressType, value) {
     const user = await User.findById(userId)
     if (!user) return
 
+    // Initialisation si nécessaire (identique à ci-dessus)
     if (!user.achievements || Array.isArray(user.achievements) || !user.achievements.progress) {
       const achievementsObject = {
         progress: {
@@ -285,7 +411,20 @@ export async function updateAchievementProgress(userId, progressType, value) {
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          nameChanged: 0,
+          bestTeamEnergy: 0,
+          bestTeamIntelligence: 0,
+          bestTeamCharisme: 0,
+          maxTeamStat: 0,
+          maxMegaClick: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: false,
+          miningFullGridBroken: false,
+          miningBestCellsInGame: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -301,7 +440,48 @@ export async function updateAchievementProgress(userId, progressType, value) {
       user.achievements = updatedUser.achievements
     }
 
-    // Mettre à jour le progrès
+    // S'assurer que tous les champs requis existent (pour les utilisateurs existants)
+    if (!user.achievements.progress.hasOwnProperty('bestTeamEnergy')) {
+      user.achievements.progress.bestTeamEnergy = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('bestTeamIntelligence')) {
+      user.achievements.progress.bestTeamIntelligence = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('bestTeamCharisme')) {
+      user.achievements.progress.bestTeamCharisme = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('maxTeamStat')) {
+      user.achievements.progress.maxTeamStat = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('maxMegaClick')) {
+      user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('nameChanged')) {
+      user.achievements.progress.nameChanged = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningGamesPlayed')) {
+      user.achievements.progress.miningGamesPlayed = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningArtifactsFound')) {
+      user.achievements.progress.miningArtifactsFound = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningCellsBroken')) {
+      user.achievements.progress.miningCellsBroken = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningNoRewardGame')) {
+      user.achievements.progress.miningNoRewardGame = false
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningFullGridBroken')) {
+      user.achievements.progress.miningFullGridBroken = false
+    }
+    if (!user.achievements.progress.hasOwnProperty('miningBestCellsInGame')) {
+      user.achievements.progress.miningBestCellsInGame = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('chickenGiftsCollected')) {
+      user.achievements.progress.chickenGiftsCollected = 0
+    }
+
+    // Mettre à jour le progrès selon le type (inchangé)
     if (progressType === 'increment') {
       // Pour les incréments (ex: +1 boîte ouverte)
       for (const [key, amount] of Object.entries(value)) {
@@ -320,8 +500,34 @@ export async function updateAchievementProgress(userId, progressType, value) {
           const newValue = Number(amount) || 0
           user.achievements.progress[key] = Math.max(currentValue, newValue)
           console.log(`🔍 Achievement progress updated (max): ${key} ${currentValue} -> ${user.achievements.progress[key]}`)
+          
+          // Synchroniser maxMegaClick avec maxEggsInOneClick
+          if (key === 'maxEggsInOneClick') {
+            user.achievements.progress.maxMegaClick = user.achievements.progress[key]
+            console.log(`🔍 maxMegaClick synchronized: ${user.achievements.progress.maxMegaClick}`)
+          }
         }
       }
+    }
+
+    // --- NOUVEAU : recalculer et mettre à jour les bestTeam* en se basant sur l'état courant de l'équipe
+    try {
+      const { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme } = await import('./egg.controller.js')
+      const teamEnergy = computeTeamEnergy(user)
+      const teamIntelligence = computeTeamIntelligence(user)
+      const teamCharisme = computeTeamCharisme(user)
+
+      user.achievements.progress.bestTeamEnergy = Math.max(Number(user.achievements.progress.bestTeamEnergy) || 0, Math.floor(teamEnergy))
+      user.achievements.progress.bestTeamIntelligence = Math.max(Number(user.achievements.progress.bestTeamIntelligence) || 0, Math.floor(teamIntelligence))
+      user.achievements.progress.bestTeamCharisme = Math.max(Number(user.achievements.progress.bestTeamCharisme) || 0, Math.floor(teamCharisme))
+
+      user.achievements.progress.maxTeamStat = Math.max(
+        user.achievements.progress.bestTeamEnergy || 0,
+        user.achievements.progress.bestTeamIntelligence || 0,
+        user.achievements.progress.bestTeamCharisme || 0
+      )
+    } catch (e) {
+      console.warn('Erreur lors de la mise à jour des bestTeam*:', e)
     }
 
     try { user.markModified && user.markModified('achievements') } catch (_) {}
@@ -346,7 +552,22 @@ export async function triggerAchievementCheck(userId) {
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          nameChanged: 0,
+          // NOUVEAU : champs "best" persistés pour les 3 stats d'équipe (meilleures valeurs historiques)
+          bestTeamEnergy: 0,
+          bestTeamIntelligence: 0,
+          bestTeamCharisme: 0,
+          // Max global utilisé par les succès 'team_stats'
+          maxTeamStat: 0,
+          maxMegaClick: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: false,
+          miningFullGridBroken: false,
+          miningBestCellsInGame: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -360,6 +581,32 @@ export async function triggerAchievementCheck(userId) {
       
       user.achievements = updatedUser.achievements
     }
+
+    // Calculer et mettre à jour les stats d'équipe
+    const { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme } = await import('./egg.controller.js');
+    const teamEnergy = computeTeamEnergy(user);
+    const teamIntelligence = computeTeamIntelligence(user);
+    const teamCharisme = computeTeamCharisme(user);
+
+    // Mettre à jour les meilleurs historiques (persistés)
+    user.achievements.progress.bestTeamEnergy = Math.max(Number(user.achievements.progress.bestTeamEnergy) || 0, Math.floor(teamEnergy));
+    user.achievements.progress.bestTeamIntelligence = Math.max(Number(user.achievements.progress.bestTeamIntelligence) || 0, Math.floor(teamIntelligence));
+    user.achievements.progress.bestTeamCharisme = Math.max(Number(user.achievements.progress.bestTeamCharisme) || 0, Math.floor(teamCharisme));
+
+    // Mettre à jour le max global utilisé par les succès
+    user.achievements.progress.maxTeamStat = Math.max(
+      user.achievements.progress.bestTeamEnergy || 0,
+      user.achievements.progress.bestTeamIntelligence || 0,
+      user.achievements.progress.bestTeamCharisme || 0
+    )
+    user.achievements.progress.maxMegaClick = user.achievements.progress.maxEggsInOneClick || 0
+
+    // Synchroniser miningArtifactsFound avec l'inventaire actuel du joueur
+    const currentUniqueArtifacts = user.artifacts?.length || 0
+    user.achievements.progress.miningArtifactsFound = Math.max(
+      Number(user.achievements.progress.miningArtifactsFound) || 0,
+      currentUniqueArtifacts
+    )
 
     console.log(`🔍 Current achievement progress for user ${userId}:`, user.achievements.progress)
 

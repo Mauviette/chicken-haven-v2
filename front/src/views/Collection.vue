@@ -2,10 +2,29 @@
   <div class="collection-view">
 
     <div class="header-bar">
-      <h2 class="section-title" style="margin-bottom: 0;">🐔 Ma Collection
-        <span class="team-indicator" v-if="team">— Équipe: {{ usedSlots }}/{{ team.maxSlots }}</span>
-      </h2>
-      <div class="controls" style="margin-bottom: 0;">
+      <div class="title-and-tabs">
+        <h2 class="section-title" style="margin-bottom: 0;">
+          {{ activeTab === 'chickens' ? '🐔 Ma Collection' : '⛏️ Mes Artefacts' }}
+          <span class="team-indicator" v-if="team && activeTab === 'chickens'">— Équipe: {{ usedSlots }}/{{ team.maxSlots }}</span>
+          <span class="team-indicator" v-if="activeTab === 'artifacts' && artifactSlots">— Équipement: {{ equippedArtifactsCount }}/{{ artifactSlots.slotsCount }}</span>
+        </h2>
+        <div class="tabs">
+          <button 
+            :class="['tab-btn', { active: activeTab === 'chickens' }]"
+            @click="activeTab = 'chickens'"
+          >
+            🐔 Poules
+          </button>
+          <button 
+            v-if="getLevel() >= 5"
+            :class="['tab-btn', { active: activeTab === 'artifacts' }]"
+            @click="activeTab = 'artifacts'"
+          >
+            ⛏️ Artefacts
+          </button>
+        </div>
+      </div>
+      <div class="controls" v-if="activeTab === 'chickens'" style="margin-bottom: 0;">
         <input v-model="searchQuery" type="text" placeholder="Rechercher une poule..." class="search-input" />
         <select v-model="sortKey" class="sort-select">
           <option value="rarete">Rareté</option>
@@ -17,7 +36,8 @@
       </div>
     </div>
 
-    <div class="poules-grid">
+    <!-- Grille des poules -->
+    <div v-if="activeTab === 'chickens'" class="poules-grid">
       <div v-if="gameDataLoading" class="loading-message">
         Chargement des données...
       </div>
@@ -34,12 +54,38 @@
       />
     </div>
 
+    <!-- Grille des artefacts -->
+    <div v-if="activeTab === 'artifacts'" class="artifacts-grid">
+      <div v-if="gameDataLoading" class="loading-message">
+        Chargement des données...
+      </div>
+      <ArtifactCard
+        v-else
+        v-for="artifact in sortedArtifacts"
+        :key="artifact.artifactId"
+        :artifact="artifact"
+        :artifactData="artifact"
+        :class="{ 'non-clickable': !artifact.owned }"
+        @click="artifact.owned ? openArtifactDetail(artifact) : null"
+      />
+    </div>
+
+    <!-- Popup détail poule -->
     <ChickenDetail
       v-if="selectedPoule && especeData"
       :poule="selectedPoule"
       :espece="especeData[selectedPoule.especeId]"
       :image="getImage(selectedPoule.especeId)"
       @close="closeDetail"
+    />
+
+    <!-- Popup détail artefact -->
+    <ArtifactDetail
+      v-if="selectedArtifact"
+      :artifact="selectedArtifact"
+      :artifactData="selectedArtifact"
+      @close="closeArtifactDetail"
+      @updated="onArtifactUpdated"
     />
 
   <br/><br/><br/>
@@ -49,9 +95,12 @@
 <script setup>
 import ChickenCard from '@/components/chicken/ChickenCard.vue'
 import ChickenDetail from '../components/chicken/ChickenDetail.vue'
+import ArtifactCard from '@/components/artifacts/ArtifactCard.vue'
+import ArtifactDetail from '@/components/artifacts/ArtifactDetail.vue'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePoules } from '@/composables/usePoules'
+import { useArtifacts } from '@/composables/useArtifacts'
 import { useGameData } from '@/composables/useGameData'
 import { usePlayer } from '@/composables/usePlayer'
 
@@ -59,7 +108,9 @@ onMounted(() => {
   // Collection initialisée
 })
 
+const activeTab = ref('chickens')
 const selectedPoule = ref(null)
+const selectedArtifact = ref(null)
 const searchQuery = ref('')
 // Tri par défaut: quantité décroissante
 const sortKey = ref('quantite')
@@ -73,7 +124,8 @@ const {
 } = usePoules()
 
 const { especies: especeData, loading: gameDataLoading } = useGameData()
-const { team, fetchTeam } = usePlayer()
+const { team, fetchTeam, artifactSlots, fetchArtifactSlots, level, getLevel } = usePlayer()
+const { artifacts, fetchArtifacts, enrichArtifacts } = useArtifacts()
 const route = useRoute()
 const router = useRouter()
 
@@ -88,6 +140,15 @@ const rareteOrder = {
 onMounted(async () => {
   if (localStorage.getItem('token')) {
     await fetchTeam()
+    if (getLevel() >= 5) {
+      await fetchArtifacts()
+      await fetchArtifactSlots()
+    }
+    
+    // Rediriger vers l'onglet poules si on est sur artefacts mais niveau < 5
+    if (activeTab.value === 'artifacts' && getLevel() < 5) {
+      activeTab.value = 'chickens'
+    }
   }
 })
 
@@ -120,6 +181,48 @@ function openDetail(poule) {
 function toggleSortOrder() {
   sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
 }
+
+// Fonctions pour les artefacts
+function openArtifactDetail(artifact) {
+  selectedArtifact.value = artifact
+}
+
+function closeArtifactDetail() {
+  selectedArtifact.value = null
+}
+
+async function onArtifactUpdated() {
+  await fetchArtifacts()
+  await fetchArtifactSlots()
+}
+
+// Artefacts enrichis avec les données du jeu
+const enrichedArtifacts = computed(() => {
+  if (!useGameData().artifacts?.value || !artifacts.value) return []
+  return enrichArtifacts(useGameData().artifacts.value)
+})
+
+// Tri des artefacts (possédés en premier, puis par rareté)
+const sortedArtifacts = computed(() => {
+  if (!enrichedArtifacts.value) return []
+  
+  const owned = enrichedArtifacts.value.filter(a => a.owned)
+  const locked = enrichedArtifacts.value.filter(a => !a.owned)
+  
+  // Trier les possédés par rareté (descendant)
+  owned.sort((a, b) => {
+    const rarityOrder = { legendaire: 4, epique: 3, rare: 2, commune: 1 }
+    return (rarityOrder[b.rarete] || 0) - (rarityOrder[a.rarete] || 0)
+  })
+  
+  // Trier les non possédés par rareté (ascendant)
+  locked.sort((a, b) => {
+    const rarityOrder = { legendaire: 4, epique: 3, rare: 2, commune: 1 }
+    return (rarityOrder[a.rarete] || 0) - (rarityOrder[b.rarete] || 0)
+  })
+  
+  return [...owned, ...locked]
+})
 
 const filteredPoules = computed(() => {
   // Attendre que les données soient chargées
@@ -188,6 +291,11 @@ const filteredPoules = computed(() => {
 
 const usedSlots = computed(() => (team.value?.slots || []).filter(s => s?.especeId).length)
 
+const equippedArtifactsCount = computed(() => {
+  const equipped = artifactSlots.value?.equipped || []
+  return equipped.filter(id => id !== null && id !== '').length
+})
+
 // Ouvrir automatiquement la fiche si ?detail=especeId est présent
 watch(
   () => [route.query.detail, poules.value, especeData, gameDataLoading.value],
@@ -249,6 +357,47 @@ watch(
   flex-wrap: wrap;
   gap: 16px;
   justify-content: flex-start;
+}
+
+.artifacts-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: flex-start;
+}
+
+.title-and-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 2px solid #ffc66e;
+  background: #fffaf1;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background: #fff9e5;
+  transform: translateY(-1px);
+}
+
+.tab-btn.active {
+  background: #ffc66e;
+  color: #5c2c08;
+  border-color: #ff9800;
 }
 
 .info {

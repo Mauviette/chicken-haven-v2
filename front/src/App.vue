@@ -5,6 +5,7 @@
       @open-achievements="toggleAchievementsWithSound"
       @open-options="openOptions"
       @close-achievements="closeAchievements"
+      @open-mining="() => showMiningGame = true"
       :achievements-open="showAchievements"
     />
     <div class="main-content">
@@ -33,7 +34,10 @@
       @open-help="toast('Bientôt disponible !')"
       @open-options="openOptions"
       @open-achievements="toggleAchievementsWithSound"
+      @open-mining="() => showMiningGame = true"
     />
+    <!-- Mining popup global accessible depuis la BottomBar -->
+    <MiningGame v-if="showMiningGame && !isAuthPage" @close="showMiningGame = false" />
   </div>
 </template>
 
@@ -43,6 +47,7 @@ import { useRoute } from 'vue-router'
 import ToastManager from '@/components/menu/ToastManager.vue'
 import Options from '@/components/menu/Options.vue'
 import BottomBar from '@/components/menu/BottomBar.vue'
+import MiningGame from '@/components/menu/MiningGame.vue'
 import TopBar from '@/components/menu/TopBar.vue'
 import TeamParade from '@/components/menu/TeamParade.vue'
 import SpawnableObjects from '@/components/SpawnableObjects.vue'
@@ -58,6 +63,7 @@ import { useSound } from '@/composables/useSound'
 import { useToast } from '@/composables/useToast'
 import { useAppLoading } from '@/composables/useAppLoading'
 import { useSettings } from '@/composables/useSettings'
+import { useChickenGifts } from '@/composables/useChickenGifts'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -66,6 +72,7 @@ const showAchievements = ref(false)
 const levelUpVisible = ref(false)
 const levelUpFrom = ref(1)
 const levelUpTo = ref(1)
+const showMiningGame = ref(false)
 const { logout: performLogout } = useAuth()
 const { refreshPlayer, fetchTeam } = usePlayer()
 const { syncStatus } = useDataSync()
@@ -73,6 +80,7 @@ const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: s
 const { setToastManager } = useToast()
 const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = useAppLoading()
 const { settings } = useSettings()
+const { startPeriodicCheck } = useChickenGifts()
 
 onMounted(async () => {
   window.$toast = toast
@@ -111,6 +119,9 @@ onMounted(async () => {
       console.error('Erreur chargement paramètres:', error)
       setSettingsLoading(false)
     }
+
+    // Démarrer la vérification périodique des cadeaux de poules
+    startPeriodicCheck()
   } else {
     setUserDataLoading(false)
     setSettingsLoading(false)

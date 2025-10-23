@@ -8,15 +8,47 @@
   </template>
   
   <script setup>
-  import { onMounted } from 'vue'
+  import { onMounted, onBeforeUnmount } from 'vue'
   import { useSound } from '@/composables/useSound'
   const emit = defineEmits(['close'])
   const { open, close } = useSound()
+  
+  // Shared stack across Popup instances (most recent at the end).
+  // Use window property so HMR won't reset it unexpectedly.
+  const popupStack = typeof window !== 'undefined'
+    ? (window.__popupStack = window.__popupStack || [])
+    : []
+  
+  const instanceId = Symbol('popup-instance')
+  
+  function onKeyDown(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      // Only close if this instance is the most recently opened popup
+      if (popupStack[popupStack.length - 1] === instanceId) {
+        emitClose()
+      }
+    }
+  }
+  
   onMounted(() => {
+    // Register this popup as most recent
+    popupStack.push(instanceId)
     // Son d'ouverture du popup
     open()
+    window.addEventListener('keydown', onKeyDown)
   })
+  
+  onBeforeUnmount(() => {
+    // Ensure removal from stack
+    const idx = popupStack.indexOf(instanceId)
+    if (idx > -1) popupStack.splice(idx, 1)
+    window.removeEventListener('keydown', onKeyDown)
+  })
+  
   function emitClose() {
+    // Defensive removal from stack in case close is triggered manually
+    const idx = popupStack.indexOf(instanceId)
+    if (idx > -1) popupStack.splice(idx, 1)
     // Son de fermeture du popup
     close()
     emit('close')
@@ -46,6 +78,8 @@
     padding: 24px;
     width: 360px;
     max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
     font-family: 'Fredoka', sans-serif;
     color: #fff9e5;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
@@ -100,4 +134,3 @@
   }
 }
   </style>
-  

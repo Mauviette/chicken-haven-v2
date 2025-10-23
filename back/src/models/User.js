@@ -80,7 +80,45 @@ const UserSchema = new mongoose.Schema({
   resources : {
     eggs : { type : Number, default: 0},
     stock_token : { type : Number, default: 0},
-    production_token : { type : Number, default: 0}
+    production_token : { type : Number, default: 0},
+    mining_token : { type : Number, default: 0},
+    chest_key : { type : Number, default: 0}
+  },
+
+  // Artéfacts de minage: collection du joueur et emplacements équipables
+  // Les artefacts n'ont pas de quantité - une fois débloqué, débloqué pour toujours
+  artifacts: [
+    {
+      artifactId: { type: String, required: true }
+    }
+  ],
+
+  artifactSlots: {
+    slotsCount: { type: Number, default: 2 }, // nombre total d'emplacements disponibles
+    equipped: [ { type: String, default: null } ] // array d'artifactId ou null
+  },
+
+  // Mini-jeu de minage
+  miningGame: {
+    active: { type: Boolean, default: false },
+    gridSize: { type: Number, default: 5 },
+    cells: [
+      {
+        row: { type: Number, required: true },
+        col: { type: Number, required: true },
+        hp: { type: Number, default: 3 },
+        reward: { type: String, default: null }, // 'eggs:10', 'mining_token:1', etc.
+        hint: { type: Boolean, default: false } // <- permettre la persistance du flag reveal depuis le serveur
+      }
+    ],
+    tools: [{ type: String }], // ['shovel', 'pickaxe', 'shovel', ...]
+    currentToolIndex: { type: Number, default: 0 },
+    rewards: [{ type: String }], // Récompenses collectées durant la partie
+    equippedArtifacts: [{ type: String }], // IDs des artefacts équipés (peut contenir des null)
+    artifactModifiers: {
+      type: mongoose.Schema.Types.Mixed,
+      default: function () { return {} }
+    }
   },
 
   // Niveaux d'améliorations par ID (ex: { '1': 2, '2': 5 })
@@ -99,7 +137,13 @@ const UserSchema = new mongoose.Schema({
           totalProductionCompleted: 0,
           totalBoxesOpened: 0,
           maxEggsInOneClick: 0,
-          avatarChanged: 0
+          avatarChanged: 0,
+          miningGamesPlayed: 0,
+          miningArtifactsFound: 0,
+          miningCellsBroken: 0,
+          miningNoRewardGame: 0,
+          miningFullGridBroken: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -127,11 +171,20 @@ const UserSchema = new mongoose.Schema({
     }
   ],
 
-  lastSpawns: {
+  activeChickenGifts: [
+    {
+      id: { type: String, required: true },
+      especeId: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now },
+      expiresAt: { type: Date, required: true }
+    }
+  ],
+
+  lastChickenGifts: {
     type: Map,
     of: Date,
     default: new Map()
-  }
+  },
 
 }, { timestamps: true })
 

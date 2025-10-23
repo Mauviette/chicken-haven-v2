@@ -6,23 +6,30 @@
       <p>Votre équipe est déjà complète. Choisissez quel membre remplacer :</p>
       
       <div class="current-team">
-        <div 
-          v-for="(member, index) in currentTeam" 
+        <!-- Wrap each member with Tooltip so hovering shows talent effect -->
+        <Tooltip
+          v-for="(member, index) in currentTeam"
           :key="index"
-          class="team-member"
-          :class="{ selected: selectedIndex === index }"
-          @click="selectedIndex = index"
+          :text="getTalentTooltip(member?.especeId)"
+          position="right"
+          :followMouse="false"
         >
-          <img 
-            :src="getMemberImage(member?.especeId)" 
-            :alt="getMemberName(member?.especeId)"
-            class="member-image"
-          />
-          <div class="member-info">
-            <div class="member-name">{{ getMemberName(member?.especeId) }}</div>
-            <div class="member-talent">{{ getMemberTalent(member?.especeId) }}</div>
+          <div
+            class="team-member"
+            :class="{ selected: selectedIndex === index }"
+            @click="selectedIndex = index"
+          >
+            <img 
+              :src="getMemberImage(member?.especeId)" 
+              :alt="getMemberName(member?.especeId)"
+              class="member-image"
+            />
+            <div class="member-info">
+              <div class="member-name">{{ getMemberName(member?.especeId) }}</div>
+              <div class="member-talent">{{ getMemberTalent(member?.especeId) }}</div>
+            </div>
           </div>
-        </div>
+        </Tooltip>
       </div>
       
       <div class="actions">
@@ -42,6 +49,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import Popup from '@/components/menu/Popup.vue'
+import Tooltip from '@/components/menu/Tooltip.vue' // <-- nouveau import
 import { useGameData } from '@/composables/useGameData'
 import { usePoules } from '@/composables/usePoules'
 
@@ -53,7 +61,7 @@ const props = defineProps({
 })
 
 const { especies } = useGameData()
-const { getTalentDisplayNameSync, getImage, poules } = usePoules()
+const { getTalentDisplayNameSync, getTalentEffectSync, getImage, poules } = usePoules()
 
 const selectedIndex = ref(-1)
 
@@ -77,6 +85,14 @@ const getMemberTalent = (especeId) => {
   const niveauTalent = Math.max(1, Number(poule?.niveauTalent) || 1)
   
   return getTalentDisplayNameSync({ especeId, niveauTalent })
+}
+
+// Retourne exactement la même chaîne que ChickenDetail : utiliser getTalentEffectSync
+const getTalentTooltip = (especeId) => {
+  if (!especeId) return ''
+  const poule = poules.value?.find(p => p.especeId === especeId) || { especeId, niveauTalent: 1 }
+  // getTalentEffectSync attend un objet "poule" similaire à celui utilisé dans ChickenDetail
+  return getTalentEffectSync(poule)
 }
 
 const confirmReplacement = () => {

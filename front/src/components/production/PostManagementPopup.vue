@@ -33,7 +33,6 @@ async function fetchPoulesDisponibles() {
       talent: resolveTalent(poule.especeId)
     }))
 
-    console.log('Fetched poules:', poulesDisponibles.value)
   } catch (err) {
     window.$toast('Impossible de charger les poules : ' + err, 'error')
   }

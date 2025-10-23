@@ -34,7 +34,10 @@
       <Tooltip :text="charismeTooltipHtml">
         <span class="stat-chip" :class="{ buffed: teamStatMult.charisme > 1 }">✨ {{ Math.round(teamStats.charisme) }}</span>
       </Tooltip>
+      
+      <!-- (Mine accessible depuis la barre du bas) -->
     </div>
+    
     <div class="production-content">
 
       <div class="egg-clicker">
@@ -643,6 +646,8 @@ const handleEggClick = async () => {
   }
 }
 
+// Le mini-jeu de minage est maintenant géré globalement depuis BottomBar / App.vue
+
 onMounted(async () => {
   // S'assurer que l'équipe est à jour pour les stats
   await fetchTeam()
@@ -656,6 +661,13 @@ onMounted(async () => {
     window.__buffsInterval && clearInterval(window.__buffsInterval)
     window.__buffsInterval = setInterval(() => { fetchBuffs() }, BUFFS_REFRESH_MS)
   }
+
+  // Rafraîchir les cooldowns des talents actifs périodiquement (toutes les 5s)
+  const COOLDOWNS_REFRESH_MS = 5000
+  if (typeof window !== 'undefined') {
+    window.__cooldownsInterval && clearInterval(window.__cooldownsInterval)
+    window.__cooldownsInterval = setInterval(() => { fetchEggStatus() }, COOLDOWNS_REFRESH_MS)
+  }
 })
 
 onUnmounted(() => {
@@ -663,6 +675,10 @@ onUnmounted(() => {
   if (typeof window !== 'undefined' && window.__buffsInterval) {
     clearInterval(window.__buffsInterval)
     window.__buffsInterval = null
+  }
+  if (typeof window !== 'undefined' && window.__cooldownsInterval) {
+    clearInterval(window.__cooldownsInterval)
+    window.__cooldownsInterval = null
   }
 })
 
@@ -808,6 +824,32 @@ watch(() => currentGains.value, (nv, ov) => {
 .team-stats-banner .stat-chip.buffed {
   color: #c99100;
   font-weight: 700;
+}
+
+.mining-icon {
+  background: linear-gradient(135deg, #8b6914, #a17e1a);
+  border: 2px solid #ffc66e;
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 20px;  
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  transition: all 0.2s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+
+.mining-icon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 105, 20, 0.4);
+  background: linear-gradient(135deg, #a17e1a, #c99100);
+}
+
+.mining-icon:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(139, 105, 20, 0.4);
 }
 
 .production-content {

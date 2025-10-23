@@ -1,6 +1,6 @@
 // controllers/box.controller.js
 import User from '../models/User.js'
-import { especeData, groupes, boxesData } from '../data/gameData.js'
+import { especeData, groupes, boxesData, artifactsData } from '../data/sharedGameData.js'
 import { updateAchievementProgress } from './achievements.controller.js'
 import { executeWithRetry } from '../utils/mongoUtils.js'
 
@@ -21,10 +21,16 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
         throw new Error('Niveau insuffisant pour cette boîte')
       }
 
+      // Vérification spéciale pour les boîtes d'artefacts (niveau 5 minimum)
+      if (box.category === 'artifacts' && playerLevel < 5) {
+        throw new Error('Vous devez atteindre le niveau 5 pour ouvrir des boîtes d\'artefacts')
+      }
+
       // Vérifier les ressources
       const resourceType = box.price.type === 'eggs' ? 'eggs' : 
                           box.price.type === 'stock_token' ? 'stock_token' : 
-                          box.price.type === 'production_token' ? 'production_token' : null
+                          box.price.type === 'production_token' ? 'production_token' :
+                          box.price.type === 'chest_key' ? 'chest_key' : null
 
       if (!resourceType) throw new Error('Type de ressource invalide')
 
@@ -40,48 +46,118 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
         .filter(poule => poule.quantite > 0)
         .map(poule => poule.especeId)
 
+      // Calculer les artefacts déjà possédés si c'est une boîte d'artefacts
+      const ownedArtifacts = box.category === 'artifacts' ? 
+        (user.artifacts || []).map(a => a.artifactId) : []
+      
+
+
       // Simuler l'ouverture de boîte
-      const results = simulateBoxOpening(box, ownedChickens)
+      const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts)
 
-      // Appliquer les changements
-      playerResources[resourceType] = currentAmount - box.price.count
-      user.resources = playerResources
-
-      // Ajouter les poules obtenues
-      const addedChickens = []
-      for (const result of results) {
-        const existingPoule = user.poulesPossedees.find(p => p.especeId === result.chickenId)
-        
-        if (existingPoule) {
-          existingPoule.quantite += 1
-        } else {
-          user.poulesPossedees.push({
-            especeId: result.chickenId,
-            quantite: 1,
-            niveauTalent: 1,
-            new: true
-          })
-        }
-
-        // Préparer les données de réponse
-        const chickenData = especeData[result.chickenId]
-        addedChickens.push({
-          especeId: result.chickenId,
-          nom: chickenData?.nom || result.chickenId,
-          rarete: chickenData?.rarete || 'commune',
-          groupe: result.groupName,
-          isNew: !ownedChickens.includes(result.chickenId)
-        })
+      // Décrémenter le coût d'abord
+      const costUpdate = await User.findByIdAndUpdate(
+        userId,
+        { $inc: { [`resources.${resourceType}`]: -box.price.count } },
+        { new: true }
+      )
+      
+      if (!costUpdate) {
+        throw new Error('Échec de la déduction du coût')
       }
 
-      // Sauvegarder atomiquement
-      await user.save() // Ici on garde user.save() car c'est déjà dans executeWithRetry
+      const responseResults = []
+      
+      // Traiter les résultats un par un de manière atomique
+      for (const result of results) {
+        if (result.type === 'chicken') {
+          // Tenter d'incrémenter la quantité si la poule existe déjà
+          // Vérifier l'existence de la poule avant d'ajouter
+          const alreadyHasChicken = await User.findOne({
+            _id: userId,
+            'poulesPossedees.especeId': result.chickenId
+          });
+
+          // Logique classique : si la poule existe, on incrémente la quantité, sinon on ajoute
+          const user = await User.findById(userId);
+          const pouleIndex = user.poulesPossedees.findIndex(p => p.especeId === result.chickenId);
+          if (pouleIndex !== -1) {
+            await User.updateOne(
+              { _id: userId, [`poulesPossedees.${pouleIndex}.especeId`]: result.chickenId },
+              { $inc: { [`poulesPossedees.${pouleIndex}.quantite`]: 1 } }
+            );
+          } else {
+            await User.updateOne(
+              { _id: userId },
+              {
+                $push: {
+                  poulesPossedees: {
+                    especeId: result.chickenId,
+                    quantite: 1,
+                    niveauTalent: 1,
+                    new: true
+                  }
+                }
+              }
+            );
+          }
+
+          // Préparer les données de réponse
+          const chickenData = especeData[result.chickenId];
+          responseResults.push({
+            type: 'chicken',
+            especeId: result.chickenId,
+            nom: chickenData?.nom || result.chickenId,
+            rarete: chickenData?.rarete || 'commune',
+            groupe: result.groupName,
+            isNew: !ownedChickens.includes(result.chickenId)
+          });
+        } else if (result.type === 'artifact') {
+          // Utiliser $addToSet pour éviter les doublons d'artefacts
+          await User.updateOne(
+            { _id: userId },
+            {
+              $addToSet: {
+                artifacts: { artifactId: result.artifactId }
+              }
+            }
+          )
+
+          // Préparer les données de réponse
+          const artifactData = artifactsData[result.artifactId]
+          responseResults.push({
+            type: 'artifact',
+            artifactId: result.artifactId,
+            name: artifactData?.name || result.artifactId,
+            icon: artifactData?.icon || '❖',
+            rarete: artifactData?.rarete || 'commune',
+            description: artifactData?.description || '',
+            isNew: !ownedArtifacts.includes(result.artifactId)
+          })
+        } else if (result.type === 'item') {
+          // Ajouter les ressources de manière atomique
+          await User.updateOne(
+            { _id: userId },
+            { $inc: { [`resources.${result.itemId}`]: result.amount } }
+          )
+
+          responseResults.push({
+            type: 'item',
+            itemId: result.itemId,
+            amount: result.amount
+          })
+        }
+      }
+
+      // Récupérer l'utilisateur mis à jour pour les nouvelles ressources
+      const updatedUser = await User.findById(userId)
+      const newBalance = updatedUser.resources[resourceType]
 
       // Retourner le résultat
       return {
         box: { id: box.id, name: box.name, cost: box.price },
-        results: addedChickens,
-        newBalance: { [resourceType]: playerResources[resourceType] }
+        results: responseResults,
+        newBalance: { [resourceType]: newBalance }
       }
 
     } catch (error) {
@@ -110,11 +186,131 @@ export async function getBoxes(req, res) {
     const playerLevel = user.experience?.level || 1
     const availableBoxes = boxesData.filter(box => (box.unlock_level || 1) <= playerLevel)
 
-    res.json(availableBoxes)
+    // Ajouter les chances ajustées pour les boîtes d'artefacts
+    const ownedArtifacts = (user.artifacts || []).map(a => a.artifactId)
+    
+    const enrichedBoxes = availableBoxes.map(box => {
+      if (box.category === 'artifacts') {
+        const adjustedChances = calculateAdjustedArtifactChances(ownedArtifacts)
+        const adjustedBox = calculateAdjustedBoxChances(box, ownedArtifacts)
+        return {
+          ...adjustedBox,
+          adjustedRarityChances: adjustedChances
+        }
+      }
+      return box
+    })
+
+    res.json(enrichedBoxes)
   } catch (err) {
     console.error('Erreur getBoxes:', err)
     res.status(500).json({ error: 'Erreur serveur' })
   }
+}
+
+// Fonction pour calculer les chances ajustées des artefacts (UNIQUEMENT POUR L'AFFICHAGE)
+// Cette fonction modifie les pourcentages affichés mais n'affecte pas la logique de sélection
+function calculateAdjustedArtifactChances(ownedArtifacts) {
+  const rarityOrder = ['commune', 'rare', 'epique', 'legendaire']
+  const baseRarityWeights = [40, 35, 20, 5]
+
+  // Grouper les artefacts par rareté
+  const artifactsByRarity = {
+    commune: [],
+    rare: [],
+    epique: [],
+    legendaire: []
+  }
+
+  for (const [artifactId, data] of Object.entries(artifactsData)) {
+    const rarity = data.rarete || 'commune'
+    if (artifactsByRarity[rarity]) {
+      artifactsByRarity[rarity].push(artifactId)
+    }
+  }
+
+  // Calculer les artefacts disponibles par rareté
+  const availableByRarity = {}
+  for (const rarity of rarityOrder) {
+    availableByRarity[rarity] = artifactsByRarity[rarity].filter(id => !ownedArtifacts.includes(id))
+  }
+
+  // Calculer les poids ajustés en excluant les raretés vides
+  const adjustedWeights = baseRarityWeights.map((weight, index) => {
+    const rarity = rarityOrder[index]
+    return availableByRarity[rarity].length > 0 ? weight : 0
+  })
+
+  const totalWeight = adjustedWeights.reduce((sum, weight) => sum + weight, 0)
+  
+  // Convertir en pourcentages
+  if (totalWeight === 0) return [0, 0, 0, 0]
+  
+  return adjustedWeights.map(weight => Math.round((weight / totalWeight) * 100))
+}
+
+// Fonction pour ajuster les chances des groupes d'une boîte
+function calculateAdjustedBoxChances(box, ownedArtifacts) {
+  // Trouver le groupe artifacts dans la boîte
+  const artifactsGroupIndex = box.dropGroups.findIndex(group => group.name === 'artifacts')
+  if (artifactsGroupIndex === -1) return box // Pas de groupe artifacts dans cette boîte
+
+  // Calculer la probabilité réelle d'obtenir un artefact disponible
+  const rarityOrder = ['commune', 'rare', 'epique', 'legendaire']
+  const baseRarityWeights = [40, 35, 20, 5] // Poids du groupe artifacts
+
+  // Grouper les artefacts par rareté
+  const artifactsByRarity = {
+    commune: [],
+    rare: [],
+    epique: [],
+    legendaire: []
+  }
+
+  for (const [artifactId, data] of Object.entries(artifactsData)) {
+    const rarity = data.rarete || 'commune'
+    if (artifactsByRarity[rarity]) {
+      artifactsByRarity[rarity].push(artifactId)
+    }
+  }
+
+  // Calculer les artefacts disponibles par rareté
+  const availableByRarity = {}
+  for (const rarity of rarityOrder) {
+    availableByRarity[rarity] = artifactsByRarity[rarity].filter(id => !ownedArtifacts.includes(id))
+  }
+
+  // Calculer la probabilité pondérée d'obtenir un artefact disponible
+  let totalAvailableProbability = 0
+  const totalRarityWeight = baseRarityWeights.reduce((sum, weight) => sum + weight, 0)
+
+  for (let i = 0; i < rarityOrder.length; i++) {
+    const rarity = rarityOrder[i]
+    const weight = baseRarityWeights[i]
+    const hasAvailable = availableByRarity[rarity].length > 0
+
+    if (hasAvailable) {
+      totalAvailableProbability += weight / totalRarityWeight
+    }
+  }
+
+  // Ajuster les chances du groupe artifacts
+  const originalArtifactsChance = box.dropGroups[artifactsGroupIndex].chance
+  const adjustedArtifactsChance = originalArtifactsChance * totalAvailableProbability
+
+  // Calculer les nouvelles chances pour tous les groupes
+  const adjustedGroups = box.dropGroups.map((group, index) => {
+    if (index === artifactsGroupIndex) {
+      return { ...group, chance: adjustedArtifactsChance }
+    } else if (group.name === 'eggs_bonus') {
+      // Redistribuer la différence aux œufs
+      const redistribution = originalArtifactsChance - adjustedArtifactsChance
+      return { ...group, chance: group.chance + redistribution }
+    }
+    return group
+  })
+
+  return { ...box, dropGroups: adjustedGroups }
 }
 
 // POST /api/boxes/:boxId/open - Ouvrir une boîte
@@ -166,7 +362,7 @@ export async function openBox(req, res) {
 }
 
 // Fonction pour simuler l'ouverture d'une boîte avec probabilités
-function simulateBoxOpening(box, ownedChickens) {
+function simulateBoxOpening(box, ownedChickens, ownedArtifacts = []) {
   const groups = Array.isArray(box.dropGroups) ? box.dropGroups : []
   if (!groups.length) return []
 
@@ -195,37 +391,91 @@ function simulateBoxOpening(box, ownedChickens) {
   }
   if (!selectedGroup) selectedGroup = candidates[0]
 
-  // Vérifier la disponibilité pour le groupe choisi, sinon fallback vers un autre groupe disponible
-  let availableChickens = availableForGroup(selectedGroup.name)
-  if (!availableChickens.length) {
-    const sorted = [...candidates].sort((a, b) => Number(b.chance || 0) - Number(a.chance || 0))
-    for (const g of sorted) {
-      if (g === selectedGroup) continue
-      const cand = availableForGroup(g.name)
-      if (cand.length) { selectedGroup = g; availableChickens = cand; break }
-    }
-  }
-
-  // Fallback ultime: agréger toutes les dispos si aucune pour les groupes (devrait être rare)
-  if (!availableChickens.length) {
-    const all = []
-    for (const g of candidates) all.push(...availableForGroup(g.name))
-    if (!all.length) return []
-    availableChickens = all
-  }
-
   const groupData = groupes.find(g => g.name === selectedGroup.name)
-  const rarityChances = groupData?.rarityDropChance || [100, 0, 0, 0]
   const quantity = Math.max(1, Number(selectedGroup.quantity) || 1)
   const results = []
-  for (let i = 0; i < quantity; i++) {
-    const selectedChicken = selectChickenByRarity(availableChickens, rarityChances)
-    if (selectedChicken) {
+
+  // Traitement selon le type de groupe
+  if (selectedGroup.name === 'artifacts') {
+    // Groupe des artefacts - sélection respectant les pourcentages de rareté originaux
+    const artifactResult = selectArtifactRespectingRarity(ownedArtifacts, groupData?.rarityDropChance || [40, 35, 20, 5])
+    
+    if (artifactResult) {
       results.push({
-        chickenId: selectedChicken,
-        groupName: selectedGroup.name,
-        rarity: especeData[selectedChicken]?.rarete || 'commune'
+        type: 'artifact',
+        artifactId: artifactResult,
+        rarity: artifactsData[artifactResult]?.rarete || 'commune'
       })
+    } else {
+      // Si aucun artefact disponible (tous obtenus), donner des œufs par défaut
+      results.push({
+        type: 'item',
+        itemId: 'eggs',
+        amount: 200
+      })
+    }
+    
+  } else if (selectedGroup.name === 'eggs_bonus') {
+    // Groupe des œufs bonus - utiliser les items définis dans le groupe
+    if (groupData && groupData.items) {
+      const totalWeight = groupData.items.reduce((sum, item) => sum + (item.weight || 0), 0)
+      if (totalWeight > 0) {
+        let r = Math.random() * totalWeight
+        let acc = 0
+        for (const item of groupData.items) {
+          acc += item.weight || 0
+          if (r <= acc) {
+            results.push({
+              type: 'item',
+              itemId: item.id,
+              amount: item.amount
+            })
+            break
+          }
+        }
+      }
+    }
+    
+    // Fallback
+    if (results.length === 0) {
+      results.push({
+        type: 'item',
+        itemId: 'eggs',
+        amount: 100
+      })
+    }
+    
+  } else {
+    // Groupes de poules traditionnels
+    let availableChickens = availableForGroup(selectedGroup.name)
+    if (!availableChickens.length) {
+      const sorted = [...candidates].sort((a, b) => Number(b.chance || 0) - Number(a.chance || 0))
+      for (const g of sorted) {
+        if (g === selectedGroup) continue
+        const cand = availableForGroup(g.name)
+        if (cand.length) { selectedGroup = g; availableChickens = cand; break }
+      }
+    }
+
+    // Fallback ultime: agréger toutes les dispos si aucune pour les groupes (devrait être rare)
+    if (!availableChickens.length) {
+      const all = []
+      for (const g of candidates) all.push(...availableForGroup(g.name))
+      if (!all.length) return []
+      availableChickens = all
+    }
+
+    const rarityChances = groupData?.rarityDropChance || [100, 0, 0, 0]
+    for (let i = 0; i < quantity; i++) {
+      const selectedChicken = selectChickenByRarity(availableChickens, rarityChances)
+      if (selectedChicken) {
+        results.push({
+          type: 'chicken',
+          chickenId: selectedChicken,
+          groupName: selectedGroup.name,
+          rarity: especeData[selectedChicken]?.rarete || 'commune'
+        })
+      }
     }
   }
 
@@ -279,4 +529,67 @@ function selectChickenByRarity(availableChickens, rarityChances) {
 
   // Sélection aléatoire pondérée
   return weightedChickens[Math.floor(Math.random() * weightedChickens.length)]
+}
+
+// Fonction pour sélectionner un artefact en respectant les pourcentages de rareté originaux
+function selectArtifactRespectingRarity(ownedArtifacts, rarityWeights = [40, 35, 20, 5]) {
+
+  
+  const rarityOrder = ['commune', 'rare', 'epique', 'legendaire']
+
+  // Grouper les artefacts par rareté
+  const artifactsByRarity = {
+    commune: [],
+    rare: [],
+    epique: [],
+    legendaire: []
+  }
+
+  for (const [artifactId, data] of Object.entries(artifactsData)) {
+    const rarity = data.rarete || 'commune'
+    if (artifactsByRarity[rarity]) {
+      artifactsByRarity[rarity].push(artifactId)
+    }
+  }
+
+
+
+  // Calculer les artefacts disponibles par rareté
+  const availableByRarity = {}
+  for (const rarity of rarityOrder) {
+    availableByRarity[rarity] = artifactsByRarity[rarity].filter(id => !ownedArtifacts.includes(id))
+  }
+  
+
+
+  // Utiliser les poids originaux (pas d'ajustement) pour respecter les pourcentages
+  const totalWeight = rarityWeights.reduce((sum, weight) => sum + weight, 0)
+  if (totalWeight === 0) return null
+
+  // Roll pour déterminer la rareté avec les poids originaux
+  let random = Math.random() * totalWeight
+  let selectedRarityIndex = 0
+
+  for (let i = 0; i < rarityWeights.length; i++) {
+    random -= rarityWeights[i]
+    if (random <= 0) {
+      selectedRarityIndex = i
+      break
+    }
+  }
+
+  const selectedRarity = rarityOrder[selectedRarityIndex]
+  const availableArtifacts = availableByRarity[selectedRarity]
+
+
+
+  // Si aucun artefact disponible pour cette rareté, retourner null (donnera des œufs)
+  if (availableArtifacts.length === 0) {
+    return null
+  }
+
+  // Sélectionner un artefact aléatoire dans cette rareté
+  const selectedArtifact = availableArtifacts[Math.floor(Math.random() * availableArtifacts.length)]
+  
+  return selectedArtifact
 }

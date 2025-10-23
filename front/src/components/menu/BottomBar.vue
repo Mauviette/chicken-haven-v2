@@ -9,6 +9,17 @@
           <span class="mobile-text">⚙️</span>
         </ActionButton>
       </div>
+      <div class="mining-button" style="margin-left:8px;">
+        <Tooltip :text="!isMiningUnlocked ? 'Débloqué au niveau 5' : 'Accéder au mini-jeu de minage'">
+          <ActionButton
+            :onClick="() => emit('open-mining')"
+            :disabled="!isMiningUnlocked"
+          >
+            <span class="desktop-text">🪨</span>
+            <span class="mobile-text">🪨</span>
+          </ActionButton>
+        </Tooltip>
+      </div>
     </div>
 
     <div class="main-buttons">
@@ -21,6 +32,7 @@
         <span class="desktop-text">⚒️ Production</span>
         <span class="mobile-text">⚒️</span>
       </ActionButton>
+
 
       <div class="badge-wrapper market-button">
         <ActionButton
@@ -95,9 +107,10 @@ import { usePlayer } from '@/composables/usePlayer'
 import { useGameData } from '@/composables/useGameData'
 import { usePoules } from '@/composables/usePoules'
 import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
+import Tooltip from '@/components/menu/Tooltip.vue'
 const route = useRoute()
 
-const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements'])
+const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements', 'open-mining'])
 
 // Succès non réclamés -> badge sur le bouton
 const {
@@ -137,6 +150,12 @@ const isMarketUnlocked = computed(() => {
 const isSocialUnlocked = computed(() => {
   const l = level.value || 1
   if (l >= 3) return true;
+  return false
+})
+
+const isMiningUnlocked = computed(() => {
+  const l = level.value || 1
+  if (l >= 5) return true;
   return false
 })
 

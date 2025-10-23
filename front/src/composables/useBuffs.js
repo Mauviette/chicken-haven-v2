@@ -73,7 +73,7 @@ export function useBuffs() {
       case 'income_multiplier':
         emoji = '💰'; break
       case 'production':
-        emoji = '⚡'; break
+        emoji = '⚙️'; break
       case 'storage':
       case 'storage_multiplier':
         emoji = '📦'; break

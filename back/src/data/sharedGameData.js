@@ -464,25 +464,39 @@ export const talentsData = {
 export const groupes = [
   { 
     name: 'fondamental', 
-    description: 'Groupe fondamental', 
+    description: 'Poule du groupe fondamental', 
     rarityDropChance: [75, 25, 0, 0]
   },
   { 
     name: 'brillant', 
-    description: 'Groupe brillant', 
+    description: 'Poule du groupe brillant', 
     rarityDropChance: [75, 25, 0, 0]
   },
   { 
     name: 'discret', 
-    description: 'Groupe discret', 
-    // Légère chance d'épique pour permettre l'obtention de Canard
+    description: 'Poule du groupe discret', 
     rarityDropChance: [70, 25, 5, 0]
   },
   { 
     name: 'chic', 
-    description: 'Groupe chic', 
-    // Très faible chance de légendaire pour Spaciale
+    description: 'Poule du groupe chic', 
     rarityDropChance: [64, 25, 10, 1]
+  },
+  {
+    name: 'artifacts',
+    description: 'Artefacts de minage',
+    type: 'artifacts',
+    rarityDropChance: [40, 38, 20, 2]
+  },
+  {
+    name: 'eggs_bonus',
+    description: 'Œufs',
+    type: 'items',
+    items: [
+      { id: 'eggs', amount: 100, weight: 60 },
+      { id: 'eggs', amount: 250, weight: 30 },
+      { id: 'eggs', amount: 500, weight: 10 }
+    ]
   }
 ]
 
@@ -542,6 +556,27 @@ export const boxesData = [
         quantity: 1
       },
     ],
+    unlock_level: 4
+  },
+  {
+    id: 5,
+    name: 'Coffre de Trésors',
+    description: 'Contient un artefact de minage que vous ne possédez pas encore, ou des œufs',
+    icon: '🗝️',
+    price: { type: 'chest_key', count: 1 },
+    category: 'artifacts',
+    dropGroups: [
+      {
+        name: 'artifacts',
+        chance: 70,
+        quantity: 1
+      },
+      {
+        name: 'eggs_bonus',
+        chance: 30,
+        quantity: 1
+      }
+    ],
     unlock_level: 5
   }
 ]
@@ -582,7 +617,7 @@ export const upgradesData = [
 // ========================
 // DÉBLOCAGES PAR NIVEAU
 // ========================
-// Centralise ce qui se débloque à chaque niveau (ex: fonctionnalités UI)
+// Centralise ce qui se débloque à chaque niveau
 export const levelUnlocks = {
   2: [
     { id: 'market', label: 'Marché débloqué', icon: '🛒' }
@@ -591,8 +626,11 @@ export const levelUnlocks = {
     { id: 'social', label: 'Social débloqué', icon: '👥' },
     { id: 'shiny_box', label: 'Boîte brillante débloquée', icon: '✨' }
   ],
-  5: [
+  4: [
     { id: 'noble_box', label: 'Coffret chic débloqué', icon: '💎' }
+  ],
+  5: [
+    { id: 'mining', label: 'Mini-jeu de minage débloqué', icon: '🪨' }
   ]
 }
 
@@ -604,9 +642,12 @@ export const levelUnlocks = {
 export const levelRewards = {
   3: [ { type: 'production_token', count: 1 } ],
   4: [ { type: 'stock_token', count: 1 } ],
-  5: [ { type: 'production_token', count: 1 } ],
-  6: [ { type: 'stock_token', count: 1 } ]
-  // Ajoutez d'autres niveaux selon la progression désirée
+  5: [ { type: 'production_token', count: 2 }, { type: 'mining_token', count: 3 } ],
+  6: [ { type: 'stock_token', count: 2 }, { type: 'mining_token', count: 3 } ],
+  7: [ { type: 'production_token', count: 3 }, { type: 'mining_token', count: 3 } ],
+  8: [ { type: 'stock_token', count: 3 }, { type: 'mining_token', count: 3 } ],
+  9: [ { type: 'production_token', count: 5 }, { type: 'mining_token', count: 3 } ],
+  10: [ { type: 'stock_token', count: 5 }, { type: 'mining_token', count: 3 } ],
 }
 
 export const talentLevelUpgradeCost = {
@@ -647,7 +688,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 2
     }
   },
   'egg_master': {
@@ -659,7 +700,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 2
+      quantite: 3
     }
   },
   'egg_king': {
@@ -671,7 +712,7 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 3
+      quantite: 5
     }
   },
   'egg_god': {
@@ -683,14 +724,14 @@ export const achievementsData = {
     type: 'eggs',
     reward: {
       type: 'blueberry',
-      quantite: 4
+      quantite: 10
     }
   },
   'first_chicken': {
     id: 'first_chicken',
     nom: 'Première Poule',
     description: 'Obtenez votre première poule',
-    icon: '🐔',
+    icon: '🐓',
     objectif: 1,
     type: 'chickens',
     reward: {
@@ -707,7 +748,19 @@ export const achievementsData = {
     type: 'chickens',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 2
+    }
+  },
+  'chicken_interested': {
+    id: 'chicken_interested',
+    nom: 'Éleveur Interessé',
+    description: 'Possédez 10 poules différentes',
+    icon: '🐓',
+    objectif: 10,
+    type: 'chickens',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
     }
   },
   'talent_apprentice': {
@@ -719,7 +772,7 @@ export const achievementsData = {
     type: 'talent_level',
     reward: {
       type: 'blueberry',
-      quantite: 1
+      quantite: 2
     }
   },
   'talent_expert': {
@@ -731,7 +784,7 @@ export const achievementsData = {
     type: 'talent_level',
     reward: {
       type: 'blueberry',
-      quantite: 2
+      quantite: 3
     }
   },
   'talent_master': {
@@ -743,18 +796,30 @@ export const achievementsData = {
     type: 'talent_level',
     reward: {
       type: 'blueberry',
-      quantite: 3
+      quantite: 5
     }
   },
   'avatar_changed': {
     id: 'avatar_changed',
     nom: 'Nouveau Look',
-    description: 'Changez votre avatar pour la première fois',
-    icon: '👤',
+    description: 'Changez votre avatar.',
+    icon: '🖼️',
     objectif: 1,
     type: 'avatar_change',
     reward: {
       type: 'stock_token',
+      quantite: 1
+    }
+  },
+  'name_changed': {
+    id: 'name_changed',
+    nom: 'Nouveau Moi',
+    description: 'Changez votre pseudo.',
+    icon: '👤',
+    objectif: 1,
+    type: 'name_change',
+    reward: {
+      type: 'production_token',
       quantite: 1
     }
   },
@@ -793,42 +858,255 @@ export const achievementsData = {
       type: 'blueberry',
       quantite: 5
     }
+  },
+  'chicken_gifts_5': {
+    id: 'chicken_gifts_5',
+    nom: 'Collectionneur de Cadeaux',
+    description: 'Collectez 5 cadeaux de poules',
+    icon: '🎁',
+    objectif: 5,
+    type: 'chickenGiftsCollected',
+    reward: {
+      type: 'blueberry',
+      quantite: 2
+    }
+  },
+  'chicken_gifts_25': {
+    id: 'chicken_gifts_25',
+    nom: 'Maître des Cadeaux',
+    description: 'Collectez 25 cadeaux de poules',
+    icon: '🎁',
+    objectif: 25,
+    type: 'chickenGiftsCollected',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'chicken_gifts_100': {
+    id: 'chicken_gifts_100',
+    nom: 'Légende des Cadeaux',
+    description: 'Collectez 100 cadeaux de poules',
+    icon: '🎁',
+    objectif: 100,
+    type: 'chickenGiftsCollected',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'team_stat_50': {
+    id: 'team_stat_50',
+    nom: 'Équipe Solide',
+    description: 'Atteignez au moins 50 points dans une stat d\'équipe',
+    icon: '💪',
+    objectif: 50,
+    type: 'team_stats',
+    reward: {
+      type: 'blueberry',
+      quantite: 2
+    }
+  },
+  'team_stat_100': {
+    id: 'team_stat_100',
+    nom: 'Équipe Puissante',
+    description: 'Atteignez au moins 100 points dans une stat d\'équipe',
+    icon: '🔥',
+    objectif: 100,
+    type: 'team_stats',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'team_stat_200': {
+    id: 'team_stat_200',
+    nom: 'Équipe Légendaire',
+    description: 'Atteignez au moins 200 points dans une stat d\'équipe',
+    icon: '⭐',
+    objectif: 200,
+    type: 'team_stats',
+    reward: {
+      type: 'blueberry',
+      quantite: 10
+    }
+  },
+  'mega_click_500': {
+    id: 'mega_click_500',
+    nom: 'Récolte Généreuse',
+    description: 'Récoltez 500 œufs en un clic',
+    icon: '🥚',
+    objectif: 500,
+    type: 'mega_click',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'mega_click_1000': {
+    id: 'mega_click_1000',
+    nom: 'Récolte Massive',
+    description: 'Récoltez 1000 œufs en un clic',
+    icon: '🍳',
+    objectif: 1000,
+    type: 'mega_click',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'mega_click_5000': {
+    id: 'mega_click_5000',
+    nom: 'Récolte Titanesque',
+    description: 'Récoltez 5000 œufs en un clic',
+    icon: '🌟',
+    objectif: 5000,
+    type: 'mega_click',
+    reward: {
+      type: 'blueberry',
+      quantite: 10
+    }
+  },
+  'mining_artifact_1': {
+    id: 'mining_artifact_1',
+    nom: 'Premier Artefact',
+    description: 'Trouvez votre premier artefact de minage',
+    icon: '🪨',
+    objectif: 1,
+    type: 'mining_artifacts',
+    reward: {
+      type: 'blueberry',
+      quantite: 1
+    }
+  },
+  'mining_artifact_3': {
+    id: 'mining_artifact_3',
+    nom: 'Collectionneur d\'Artefacts',
+    description: 'Trouvez 3 artefacts de minage différents',
+    icon: '💎',
+    objectif: 3,
+    type: 'mining_artifacts',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'mining_artifact_5': {
+    id: 'mining_artifact_5',
+    nom: 'Maître des Artefacts',
+    description: 'Trouvez 5 artefacts de minage différents',
+    icon: '⭐',
+    objectif: 5,
+    type: 'mining_artifacts',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'mining_cells_10': {
+    id: 'mining_cells_10',
+    nom: 'Mineur Débutant',
+    description: 'Brisez 10 cases au total en minage',
+    icon: '⛏️',
+    objectif: 50,
+    type: 'mining_cells',
+    reward: {
+      type: 'blueberry',
+      quantite: 1
+    }
+  },
+  'mining_cells_25': {
+    id: 'mining_cells_25',
+    nom: 'Mineur Expérimenté',
+    description: 'Brisez 25 cases au total en minage',
+    icon: '⚒️',
+    objectif: 100,
+    type: 'mining_cells',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'mining_cells_100': {
+    id: 'mining_cells_100',
+    nom: 'Mineur Légendaire',
+    description: 'Brisez 100 cases au total en minage',
+    icon: '💥',
+    objectif: 250,
+    type: 'mining_cells',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
+  'mining_no_reward': {
+    id: 'mining_no_reward',
+    nom: 'Malchance',
+    description: 'Finissez une grille de minage sans avoir collecté de récompense',
+    icon: '😞',
+    objectif: 1,
+    type: 'mining_no_reward',
+    reward: {
+      type: 'chest_key',
+      quantite: 3
+    }
+  },
+  'mining_full_grid': {
+    id: 'mining_full_grid',
+    nom: 'Mineur Expert',
+    description: 'Cassez toutes les cases d\'une grille de 5x5',
+    icon: '💎',
+    objectif: 25,
+    type: 'mining_best_cells_in_game',
+    reward: {
+      type: 'chest_key',
+      quantite: 5
+    }
   }
 }
 
-// ========================
-// DONNÉES DES RESSOURCES
-// ========================
 export const itemsData = {
   'eggs': {
     id: 'eggs',
     nom: 'œufs',
     nom_singulier: 'œuf',
-    icon: '🥚'
+    icon: '🥚',
+    description: 'La monnaie principale de votre ferme. Récoltez-les sur la page de production et utilisez-les pour acheter des boîtes et améliorer vos poules.'
   },
   'stock_token': {
     id: 'stock_token',
     nom: 'jetons de stock',
     nom_singulier: 'jeton de stock',
-    icon: '📦'
+    icon: '📦',
+    description: 'Jetons permettant d\'acheter des améliorations de stockage.'
   },
   'production_token': {
     id: 'production_token',
     nom: 'jetons de production',
     nom_singulier: 'jeton de production',
-    icon: '⚡'
+    icon: '⚙️',
+    description: 'Jetons permettant d\'acheter des améliorations de production.'
   },
-  'wild_token': {
-    id: 'wild_token',
-    nom: 'jetons joker',
-    nom_singulier: 'jeton joker',
-    icon: '🃏'
+  'mining_token': {
+    id: 'mining_token',
+    nom: 'jetons de minage',
+    nom_singulier: 'jeton de minage',
+    icon: '🪨',
+    description: 'Jetons nécessaires pour démarrer une partie de minage et découvrir des trésors souterrains.'
+  },
+  'chest_key': {
+    id: 'chest_key',
+    nom: 'clés à coffre',
+    nom_singulier: 'clé à coffre',
+    icon: '🗝️',
+    description: 'Clés spéciales permettant d\'ouvrir des coffres de trésors contenant des artefacts de minage.'
   },
   'blueberry': {
     id: 'blueberry',
     nom: 'myrtilles',
     nom_singulier: 'myrtille',
-    icon: '🫐'
+    icon: '🫐',
+    description: 'Fruits délicieux qui augmentent votre niveau! Survolez votre icone de profil pour plus d\'infos.'
   }
 }
 
@@ -866,10 +1144,50 @@ export const achievementCategories = {
     icon: '👤',
     color: '#795548'
   },
+  'name_change': {
+    nom: 'Personnalisation',
+    icon: '👤',
+    color: '#795548'
+  },
   'boxes_opened': {
     nom: 'Ouvertures',
     icon: '📦',
     color: '#673AB7'
+  },
+  'team_stats': {
+    nom: 'Équipe',
+    icon: '💪',
+    color: '#FF5722'
+  },
+  'mega_click': {
+    nom: 'Récolte',
+    icon: '🥚',
+    color: '#FFC107'
+  },
+  'mining_artifacts': {
+    nom: 'Artefacts',
+    icon: '🪨',
+    color: '#8B4513'
+  },
+  'mining_cells': {
+    nom: 'Minage',
+    icon: '⛏️',
+    color: '#696969'
+  },
+  'mining_no_reward': {
+    nom: 'Malchance',
+    icon: '😞',
+    color: '#FF6347'
+  },
+  'mining_full_grid': {
+    nom: 'Expertise',
+    icon: '💎',
+    color: '#FFD700'
+  },
+  'chickenGiftsCollected': {
+    nom: 'Cadeaux',
+    icon: '🎁',
+    color: '#FF69B4'
   }
 }
 
@@ -896,7 +1214,154 @@ export function getAllGameData() {
     levelRewards,
     achievements: achievementsData,
     items: itemsData,
-    categories: achievementCategories
+    categories: achievementCategories,
+    mining: miningData,
+    artifacts: artifactsData
+  }
+}
+
+// ========================
+// CONFIGURATION DU MINI-JEU DE MINAGE
+// ========================
+export const miningData = {
+  gridSize: 5,
+  defaultHP: 3,
+  tools: {
+    shovel: {
+      name: 'Pelle',
+      icon: '🪚',
+      desc: 'Inflige 3 dégâts sur une case',
+      damage: 3,
+      pattern: 'single',
+      secondary_damage: 1,
+      animation: 'mining'
+    },
+    pickaxe: {
+      name: 'Pioche',
+      icon: '⛏️',
+      desc: 'Inflige 2 dégâts sur la case ciblée et 1 dégât sur les cases adjacentes',
+      damage: 2,
+      pattern: 'cross',
+      secondary_damage: 1,
+      animation: 'mining'
+    },
+    hammer: {
+      name: 'Marteau',
+      icon: '🔨',
+      desc: 'Inflige 1 dégât au centre et 1 dégât aux cases voisines (3x3)',
+      damage: 1,
+      pattern: 'square',
+      secondary_damage: 1,
+      animation: 'mining'
+    },
+    dynamite: {
+      name: 'Dynamite',
+      icon: '🧨',
+      desc: 'BOOM! (en croix)',
+      damage: 3,
+      pattern: 'cross',
+      secondary_damage: 3,
+      animation: 'explosion'
+    },
+    bomb: {
+      name: 'Bombe',
+      icon: '💣',
+      desc: 'BOOOOOOM! (3x3)',
+      damage: 3,
+      pattern: 'square',
+      secondary_damage: 3,
+      animation: 'explosion'
+    }
+  },
+  rewardPool: [
+    { type: 'eggs', amount: 25, weight: 25 },
+    { type: 'eggs', amount: 50, weight: 15 },
+    { type: 'eggs', amount: 100, weight: 5 },
+    { type: 'eggs', amount: 1000, weight: 1 },
+    { type: 'eggs', amount: 10000, weight: 0.1 },
+    { type: 'mining_token', amount: 1, weight: 10 },
+    { type: 'stock_token', amount: 1, weight: 6 },
+    { type: 'production_token', amount: 1, weight: 6 },
+    { type: 'chest_key', amount: 1, weight: 10 }
+  ],
+  toolPool: [
+    { type: 'shovel', weight: 33 },
+    { type: 'pickaxe', weight: 33 },
+    { type: 'hammer', weight: 33 },
+    { type: 'dynamite', weight: 1 }
+  ],
+  toolsCount: 6
+}
+
+// ========================
+// ARTÉFACTS DE MINAGE
+// Liste d'artefacts utilisables pendant une partie de minage.
+// Chaque artefact a un effet passif appliqué lorsqu'il est équipé pour une partie.
+// Structure similaire aux espèces: id, name, icon, description, rarity, effect
+export const artifactsData = {
+  'lucky-shard': {
+    id: 'lucky-shard',
+    name: 'Fragment de Chance',
+    icon: '🍀',
+    description: "Augmente légèrement la probabilité d'obtenir une récompense dans chaque case.",
+    rarete: 'commune',
+    effect: { type: 'increase_reward_chance', amount: 0.1 }
+  },
+  'smith-glyph': {
+    id: 'smith-glyph',
+    name: 'Glyphe du Forgeron',
+    icon: '🔧',
+    description: "+1 outil pendant une partie.",
+    rarete: 'commune',
+    effect: { type: 'increase_tool_count', amount: 1 }
+  },
+  'ancient-compass': {
+    id: 'ancient-compass',
+    name: 'Boussole Antique',
+    icon: '🧭',
+    description: "Révèle 50% des cases avec récompenses au début de la partie.",
+    rarete: 'legendaire',
+    effect: { type: 'reveal_rewards', chance: 0.5 }
+  },
+  'explosive-fan': {
+    id: 'explosive-fan',
+    name: 'Fan d\'explosif',
+    icon: '🧨',
+    description: "Le dernier outil est toujours une dynamite.",
+    rarete: 'rare',
+    effect: { type: 'last_dynamite' }
+  },
+  'pyromaniac': {
+    id: 'pyromaniac',
+    name: 'Pyromane',
+    icon: '💣',
+    description: "Les dynamites deviennent des bombes, qui affectent une zone de 3x3.",
+    rarete: 'epique',
+    effect: { type: 'tool_change', origin:'dynamite', dest:'bomb' }
+  },
+  'reinforced-handle': {
+    id: 'reinforced-handle',
+    name: 'Manche Renforcé',
+    icon: '🪓',
+    description: "Les outils infligent +1 dégat à l'endroit cliqué.",
+    rarete: 'epique',
+    effect: { type: 'increase_tool_damage', amount: 1 }
+  },
+  'mining-master': {
+    id: 'mining-master',
+    name: 'Maître mineur',
+    icon: '⚒️',
+    description: "Les pelles deviennent des pioches.",
+    rarete: 'rare',
+    effect: { type: 'tool_change', origin:'shovel', dest:'pickaxe' }
+  },
+  'hole-ace': {
+    id: 'hole-ace',
+    name: 'As du trou',
+    icon: '🕳️',
+    description: "Chaque pelle se duplique au début de la partie.",
+    rarete: 'commune',
+    effect: { type: 'when_tool_add_another', detect:'shovel', add:'shovel' }
   }
 }
 

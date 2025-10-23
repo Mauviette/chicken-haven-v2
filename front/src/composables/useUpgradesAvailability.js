@@ -22,8 +22,11 @@ export function useUpgradesAvailability() {
     if (!Array.isArray(list) || list.length === 0) return false
     
     // Vérifier que les tokens sont bien chargés avant de calculer la disponibilité
-    if (stockTokens.value === null || productionTokens.value === null || wildTokens.value === null) {
-      return false
+    // Convertir null en 0 pour éviter les faux positifs
+    const tokens = {
+      stock_token: stockTokens.value ?? 0,
+      production_token: productionTokens.value ?? 0,
+      wild_token: wildTokens.value ?? 0
     }
     
     return list.some(u => {
@@ -32,7 +35,11 @@ export function useUpgradesAvailability() {
       if (isMaxed) return false
       const cost = getCurrentCostForLevel(u.costs, currentLevel)
       const price = { type: u.priceType, count: Number(cost) || 0 }
-      return Number(price.count) > 0 ? canAfford(price) : false
+      
+      // Vérifier avec les tokens normalisés
+      if (Number(price.count) <= 0) return false
+      
+      return canAfford(price)
     })
   })
 

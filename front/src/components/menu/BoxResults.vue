@@ -9,31 +9,67 @@
       
       <div class="results-content">
         <div v-if="results.length === 0" class="no-results">
-          <p>😢 Aucune poule obtenue cette fois...</p>
+          <p>😢 Rien obtenu cette fois...</p>
         </div>
         
-        <div v-else class="chicken-results">
+        <div v-else class="results-grid">
           <div 
             v-for="(result, index) in results" 
             :key="index"
             :class="['result-item', `rarity-${result.rarete}`, { 'epic-appear': result.rarete === 'epique' }]"
           >
+            <!-- Poule -->
+            <template v-if="result.type === 'chicken'">
             <div class="result-icon">
               <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
-              <img 
-                :src="getImage(result.especeId)" 
-                :alt="result.nom"
-                @error="onImageError"
-              />
-            </div>
-            
-            <div class="result-info">
-              <h4 :style="{ color: getRarityColor(result.rarete) }">
-                {{ result.nom }}
-              </h4>
-              <p class="result-rarity">{{ getRarityLabel(result.rarete) }}</p>
-              <p class="result-group">Groupe: {{ result.groupe }}</p>
-            </div>
+              <div class="box-results-tooltip">
+                <Tooltip :text="getTalentEffect(result)">
+                  <img 
+                    :src="getImage(result.especeId)" 
+                    :alt="result.nom"
+                    @error="onImageError"
+                  />
+                </Tooltip>
+              </div>
+            </div>              <div class="result-info">
+                <h4 :style="{ color: getRarityColor(result.rarete) }">
+                  {{ result.nom }}
+                </h4>
+                <p class="result-rarity">{{ getRarityLabel(result.rarete) }}</p>
+                <p class="result-group">Groupe: {{ result.groupe }}</p>
+              </div>
+            </template>
+
+            <!-- Artefact -->
+            <template v-else-if="result.type === 'artifact'">
+              <div class="result-icon">
+                <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
+                <div class="artifact-display">
+                  {{ result.icon }}
+                </div>
+              </div>
+              
+              <div class="result-info">
+                <h4 :style="{ color: getRarityColor(result.rarete) }">
+                  {{ result.name }}
+                </h4>
+                <p class="result-rarity">{{ getRarityLabel(result.rarete) }}</p>
+                <p class="result-description">{{ result.description }}</p>
+              </div>
+            </template>
+
+            <!-- Item/Ressource -->
+            <template v-else-if="result.type === 'item'">
+              <div class="result-icon item-icon">
+                <div class="item-display">
+                  {{ getItemIcon(result.itemId) }}
+                </div>
+              </div>
+              
+              <div class="result-info">
+                <h4>{{ result.amount }} {{ getItemName(result.itemId).toLowerCase() }}</h4>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -50,6 +86,7 @@
 <script setup>
 import { computed } from 'vue'
 import ActionButton from './ActionButton.vue'
+import Tooltip from './Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
 
 const props = defineProps({
@@ -68,7 +105,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
-const { getImage, hiddenImage } = usePoules()
+const { getImage, hiddenImage, poules, getTalentEffectSync } = usePoules()
 
 function closeResults() {
   emit('close')
@@ -94,9 +131,42 @@ function getRarityLabel(rarity) {
   }
 }
 
+function getItemIcon(itemId) {
+  const icons = {
+    eggs: '🥚',
+    stock_token: '📦',
+    production_token: '⚙️',
+    wild_token: '🃏',
+    chest_key: '🗝️',
+    mining_token: '🪨'
+  }
+  return icons[itemId] || '❓'
+}
+
+function getItemName(itemId) {
+  const names = {
+    eggs: 'Œufs',
+    stock_token: 'Jetons de stock', 
+    production_token: 'Jetons de production',
+    wild_token: 'Jetons joker',
+    chest_key: 'Clés à coffre',
+    mining_token: 'Jetons de minage'
+  }
+  return names[itemId] || 'Objet inconnu'
+}
+
 function onImageError(event) {
   // Image de fallback en cas d'erreur
   event.target.src = hiddenImage
+}
+
+function getTalentEffect(result) {
+  // Trouver la poule correspondante dans le store
+  const poule = poules.value.find(p => p.especeId === result.especeId)
+  if (poule) {
+    return getTalentEffectSync(poule)
+  }
+  return 'Talent inconnu'
 }
 </script>
 
@@ -176,7 +246,19 @@ function onImageError(event) {
   font-size: 16px;
 }
 
-.chicken-results {
+.results-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.artifact-results {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item-results {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -297,6 +379,58 @@ function onImageError(event) {
   color: #A0522D;
 }
 
+/* Styles spécifiques pour les artefacts */
+.result-item.artifact {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(75, 0, 130, 0.1) 100%);
+  border-color: #8a2be2;
+}
+
+.artifact-description {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+/* Styles spécifiques pour les objets */
+.result-item.item {
+  background: linear-gradient(135deg, rgba(34, 139, 34, 0.1) 0%, rgba(0, 100, 0, 0.1) 100%);
+  border-color: #228b22;
+}
+
+.item-amount {
+  font-size: 14px;
+  font-weight: bold;
+  color: #228b22;
+  margin-left: 8px;
+}
+
+.artifact-display {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 2px solid #8B4513;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.item-icon {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 2px solid #8B4513;
+}
+
 .results-footer {
   text-align: center;
   margin-top: 16px;
@@ -329,5 +463,12 @@ function onImageError(event) {
     width: 40px;
     height: 40px;
   }
+}
+</style>
+
+<style>
+/* Styles pour corriger le tooltip sur les images dans BoxResults */
+.box-results-tooltip .tooltip-wrapper {
+  display: block !important;
 }
 </style>
