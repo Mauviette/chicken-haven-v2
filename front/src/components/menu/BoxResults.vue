@@ -20,9 +20,10 @@
           >
             <!-- Poule -->
             <template v-if="result.type === 'chicken'">
-              <div class="result-icon">
-                <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
-                <Tooltip :text="getTalentEffectForChicken(result.especeId)">
+            <div class="result-icon">
+              <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
+              <div class="box-results-tooltip">
+                <Tooltip :text="getTalentEffect(result)">
                   <img 
                     :src="getImage(result.especeId)" 
                     :alt="result.nom"
@@ -30,8 +31,7 @@
                   />
                 </Tooltip>
               </div>
-              
-              <div class="result-info">
+            </div>              <div class="result-info">
                 <h4 :style="{ color: getRarityColor(result.rarete) }">
                   {{ result.nom }}
                 </h4>
@@ -105,16 +105,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
-const { getImage, hiddenImage, getTalentEffectSync, poules } = usePoules()
-
-function getTalentEffectForChicken(especeId) {
-  // Trouver la poule dans les données
-  const poule = poules.value?.find(p => p.especeId === especeId)
-  if (poule) {
-    return getTalentEffectSync(poule)
-  }
-  return 'Talent inconnu'
-}
+const { getImage, hiddenImage, poules, getTalentEffectSync } = usePoules()
 
 function closeResults() {
   emit('close')
@@ -167,6 +158,15 @@ function getItemName(itemId) {
 function onImageError(event) {
   // Image de fallback en cas d'erreur
   event.target.src = hiddenImage
+}
+
+function getTalentEffect(result) {
+  // Trouver la poule correspondante dans le store
+  const poule = poules.value.find(p => p.especeId === result.especeId)
+  if (poule) {
+    return getTalentEffectSync(poule)
+  }
+  return 'Talent inconnu'
 }
 </script>
 
@@ -463,5 +463,12 @@ function onImageError(event) {
     width: 40px;
     height: 40px;
   }
+}
+</style>
+
+<style>
+/* Styles pour corriger le tooltip sur les images dans BoxResults */
+.box-results-tooltip .tooltip-wrapper {
+  display: block !important;
 }
 </style>
