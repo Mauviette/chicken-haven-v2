@@ -1,7 +1,7 @@
 
 
 
-Problème : une poule dont la quantité est 0 est affichée comme non obtenue dans les possibilités du marché alors qu'il faut se baser sur si elle est dans poulesPossede tout court
+
 
 Market : Résultat d'ouverture d'une boite : Hover l'image de la poule pour afficher l'effet de son talent. (avec Tooltip.vue)
 
