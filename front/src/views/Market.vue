@@ -422,14 +422,8 @@ function getBoxRarityProbabilities(box) {
   })
   
   return avgProbabilities.map(prob => {
-    // Arrondir intelligemment : si >= 1, arrondir à l'entier, sinon garder 1 décimale
-    if (prob >= 1) {
-      return Math.round(prob)
-    } else if (prob > 0) {
-      return Math.round(prob * 10) / 10
-    } else {
-      return 0
-    }
+    // Arrondir à 1 décimale maximum pour éviter les erreurs de précision
+    return Math.round(prob * 10) / 10
   })
 }
 
@@ -500,15 +494,8 @@ function getDiceTooltipText(box) {
           // Calculer le pourcentage final : (chance du groupe dans la boîte) * (chance de rareté dans le groupe) / 100
           const rawPercent = (group.chance / totalChance) * (rarityChance / 100) * 100
           
-          // Arrondir intelligemment : si >= 1, arrondir à l'entier, sinon garder 1 décimale
-          let finalPercent
-          if (rawPercent >= 1) {
-            finalPercent = Math.round(rawPercent)
-          } else if (rawPercent > 0) {
-            finalPercent = Math.round(rawPercent * 10) / 10
-          } else {
-            finalPercent = 0
-          }
+          // Arrondir à 1 décimale maximum pour éviter les erreurs de précision
+          const finalPercent = Math.round(rawPercent * 10) / 10
           
           // Afficher même si le pourcentage est 0 mais qu'il y a des éléments disponibles
           if (finalPercent > 0 || availableCount > 0) {
