@@ -27,7 +27,7 @@
             </div>
             <div class="leaderboard-list">
               <div 
-                v-for="leaderboardPlayer in leaderboards.totalEggs" 
+                v-for="leaderboardPlayer in limitedTotalEggs" 
                 :key="`total-${leaderboardPlayer.profileId}`"
                 class="leaderboard-item"
                 :class="{ 'current-user': isCurrentUser(leaderboardPlayer) }"
@@ -45,13 +45,20 @@
                 </div>
                 <div class="player-info">
                   <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
-                  <div class="player-id">#{{ leaderboardPlayer.profileId }}</div>
+                  <div class="player-username">{{ leaderboardPlayer.username }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
                 <div class="player-value">
                   {{ formatNumber(leaderboardPlayer.value) }} 🥚
                 </div>
               </div>
+              <button 
+                v-if="leaderboards?.totalEggs && leaderboards.totalEggs.length > 10"
+                class="show-more-button"
+                @click="openFullLeaderboard('totalEggs')"
+              >
+                Plus...
+              </button>
             </div>
           </div>
 
@@ -66,7 +73,7 @@
             </div>
             <div class="leaderboard-list">
               <div 
-                v-for="leaderboardPlayer in leaderboards.maxEggs" 
+                v-for="leaderboardPlayer in limitedMaxEggs" 
                 :key="`max-${leaderboardPlayer.profileId}`"
                 class="leaderboard-item"
                 :class="{ 'current-user': isCurrentUser(leaderboardPlayer) }"
@@ -84,13 +91,20 @@
                 </div>
                 <div class="player-info">
                   <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
-                  <div class="player-id">#{{ leaderboardPlayer.profileId }}</div>
+                  <div class="player-username">{{ leaderboardPlayer.username }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
                 <div class="player-value">
                   {{ formatNumber(leaderboardPlayer.value) }} ⚡
                 </div>
               </div>
+              <button 
+                v-if="leaderboards?.maxEggs && leaderboards.maxEggs.length > 10"
+                class="show-more-button"
+                @click="openFullLeaderboard('maxEggs')"
+              >
+                Plus...
+              </button>
             </div>
           </div>
 
@@ -105,7 +119,7 @@
             </div>
             <div class="leaderboard-list">
               <div 
-                v-for="leaderboardPlayer in leaderboards.chickens" 
+                v-for="leaderboardPlayer in limitedChickens" 
                 :key="`chickens-${leaderboardPlayer.profileId}`"
                 class="leaderboard-item"
                 :class="{ 'current-user': isCurrentUser(leaderboardPlayer) }"
@@ -123,13 +137,20 @@
                 </div>
                 <div class="player-info">
                   <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
-                  <div class="player-id">#{{ leaderboardPlayer.profileId }}</div>
+                  <div class="player-username">{{ leaderboardPlayer.username }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
                 <div class="player-value">
                   {{ leaderboardPlayer.value }} 🐔
                 </div>
               </div>
+              <button 
+                v-if="leaderboards?.chickens && leaderboards.chickens.length > 10"
+                class="show-more-button"
+                @click="openFullLeaderboard('chickens')"
+              >
+                Plus...
+              </button>
             </div>
           </div>
         </div>
@@ -159,16 +180,56 @@
       </button>
     </div>
 
+    <!-- Popup pour la leaderboard complète -->
+    <Popup v-if="showFullLeaderboard" @close="closeFullLeaderboard">
+      <div class="full-leaderboard-popup">
+        <h3 class="popup-title">{{ getLeaderboardTitle(showFullLeaderboard) }}</h3>
+        <div class="user-rank-popup" v-if="userRankings && userRankings[showFullLeaderboard]?.rank">
+          Votre rang: <strong>#{{ userRankings[showFullLeaderboard].rank }}</strong> / {{ userRankings[showFullLeaderboard].total }}
+          <span class="user-value-popup">({{ formatNumber(userRankings[showFullLeaderboard].value) }} {{ getLeaderboardIcon(showFullLeaderboard) }})</span>
+        </div>
+        <div class="full-leaderboard-list">
+          <div 
+            v-for="leaderboardPlayer in leaderboards[showFullLeaderboard]" 
+            :key="`full-${showFullLeaderboard}-${leaderboardPlayer.profileId}`"
+            class="leaderboard-item"
+            :class="{ 'current-user': isCurrentUser(leaderboardPlayer) }"
+            @click="viewPlayer(leaderboardPlayer)"
+          >
+            <div class="rank-badge" :class="getRankClass(leaderboardPlayer.rank)">
+              {{ leaderboardPlayer.rank }}
+            </div>
+            <div class="player-avatar">
+              <img 
+                :src="getPlayerAvatar(leaderboardPlayer)" 
+                :alt="leaderboardPlayer.username"
+                class="avatar-img"
+              />
+            </div>
+            <div class="player-info">
+              <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
+              <div class="player-username">{{ leaderboardPlayer.username }}</div>
+              <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
+            </div>
+            <div class="player-value">
+              {{ showFullLeaderboard === 'chickens' ? leaderboardPlayer.value : formatNumber(leaderboardPlayer.value) }} {{ getLeaderboardIcon(showFullLeaderboard) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Popup>
+
     <br/><br/><br/>
   </div>
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSocial } from '@/composables/useSocial'
 import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
+import Popup from '@/components/menu/Popup.vue'
 
 const { 
   leaderboards, 
@@ -182,6 +243,9 @@ const {
 const { player } = usePlayer()
 const { getImage: getChickenImage, hiddenImage } = usePoules()
 const router = useRouter()
+
+// État pour les popups
+const showFullLeaderboard = ref(null) // null, 'totalEggs', 'maxEggs', 'chickens'
 
 onMounted(async () => {
   await fetchLeaderboards()
@@ -246,6 +310,39 @@ const getPlayerAvatar = (leaderboardPlayer) => {
 const viewPlayer = (leaderboardPlayer) => {
   if (leaderboardPlayer.profileId) {
     router.push(`/user/${leaderboardPlayer.profileId}`)
+  }
+}
+
+// Fonctions pour les popups
+const openFullLeaderboard = (type) => {
+  showFullLeaderboard.value = type
+}
+
+const closeFullLeaderboard = () => {
+  showFullLeaderboard.value = null
+}
+
+// Computed pour limiter les leaderboards à 10 éléments
+const limitedTotalEggs = computed(() => leaderboards.value?.totalEggs?.slice(0, 10) || [])
+const limitedMaxEggs = computed(() => leaderboards.value?.maxEggs?.slice(0, 10) || [])
+const limitedChickens = computed(() => leaderboards.value?.chickens?.slice(0, 10) || [])
+
+// Fonctions pour obtenir le titre du popup
+const getLeaderboardTitle = (type) => {
+  switch (type) {
+    case 'totalEggs': return '🥚 Total d\'Œufs Récoltés'
+    case 'maxEggs': return '⚡ Maximum en Un Clic'
+    case 'chickens': return '🐔 Poules Découvertes'
+    default: return 'Classement'
+  }
+}
+
+const getLeaderboardIcon = (type) => {
+  switch (type) {
+    case 'totalEggs': return '🥚'
+    case 'maxEggs': return '⚡'
+    case 'chickens': return '🐔'
+    default: return ''
   }
 }
 </script>
@@ -533,7 +630,7 @@ const viewPlayer = (leaderboardPlayer) => {
   white-space: nowrap;
 }
 
-.player-id {
+.player-username {
   font-size: 12px;
   color: #888;
   font-family: monospace;
@@ -691,7 +788,7 @@ const viewPlayer = (leaderboardPlayer) => {
     margin-bottom: 3px;
   }
   
-  .player-id {
+  .player-username {
     font-size: 11px;
     margin-bottom: 3px;
   }
@@ -793,7 +890,7 @@ const viewPlayer = (leaderboardPlayer) => {
     white-space: nowrap;
   }
   
-  .player-id {
+  .player-username {
     font-size: 10px;
     margin-bottom: 2px;
   }
@@ -860,7 +957,7 @@ const viewPlayer = (leaderboardPlayer) => {
     max-width: 100px;
   }
   
-  .player-id {
+  .player-username {
     font-size: 9px;
   }
   
@@ -877,5 +974,143 @@ const viewPlayer = (leaderboardPlayer) => {
     font-size: 11px;
     padding: 4px 6px;
   }
+}
+
+/* Styles pour le bouton Plus */
+.show-more-button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #8B4513, #A0522D);
+  color: #fff9e5;
+  border: 2px solid #ffc66e;
+  border-radius: 8px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
+  transition: all 0.2s ease;
+}
+
+.show-more-button:hover {
+  background: linear-gradient(135deg, #A0522D, #CD853F);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+}
+
+/* Styles pour le popup de leaderboard complète */
+.full-leaderboard-popup {
+  max-height: 70vh;
+  overflow-y: auto;
+  min-width: 700px;
+  max-width: 95vw;
+  padding-top: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 198, 110, 0.3) transparent;
+}
+
+.full-leaderboard-popup::-webkit-scrollbar {
+  width: 6px;
+}
+
+.full-leaderboard-popup::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.full-leaderboard-popup::-webkit-scrollbar-thumb {
+  background: rgba(255, 198, 110, 0.3);
+  border-radius: 3px;
+}
+
+.full-leaderboard-popup::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 198, 110, 0.5);
+}
+
+/* Surcharge des styles du composant Popup pour la leaderboard */
+:deep(.popup-content) {
+  width: auto;
+  min-width: 700px;
+  max-width: 95vw;
+}
+
+.popup-title {
+  font-size: 20px;
+  color: #fff9e5;
+  margin: 0;
+  text-align: center;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  background: #7a3e10;
+  padding: 16px 0;
+  border-bottom: 2px solid #ffc66e;
+  z-index: 10;
+}
+
+.user-rank-popup {
+  font-size: 14px;
+  color: #ffc66e;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 16px;
+  font-weight: bold;
+  position: relative;
+  z-index: 5;
+  margin-top: 16px;
+}
+
+.user-value-popup {
+  font-weight: normal;
+  color: #ddd;
+}
+
+.full-leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.full-leaderboard-list .leaderboard-item.current-user {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: #4CAF50;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+  border: 2px solid #4CAF50;
+  position: relative;
+}
+
+.full-leaderboard-list .rank-badge {
+  min-width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+
+.full-leaderboard-list .player-avatar {
+  width: 44px;
+  height: 44px;
+}
+
+.full-leaderboard-list .avatar-img {
+  width: 44px;
+  height: 44px;
+}
+
+.full-leaderboard-list .player-name {
+  font-size: 15px;
+}
+
+.full-leaderboard-list .player-username {
+  font-size: 11px;
+}
+
+.full-leaderboard-list .last-seen {
+  font-size: 10px;
+}
+
+.full-leaderboard-list .player-value {
+  font-size: 15px;
+  min-width: 70px;
 }
 </style>

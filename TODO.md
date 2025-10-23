@@ -1,6 +1,5 @@
 
 
-Social : Limiter la taille des leaderboards à 10. S'il y a au moins 10 personnes sur la leaderboard, mettre un bouton "Plus" qui lorsque cliqué ouvrira un popup (Popup.vue) qui affichera la leaderboard entière.
 
 Problème : une poule dont la quantité est 0 est affichée comme non obtenue dans les possibilités du marché alors qu'il faut se baser sur si elle est dans poulesPossede tout court
 
