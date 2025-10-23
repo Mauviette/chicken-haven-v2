@@ -4,6 +4,7 @@
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
     @mousemove="handleMouseMove"
+    @click="handleClick"
     ref="wrapper"
   >
     <slot />
@@ -33,8 +34,14 @@ const wrapper = ref(null)
 const show = ref(false)
 const position = ref({ top: 0, left: 0 })
 const tooltipEl = ref(null)
+const isMobile = ref(false)
 
 const tooltipOffset = { x: 15, y: 12 } // Offset par rapport au curseur (plus bas)
+
+// Détecter si c'est un appareil tactile
+function detectMobile() {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0
+}
 
 function getTooltipSize() {
   const rect = tooltipEl.value?.getBoundingClientRect?.()
@@ -111,13 +118,23 @@ function updateMousePosition(event) {
 }
 
 function handleMouseEnter(event) {
+  if (isMobile.value) return // Sur mobile, utiliser le clic
   show.value = true
   // Attendre que la tooltip soit montée pour mesurer sa taille réelle
   nextTick(() => updateMousePosition(event))
 }
 
 function handleMouseLeave() {
+  if (isMobile.value) return // Sur mobile, garder visible jusqu'au clic suivant
   show.value = false
+}
+
+function handleClick(event) {
+  if (!isMobile.value) return // Sur desktop, utiliser le hover
+  show.value = !show.value // Toggle
+  if (show.value) {
+    nextTick(() => updateMousePosition(event))
+  }
 }
 
 function handleMouseMove(event) {
@@ -133,12 +150,23 @@ function handleGlobalMouseMove(event) {
   }
 }
 
+// Fermer la tooltip sur mobile quand on clique ailleurs
+function handleGlobalClick(event) {
+  if (!isMobile.value || !show.value) return
+  if (wrapper.value && !wrapper.value.contains(event.target)) {
+    show.value = false
+  }
+}
+
 onMounted(() => {
+  isMobile.value = detectMobile()
   document.addEventListener('mousemove', handleGlobalMouseMove)
+  document.addEventListener('click', handleGlobalClick)
 })
 
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleGlobalMouseMove)
+  document.removeEventListener('click', handleGlobalClick)
 })
 
 // Si le texte change pendant que la tooltip est ouverte, forcer un léger remount pour garantir la mise à jour visuelle

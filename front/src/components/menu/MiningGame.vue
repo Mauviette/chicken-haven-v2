@@ -767,6 +767,12 @@ function getArtifactBadgeStyle(aid) {
   padding: 8px;
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
   overflow: hidden;
+  user-select: none; /* Désactiver sélection de texte */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 .cell {
@@ -781,6 +787,12 @@ function getArtifactBadgeStyle(aid) {
   position: relative;
   cursor: inherit;
   overflow: hidden;
+  user-select: none; /* Désactiver sélection de texte */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 .cell.intact {
@@ -1166,19 +1178,22 @@ function getArtifactBadgeStyle(aid) {
   .game-container {
     flex-direction: column;
     align-items: center;
+    gap: 12px;
   }
 
   .grid {
-    width: 70vw;
-    height: 70vw;
-    max-width: 400px;
-    max-height: 400px;
+    width: 75vw;
+    height: 75vw;
+    max-width: 380px;
+    max-height: 380px;
+    gap: 3px;
   }
 
   .tools-panel {
-    width: 70vw;
-    max-width: 400px;
-    height: 120px;
+    width: 75vw;
+    max-width: 380px;
+    height: 80px; /* Réduit de 110px à 80px pour économiser l'espace vertical */
+    padding: 8px;
   }
 
   .tools-stack-container {
@@ -1192,6 +1207,7 @@ function getArtifactBadgeStyle(aid) {
     justify-content: flex-start;
     overflow-x: auto;
     scrollbar-width: none; /* Firefox */
+    gap: 6px;
   }
 
   .tools-stack::-webkit-scrollbar {
@@ -1204,46 +1220,209 @@ function getArtifactBadgeStyle(aid) {
   }
 
   .tool-item {
-    min-width: 50px;
+    min-width: 48px;
+    min-height: 48px;
     justify-content: center;
+    padding: 6px;
+    flex-shrink: 0;
   }
 
   .tool-item.current {
     min-width: auto;
+    min-height: 52px;
+  }
+
+  .tool-icon {
+    font-size: 20px;
+  }
+
+  .tool-name {
+    font-size: 12px;
+  }
+
+  /* Désactiver les effets hover sur mobile */
+  .cell:hover {
+    transform: none;
+  }
+
+  /* Désactiver les effets de preview sur mobile */
+  .cell.preview,
+  .cell.preview-strong,
+  .cell.preview-destroy {
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* Améliorer interactions tactiles */
+  .cell {
+    touch-action: manipulation; /* Améliorer réponse tactile */
+    -webkit-tap-highlight-color: rgba(255, 198, 110, 0.3); /* Highlight de tap */
+  }
+
+  .tool-item {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(255, 198, 110, 0.2);
+  }
+
+  /* Améliorer visibilité des tooltips sur mobile */
+  .mining-popup :deep(.tooltip) {
+    font-size: 12px;
+    max-width: 200px;
+  }
+
+  /* Améliorer contraste pour accessibilité mobile */
+  .cell.intact {
+    border-width: 1px; /* Bordures plus fines pour plus de cases */
+  }
+
+  .cell.cracked-light,
+  .cell.cracked-heavy,
+  .cell.dug {
+    border-width: 1px;
+  }
+
+  /* Optimiser performance mobile */
+  .grid {
+    -webkit-transform: translateZ(0); /* Accélérer rendu */
+    transform: translateZ(0);
+  }
+
+  .tools-stack {
+    -webkit-overflow-scrolling: touch; /* Smooth scroll iOS */
   }
 }
 
 @media (max-width: 480px) {
   .grid {
-    width: 85vw;
-    height: 85vw;
-    max-width: 350px;
-    max-height: 350px;
-    gap: 4px;
+    width: 90vw;
+    height: 90vw;
+    max-width: 320px;
+    max-height: 320px;
+    gap: 2px;
+    padding: 6px;
   }
 
   .tools-panel {
-    width: 85vw;
-    max-width: 350px;
-    height: 100px;
-  }
-  
-  .header {
-    padding-right: 25px;
-  }
-  
-  .header h2 {
-    font-size: 18px;
+    width: 90vw;
+    max-width: 320px;
+    height: 70px; /* Réduit de 90px à 70px pour les très petits écrans */
+    padding: 6px;
   }
 
-  /* En très petit écran aussi, cacher les noms sauf pour l'outil actuel */
-  .tool-item:not(.current) .tool-name {
-    display: none;
+  .cell {
+    min-height: 28px;
+    min-width: 28px;
+    font-size: 10px;
+  }
+
+  .reward {
+    font-size: 12px;
+  }
+
+  .reward.large-emoji {
+    font-size: 20px;
   }
 
   .tool-item {
-    min-width: 45px;
-    padding: 6px 8px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 4px;
+  }
+
+  .tool-item.current {
+    min-height: 44px;
+  }
+
+  .tool-icon {
+    font-size: 16px;
+  }
+
+  .tool-name {
+    font-size: 11px;
+  }
+
+  .header h2 {
+    font-size: 16px;
+  }
+
+  .artifact-badge {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .tokens {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+
+  .hint-counter {
+    font-size: 11px;
+    padding: 1px 4px;
+  }
+
+  /* Désactiver les effets hover sur très petits écrans */
+  .cell:hover {
+    transform: none;
+  }
+
+  /* Désactiver les effets de preview sur très petits écrans */
+  .cell.preview,
+  .cell.preview-strong,
+  .cell.preview-destroy {
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* Améliorer les boutons */
+  .start-screen p,
+  .continue-screen p {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .game-over h3 {
+    font-size: 18px;
+  }
+
+  .rewards-list {
+    padding: 12px;
+  }
+
+  .rewards-list li {
+    font-size: 14px;
+    padding: 3px 0;
+  }
+
+  /* Améliorer popup très petit écran */
+  .mining-popup :deep(.popup-content) {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    padding: 8px !important;
+  }
+
+  /* Désactiver complètement les particules sur très petits écrans */
+  .cell.digging::before,
+  .cell.digging::after {
+    display: none !important;
+  }
+
+  .explosion-effect {
+    display: none; /* Désactiver overlay explosion sur très petits écrans */
+  }
+
+  .cell.explosion {
+    box-shadow: 0 0 8px rgba(255, 150, 50, 0.6);
+    transform: scale(1.03);
+    animation: none; /* Désactiver animation explosion */
+  }
+
+  /* Simplifier hint */
+  .cell-hint {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    animation: none; /* Désactiver pulse */
   }
 }
 
