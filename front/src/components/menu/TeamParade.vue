@@ -41,7 +41,7 @@ import TeamParadeChicken from '@/components/menu/TeamParadeChicken.vue'
 const { team } = usePlayer()
 const { especies, getImage, poules, getTalentEffectSync, getTalentLevel } = usePoules()
 const { especies: especeData, talents } = useGameData()
-const { eggState, fetchEggStatus } = useEgg()
+const { eggState, fetchEggStatus, startUpdates, stopUpdates } = useEgg()
 
 const container = ref(null)
 const containerWidth = ref(0)
@@ -197,10 +197,25 @@ onMounted(() => {
   window.addEventListener('resize', measure)
   // Récupérer le statut de l'œuf pour avoir maxIncome (stock) à jour pour le tooltip
   fetchEggStatus().catch(() => {})
+  // Démarrer les mises à jour périodiques pour les cooldowns des talents
+  startUpdates()
+  
+  // Interval supplémentaire pour s'assurer que les cooldowns sont mis à jour fréquemment
+  if (typeof window !== 'undefined') {
+    window.__teamParadeCooldownsInterval && clearInterval(window.__teamParadeCooldownsInterval)
+    window.__teamParadeCooldownsInterval = setInterval(() => { fetchEggStatus() }, 2000)
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', measure)
+  // Arrêter les mises à jour périodiques
+  stopUpdates()
+  // Nettoyer l'interval supplémentaire
+  if (typeof window !== 'undefined' && window.__teamParadeCooldownsInterval) {
+    clearInterval(window.__teamParadeCooldownsInterval)
+    window.__teamParadeCooldownsInterval = null
+  }
 })
 
 watch(() => team.value?.slots, () => {

@@ -661,6 +661,13 @@ onMounted(async () => {
     window.__buffsInterval && clearInterval(window.__buffsInterval)
     window.__buffsInterval = setInterval(() => { fetchBuffs() }, BUFFS_REFRESH_MS)
   }
+
+  // Rafraîchir les cooldowns des talents actifs périodiquement (toutes les 5s)
+  const COOLDOWNS_REFRESH_MS = 5000
+  if (typeof window !== 'undefined') {
+    window.__cooldownsInterval && clearInterval(window.__cooldownsInterval)
+    window.__cooldownsInterval = setInterval(() => { fetchEggStatus() }, COOLDOWNS_REFRESH_MS)
+  }
 })
 
 onUnmounted(() => {
@@ -668,6 +675,10 @@ onUnmounted(() => {
   if (typeof window !== 'undefined' && window.__buffsInterval) {
     clearInterval(window.__buffsInterval)
     window.__buffsInterval = null
+  }
+  if (typeof window !== 'undefined' && window.__cooldownsInterval) {
+    clearInterval(window.__cooldownsInterval)
+    window.__cooldownsInterval = null
   }
 })
 
