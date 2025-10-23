@@ -69,15 +69,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erreur interne du serveur' })
 })
 
+const PORT = process.env.PORT || 3002
+app.listen(PORT, () => {
+  console.log(`Serveur lancé sur le port ${PORT}`)
+})
+
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 }).then(() => {
   console.log('✅ Connecté à MongoDB')
-  const PORT = process.env.PORT || 3002
-  app.listen(PORT, () => {
-    console.log(`Serveur lancé sur le port ${PORT}`)
-  })
 }).catch((err) => {
   console.error('❌ Erreur de connexion MongoDB :', err.message)
   console.log('🔄 Tentative de redémarrage dans 5 secondes...')
