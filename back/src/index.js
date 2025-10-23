@@ -75,9 +75,8 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(() => {
   console.log('✅ Connecté à MongoDB')
   const PORT = process.env.PORT || 3002
-  app.listen(PORT, '::', () => {
-    console.log(`🚀 Serveur lancé sur le port ${PORT} (IPv4 + IPv6)`)
-    console.log(`📡 CORS configuré pour toutes les origines`)
+  app.listen(PORT, () => {
+    console.log(`Serveur lancé sur le port ${PORT}`)
   })
 }).catch((err) => {
   console.error('❌ Erreur de connexion MongoDB :', err.message)
