@@ -30,6 +30,12 @@
               🏆 Succès
               <span v-if="hasUnclaimedRewards" class="menu-badge"></span>
             </div>
+            <Tooltip :text="!isMiningUnlocked ? 'Débloqué au niveau 5' : 'Accéder au mini-jeu de minage'">
+              <div class="mobile-menu-item" @click="isMiningUnlocked ? openMiningFromMenu() : null" :class="{ disabled: !isMiningUnlocked }">
+                🪨 Minage 
+                <span v-if="!isMiningUnlocked" class="level-requirement"> Niv. 5</span>
+              </div>
+            </Tooltip>
             <div class="mobile-menu-item" @click="openOptions">
               ⚙️ Paramètres
             </div>
@@ -83,11 +89,16 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['open-profile', 'open-achievements', 'open-options', 'close-achievements'])
+const emit = defineEmits(['open-profile', 'open-achievements', 'open-options', 'close-achievements', 'open-mining'])
 
 const showMobileMenu = ref(false)
 const myProfileId = ref('')
 const myAvatarId = ref('hidden')
+
+// Handler pour les mises à jour d'avatar
+const avatarUpdateHandler = (e) => {
+  try { myAvatarId.value = e?.detail?.avatar ? String(e.detail.avatar) : 'hidden' } catch (_) {}
+}
 
 // Marché déverrouillé
 const isMarketUnlocked = computed(() => {
@@ -97,6 +108,12 @@ const isMarketUnlocked = computed(() => {
     if (arr.some(u => u.id === 'market')) return true
   }
   return false
+})
+
+// Minage déverrouillé
+const isMiningUnlocked = computed(() => {
+  const l = level.value || 1
+  return l >= 5
 })
 
 // Succès non réclamés
@@ -131,15 +148,15 @@ onMounted(async () => {
   } catch (_) {}
 
   // Ecouter les mises à jour d'avatar globales (depuis UserProfile)
-  const handler = (e) => {
-    try { myAvatarId.value = e?.detail?.avatar ? String(e.detail.avatar) : 'hidden' } catch (_) {}
-  }
-  window.addEventListener('avatar-updated', handler)
-  // Nettoyage
-  onBeforeUnmount(() => window.removeEventListener('avatar-updated', handler))
+  window.addEventListener('avatar-updated', avatarUpdateHandler)
 
   // Init upgrades availability for global badge
   try { initUpgradesAvailability() } catch (_) {}
+})
+
+// Nettoyage des event listeners
+onBeforeUnmount(() => {
+  window.removeEventListener('avatar-updated', avatarUpdateHandler)
 })
 
 function toggleMobileMenu() {
@@ -182,6 +199,12 @@ function openAchievements() {
 function openOptions() {
   emit('open-options')
   showMobileMenu.value = false
+}
+
+function openMiningFromMenu() {
+  console.log('Opening mining from menu')
+  emit('open-mining')
+  showMobileMenu.value = false // Fermer le menu mobile
 }
 
 const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`
@@ -378,6 +401,15 @@ const levelTooltipHtml = () => {
   border: 1px solid #8B4513;
   border-radius: 50%;
   margin-left: 8px;
+}
+
+.level-requirement {
+  font-size: 10px;
+  color: #8B4513;
+  background-color: rgba(255, 198, 110, 0.3);
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin-left: auto;
 }
 
 .top-right {

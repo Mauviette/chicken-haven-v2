@@ -5,6 +5,7 @@
       @open-achievements="toggleAchievementsWithSound"
       @open-options="openOptions"
       @close-achievements="closeAchievements"
+      @open-mining="() => showMiningGame = true"
       :achievements-open="showAchievements"
     />
     <div class="main-content">
