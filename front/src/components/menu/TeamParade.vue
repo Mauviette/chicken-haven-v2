@@ -3,7 +3,7 @@
     <div class="stage">
       <TeamParadeChicken
         v-for="(e, i) in entries"
-        :key="e.especeId + '-' + e.level"
+        :key="e.especeId"
         :especeId="e.especeId"
         :name="e.name"
         :talentEffect="e.talentEffect"

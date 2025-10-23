@@ -7,11 +7,15 @@
         v-if="currentImg"
         :src="currentImg"
         class="parade-chicken"
-        :class="[state, isFallback ? 'fallback' : '']"
+        :class="[state, isFallback ? 'fallback' : '', isUpgrading ? 'upgrading' : '']"
         :alt="name"
         :style="{ '--dir': direction }"
         @click="emitOpenDetail"
         />
+        <!-- Particules d'amélioration -->
+        <div v-if="isUpgrading" class="upgrade-particles">
+          <span class="particle" v-for="i in 8" :key="i" :style="{ '--delay': (i * 0.1) + 's', '--angle': (i * 45) + 'deg' }">✨</span>
+        </div>
   <!-- Indicateur talent activable: petit éclair en haut à droite -->
   <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">
     ⚡
@@ -31,11 +35,15 @@
       v-if="currentImg && isMobile"
       :src="currentImg"
       class="parade-chicken"
-      :class="[state, isFallback ? 'fallback' : '']"
+      :class="[state, isFallback ? 'fallback' : '', isUpgrading ? 'upgrading' : '']"
       :alt="name"
       :style="{ '--dir': direction }"
       @click="emitOpenDetail"
       />
+      <!-- Particules d'amélioration pour mobile -->
+      <div v-if="isUpgrading" class="upgrade-particles">
+        <span class="particle" v-for="i in 8" :key="i" :style="{ '--delay': (i * 0.1) + 's', '--angle': (i * 45) + 'deg' }">✨</span>
+      </div>
   <span v-if="isActivableTalent" :class="['badge-activable', { 'not-ready': !isTalentReady }]">
     ⚡
     <span class="badge-subtype">{{ talentSubIcon }}</span>
@@ -88,8 +96,23 @@ function updateMobileState() {
   isMobile.value = window.innerWidth <= 768
 }
 
+const isUpgrading = ref(false)
+
+// Écouter l'événement d'amélioration de poule
+function onChickenUpgraded(event) {
+  // Vérifier si c'est cette poule qui a été améliorée
+  if (event.detail?.especeId === props.especeId) {
+    isUpgrading.value = true
+    // Réinitialiser après l'animation (0.8 secondes)
+    setTimeout(() => {
+      isUpgrading.value = false
+    }, 800)
+  }
+}
+
 onMounted(() => {
   window.addEventListener('resize', updateMobileState)
+  window.addEventListener('chicken-upgraded', onChickenUpgraded)
   initPosition()
   applyImage()
   rafId = requestAnimationFrame(step)
@@ -97,6 +120,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateMobileState)
+  window.removeEventListener('chicken-upgraded', onChickenUpgraded)
   if (rafId) cancelAnimationFrame(rafId)
 })
 
@@ -506,4 +530,74 @@ watch(() => props.containerWidth, () => {
 .parade-chicken.walk { filter: brightness(1); }
 .parade-chicken.idle { filter: saturate(0.99); }
 .parade-chicken.peck { filter: contrast(1.02); }
+
+/* Animation d'amélioration */
+.parade-chicken.upgrading {
+  animation: upgrade-explosion 0.8s ease-out;
+}
+
+/* Particules d'amélioration */
+.upgrade-particles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  font-size: 12px;
+  animation: particle-explosion 0.8s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+  transform-origin: center;
+}
+
+@keyframes upgrade-explosion {
+  0% { 
+    transform: scaleX(var(--dir, 1)) scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  20% { 
+    transform: scaleX(var(--dir, 1)) scale(1.3);
+    filter: brightness(1.8) saturate(1.5) hue-rotate(45deg);
+  }
+  40% { 
+    transform: scaleX(var(--dir, 1)) scale(0.9);
+    filter: brightness(2.2) saturate(2) hue-rotate(90deg);
+  }
+  60% { 
+    transform: scaleX(var(--dir, 1)) scale(1.4);
+    filter: brightness(2.5) saturate(2.5) hue-rotate(180deg);
+  }
+  80% { 
+    transform: scaleX(var(--dir, 1)) scale(1.1);
+    filter: brightness(1.8) saturate(1.8) hue-rotate(270deg);
+  }
+  100% { 
+    transform: scaleX(var(--dir, 1)) scale(1);
+    filter: brightness(1.2) saturate(1.2) hue-rotate(360deg);
+  }
+}
+
+@keyframes particle-explosion {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(calc(cos(var(--angle)) * 10px), calc(sin(var(--angle)) * 10px)) scale(1);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(calc(cos(var(--angle)) * 25px), calc(sin(var(--angle)) * 25px)) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(cos(var(--angle)) * 35px), calc(sin(var(--angle)) * 35px)) scale(0.8);
+  }
+}
 </style>

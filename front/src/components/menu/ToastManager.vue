@@ -35,6 +35,8 @@ const emojiMap = {
   achievement : '🏆',
   lucky : '🍀',
   power : '⚡',
+  power : '⚡',
+  upgrade : '🔼'
 }
 
 function showToast(message, type = 'info', duration = 5000) {

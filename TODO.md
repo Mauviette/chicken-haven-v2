@@ -1,6 +1,4 @@
 
-Ajouter des effets visuels pour l'amélioration de poules
-Faire en sorte que l'instance de poule en bas ne soit pas reset dans ce cas (TeamParadeChicken)
 
 Social : Limiter la taille des leaderboards à 10. S'il y a au moins 10 personnes sur la leaderboard, mettre un bouton "Plus" qui lorsque cliqué ouvrira un popup (Popup.vue) qui affichera la leaderboard entière.
 

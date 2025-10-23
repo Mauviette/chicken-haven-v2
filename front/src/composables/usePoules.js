@@ -227,9 +227,12 @@ export function usePoules() {
       }
       
       // Émettre un événement pour le système d'achievements
-      window.dispatchEvent(new CustomEvent('chicken-upgraded'))
+      window.dispatchEvent(new CustomEvent('chicken-upgraded', { detail: { especeId: poule.especeId } }))
       
-      window.$toast?.('Talent amélioré !', 'success')
+      // Toast avec nom de la poule et niveau
+      const pouleName = getNom(poule.especeId)
+      const newLevel = data.poule?.niveauTalent || (poule.niveauTalent + 1)
+      window.$toast?.(`${pouleName} améliorée au niveau ${getTalentLevelRoman({ niveauTalent: newLevel })} !`, 'upgrade')
       return true
     } catch (e) {
       console.error('upgradeTalent client error:', e)
