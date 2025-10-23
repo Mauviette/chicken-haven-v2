@@ -202,7 +202,6 @@ function openOptions() {
 }
 
 function openMiningFromMenu() {
-  console.log('Opening mining from menu')
   emit('open-mining')
   showMobileMenu.value = false // Fermer le menu mobile
 }

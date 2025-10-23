@@ -36,7 +36,7 @@ const fallback = {
     eggs: { name: 'Œufs', icon: '🥚', color: '#fff9e5' },
     mining_token: { name: 'Jeton de minage', icon: '🪨', color: '#8b6914' },
     stock_token: { name: 'Jeton de stock', icon: '📦', color: '#7a3e10' },
-    production_token: { name: 'Jeton de production', icon: '⚡', color: '#ffc66e' },
+    production_token: { name: 'Jeton de production', icon: '⚙️', color: '#ffc66e' },
     chest_key: { name: 'Clé à coffre', icon: '🗝️', color: '#b8860b' }
   },
   cellStates: {

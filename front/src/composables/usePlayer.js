@@ -32,14 +32,12 @@ export function usePlayer() {
   // Écouter les événements de déconnexion pour nettoyer les données
   onMounted(() => {
     const handleLogout = () => {
-      console.log('🧹 usePlayer: nettoyage suite à déconnexion')
       clearPlayerData()
     }
     
     const handleMiningGameOver = (event) => {
       const resources = event.detail?.resources
       if (resources) {
-        console.log('🪨 usePlayer: mise à jour des ressources après minage:', resources)
         if (resources.eggs !== undefined) eggs.value = resources.eggs
         if (resources.stock_token !== undefined) stockTokens.value = resources.stock_token
         if (resources.production_token !== undefined) productionTokens.value = resources.production_token

@@ -859,6 +859,42 @@ export const achievementsData = {
       quantite: 5
     }
   },
+  'chicken_gifts_5': {
+    id: 'chicken_gifts_5',
+    nom: 'Collectionneur de Cadeaux',
+    description: 'Collectez 5 cadeaux de poules',
+    icon: '🎁',
+    objectif: 5,
+    type: 'chickenGiftsCollected',
+    reward: {
+      type: 'blueberry',
+      quantite: 2
+    }
+  },
+  'chicken_gifts_25': {
+    id: 'chicken_gifts_25',
+    nom: 'Maître des Cadeaux',
+    description: 'Collectez 25 cadeaux de poules',
+    icon: '🎁',
+    objectif: 25,
+    type: 'chickenGiftsCollected',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
+  'chicken_gifts_100': {
+    id: 'chicken_gifts_100',
+    nom: 'Légende des Cadeaux',
+    description: 'Collectez 100 cadeaux de poules',
+    icon: '🎁',
+    objectif: 100,
+    type: 'chickenGiftsCollected',
+    reward: {
+      type: 'blueberry',
+      quantite: 5
+    }
+  },
   'team_stat_50': {
     id: 'team_stat_50',
     nom: 'Équipe Solide',
@@ -1028,6 +1064,7 @@ export const achievementsData = {
     }
   }
 }
+
 export const itemsData = {
   'eggs': {
     id: 'eggs',
@@ -1047,7 +1084,7 @@ export const itemsData = {
     id: 'production_token',
     nom: 'jetons de production',
     nom_singulier: 'jeton de production',
-    icon: '⚡',
+    icon: '⚙️',
     description: 'Jetons permettant d\'acheter des améliorations de production.'
   },
   'mining_token': {
@@ -1146,6 +1183,11 @@ export const achievementCategories = {
     nom: 'Expertise',
     icon: '💎',
     color: '#FFD700'
+  },
+  'chickenGiftsCollected': {
+    nom: 'Cadeaux',
+    icon: '🎁',
+    color: '#FF69B4'
   }
 }
 

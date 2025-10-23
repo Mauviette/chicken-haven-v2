@@ -78,6 +78,8 @@
             <div class="stat-row"><span>🧠 Meilleure intelligence d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamIntelligence ?? 0 }}</b></div>
             <div class="stat-row"><span>✨ Meilleur charisme d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamCharisme ?? 0 }}</b></div>
             
+            <!-- NOUVEAU : afficher le nombre de cadeaux de poules collectés -->
+            <div class="stat-row"><span>🎁 Cadeaux de poules collectés</span><b>{{ profile.achievements?.progress?.chickenGiftsCollected ?? 0 }}</b></div>
           </div>
         </div>
         <div class="right">

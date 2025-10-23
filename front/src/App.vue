@@ -63,6 +63,7 @@ import { useSound } from '@/composables/useSound'
 import { useToast } from '@/composables/useToast'
 import { useAppLoading } from '@/composables/useAppLoading'
 import { useSettings } from '@/composables/useSettings'
+import { useChickenGifts } from '@/composables/useChickenGifts'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -79,6 +80,7 @@ const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: s
 const { setToastManager } = useToast()
 const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = useAppLoading()
 const { settings } = useSettings()
+const { startPeriodicCheck } = useChickenGifts()
 
 onMounted(async () => {
   window.$toast = toast
@@ -117,6 +119,9 @@ onMounted(async () => {
       console.error('Erreur chargement paramètres:', error)
       setSettingsLoading(false)
     }
+
+    // Démarrer la vérification périodique des cadeaux de poules
+    startPeriodicCheck()
   } else {
     setUserDataLoading(false)
     setSettingsLoading(false)

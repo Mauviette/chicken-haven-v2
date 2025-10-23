@@ -142,7 +142,8 @@ const UserSchema = new mongoose.Schema({
           miningArtifactsFound: 0,
           miningCellsBroken: 0,
           miningNoRewardGame: 0,
-          miningFullGridBroken: 0
+          miningFullGridBroken: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -170,11 +171,20 @@ const UserSchema = new mongoose.Schema({
     }
   ],
 
-  lastSpawns: {
+  activeChickenGifts: [
+    {
+      id: { type: String, required: true },
+      especeId: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now },
+      expiresAt: { type: Date, required: true }
+    }
+  ],
+
+  lastChickenGifts: {
     type: Map,
     of: Date,
     default: new Map()
-  }
+  },
 
 }, { timestamps: true })
 

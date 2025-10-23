@@ -46,12 +46,12 @@ Object.entries(achievementsData).forEach(([id, data]) => {
           return !!(progress.miningFullGridBroken)
         case 'mining_best_cells_in_game':
           return (progress.miningBestCellsInGame || 0) >= data.objectif
+        case 'chickenGiftsCollected':
+          return (progress.chickenGiftsCollected || 0) >= data.objectif
       }
     }
   }
 })
-
-// GET /api/achievements/status - Récupère le statut des succès de l'utilisateur
 export async function getAchievementsStatus(req, res) {
   try {
     const user = await User.findById(req.userId)
@@ -80,7 +80,8 @@ export async function getAchievementsStatus(req, res) {
           miningCellsBroken: 0,
           miningNoRewardGame: false,
           miningFullGridBroken: false,
-          miningBestCellsInGame: 0
+          miningBestCellsInGame: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -134,7 +135,8 @@ export async function checkAchievements(req, res) {
           miningCellsBroken: 0,
           miningNoRewardGame: false,
           miningFullGridBroken: false,
-          miningBestCellsInGame: 0
+          miningBestCellsInGame: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -202,6 +204,9 @@ export async function checkAchievements(req, res) {
     }
     if (!user.achievements.progress.hasOwnProperty('miningBestCellsInGame')) {
       user.achievements.progress.miningBestCellsInGame = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('chickenGiftsCollected')) {
+      user.achievements.progress.chickenGiftsCollected = 0
     }
 
     // Calculer et mettre à jour les stats d'équipe avec les fonctions dédiées
@@ -418,7 +423,8 @@ export async function updateAchievementProgress(userId, progressType, value) {
           miningCellsBroken: 0,
           miningNoRewardGame: false,
           miningFullGridBroken: false,
-          miningBestCellsInGame: 0
+          miningBestCellsInGame: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -470,6 +476,9 @@ export async function updateAchievementProgress(userId, progressType, value) {
     }
     if (!user.achievements.progress.hasOwnProperty('miningBestCellsInGame')) {
       user.achievements.progress.miningBestCellsInGame = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('chickenGiftsCollected')) {
+      user.achievements.progress.chickenGiftsCollected = 0
     }
 
     // Mettre à jour le progrès selon le type (inchangé)
@@ -557,7 +566,8 @@ export async function triggerAchievementCheck(userId) {
           miningCellsBroken: 0,
           miningNoRewardGame: false,
           miningFullGridBroken: false,
-          miningBestCellsInGame: 0
+          miningBestCellsInGame: 0,
+          chickenGiftsCollected: 0
         },
         completed: [],
         lastChecked: new Date()

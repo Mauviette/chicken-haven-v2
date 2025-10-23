@@ -20,7 +20,6 @@ async function loadForbiddenWords() {
     const response = await apiGet('/api/auth/forbidden-words')
     forbiddenWords = response.forbiddenWords || []
     lastFetched = now
-    console.log(`📝 Loaded ${forbiddenWords.length} forbidden words from server`)
   } catch (error) {
     console.warn('⚠️ Could not load forbidden words from server, using fallback:', error)
     

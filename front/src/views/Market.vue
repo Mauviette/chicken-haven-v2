@@ -11,7 +11,7 @@
       </Tooltip>
       <Tooltip :text="`<strong>${achievementsData.production_token.nom.charAt(0).toUpperCase() + achievementsData.production_token.nom.slice(1)}</strong><br>${achievementsData.production_token.description}`" position="bottom">
         <div class="balance-item">
-          <span class="balance-icon">⚡</span>
+          <span class="balance-icon">⚙️</span>
           <span class="balance-amount">{{ productionTokens }}</span>
         </div>
       </Tooltip>
@@ -170,7 +170,7 @@
       <!-- Onglet Améliorations -->
       <div v-if="activeTab === 'upgrades'" class="market-section">
         <div class="section-header">
-          <h3>⚡ Améliorations</h3>
+          <h3>⚙️ Améliorations</h3>
           <p class="section-description">Améliorez votre ferme et vos capacités de production !</p>
         </div>
         
@@ -277,7 +277,7 @@ const currentBoxIcon = ref('📦')
 const tabs = computed(() => {
   return [
     { id: 'boxes', name: 'Boîtes', icon: '🧰' },
-    { id: 'upgrades', name: 'Améliorations', icon: '⚡' }
+    { id: 'upgrades', name: 'Améliorations', icon: '⚙️' }
   ]
 })
 
@@ -622,7 +622,6 @@ function getMaxAffordableOpens(price, desiredQty) {
 
 async function openBox(box) {
   try {
-    console.log('Achat boîte:', box)
     // Lancer l'animation d'ouverture
     currentBoxIcon.value = box.icon || '📦'
     showOpenAnim.value = true
@@ -716,7 +715,6 @@ async function openBox(box) {
 
 function buyChicken(offer) {
   // Cette fonction n'est plus utilisée car on achète des boîtes maintenant
-  console.log('Achat direct de poule désactivé - utilisez les boîtes')
 }
 
 async function openBoxMultiple(box, times = 10) {

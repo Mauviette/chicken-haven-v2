@@ -20,7 +20,8 @@ const userAchievements = ref({
     miningCellsBroken: 0,
     miningNoRewardGame: false,
     miningFullGridBroken: false,
-    miningBestCellsInGame: 0
+    miningBestCellsInGame: 0,
+    chickenGiftsCollected: 0
   },
   completed: [],
   lastChecked: new Date()
@@ -112,6 +113,8 @@ export function useAchievements() {
         return fullGridCompleted ? achievement.objectif : 0
       case 'mining_best_cells_in_game':
         return Math.min(userAchievements.value.progress.miningBestCellsInGame, achievement.objectif)
+      case 'chickenGiftsCollected':
+        return Math.min(userAchievements.value.progress.chickenGiftsCollected, achievement.objectif)
       default:
         return 0
     }
@@ -233,7 +236,6 @@ export function useAchievements() {
       const achievementData = gameAchievements.value[achievement.achievementId]
       if (achievementData) {
         // Ici vous pouvez ajouter des notifications, animations, etc.
-        console.log(`🎉 Nouveau succès débloqué: ${achievementData.nom}`)
 
         // Afficher un toast global si disponible
         try {
@@ -316,7 +318,8 @@ export function useAchievements() {
             miningCellsBroken: 0,
             miningNoRewardGame: false,
             miningFullGridBroken: false,
-            miningBestCellsInGame: 0
+            miningBestCellsInGame: 0,
+            chickenGiftsCollected: 0
           },
           completed: [],
           lastChecked: new Date()
@@ -345,7 +348,8 @@ export function useAchievements() {
             miningCellsBroken: 0,
             miningNoRewardGame: false,
             miningFullGridBroken: false,
-            miningBestCellsInGame: 0
+            miningBestCellsInGame: 0,
+            chickenGiftsCollected: 0
           },
           completed: [],
           lastChecked: new Date()

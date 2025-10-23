@@ -75,7 +75,6 @@
 
 
   function handleRegistered() {
-    console.log("🎉 Inscription réussie")
     window.$toast("Inscription réussie ! Vous pouvez maintenant vous connecter.", 'success')
     // Basculer vers le mode login après inscription réussie
     setTimeout(() => {
@@ -84,7 +83,6 @@
   }
   
   function handleAutoLogin(token) {
-    console.log("🎉 Inscription et connexion automatique réussies")
     login(token)
     router.push('/production')
     window.$toast("Compte créé et connexion réussie !", 'success')

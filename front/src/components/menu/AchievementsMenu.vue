@@ -177,7 +177,6 @@ const handleClaimReward = async (achievement, event) => {
       try { await refreshPlayer() } catch (_) {}
 
       // Optionnel: afficher une notification
-      console.log(`Récompense réclamée: ${reward.quantite} ${reward.type}`)
       // Recharger l'état des succès pour refléter rewardClaimed
       try { await fetchAchievements(); await checkAchievements() } catch (_) {}
     }
@@ -197,7 +196,6 @@ const handleRefresh = async () => {
     const newAchievements = await checkAchievements()
     
     if (newAchievements && newAchievements.length > 0) {
-      console.log(`🎉 ${newAchievements.length} nouveau(x) succès débloqué(s) !`)
     }
   } catch (error) {
     console.error('Erreur lors de l\'actualisation des succès:', error)

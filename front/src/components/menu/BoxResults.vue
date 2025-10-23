@@ -135,7 +135,7 @@ function getItemIcon(itemId) {
   const icons = {
     eggs: '🥚',
     stock_token: '📦',
-    production_token: '⚡',
+    production_token: '⚙️',
     wild_token: '🃏',
     chest_key: '🗝️',
     mining_token: '🪨'

@@ -35,7 +35,6 @@ const emojiMap = {
   achievement : '🏆',
   lucky : '🍀',
   power : '⚡',
-  power : '⚡',
   upgrade : '🔼'
 }
 

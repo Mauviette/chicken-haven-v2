@@ -6,9 +6,11 @@
         <img
         v-if="currentImg"
         :src="currentImg"
+        ref="chickenRef"
         class="parade-chicken"
         :class="[state, isFallback ? 'fallback' : '', isUpgrading ? 'upgrading' : '']"
         :alt="name"
+        :data-espece-id="especeId"
         :style="{ '--dir': direction }"
         @click="emitOpenDetail"
         />
@@ -27,6 +29,10 @@
       <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
     </svg>
   </span>
+  <!-- Indicateur cadeau disponible: brillance et icône cadeau -->
+  <div v-if="hasChickenGift" class="gift-indicator">
+    <span class="gift-icon">🎁</span>
+  </div>
       </div>
     </Tooltip>
     <!-- Version sans tooltip pour mobile -->
@@ -34,9 +40,11 @@
       <img
       v-if="currentImg && isMobile"
       :src="currentImg"
+      ref="chickenRef"
       class="parade-chicken"
       :class="[state, isFallback ? 'fallback' : '', isUpgrading ? 'upgrading' : '']"
       :alt="name"
+      :data-espece-id="especeId"
       :style="{ '--dir': direction }"
       @click="emitOpenDetail"
       />
@@ -54,6 +62,10 @@
       <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
     </svg>
   </span>
+  <!-- Indicateur cadeau disponible pour mobile -->
+  <div v-if="hasChickenGift" class="gift-indicator">
+    <span class="gift-icon">🎁</span>
+  </div>
     </div>
   </div>
 </template>
@@ -67,6 +79,7 @@ import { apiCall } from '@/utils/api'
 import { useSound } from '@/composables/useSound'
 import { useEgg } from '@/composables/useEgg'
 import { useBuffs } from '@/composables/useBuffs'
+import { useChickenGifts } from '@/composables/useChickenGifts'
 
 const props = defineProps({
   especeId: String,
@@ -87,6 +100,9 @@ const currentImg = ref('')
 const stateUntil = ref(Date.now() + 2000)
 const isFallback = ref(false)
 const isActivating = ref(false)
+
+// Référence à l'élément poule pour obtenir sa position
+const chickenRef = ref(null)
 
 // Détection mobile
 const isMobile = ref(window.innerWidth <= 768)
@@ -181,6 +197,21 @@ function initPosition() {
 }
 
 function emitOpenDetail() {
+  // Vérifier d'abord si cette poule a un cadeau actif
+  if (hasChickenGift.value) {
+    // Récupérer la position de la poule pour l'animation
+    let position = null
+    if (chickenRef.value) {
+      const rect = chickenRef.value.getBoundingClientRect()
+      position = {
+        x: rect.left + rect.width / 2,
+        y: rect.top - 20 // Un peu au-dessus de la poule
+      }
+    }
+    collectGift(props.especeId, position)
+    return
+  }
+
   if (!props.especeId) return
   const talent = especeDataFor(props.especeId)?.talent
   if (talent === 'Maligne' || talent === 'Joyeuse' || talent === 'Rapide') {
@@ -201,6 +232,13 @@ const { talents } = useGameData()
 const { click: sndClick, confirm: sndOk } = useSound()
 const { eggState, fetchEggStatus } = useEgg()
 const { fetchBuffs } = useBuffs()
+const { hasActiveGift, collectGift } = useChickenGifts()
+
+// État des cadeaux pour cette poule
+const hasChickenGift = computed(() => {
+  const hasGift = props.especeId ? hasActiveGift(props.especeId) : false
+  return hasGift
+})
 
 // Badge amélioration disponible (similaire à ChickenCard)
 import { usePlayer as usePlayerComposable } from '@/composables/usePlayer'
@@ -598,6 +636,35 @@ watch(() => props.containerWidth, () => {
   100% {
     opacity: 0;
     transform: translate(calc(cos(var(--angle)) * 35px), calc(sin(var(--angle)) * 35px)) scale(0.8);
+  }
+}
+
+/* Indicateur de cadeau actif */
+.gift-indicator {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.gift-icon {
+  position: relative;
+  font-size: 32px;
+  animation: gift-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+  text-shadow: 0 0 10px rgba(255,255,255,0.8);
+}
+
+@keyframes gift-float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: translateY(-6px) scale(1.08);
+    opacity: 1;
   }
 }
 </style>
