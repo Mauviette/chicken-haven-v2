@@ -22,11 +22,13 @@
             <template v-if="result.type === 'chicken'">
               <div class="result-icon">
                 <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
-                <img 
-                  :src="getImage(result.especeId)" 
-                  :alt="result.nom"
-                  @error="onImageError"
-                />
+                <Tooltip :text="getTalentEffectForChicken(result.especeId)">
+                  <img 
+                    :src="getImage(result.especeId)" 
+                    :alt="result.nom"
+                    @error="onImageError"
+                  />
+                </Tooltip>
               </div>
               
               <div class="result-info">
@@ -84,6 +86,7 @@
 <script setup>
 import { computed } from 'vue'
 import ActionButton from './ActionButton.vue'
+import Tooltip from './Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
 
 const props = defineProps({
@@ -102,7 +105,16 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
-const { getImage, hiddenImage } = usePoules()
+const { getImage, hiddenImage, getTalentEffectSync, poules } = usePoules()
+
+function getTalentEffectForChicken(especeId) {
+  // Trouver la poule dans les données
+  const poule = poules.value?.find(p => p.especeId === especeId)
+  if (poule) {
+    return getTalentEffectSync(poule)
+  }
+  return 'Talent inconnu'
+}
 
 function closeResults() {
   emit('close')
