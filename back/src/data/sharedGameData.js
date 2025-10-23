@@ -972,7 +972,7 @@ export const achievementsData = {
     nom: 'Mineur Débutant',
     description: 'Brisez 10 cases au total en minage',
     icon: '⛏️',
-    objectif: 10,
+    objectif: 50,
     type: 'mining_cells',
     reward: {
       type: 'blueberry',
@@ -984,7 +984,7 @@ export const achievementsData = {
     nom: 'Mineur Expérimenté',
     description: 'Brisez 25 cases au total en minage',
     icon: '⚒️',
-    objectif: 25,
+    objectif: 100,
     type: 'mining_cells',
     reward: {
       type: 'blueberry',
@@ -996,7 +996,7 @@ export const achievementsData = {
     nom: 'Mineur Légendaire',
     description: 'Brisez 100 cases au total en minage',
     icon: '💥',
-    objectif: 100,
+    objectif: 250,
     type: 'mining_cells',
     reward: {
       type: 'blueberry',
