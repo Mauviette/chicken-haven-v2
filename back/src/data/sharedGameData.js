@@ -423,7 +423,7 @@ export const talentsData = {
       effects: [
         {
           type: 'storage_multiplier',
-          amount: { op: 'add', args: [ 1.15, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
+          amount: { op: 'add', args: [ 1.15, { op: 'mul', args: [ { var: 'niveau' }, 0.10 ] } ] }
         }
       ]
     }
