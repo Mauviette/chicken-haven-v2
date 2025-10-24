@@ -1,6 +1,5 @@
 
 
-ChickenDetail et ChickenCard : Au lieu d'afficher "eclosion", afficher le groupe de la poule (fondamental, chic, etc)
 
 Rework effets sonores :
 - BoxResults : élement "nouveau" : 

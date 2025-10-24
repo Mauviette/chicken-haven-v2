@@ -23,7 +23,7 @@
         </div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
         <div class="categorie">
-          {{ espece.categorie === 'eclosion' ? '🥚 Éclosion' : '🧬 Fusion' }}
+          {{ formatGroupe(espece.id) }}
         </div>
         <div class="talent">{{ getTalentDisplayName(poule) }}</div>
       </div>
@@ -37,7 +37,7 @@
         <div class="name">???</div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
         <div class="categorie">
-          {{ espece.categorie === 'eclosion' ? '🥚 Éclosion' : '🧬 Fusion' }}
+          {{ formatGroupe(espece.id) }}
         </div>
       </div>
     </template>
@@ -71,6 +71,7 @@ const props = defineProps({
 const { getTalentDisplayNameSync, getTalentNextCost, upgradeTalent, poules } = usePoules()
 const { isInTeam } = usePlayer()
 const { talents } = useGameData()
+const { getEspeceInfo } = useGameData()
 const inTeam = computed(() => isInTeam(props.poule?.especeId))
 
 // Badge amélioration disponible: si un nextCost existe et que le joueur a les ressources
@@ -128,6 +129,12 @@ function formatRareté(r) {
     legendaire: '🔥 Légendaire',
   }
   return map[r] || r
+}
+
+function formatGroupe(especeId) {
+  const especeInfo = getEspeceInfo(especeId)
+  const groupe = especeInfo?.groupe || props.espece?.groupe || 'fondamental'
+  return groupe.charAt(0).toUpperCase() + groupe.slice(1)
 }
 </script>
 

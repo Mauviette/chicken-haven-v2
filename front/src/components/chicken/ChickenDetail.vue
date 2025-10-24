@@ -15,7 +15,7 @@
             </div>
 
           <div class="rarete" :class="espece.rarete">{{ formatRareté(espece.rarete) }}</div>
-          <div class="categorie">{{ espece.categorie === 'eclosion' ? '🥚 Éclosion' : '🧬 Fusion' }}</div>
+          <div class="categorie">{{ formatGroupe(espece.id) }}</div>
           <div class="quantite"></div>
         </div>
       </div>
@@ -104,6 +104,7 @@ import { usePoules } from '@/composables/usePoules'
 import { usePlayer } from '@/composables/usePlayer'
 import { computed, ref, onMounted } from 'vue'
 import { useSound } from '@/composables/useSound'
+import { useGameData } from '@/composables/useGameData'
 
 const emit = defineEmits(['close', 'updated'])
 
@@ -117,6 +118,7 @@ const props = defineProps({
 const { getTalentDisplayNameSync, getTalentEffectSync, getTalentNextCost, upgradeTalent, poules, getDescription } = usePoules()
 const { isInTeam, equipChicken, unequipChicken, eggs, replaceTeamMember } = usePlayer()
 const { click, confirm, close: sndClose } = useSound()
+const { getEspeceInfo } = useGameData()
 
 // Variables pour le système de remplacement d'équipe
 const showTeamReplacement = ref(false)
@@ -153,6 +155,12 @@ function formatRareté(r) {
     legendaire: '🔥 Légendaire',
   }
   return map[r] || r
+}
+
+function formatGroupe(especeId) {
+  const especeInfo = getEspeceInfo(especeId)
+  const groupe = especeInfo?.groupe || props.espece?.groupe || 'fondamental'
+  return groupe.charAt(0).toUpperCase() + groupe.slice(1)
 }
 
 function renderStars(n) {
