@@ -74,7 +74,11 @@ const levelUpFrom = ref(1)
 const levelUpTo = ref(1)
 const showMiningGame = ref(false)
 const { logout: performLogout } = useAuth()
-const { refreshPlayer, fetchTeam } = usePlayer()
+const playerComposable = usePlayer()
+const { refreshPlayer, fetchTeam } = {
+  refreshPlayer: typeof playerComposable.refreshPlayer === 'function' ? playerComposable.refreshPlayer : () => Promise.resolve(),
+  fetchTeam: typeof playerComposable.fetchTeam === 'function' ? playerComposable.fetchTeam : () => Promise.resolve()
+}
 const { syncStatus } = useDataSync()
 const soundComposable = useSound()
 const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = {
@@ -87,7 +91,10 @@ const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: s
 const { setToastManager } = useToast()
 const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = useAppLoading()
 const { settings } = useSettings()
-const { startPeriodicCheck } = useChickenGifts()
+const chickenGiftsComposable = useChickenGifts()
+const { startPeriodicCheck } = {
+  startPeriodicCheck: typeof chickenGiftsComposable.startPeriodicCheck === 'function' ? chickenGiftsComposable.startPeriodicCheck : () => {}
+}
 
 onMounted(async () => {
   window.$toast = toast

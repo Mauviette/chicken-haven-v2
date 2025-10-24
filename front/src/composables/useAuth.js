@@ -9,6 +9,10 @@ export function useAuth() {
   const isLoggedIn = () => !!token.value
 
   const login = (newToken) => {
+    if (!newToken) {
+      console.error('Tentative de login avec token invalide:', newToken)
+      return
+    }
     token.value = newToken
     console.log("Tentative de login avec token:", newToken)
     localStorage.setItem('token', newToken)
