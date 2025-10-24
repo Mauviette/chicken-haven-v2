@@ -75,39 +75,60 @@ const levelUpTo = ref(1)
 const showMiningGame = ref(false)
 const { logout: performLogout } = useAuth()
 const playerComposable = usePlayer()
-const { refreshPlayer, fetchTeam } = {
+const { refreshPlayer, fetchTeam } = playerComposable && typeof playerComposable === 'object' ? {
   refreshPlayer: typeof playerComposable.refreshPlayer === 'function' ? playerComposable.refreshPlayer : () => Promise.resolve(),
   fetchTeam: typeof playerComposable.fetchTeam === 'function' ? playerComposable.fetchTeam : () => Promise.resolve()
+} : {
+  refreshPlayer: () => Promise.resolve(),
+  fetchTeam: () => Promise.resolve()
 }
 const dataSyncComposable = useDataSync()
-const { syncStatus } = {
+const { syncStatus } = dataSyncComposable && typeof dataSyncComposable === 'object' ? {
   syncStatus: dataSyncComposable.syncStatus || 'idle'
+} : {
+  syncStatus: 'idle'
 }
 const soundComposable = useSound()
-const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = {
+const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = soundComposable && typeof soundComposable === 'object' ? {
   click: typeof soundComposable.click === 'function' ? soundComposable.click : () => {},
   open: typeof soundComposable.open === 'function' ? soundComposable.open : () => {},
   close: typeof soundComposable.close === 'function' ? soundComposable.close : () => {},
   toast: typeof soundComposable.toast === 'function' ? soundComposable.toast : () => {},
   achievement: typeof soundComposable.achievement === 'function' ? soundComposable.achievement : () => {}
+} : {
+  click: () => {},
+  open: () => {},
+  close: () => {},
+  toast: () => {},
+  achievement: () => {}
 }
 const toastComposable = useToast()
-const { setToastManager } = {
+const { setToastManager } = toastComposable && typeof toastComposable === 'object' ? {
   setToastManager: typeof toastComposable.setToastManager === 'function' ? toastComposable.setToastManager : () => {}
+} : {
+  setToastManager: () => {}
 }
 const appLoadingComposable = useAppLoading()
-const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = {
+const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = appLoadingComposable && typeof appLoadingComposable === 'object' ? {
   setGameDataLoading: typeof appLoadingComposable.setGameDataLoading === 'function' ? appLoadingComposable.setGameDataLoading : () => {},
   setUserDataLoading: typeof appLoadingComposable.setUserDataLoading === 'function' ? appLoadingComposable.setUserDataLoading : () => {},
   setSettingsLoading: typeof appLoadingComposable.setSettingsLoading === 'function' ? appLoadingComposable.setSettingsLoading : () => {}
+} : {
+  setGameDataLoading: () => {},
+  setUserDataLoading: () => {},
+  setSettingsLoading: () => {}
 }
 const settingsComposable = useSettings()
-const { settings } = {
+const { settings } = settingsComposable && typeof settingsComposable === 'object' ? {
   settings: settingsComposable.settings || ref({})
+} : {
+  settings: ref({})
 }
 const chickenGiftsComposable = useChickenGifts()
-const { startPeriodicCheck } = {
+const { startPeriodicCheck } = chickenGiftsComposable && typeof chickenGiftsComposable === 'object' ? {
   startPeriodicCheck: typeof chickenGiftsComposable.startPeriodicCheck === 'function' ? chickenGiftsComposable.startPeriodicCheck : () => {}
+} : {
+  startPeriodicCheck: () => {}
 }
 
 onMounted(async () => {
