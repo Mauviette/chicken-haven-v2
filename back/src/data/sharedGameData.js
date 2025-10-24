@@ -155,7 +155,7 @@ export const especeData = {
 export const talentsData = {
   'Chanceuse': {
     description: "Des œufs blancs apparaissent sur l'écran.",
-    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{niveau} œufs.",
+    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*1.5} œufs.",
     nivType : 'basic',
     icon: '🍀',
     calculation: {
@@ -172,7 +172,7 @@ export const talentsData = {
           reward: {
             type: 'resource',
             resource: 'eggs',
-            amount: { op: 'mul', args: [ { var: 'niveau' }, { var: 'stockageMax' } ] }
+            amount: { op: 'mul', args: [ { var: 'stockageMax' }, { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 1.5 ] } ] } ] }
           }
         }
       ]
@@ -284,7 +284,7 @@ export const talentsData = {
   },
   'Gourmande': {
     description: "Des chocolats apparaissent sur l'écran qui augmentent la production et le stockage lorsque cliqués.",
-    effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {niveau*25}% pendant 15s.",
+    effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {25+niveau*15}% pendant 15s.",
     icon: '🍫',
     calculation: {
       combine: 'not_linear',
@@ -301,8 +301,8 @@ export const talentsData = {
             type: 'buff',
             buff_type: 'income_storage_multiplier',
             duration: 15000,
-            income_multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] },
-            storage_multiplier: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }
+            income_multiplier: { op: 'add', args: [ 0.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] },
+            storage_multiplier: { op: 'add', args: [ 0.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
           }
         }
       ]
@@ -343,7 +343,7 @@ export const talentsData = {
   },
   'Maligne': {
     description: "Cliquez-moi pour augmenter l'intelligence temporairement.",
-    effet: "Cliquez moi pour augmenter l'intelligence globale de {niveau*50}% pendant 20s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
+    effet: "Cliquez moi pour augmenter l'intelligence globale de {50+niveau*25}% pendant 20s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
     icon: '🧠',
     calculation: {
       triggers: [ { type: 'active' } ],
@@ -354,7 +354,7 @@ export const talentsData = {
           target: 'team',
           duration: 20000,
           stats: {
-            intelligence: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] }
+            intelligence: { op: 'add', args: [ 0.5, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }
           }
         }
       ]
@@ -380,7 +380,7 @@ export const talentsData = {
   },
   'Rapide': {
     description: "Cliquez-moi pour augmenter le stockage temporairement.",
-    effet: "Cliquez moi pour augmenter le stockage de {niveau*25}% pendant 15s. Cooldown 1 minute",
+    effet: "Cliquez moi pour augmenter le stockage de {25+niveau*15}% pendant 15s. Cooldown 1 minute",
     icon: '💨',
     calculation: {
       triggers: [ { type: 'active' } ],
@@ -390,14 +390,14 @@ export const talentsData = {
           type: 'apply_buff',
           buff_type: 'storage',
           duration: 15000,
-          amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }
+          amount: { op: 'add', args: [ 0.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
         }
       ]
     }
   },
   'Joyeuse': {
     description: "Cliquez-moi pour augmenter les revenus temporairement.",
-    effet: "Cliquez moi pour augmenter le revenu de {100+niveau*100}% pendant 10s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
+    effet: "Cliquez moi pour augmenter le revenu de {100+niveau*50}% pendant 10s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
     icon: '🎉',
     calculation: {
       triggers: [ { type: 'active' } ],
@@ -407,7 +407,7 @@ export const talentsData = {
           type: 'apply_buff',
           buff_type: 'income_multiplier',
           duration: 10000,
-          amount: { op: 'add', args: [ 2, { var: 'niveau' } ] } // 2 + niveau  => 100% + niveau*100%
+          amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] } // 1 + niveau*0.5  => 100% + niveau*50%
         }
       ]
     }
