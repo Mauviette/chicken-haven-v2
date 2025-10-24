@@ -40,7 +40,12 @@ export async function buyUpgrade(req, res) {
 
     user.upgrades = user.upgrades || {}
     const currentLevel = Number(user.upgrades[uId] || 0)
-    const price = getCurrentCostForLevel(serverUpgrade, currentLevel)
+    let price = getCurrentCostForLevel(serverUpgrade, currentLevel)
+
+    // Mode Apocalypse : multiplier les prix par 2
+    if (user.apocalypse) {
+      price = Math.floor(price * 2)
+    }
 
     // Vérifier solde
     const priceType = serverUpgrade.priceType

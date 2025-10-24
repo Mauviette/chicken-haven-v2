@@ -89,6 +89,8 @@ const UserSchema = new mongoose.Schema({
     chest_key : { type : Number, default: 0}
   },
 
+  apocalypse: { type: Boolean, default: false },
+
   // Artéfacts de minage: collection du joueur et emplacements équipables
   // Les artefacts n'ont pas de quantité - une fois débloqué, débloqué pour toujours
   artifacts: [

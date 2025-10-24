@@ -1,8 +1,8 @@
 <template>
-  <div class="achievements-overlay" :class="{ 'visible': visible }">
+  <div class="achievements-overlay" :class="{ 'visible': visible, 'apocalypse-mode': isApocalypseMode }">
     <div class="achievements-menu">
       <div class="achievements-header">
-        <h2>🏆 Succès</h2>
+        <h2>{{ isApocalypseMode ? '🏆 Succès' : '🏆 Succès' }}</h2>
         <div class="header-actions">
           <button 
             class="refresh-btn" 
@@ -118,11 +118,16 @@ const {
 } = useAchievements()
 
 const { items } = useGameData()
-const { eggs, addEggs, addTokens, refreshPlayer } = usePlayer()
+const { eggs, addEggs, addTokens, refreshPlayer, apocalypse } = usePlayer()
 const { confirm: sndConfirm } = useSound()
 
 // Données des items depuis le backend
 const itemsData = computed(() => items.value)
+
+const isApocalypseMode = computed(() => {
+  const val = Boolean(apocalypse?.value)
+  return val
+})
 
 const refreshing = ref(false)
 
@@ -545,6 +550,94 @@ const getRewardDescription = (reward) => {
   font-weight: bold;
 }
 
+.achievements-overlay.apocalypse-mode .achievements-menu {
+  background: #2d1b1b;
+  border-left: 4px solid #8b0000;
+}
+
+.achievements-overlay.apocalypse-mode .achievements-header {
+  background: #1a0f0f;
+  border-bottom: 2px solid #8b0000;
+}
+
+.achievements-overlay.apocalypse-mode .achievements-header h2 {
+  color: #ffcccc;
+}
+
+.achievements-overlay.apocalypse-mode .close-btn,
+.achievements-overlay.apocalypse-mode .refresh-btn {
+  background: #4a1a0a;
+  border: 2px solid #ff4444;
+  color: #ffcccc;
+}
+
+.achievements-overlay.apocalypse-mode .close-btn:hover,
+.achievements-overlay.apocalypse-mode .refresh-btn:hover:not(:disabled) {
+  background: #5a2a1a;
+}
+
+.achievements-overlay.apocalypse-mode .achievements-stats {
+  background: rgba(45, 27, 27, 0.8);
+}
+
+.achievements-overlay.apocalypse-mode .stat-number {
+  color: #ff6b6b;
+}
+
+.achievements-overlay.apocalypse-mode .achievement-item {
+  background: rgba(45, 27, 27, 0.9);
+  border-color: #ff4444;
+}
+
+.achievements-overlay.apocalypse-mode .achievement-item.completed {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.achievements-overlay.apocalypse-mode .achievement-name {
+  color: #ffcccc;
+}
+
+.achievements-overlay.apocalypse-mode .achievement-description {
+  color: #ffaaaa;
+}
+
+.achievements-overlay.apocalypse-mode .progress-bar {
+  background: #3d1f1f;
+  border-color: #ff4444;
+}
+
+.achievements-overlay.apocalypse-mode .progress-fill {
+  background: linear-gradient(90deg, #ff6b6b, #ff4444);
+}
+
+.achievements-overlay.apocalypse-mode .progress-text {
+  color: #ffaaaa;
+}
+
+.achievements-overlay.apocalypse-mode .achievement-reward {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: #ff4444;
+}
+
+.achievements-overlay.apocalypse-mode .claim-reward-btn {
+  background: linear-gradient(145deg, #ff4444, #cc3333);
+  border-color: #8b0000;
+}
+
+.achievements-overlay.apocalypse-mode .claim-reward-btn:hover {
+  background: linear-gradient(145deg, #cc3333, #aa2222);
+}
+
+.achievements-overlay.apocalypse-mode .reward-preview {
+  background: rgba(45, 27, 27, 0.3);
+  border-color: #ff4444;
+}
+
+.achievements-overlay.apocalypse-mode .reward-amount {
+  color: #ffcccc;
+}
+
 @media (max-width: 768px) {
   .achievements-overlay {
     top: 0;
@@ -559,5 +652,8 @@ const getRewardDescription = (reward) => {
     border-top: none;
     border-bottom: 2px solid #8B4513;
   }
-}
-</style>
+
+  .achievements-overlay.apocalypse-mode .achievements-menu {
+    border-bottom: 2px solid #8b0000;
+  }
+}</style>

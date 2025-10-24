@@ -121,6 +121,7 @@ export async function getMe(req, res) {
       profileId,
       avatar: user.avatar || '',
       lastSeen: user.lastSeen,
+      apocalypse: user.apocalypse || false,
       experience: {
         level: experience?.level ?? 1,
         points: experience?.points ?? 0,
@@ -181,8 +182,12 @@ export async function getPublicProfile(req, res) {
       avatar: user.avatar || '',
       createdAt: user.createdAt,
       lastSeen: user.lastSeen,
+      apocalypse: user.apocalypse || false,
       experience: user.experience || { level: 1, points: 0, required_points: 2 },
       team: { maxSlots: rawTeam.maxSlots || 0, slots: enrichedSlots },
+      resources: {
+        eggs: user.resources?.eggs ?? 0,
+      },
       stats: {
         totalEggsCollected: progress.totalEggsCollected || 0,
         totalChickensOwned: progress.totalChickensOwned || 0,

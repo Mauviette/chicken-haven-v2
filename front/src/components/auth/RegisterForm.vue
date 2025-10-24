@@ -1,5 +1,5 @@
 <template>
-    <form class="auth-form" @submit.prevent="submit">
+    <form class="auth-form" :class="{ 'apocalypse-active': apocalypseMode }" @submit.prevent="submit">
       <h2>Créer un compte</h2>
       
       <!-- Nom d'utilisateur -->
@@ -169,6 +169,13 @@
   const confirmPasswordError = ref('')
   
   const emit = defineEmits(['registered', 'switch-to-login', 'auto-login'])
+  
+  const props = defineProps({
+    apocalypseMode: {
+      type: Boolean,
+      default: false
+    }
+  })
   
   // Variable pour indiquer si la validation asynchrone est en cours
   const validatingForbiddenWords = ref(false)
@@ -363,7 +370,8 @@
       const res = await apiPost('/api/auth/register', {
         username: username.value.trim(),
         displayName: displayName.value.trim(),
-        password: password.value
+        password: password.value,
+        apocalypse: props.apocalypseMode
       })
       
       // Si on reçoit un token, connecter automatiquement
@@ -668,6 +676,101 @@
     stroke: #7a3e10 !important;
     stroke-width: 2.5;
     fill: none;
+  }
+}
+
+/* Mode APOCALYPSE */
+.auth-form.apocalypse-active {
+  border-color: #ff0000;
+  background-color: #2a0000;
+  background-image: linear-gradient(45deg, rgba(255, 0, 0, 0.1) 25%, transparent 25%), 
+                    linear-gradient(-45deg, rgba(255, 0, 0, 0.1) 25%, transparent 25%), 
+                    linear-gradient(45deg, transparent 75%, rgba(255, 0, 0, 0.1) 75%), 
+                    linear-gradient(-45deg, transparent 75%, rgba(255, 0, 0, 0.1) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  animation: apocalypse-pulse 2s ease-in-out infinite alternate;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5), 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.auth-form.apocalypse-active h2 {
+  color: #ff6666;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+  animation: apocalypse-text-pulse 1.5s ease-in-out infinite alternate;
+}
+
+.auth-form.apocalypse-active .input-group input {
+  border-color: #ff4444;
+  background-color: #330000;
+  color: #ffaaaa;
+}
+
+.auth-form.apocalypse-active .input-group input:focus {
+  border-color: #ff6666;
+  box-shadow: 0 0 8px rgba(255, 102, 102, 0.4);
+}
+
+.auth-form.apocalypse-active .input-group input::placeholder {
+  color: #aa6666;
+}
+
+.auth-form.apocalypse-active .input-group input.input-error {
+  border-color: #ff6666;
+  background-color: #440000;
+}
+
+.auth-form.apocalypse-active button {
+  background-color: #660000;
+  border-color: #ff4444;
+  color: #ffaaaa;
+}
+
+.auth-form.apocalypse-active button:hover:not(:disabled) {
+  background-color: #880000;
+}
+
+.auth-form.apocalypse-active button:disabled {
+  background-color: #440000;
+  color: #aa6666;
+}
+
+.auth-form.apocalypse-active .auth-link {
+  color: #ff8888;
+}
+
+.auth-form.apocalypse-active .link-text {
+  color: #ffaaaa;
+}
+
+.auth-form.apocalypse-active .link-text:hover {
+  color: #ffcccc;
+}
+
+.auth-form.apocalypse-active .error-text {
+  color: #ff6666 !important;
+  background-color: rgba(255, 102, 102, 0.1);
+  border-color: rgba(255, 102, 102, 0.3);
+}
+
+@keyframes apocalypse-pulse {
+  0% {
+    border-color: #ff0000;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.5), 0 4px 10px rgba(0,0,0,0.2);
+  }
+  100% {
+    border-color: #ff4444;
+    box-shadow: 0 0 30px rgba(255, 68, 68, 0.7), 0 4px 10px rgba(0,0,0,0.2);
+  }
+}
+
+@keyframes apocalypse-text-pulse {
+  0% {
+    color: #ff6666;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+  }
+  100% {
+    color: #ffaaaa;
+    text-shadow: 0 0 15px rgba(255, 170, 170, 1);
   }
 }
   </style>

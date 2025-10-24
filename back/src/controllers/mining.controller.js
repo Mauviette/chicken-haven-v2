@@ -461,18 +461,23 @@ export async function digCell(req, res) {
           
           // Si la case a une récompense
           if (cell.reward) {
-            // Si un multiplicateur de quantité a été appliqué, on peut reformater la récompense
-            const rewardPercent = artifactMods.rewardAmountPercent || 0
-            if (rewardPercent && typeof cell.reward === 'string') {
-              const [t, a] = cell.reward.split(':')
-              const baseAmt = parseInt(a) || 1
-              const finalAmt = Math.max(1, Math.round(baseAmt * (1 + rewardPercent / 100)))
-              const formatted = `${t}:${finalAmt}`
-              newRewards.push(formatted)
-              user.miningGame.rewards.push(formatted)
+            let finalReward = cell.reward
+            // Mode Apocalypse : 25% de chance de perdre la récompense
+            if (user.apocalypse && Math.random() < 0.25) {
+              finalReward = null // Pas de récompense
             } else {
-              newRewards.push(cell.reward)
-              user.miningGame.rewards.push(cell.reward)
+              // Si un multiplicateur de quantité a été appliqué, on peut reformater la récompense
+              const rewardPercent = artifactMods.rewardAmountPercent || 0
+              if (rewardPercent && typeof cell.reward === 'string') {
+                const [t, a] = cell.reward.split(':')
+                const baseAmt = parseInt(a) || 1
+                const finalAmt = Math.max(1, Math.round(baseAmt * (1 + rewardPercent / 100)))
+                finalReward = `${t}:${finalAmt}`
+              }
+            }
+            if (finalReward) {
+              newRewards.push(finalReward)
+              user.miningGame.rewards.push(finalReward)
             }
           }
         }

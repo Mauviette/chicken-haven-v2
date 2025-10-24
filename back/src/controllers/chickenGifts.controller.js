@@ -367,7 +367,12 @@ export async function collectChickenGift(req, res) {
       if (reward.resource === 'eggs') {
         // Appliquer les multiplicateurs des buffs actifs pour les œufs
         const multipliers = computeActiveBuffMultipliers(user)
-        const finalAmount = Math.floor(amount * multipliers.income)
+        let finalAmount = Math.floor(amount * multipliers.income)
+
+        // Mode Apocalypse : réduire les gains à 10%
+        if (user.apocalypse) {
+          finalAmount = Math.floor(finalAmount * 0.1)
+        }
 
         // Utiliser une opération atomique pour ajouter les œufs
         await User.findByIdAndUpdate(req.userId, {

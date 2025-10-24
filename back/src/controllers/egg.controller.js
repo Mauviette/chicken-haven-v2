@@ -574,6 +574,12 @@ export async function clickEgg(req, res) {
     const eggsGained = Math.floor(currentStocked)
     user.resources = user.resources || {}
 
+    // Mode Apocalypse : réduire les gains à 10%
+    let finalEggsGained = eggsGained
+    if (user.apocalypse) {
+      finalEggsGained = Math.floor(eggsGained * 0.1)
+    }
+
     // Talent Chanceuse: probabilité basée sur le nombre d'œufs collectés lors de ce clic
     let chanceuse = { active: false, proc: false, procChance: 0, bonusEggs: 0 }
 
@@ -586,11 +592,11 @@ export async function clickEgg(req, res) {
         console.log('[Egg] Team slots =', JSON.stringify(teamOverview))
       } catch (_) { /* no-op */ }
 
-      if (eggsGained > 0) {
+      if (finalEggsGained > 0) {
         chanceuse.active = true
         
         const outcome = runTalentWithConditions(user, 'Chanceuse', { 
-          eggsGained, 
+          eggsGained: finalEggsGained, 
           stockageMax: effectiveMaxIncome 
         })
 
@@ -602,7 +608,7 @@ export async function clickEgg(req, res) {
           const pSStr = Number.isFinite(pS) ? (pS * 100).toFixed(2) : 'N/A'
           const pcStr = Number.isFinite(pc) ? (pc * 100).toFixed(2) : 'N/A'
           const rlStr = Number.isFinite(rl) ? rl.toFixed(4) : 'N/A'
-          console.log(`[Chanceuse] eggsGained=${eggsGained}, pSingle(from config)=${pSStr}%, combined=${pcStr}%, roll=${rlStr}`)
+          console.log(`[Chanceuse] eggsGained=${finalEggsGained}, pSingle(from config)=${pSStr}%, combined=${pcStr}%, roll=${rlStr}`)
         } catch (_) { /* safe log */ }
 
         if (outcome.proc) {
@@ -610,22 +616,22 @@ export async function clickEgg(req, res) {
             .filter(e => e.type === 'resource' && e.resource === 'eggs')
             .reduce((sum, e) => sum + (e.amount || 0), 0)
             
-          user.resources.eggs = currentEggs + eggsGained + bonusEggs
+          user.resources.eggs = currentEggs + finalEggsGained + bonusEggs
           chanceuse.proc = true
           chanceuse.bonusEggs = bonusEggs
           chanceuse.effects = outcome.effects || []
           console.log(`[Chanceuse] PROC! Bonus eggs=${bonusEggs}`)
         } else {
-          user.resources.eggs = currentEggs + eggsGained
+          user.resources.eggs = currentEggs + finalEggsGained
         }
       } else {
         // Pas assez d'œufs pour déclencher le talent
         console.log('[Chanceuse] eggsGained=0, talent non évalué.')
-        user.resources.eggs = currentEggs + eggsGained
+        user.resources.eggs = currentEggs + finalEggsGained
       }
     } catch (e) {
       console.warn('[Chanceuse] Erreur lors de l\'évaluation du talent:', e)
-      user.resources.eggs = currentEggs + eggsGained
+      user.resources.eggs = currentEggs + finalEggsGained
     }
 
     user.clickableEgg = user.clickableEgg || {}
@@ -639,7 +645,7 @@ export async function clickEgg(req, res) {
 
     // Mettre à jour le progrès des succès
     await updateAchievementProgress(req.userId, 'increment', {
-      totalEggsCollected: eggsGained
+      totalEggsCollected: finalEggsGained
     })
     // Si le talent Chanceuse a proc, compter aussi ces œufs bonus dans la progression
     // (on ne double pas maxEggsInOneClick car il mesure un clic de base)
@@ -652,7 +658,7 @@ export async function clickEgg(req, res) {
     // Pas besoin d'attendre le résultat de cette promesse supplémentaire
     
     // Inclure le bonus de Chanceuse dans le compteur "max œufs en 1 clic"
-    const eggsThisClickForMax = eggsGained + (chanceuse?.proc ? (chanceuse?.bonusEggs || 0) : 0)
+    const eggsThisClickForMax = finalEggsGained + (chanceuse?.proc ? (chanceuse?.bonusEggs || 0) : 0)
     await updateAchievementProgress(req.userId, 'max', {
       maxEggsInOneClick: eggsThisClickForMax
     })

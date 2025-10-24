@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" :class="{ 'apocalypse-mode': isApocalypseMode }">
     <TopBar v-if="!isAuthPage" 
       @open-profile="toast('Bientôt disponible !')"
       @open-achievements="toggleAchievementsWithSound"
@@ -64,6 +64,7 @@ import { useToast } from '@/composables/useToast'
 import { useAppLoading } from '@/composables/useAppLoading'
 import { useSettings } from '@/composables/useSettings'
 import { useChickenGifts } from '@/composables/useChickenGifts'
+import { provideApocalypse } from '@/composables/useApocalypse'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -95,6 +96,9 @@ const settingsComposable = useSettings() || {}
 const settings = settingsComposable.settings || ref({})
 const chickenGiftsComposable = useChickenGifts() || {}
 const startPeriodicCheck = chickenGiftsComposable.startPeriodicCheck || (() => {})
+
+// Fournir l'état apocalypse à tous les composants enfants
+const { isApocalypseMode } = provideApocalypse()
 
 onMounted(async () => {
   window.$toast = toast
@@ -226,6 +230,95 @@ function closeAchievements() {
 </script>
 
 <style>
+/* Variables CSS pour les couleurs du thème */
+:root {
+  /* Couleurs normales */
+  --bg-primary: #f9f3e8;
+  --bg-secondary: #fffaf1;
+  --bg-tertiary: #3d1f1f;
+  --bg-header: #f6e4c3;
+  --bg-menu: #421d00;
+  --bg-overlay: rgba(255, 255, 255, 0.8);
+  --bg-achievement: rgba(255, 255, 255, 0.9);
+  --text-primary: #4b2e06;
+  --text-secondary: #ffaaaa;
+  --text-accent: #ffcccc;
+  --text-header: #6d3c00;
+  --text-menu: #fff9e5;
+  --text-achievement: #8B4513;
+  --border-primary: #ffc66e;
+  --border-secondary: #ff4444;
+  --border-tertiary: #ffd99a;
+  --border-menu: #8B4513;
+  --button-bg: #7a3e10;
+  --button-hover: #8a4a1c;
+  --button-text: #fff9e5;
+  --level-bg: #e6f3ff;
+  --level-border: #8bb4d6;
+  --level-text: #234;
+  --error-bg: #fff5f5;
+  --error-border: #ff6b6b;
+  --error-text: #ff6b6b;
+  --success-bg: #2e8b57;
+  --success-border: #90ee90;
+  --cancel-bg: #cd5c5c;
+  --cancel-border: #ffa07a;
+  --progress-bg: #e0e0e0;
+  --progress-border: #ccc;
+  --progress-fill: linear-gradient(90deg, #4CAF50, #8BC34A);
+  --reward-bg: rgba(255, 215, 0, 0.2);
+  --reward-border: #FFD700;
+  --reward-claimed-bg: rgba(76, 175, 80, 0.2);
+  --reward-claimed-border: #4CAF50;
+  --shadow-primary: rgba(0, 0, 0, 0.05);
+  --shadow-secondary: rgba(139, 69, 19, 0.1);
+  --shadow-tertiary: rgba(0, 0, 0, 0.15);
+}
+
+.apocalypse-mode {
+  /* Couleurs apocalypse */
+  --bg-primary: #2d1b1b;
+  --bg-secondary: #3d1f1f;
+  --bg-tertiary: #4a1a0a;
+  --bg-header: #2d1b1b;
+  --bg-menu: #1a0f0f;
+  --bg-overlay: rgba(45, 27, 27, 0.8);
+  --bg-achievement: rgba(45, 27, 27, 0.9);
+  --text-primary: #ffcccc;
+  --text-secondary: #ffaaaa;
+  --text-accent: #ff6b6b;
+  --text-header: #ff6b6b;
+  --text-menu: #ffcccc;
+  --text-achievement: #ff6b6b;
+  --border-primary: #ff4444;
+  --border-secondary: #ff4444;
+  --border-tertiary: #ff4444;
+  --border-menu: #8b0000;
+  --button-bg: #4a1a0a;
+  --button-hover: #5a2a1a;
+  --button-text: #ffcccc;
+  --level-bg: #4a1a0a;
+  --level-border: #ff4444;
+  --level-text: #ffcccc;
+  --error-bg: #4a1a0a;
+  --error-border: #ff4444;
+  --error-text: #ff6b6b;
+  --success-bg: #2e5a3a;
+  --success-border: #5a8a5a;
+  --cancel-bg: #8a3a3a;
+  --cancel-border: #aa5a5a;
+  --progress-bg: #3d1f1f;
+  --progress-border: #ff4444;
+  --progress-fill: linear-gradient(90deg, #ff6b6b, #ff4444);
+  --reward-bg: rgba(255, 68, 68, 0.2);
+  --reward-border: #ff4444;
+  --reward-claimed-bg: rgba(255, 107, 107, 0.1);
+  --reward-claimed-border: #ff6b6b;
+  --shadow-primary: rgba(0, 0, 0, 0.3);
+  --shadow-secondary: rgba(139, 69, 19, 0.3);
+  --shadow-tertiary: rgba(0, 0, 0, 0.3);
+}
+
 html, body {
   margin: 0;
   padding: 0;

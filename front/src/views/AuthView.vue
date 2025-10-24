@@ -1,6 +1,6 @@
 <template>
   <div class="auth-view">
-    <div class="auth-header" @click="dropEggs">🐔 Chicken Haven</div>
+    <div class="auth-header" @click="handleTitleClick">🐔 Chicken Haven</div>
     <div class="auth-container">
       <!--div class="auth-tabs">
         <button 
@@ -36,18 +36,34 @@
   
   
   <script setup>
-  import { ref } from 'vue'
+  import { ref, onMounted, onBeforeUnmount } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAuth } from '@/composables/useAuth'
+  import { usePlayer } from '@/composables/usePlayer'
   import RegisterForm from '@/components/auth/RegisterForm.vue'
   import LoginForm from '@/components/auth/LoginForm.vue'
   
   const router = useRouter()
   const { login } = useAuth()
+  const { } = usePlayer()
   const isLoginMode = ref(true)
   const eggContainer = ref(null)
+  const titleClickCount = ref(0)
+  // Apocalypse mode is now immutable after account creation
 
-    function dropEggs() {
+  function handleTitleClick() {
+    titleClickCount.value++
+    // Apocalypse mode is now immutable after account creation
+    dropEggs()
+  }
+
+  // Apocalypse mode is now immutable after account creation
+
+  // Apocalypse mode is now immutable after account creation
+
+  // Apocalypse mode is now immutable after account creation
+
+  function dropEggs() {
     for (let i = 0; i < 20; i++) {
         const span = document.createElement('span')
         span.textContent = '🥚'
@@ -71,8 +87,7 @@
         span.remove()
         }, 3000)
     }
-    }
-
+  }
 
   function handleRegistered() {
     window.$toast("Inscription réussie ! Vous pouvez maintenant vous connecter.", 'success')
@@ -180,6 +195,17 @@
     text-shadow: 1px 1px 0 #fff;
     user-select: none;
     transition: font-size 0.2s, margin 0.2s;
+  }
+
+  .auth-header.apocalypse-active {
+    color: #ff0000;
+    text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+    animation: apocalypse-pulse 1s infinite alternate;
+  }
+
+  @keyframes apocalypse-pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.05); }
   }
   
   .auth-container {

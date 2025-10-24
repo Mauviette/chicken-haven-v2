@@ -12,7 +12,7 @@ if (!process.env.JWT_SECRET) {
 }
 
 router.post('/register', async (req, res) => {
-  const { username, displayName, password } = req.body
+  const { username, displayName, password, apocalypse } = req.body
   try {
     // Validation des champs requis
     if (!username || !displayName || !password) {
@@ -60,7 +60,8 @@ router.post('/register', async (req, res) => {
     const newUser = new User({ 
       username: trimmedUsername, 
       displayName: trimmedDisplayName,
-      password: hashed
+      password: hashed,
+      apocalypse: apocalypse || false
     })
     await newUser.save()
     

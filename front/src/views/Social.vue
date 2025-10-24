@@ -45,7 +45,10 @@
                   <span class="level-badge">{{ leaderboardPlayer.level }}</span>
                 </div>
                 <div class="player-info">
-                  <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
+                  <div class="player-name">
+                    {{ leaderboardPlayer.displayName || leaderboardPlayer.username }}
+                    <span v-if="leaderboardPlayer.apocalypse" class="apocalypse-badge-small" title="Mode APOCALYPSE">🔥</span>
+                  </div>
                   <div class="player-username">{{ leaderboardPlayer.username }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
@@ -92,7 +95,10 @@
                   <span class="level-badge">{{ leaderboardPlayer.level }}</span>
                 </div>
                 <div class="player-info">
-                  <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
+                  <div class="player-name">
+                    {{ leaderboardPlayer.displayName || leaderboardPlayer.username }}
+                    <span v-if="leaderboardPlayer.apocalypse" class="apocalypse-badge-small" title="Mode APOCALYPSE">🔥</span>
+                  </div>
                   <div class="player-username">{{ leaderboardPlayer.username }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
@@ -139,7 +145,10 @@
                   <span class="level-badge">{{ leaderboardPlayer.level }}</span>
                 </div>
                 <div class="player-info">
-                  <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
+                  <div class="player-name">
+                    {{ leaderboardPlayer.displayName || leaderboardPlayer.username }}
+                    <span v-if="leaderboardPlayer.apocalypse" class="apocalypse-badge-small" title="Mode APOCALYPSE">🔥</span>
+                  </div>
                   <div class="player-username">{{ leaderboardPlayer.username }}</div>
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
@@ -211,7 +220,10 @@
               <span class="level-badge">{{ leaderboardPlayer.level }}</span>
             </div>
             <div class="player-info">
-              <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
+              <div class="player-name">
+                {{ leaderboardPlayer.displayName || leaderboardPlayer.username }}
+                <span v-if="leaderboardPlayer.apocalypse" class="apocalypse-badge-small" title="Mode APOCALYPSE">🔥</span>
+              </div>
               <div class="player-username">{{ leaderboardPlayer.username }}</div>
               <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
             </div>
@@ -1155,5 +1167,29 @@ const getLeaderboardIcon = (type) => {
 .full-leaderboard-list .player-value {
   font-size: 15px;
   min-width: 70px;
+}
+
+/* Badge APOCALYPSE dans les leaderboards */
+.apocalypse-badge-small {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 12px;
+  animation: flame-flicker-small 1.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 2px rgba(255, 100, 0, 0.6));
+}
+
+@keyframes flame-flicker-small {
+  0% {
+    transform: scale(0.9) rotate(-1deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1) rotate(1deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9) rotate(-1deg);
+    opacity: 0.9;
+  }
 }
 </style>

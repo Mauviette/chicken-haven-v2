@@ -1,4 +1,4 @@
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { apiGet, apiPut } from '@/utils/api'
 
 const eggs = ref(0)
@@ -13,6 +13,9 @@ const level = ref(1)
 const xp = ref(0)
 const xpRequired = ref(2)
 const player = ref(null)
+
+// Propriété calculée pour apocalypse
+const apocalypse = computed(() => player.value?.apocalypse || false)
 
 // Fonction de nettoyage des données
 function clearPlayerData() {
@@ -93,7 +96,8 @@ export function usePlayer() {
             profileId: u?.profileId || u?.id || null,
             username: u?.username || null,
             avatar: u?.avatar || null,
-            lastSeen: u?.lastSeen || null
+            lastSeen: u?.lastSeen || null,
+            apocalypse: u?.apocalypse || false
           }
           
           const prevLevel = level.value || 1
@@ -370,6 +374,7 @@ export function usePlayer() {
     xp,
     xpRequired,
     player,
+    apocalypse,
     addEggs,
     spendEggs,
     setEggs,

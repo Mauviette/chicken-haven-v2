@@ -106,13 +106,14 @@
 <script setup>
 import ActionButton from '@/components/menu/ActionButton.vue'
 import { useRoute } from 'vue-router'
-import { onMounted, onUnmounted, computed, ref } from 'vue'
+import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
 import { useAchievements } from '@/composables/useAchievements'
 import { usePlayer } from '@/composables/usePlayer'
 import { useGameData } from '@/composables/useGameData'
 import { usePoules } from '@/composables/usePoules'
 import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
 import Tooltip from '@/components/menu/Tooltip.vue'
+import { apiGet } from '@/utils/api.js'
 const route = useRoute()
 
 const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements', 'open-mining'])
@@ -136,6 +137,14 @@ onMounted(async () => {
     await checkAchievements()
     // Rafraîchir les données du joueur pour s'assurer que miningTokens est à jour
     await refreshPlayer()
+    // Synchroniser l'état apocalypse avec les données du serveur
+    const token = localStorage.getItem('token')
+    if (token) {
+      try {
+        const me = await apiGet('/api/user/me')
+        // Apocalypse mode is now immutable, no need to update it
+      } catch (_) {}
+    }
   } catch (_) {}
   startAutoCheck?.()
 })
@@ -204,7 +213,7 @@ const avalaibleUpgrade = computed(() => marketUpgradeAvailable.value || !!hasAva
     height: 80px;
     min-height: 80px;
     max-height: 80px;
-    background-color: #421d00;
+    background-color: var(--bg-menu);
     background-image: url('@/assets/bar/bg.png');
     background-repeat: repeat;
     display: flex;
@@ -212,13 +221,13 @@ const avalaibleUpgrade = computed(() => marketUpgradeAvailable.value || !!hasAva
     justify-content: space-between;
     padding: 0 20px;
     box-sizing: border-box;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 -2px 5px var(--shadow-secondary);
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    border-top: 4px solid #b77b3d;
-    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.25);
+    border-top: 4px solid var(--border-menu);
+    box-shadow: 0 -4px 10px var(--shadow-tertiary);
     flex-shrink: 0;
     z-index: 10;
   }
@@ -293,9 +302,9 @@ const avalaibleUpgrade = computed(() => marketUpgradeAvailable.value || !!hasAva
   }
 
   .bottom-bar button {
-    background-color: #7a3e10;
-    border: 2px solid #ffc66e;
-    color: #fff9e5;
+    background-color: var(--button-bg);
+    border: 2px solid var(--border-primary);
+    color: var(--button-text);
     border-radius: 10px;
     padding: 8px 12px;
     font-family: 'Fredoka', sans-serif;
@@ -305,7 +314,7 @@ const avalaibleUpgrade = computed(() => marketUpgradeAvailable.value || !!hasAva
   }
 
   .bottom-bar button:hover {
-    background-color: #8a4a1c;
+    background-color: var(--button-hover);
     transform: translateY(-1px);
   }
 

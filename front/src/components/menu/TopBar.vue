@@ -3,7 +3,10 @@
     <div class="top-bar-inner">
       <!-- Menu hamburger sur mobile, titre sur desktop -->
       <div class="left-section">
-        <div class="game-title desktop-only">Chicken Haven</div>
+        <Tooltip v-if="isApocalypseMode" :text="apocalypseTooltipHtml" position="bottom">
+          <div class="game-title desktop-only">{{ isApocalypseMode ? '💀 Chicken Haven' : 'Chicken Haven' }}</div>
+        </Tooltip>
+        <div v-else class="game-title desktop-only">Chicken Haven</div>
         <div class="mobile-menu mobile-only">
           <button class="hamburger-btn" @click="handleHamburgerClick" :class="{ active: showMobileMenu || achievementsOpen }">
             <span></span>
@@ -67,8 +70,9 @@ import { usePlayer } from '@/composables/usePlayer'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { useGameData } from '@/composables/useGameData'
 import { useRouter, useRoute } from 'vue-router'
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { usePoules } from '@/composables/usePoules'
+import { injectApocalypse } from '@/composables/useApocalypse'
 import { useAchievements } from '@/composables/useAchievements'
 import { apiGet } from '@/utils/api.js'
 import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
@@ -80,6 +84,7 @@ const route = useRoute()
 const { getImage, hiddenImage } = usePoules()
 const { achievements } = useAchievements()
 const { hasAvailableUpgrade, initUpgradesAvailability } = useUpgradesAvailability()
+const { isApocalypseMode } = injectApocalypse()
 
 // Données des items depuis le backend
 const itemsData = computed(() => items.value)
@@ -129,6 +134,11 @@ const topAvatarSrc = computed(() => {
   return getImage(String(a))
 })
 
+const apocalypseTooltipHtml = computed(() => {
+  if (!isApocalypseMode.value) return ''
+  return `<strong>Mode apocalypse</strong><br>- Chaque cadeau de poule a 50% de chance de donner une tomate pourrie à la place de la récompense de base.<br>- Chaque case de minage avec récompense a 25% que la récompense soit une tomate pourrie à la place.<br>- On ne peut pas remplacer une poule (avec capacité activable) dont le cooldown n'est pas prêt.<br>- Les production d'oeufs donnent 10% des oeufs.<br>- Les prix d'améliorations dans le marché sont multipliés par 2`
+})
+
 onMounted(async () => {
   try {
     const token = localStorage.getItem('token')
@@ -146,6 +156,7 @@ onMounted(async () => {
       if (me?.resources) {
         eggs.value = Number(me.resources.eggs ?? eggs.value)
       }
+      // Apocalypse mode is now immutable, no need to update it
     } catch (_) {}
   } catch (_) {}
 
@@ -246,13 +257,13 @@ const levelTooltipHtml = () => {
   height: 60px;
   min-height: 60px;
   max-height: 60px;
-  background-color: #f6e4c3;
+  background-color: var(--bg-header);
   background-repeat: repeat;
   display: flex;
   justify-content: center;
   align-items: center;
   font-family: 'Fredoka', sans-serif;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px var(--shadow-primary);
   overflow: visible;
   flex-shrink: 0;
   position: relative;
@@ -278,7 +289,7 @@ const levelTooltipHtml = () => {
 .game-title {
   font-size: 18px;
   font-weight: bold;
-  color: #6d3c00;
+  color: var(--text-header);
 }
 
 .mobile-menu {
@@ -307,7 +318,7 @@ const levelTooltipHtml = () => {
   display: block;
   width: 18px;
   height: 2px;
-  background-color: #6d3c00;
+  background-color: var(--text-header);
   border-radius: 1px;
   transition: all 0.3s ease;
   transform-origin: center;
@@ -345,10 +356,10 @@ const levelTooltipHtml = () => {
   position: absolute;
   top: 100%;
   left: 0;
-  background: #f6e4c3;
-  border: 2px solid #ffc66e;
+  background: var(--bg-header);
+  border: 2px solid var(--border-primary);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--shadow-tertiary);
   min-width: 200px;
   opacity: 0;
   visibility: hidden;
@@ -366,7 +377,7 @@ const levelTooltipHtml = () => {
 .mobile-menu-item {
   padding: 12px 16px;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
-  color: #6d3c00;
+  color: var(--text-header);
   font-size: 14px;
   border-bottom: 1px solid rgba(255, 198, 110, 0.3);
   display: flex;
@@ -427,14 +438,14 @@ const levelTooltipHtml = () => {
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #fff7dc;
-  border: 2px solid #ffc66e;
+  background-color: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
   padding: 5px 10px;
   font-size: 15px;
-  color: #6d3c00;
+  color: var(--text-primary);
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px var(--shadow-primary);
 }
 
 .profile-btn {
@@ -447,7 +458,7 @@ const levelTooltipHtml = () => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 2px solid #ffc66e;
+  border: 2px solid var(--border-primary);
   background-color: white;
 }
 

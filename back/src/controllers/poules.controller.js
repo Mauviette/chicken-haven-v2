@@ -98,6 +98,15 @@ export async function addPoule(req, res) {
     const { especeId, quantite = 1 } = req.body
     if (!especeId) return res.status(400).json({ error: 'especeId requis' })
 
+    // Mode Apocalypse : 50% de chance de perdre la récompense
+    if (user.apocalypse && Math.random() < 0.5) {
+      await user.save()
+      return res.json({
+        message: 'Récompense perdue (mode Apocalypse)',
+        trigger: { achievementsRefresh: true }
+      })
+    }
+
     const poules = user.poulesPossedees || []
 
     const existing = poules.find(p => p.especeId === especeId)

@@ -1,5 +1,6 @@
 <template>
-  <div class="production-screen">
+  <div class="production-screen" :class="{ 'apocalypse-mode': isApocalypseMode }">
+    <!-- Debug: isApocalypseMode = {{ isApocalypseMode }} -->
     <!-- Bandeau des buffs actifs -->
     <div class="buffs-container" v-if="activeBuffs.length > 0">
       <Tooltip 
@@ -84,7 +85,7 @@
               </div>
               <div class="gains-text">
                 <Tooltip :text="storageTooltipHtml">
-                  <span>{{ Math.round(currentGains) }} / {{ Math.round(eggState.maxIncome) }}</span>
+                  <span>{{ Math.floor(displayedCurrentGains) }} / {{ Math.floor(displayedMaxIncome) }}</span>
                 </Tooltip>
               </div>
               <div class="gains-per-click">
@@ -94,7 +95,7 @@
             
             <div class="income-info">
               <Tooltip :text="incomeTooltipHtml">
-                <span class="income-rate">{{ formatIncome(eggState.income) }}/s</span>
+                <span class="income-rate">{{ formatIncome(displayedIncome) }}/s</span>
               </Tooltip>
             </div>
           </div>
@@ -131,7 +132,7 @@ const {
   stopUpdates 
 } = useEgg()
 
-const { refreshPlayer, fetchTeam, team, setEggs } = usePlayer()
+const { refreshPlayer, fetchTeam, team, setEggs, player, apocalypse } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp } = useSound()
@@ -166,7 +167,9 @@ function evalExpr(expr, ctx) {
 // Formatters
 const formatIncome = (n) => {
   const x = Number(n || 0)
-  return Number.isInteger(x) ? x : x.toFixed(1)
+  if (x === 0) return '0'
+  if (x >= 1) return x.toFixed(1)
+  return x.toFixed(2)
 }
 const roman = (n) => {
   const arr = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV']
@@ -335,6 +338,32 @@ const teamStats = computed(() => {
   }
 })
 
+// Valeurs affichées en mode apocalypse (divisées par 10)
+const isApocalypseMode = computed(() => {
+  const apocalypseVal = apocalypse.value
+  //console.log('isApocalypseMode computed - apocalypse.value:', apocalypseVal, 'player.value:', player.value)
+  return Boolean(apocalypseVal)
+})
+
+const displayedCurrentGains = computed(() => {
+  const isApocalypse = isApocalypseMode.value
+  //console.log('displayedCurrentGains - isApocalypse:', isApocalypse, 'currentGains:', currentGains.value, 'result:', isApocalypse ? currentGains.value / 10 : currentGains.value)
+  return isApocalypse ? currentGains.value / 10 : currentGains.value
+})
+
+const displayedMaxIncome = computed(() => {
+  const isApocalypse = isApocalypseMode.value
+  //console.log('displayedMaxIncome - isApocalypse:', isApocalypse, 'maxIncome:', eggState.value.maxIncome, 'result:', isApocalypse ? eggState.value.maxIncome / 10 : eggState.value.maxIncome)
+  return isApocalypse ? eggState.value.maxIncome / 10 : eggState.value.maxIncome
+})
+
+const displayedIncome = computed(() => {
+  const isApocalypse = isApocalypseMode.value
+  const result = isApocalypse ? eggState.value.income / 10 : eggState.value.income
+  //console.log('displayedIncome - isApocalypse:', isApocalypse, 'income:', eggState.value.income, 'result:', result, 'formatIncome(result):', formatIncome(result))
+  return result
+})
+
 // Calcul générique des bonus de talents (remplace energeticDetails)
 const talentBonusDetails = computed(() => {
   try {
@@ -416,19 +445,25 @@ const talentBonusDetails = computed(() => {
 
 // HTML du tooltip de l'income
 const incomeTooltipHtml = computed(() => {
+  const isApocalypse = isApocalypseMode.value
   const effective = Number(eggState.value.income || 0)
+  const displayedEffective = isApocalypse ? effective / 10 : effective
   const bonusDetails = talentBonusDetails.value
   const talentBonus = Number(bonusDetails.income.total || 0)
+  const displayedTalentBonus = isApocalypse ? talentBonus / 10 : talentBonus
   const base = Math.max(0, effective / getIncomeBuffMultiplier() - talentBonus)
+  const displayedBase = isApocalypse ? base / 10 : base
   const subtotal = base + talentBonus
+  const displayedSubtotal = isApocalypse ? subtotal / 10 : subtotal
 
   let html = `<div>`
-  html += `<div style="font-weight:bold;margin-bottom:4px;">Revenu par seconde</div>`
-  html += `<div>Base (incl. améliorations): <strong>${formatIncome(base)}</strong></div>`
+  html += `<div style="font-weight:bold;margin-bottom:4px;">Revenu par seconde${isApocalypse ? ' (Mode Apocalypse)' : ''}</div>`
+  html += `<div>Base (incl. améliorations): <strong>${isApocalypse ? Math.floor(displayedBase) : formatIncome(displayedBase)}</strong></div>`
 
   if (bonusDetails.income.entries.length) {
     for (const e of bonusDetails.income.entries) {
-      html += `<div>${e.talentName} — ${e.name} (niv ${roman(e.level)}): <strong>+${formatIncome(e.amount)}</strong></div>`
+      const displayedAmount = isApocalypse ? e.amount / 10 : e.amount
+      html += `<div>${e.talentName} — ${e.name} (niv ${roman(e.level)}): <strong>+${isApocalypse ? Math.floor(displayedAmount) : formatIncome(displayedAmount)}</strong></div>`
     }
   } else {
     html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
@@ -449,12 +484,12 @@ const incomeTooltipHtml = computed(() => {
   }*/
 
   html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">`
-  html += `<div>Sous-total: <strong>${formatIncome(subtotal)}</strong>/s</div>`
+  html += `<div>Sous-total: <strong>${isApocalypse ? Math.floor(displayedSubtotal) : formatIncome(displayedSubtotal)}</strong>/s</div>`
   if (incomeBuffs.length > 0) {
     const buffMultiplier = getIncomeBuffMultiplier()
     html += `<div>Multiplicateur buffs: <strong>x${buffMultiplier.toFixed(2)}</strong></div>`
   }
-  html += `<div style="font-weight:bold;">Total: <strong>${formatIncome(effective)}</strong>/s</div>`
+  html += `<div style="font-weight:bold;">Total: <strong>${isApocalypse ? formatIncome(displayedEffective) : formatIncome(displayedEffective)}</strong>/s</div>`
   html += `</div>`
   html += `</div>`
   return html
@@ -462,19 +497,25 @@ const incomeTooltipHtml = computed(() => {
 
 // HTML du tooltip du stockage maximum
 const storageTooltipHtml = computed(() => {
+  const isApocalypse = isApocalypseMode.value
   const effective = Number(eggState.value.maxIncome || 0)
+  const displayedEffective = isApocalypse ? effective / 10 : effective
   const bonusDetails = talentBonusDetails.value
   const talentBonus = Number(bonusDetails.storage.total || 0)
+  const displayedTalentBonus = isApocalypse ? talentBonus / 10 : talentBonus
   const base = Math.max(0, effective / getStorageBuffMultiplier() - talentBonus)
+  const displayedBase = isApocalypse ? base / 10 : base
   const subtotal = base + talentBonus
+  const displayedSubtotal = isApocalypse ? subtotal / 10 : subtotal
 
   let html = `<div>`
-  html += `<div style="font-weight:bold;margin-bottom:4px;">Stockage maximum</div>`
-  html += `<div>Base (incl. améliorations): <strong>${Math.round(base)}</strong></div>`
+  html += `<div style="font-weight:bold;margin-bottom:4px;">Stockage maximum${isApocalypse ? ' (Mode Apocalypse)' : ''}</div>`
+  html += `<div>Base (incl. améliorations): <strong>${isApocalypse ? Math.floor(displayedBase) : Math.round(displayedBase)}</strong></div>`
 
   if (bonusDetails.storage.entries.length) {
     for (const e of bonusDetails.storage.entries) {
-      html += `<div>${e.talentName} — ${e.name} (niv ${roman(e.level)}): <strong>+${Math.round(e.amount)}</strong></div>`
+      const displayedAmount = isApocalypse ? e.amount / 10 : e.amount
+      html += `<div>${e.talentName} — ${e.name} (niv ${roman(e.level)}): <strong>+${isApocalypse ? Math.floor(displayedAmount) : Math.round(displayedAmount)}</strong></div>`
     }
   } else {
     html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
@@ -495,12 +536,12 @@ const storageTooltipHtml = computed(() => {
   }*/
 
   html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">`
-  html += `<div>Sous-total: <strong>${Math.round(subtotal)}</strong></div>`
+  html += `<div>Sous-total: <strong>${isApocalypse ? Math.floor(displayedSubtotal) : Math.round(displayedSubtotal)}</strong></div>`
   if (storageBuffs.length > 0) {
     const buffMultiplier = getStorageBuffMultiplier()
     html += `<div>Multiplicateur buffs: <strong>x${buffMultiplier.toFixed(2)}</strong></div>`
   }
-  html += `<div style="font-weight:bold;">Total: <strong>${Math.round(effective)}</strong></div>`
+  html += `<div style="font-weight:bold;">Total: <strong>${isApocalypse ? Math.floor(displayedEffective) : Math.round(displayedEffective)}</strong></div>`
   html += `</div>`
   html += `</div>`
   return html
@@ -655,6 +696,14 @@ onMounted(async () => {
   await fetchBuffs()
   startUpdates()
   
+  // Écouter les changements du mode apocalypse
+  if (typeof window !== 'undefined') {
+    window.addEventListener('apocalypse-mode-changed', () => {
+      console.log('Production.vue - apocalypse mode changed, refreshing player')
+      refreshPlayer()
+    })
+  }
+  
   // Rafraîchir les buffs périodiquement (toutes les 15s); le compte à rebours est calculé en local
   const BUFFS_REFRESH_MS = 15000
   if (typeof window !== 'undefined') {
@@ -672,6 +721,12 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopUpdates()
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('apocalypse-mode-changed', () => {
+      console.log('Production.vue - apocalypse mode changed, refreshing player')
+      refreshPlayer()
+    })
+  }
   if (typeof window !== 'undefined' && window.__buffsInterval) {
     clearInterval(window.__buffsInterval)
     window.__buffsInterval = null
@@ -698,6 +753,11 @@ watch(() => currentGains.value, (nv, ov) => {
   _lastGains = cur
 })
 
+// Watcher pour déboguer displayedIncome
+watch(() => displayedIncome.value, (nv, ov) => {
+  //console.log('displayedIncome changed from', ov, 'to', nv, 'formatIncome(nv):', formatIncome(nv))
+})
+
 
 </script>
 
@@ -705,12 +765,11 @@ watch(() => currentGains.value, (nv, ov) => {
 .production-screen {
   flex: 1;
   width: 100%;
-  background-image: url('@/assets/background/main/1.png');
+  background: url('@/assets/background/main/1.png') no-repeat center center;
+  background-size: cover;
   overflow: hidden;
   position: relative;
   font-family: 'Fredoka', sans-serif;
-  background-size: cover;
-  background-position: center;
 }
 
 .team-stats-banner {
@@ -1107,6 +1166,96 @@ watch(() => currentGains.value, (nv, ov) => {
 
 @media (max-height: 640px) {
   .egg-container { gap: 1.5vh; }
+}
+
+/* Mode APOCALYPSE */
+.production-screen.apocalypse-mode {
+  background: url('@/assets/hardcore/background/1.png') no-repeat center center !important;
+  background-size: cover !important;
+  position: relative;
+}
+
+.production-screen.apocalypse-mode::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: 60px 60px, 80px 80px, 100px 100px, 40px 40px, 40px 40px, 40px 40px, 40px 40px;
+  background-position: 0 0, 0 0, 0 0, 0 0, 20px 20px, 20px -20px, -20px 20px;
+  animation: apocalypse-bg-shift 25s linear infinite, apocalypse-bg-pulse 4s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.production-screen.apocalypse-mode .production-content {
+  position: relative;
+  z-index: 2;
+}
+
+.production-screen.apocalypse-mode .egg-clicker {
+  background-color: #2a0a00;
+  border-color: #660000;
+  box-shadow: 0 -4px 10px rgba(102, 0, 0, 0.25);
+}
+
+.production-screen.apocalypse-mode .gains-display {
+  background: rgba(42, 10, 0, 0.95);
+  border-color: #660000;
+}
+
+.production-screen.apocalypse-mode .gains-progress {
+  background: #8b0000;
+}
+
+.production-screen.apocalypse-mode .gains-text {
+  color: #ff6666;
+}
+
+.production-screen.apocalypse-mode .income-rate {
+  background: #330000;
+  border-color: #660000;
+  color: #ffaaaa;
+}
+
+.production-screen.apocalypse-mode .egg-sprite {
+  filter: brightness(0.7) contrast(1.2) hue-rotate(0deg) saturate(0.8);
+  animation: apocalypse-egg-pulse 3s infinite ease-in-out;
+}
+
+.production-screen.apocalypse-mode .clickable-egg.clickable:hover {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
+}
+
+@keyframes apocalypse-egg-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    filter: brightness(0.7) contrast(1.2) hue-rotate(0deg) saturate(0.8);
+  }
+  50% { 
+    transform: scale(1.05);
+    filter: brightness(0.8) contrast(1.3) hue-rotate(5deg) saturate(0.9);
+  }
+}
+
+@keyframes apocalypse-bg-shift {
+  0% {
+    background-position: 0 0, 0 0, 0 0, 0 0, 20px 20px, 20px -20px, -20px 20px;
+  }
+  100% {
+    background-position: 60px 60px, 80px 80px, 100px 100px, 40px 40px, 60px 60px, 60px 20px, 20px 60px;
+  }
+}
+
+@keyframes apocalypse-bg-pulse {
+  0% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 </style>
 

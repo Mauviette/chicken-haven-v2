@@ -12,6 +12,9 @@
           <div class="name-section">
             <h2 class="display-name" v-if="!editingDisplayName">
               {{ profile.displayName || profile.username }}
+              <Tooltip v-if="profile?.apocalypse" text="Cet utilisateur a choisi d'avoir la vie dure.">
+                <span class="apocalypse-badge">🔥</span>
+              </Tooltip>
               <button v-if="isOwnProfile" class="edit-name-btn" @click="startEditDisplayName" title="Modifier le nom d'affichage">
                 <span class="edit-icon">✏️</span>
                 Modifier
@@ -63,10 +66,10 @@
           <h3 class="section-title">📊 Statistiques</h3>
           <div class="stats-card">
             <div class="stat-row"><span>🏆 Succès obtenus</span><b>{{ profile.stats?.achievementsCompleted ?? 0 }} / {{ totalAchievements }} ({{ Math.round(((profile.stats?.achievementsCompleted ?? 0) / Math.max(1, totalAchievements)) * 100) }}%)</b></div>
-            <div class="stat-row"><span>🥚 Oeufs récoltés</span><b>{{ profile.stats?.totalEggsCollected ?? 0 }}</b></div>
+            <div class="stat-row"><span>🥚 Oeufs récoltés</span><b>{{ formatEggsCollected(profile.stats?.totalEggsCollected ?? 0, profile?.apocalypse) }}</b></div>
             <div class="stat-row"><span>🐣 Poules découvertes</span><b>{{ (profile.stats?.chickenFound ?? 0) }} / {{ totalEspeces }}</b></div>
             <div class="stat-row"><span>📦 Boîtes ouvertes</span><b>{{ profile.stats?.totalBoxesOpened ?? 0 }}</b></div>
-            <div class="stat-row"><span>🥚 Max en un clic</span><b>{{ profile.stats?.maxEggsInOneClick ?? 0 }}</b></div>
+            <div class="stat-row"><span>🥚 Max en un clic</span><b>{{ formatMaxEggsInClick(profile.stats?.maxEggsInOneClick ?? 0, profile?.apocalypse) }}</b></div>
 
             <!-- NOUVELLES STATS DE MINAGE -->
             <div class="stat-row"><span>🎮 Parties de minage jouées</span><b>{{ profile.achievements?.progress?.miningGamesPlayed ?? 0 }}</b></div>
@@ -83,6 +86,9 @@
             
             <!-- NOUVEAU : afficher le nombre d'utilisations de capacités de poules -->
             <div class="stat-row"><span>⚡ Capacités de poules utilisées</span><b>{{ profile.achievements?.progress?.chickenAbilitiesUsed ?? 0 }}</b></div>
+
+            <!-- NOUVEAU : afficher les tomates pourries reçues en mode apocalypse -->
+            <div v-if="profile?.apocalypse" class="stat-row"><span>🍅 Tomates pourries reçues</span><b>{{ profile.achievements?.progress?.rottenTomatoesReceived ?? 0 }}</b></div>
           </div>
         </div>
         <div class="right">
@@ -226,6 +232,7 @@ onMounted(() => {
       if (!token) return
       const me = await apiGet('/api/user/me')
       meProfileId.value = String(me.profileId || '').toUpperCase()
+      // Apocalypse mode is now immutable, no need to update it
       // Après avoir obtenu mon profileId, tenter de charger les achievements si c'est mon profil
       await loadAchievementsStatusIfOwn()
     } catch (_) {}
@@ -312,10 +319,19 @@ function teamTooltip(slot) {
   } catch (_) { return '' }
 }
 
-function toRoman(num) {
-  const romans = ['','I','II','III','IV','V','VI','VII','VIII','IX','X']
-  if (typeof num !== 'number' || num < 0) return ''
-  return romans[num] || String(num)
+function formatEggsCollected(totalEggs, isApocalypse) {
+  if (!isApocalypse) return totalEggs
+  // En mode apocalypse, les gains sont réduits de 90%, donc les stats affichent 10% des vrais gains
+  // Pour afficher la valeur "réelle", on multiplie par 10
+  const realEggs = totalEggs * 10
+  return `${totalEggs} (${realEggs} en mode normal)`
+}
+
+function formatMaxEggsInClick(maxEggs, isApocalypse) {
+  if (!isApocalypse) return maxEggs
+  // Même logique pour le max en un clic
+  const realMax = maxEggs * 10
+  return `${maxEggs} (${realMax} en mode normal)`
 }
 
 function talentLabel(slot) {
@@ -404,76 +420,13 @@ async function validateDisplayName() {
     validatingDisplayName.value = false
   }, 500) // Attendre 500ms après la dernière frappe
 }
-
-async function saveDisplayName() {
-  try {
-    if (!isOwnProfile.value || !newDisplayName.value.trim()) return
-    
-    // Si une validation est en cours, l'attendre
-    if (validatingDisplayName.value) {
-      return
-    }
-    
-    // Valider une dernière fois côté client de manière synchrone
-    const value = newDisplayName.value.trim()
-    if (value.length < 2 || value.length > 30 || !/^[a-zA-Z0-9À-ÿ\s_-]+$/.test(value)) {
-      return
-    }
-    
-    // Validation finale asynchrone des mots interdits
-    try {
-      const hasForbiddenWord = await containsForbiddenWords(value)
-      if (hasForbiddenWord) {
-        displayNameError.value = 'Nom d\'affichage non autorisé'
-        window.$toast?.(displayNameError.value, 'error')
-        return
-      }
-    } catch (error) {
-      console.warn('Erreur validation finale mots interdits:', error)
-    }
-    
-    const token = localStorage.getItem('token')
-    if (!token) {
-      window.$toast?.('Connecte-toi pour modifier ton nom', 'error')
-      return
-    }
-    
-    const trimmedName = newDisplayName.value.trim()
-    const data = await apiPatch('/api/user/me/displayName', { displayName: trimmedName })
-    
-    if (!data?.success) {
-      window.$toast?.(data?.error || 'Impossible de modifier le nom', 'error')
-      return
-    }
-    
-    // Mettre à jour le profil local
-    profile.value = { ...profile.value, displayName: data.displayName }
-    editingDisplayName.value = false
-    newDisplayName.value = ''
-    displayNameError.value = ''
-    validatingDisplayName.value = false
-    if (validationTimeout) {
-      clearTimeout(validationTimeout)
-      validationTimeout = null
-    }
-    
-    // Déclencher l'événement pour les achievements
-    window.dispatchEvent(new CustomEvent('name-changed'))
-    
-    window.$toast?.('Nom d\'affichage mis à jour', 'success')
-    
-  } catch (e) {
-    console.error(e)
-    window.$toast?.('Erreur réseau', 'error')
-  }
-}
 </script>
 
 <style scoped>
 .profile-view {
   padding: 24px;
-  background: #f9f3e8;
-  color: #4b2e06;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   /* Prend tout l'espace disponible au centre, scrolle à l'intérieur */
   flex: 1 1 auto;
   min-height: 0; /* important pour laisser le scroll interne fonctionner */
@@ -490,15 +443,15 @@ async function saveDisplayName() {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 16px;
-  background: #fffaf1;
-  border: 2px solid #ffc66e;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
   padding: 12px 14px;
 }
 .avatar-block.clickable { cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer; }
 .avatar-block.clickable .avatar { transition: filter .12s ease; }
 .avatar-block.clickable:hover .avatar { filter: grayscale(0.4) brightness(0.95); }
-.avatar { width: 72px; height: 72px; border-radius: 12px; border: 3px solid #ffc66e; background: #fff; object-fit: cover; user-select: none; }
+.avatar { width: 72px; height: 72px; border-radius: 12px; border: 3px solid var(--border-primary); background: #fff; object-fit: cover; user-select: none; }
 .avatar.placeholder { display: grid; place-items: center; font-size: 36px; }
 .identity { display: grid; gap: 4px; }
 .name-section {
@@ -516,9 +469,9 @@ async function saveDisplayName() {
 }
 
 .edit-name-btn {
-  background-color: #7a3e10;
-  border: 2px solid #ffc66e;
-  color: #fff9e5;
+  background-color: var(--button-bg);
+  border: 2px solid var(--border-primary);
+  color: var(--button-text);
   border-radius: 8px;
   padding: 6px 12px;
   font-size: 12px;
@@ -532,7 +485,7 @@ async function saveDisplayName() {
 }
 
 .edit-name-btn:hover {
-  background-color: #8a4a1c;
+  background-color: var(--button-hover);
   transform: translateY(-1px);
 }
 
@@ -559,12 +512,12 @@ async function saveDisplayName() {
 
 .edit-name-input {
   padding: 10px 12px;
-  border: 2px solid #ffc66e;
+  border: 2px solid var(--border-primary);
   border-radius: 8px;
   font-size: 14px;
   font-family: 'Fredoka', sans-serif;
-  background-color: #fffaf1;
-  color: #4b2e06;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   width: 100%;
   max-width: 280px;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -578,8 +531,8 @@ async function saveDisplayName() {
 }
 
 .edit-name-input.input-error {
-  border-color: #ff6b6b;
-  background-color: #fff5f5;
+  border-color: var(--error-border);
+  background-color: var(--error-bg);
 }
 
 .edit-name-input.input-error:focus {
@@ -593,21 +546,21 @@ async function saveDisplayName() {
 }
 
 .field-error {
-  color: #ff6b6b;
+  color: var(--error-text);
   font-size: 12px;
   margin-top: -4px;
   font-weight: 500;
   background: rgba(255, 107, 107, 0.1);
   padding: 4px 8px;
   border-radius: 4px;
-  border-left: 3px solid #ff6b6b;
+  border-left: 3px solid var(--error-border);
 }
 
 /* Utiliser le style ActionButton pour les boutons de confirmation */
 .action-button {
-  background-color: #7a3e10;
-  border: 2px solid #ffc66e;
-  color: #fff9e5;
+  background-color: var(--button-bg);
+  border: 2px solid var(--border-primary);
+  color: var(--button-text);
   border-radius: 10px;
   padding: 8px 12px;
   font-family: 'Fredoka', sans-serif;
@@ -619,7 +572,7 @@ async function saveDisplayName() {
 }
 
 .action-button:hover:not(.disabled) {
-  background-color: #8a4a1c;
+  background-color: var(--button-hover);
   transform: translateY(-1px);
 }
 
@@ -636,8 +589,8 @@ async function saveDisplayName() {
 }
 
 .save-btn {
-  background-color: #2e8b57;
-  border-color: #90ee90;
+  background-color: var(--success-bg);
+  border-color: var(--success-border);
 }
 
 .save-btn:hover:not(.disabled) {
@@ -645,8 +598,8 @@ async function saveDisplayName() {
 }
 
 .cancel-btn {
-  background-color: #cd5c5c;
-  border-color: #ffa07a;
+  background-color: var(--cancel-bg);
+  border-color: var(--cancel-border);
 }
 
 .cancel-btn:hover:not(.disabled) {
@@ -654,15 +607,15 @@ async function saveDisplayName() {
 }
 
 .real-username {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: normal;
   font-family: monospace;
 }
 .id {
   font-family: monospace;
-  background: #fffaf1;
-  border: 1px solid #ffd99a;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-tertiary);
   padding: 4px 8px;
   border-radius: 6px;
   width: fit-content;
@@ -673,17 +626,17 @@ async function saveDisplayName() {
 .online { font-size: 13px; opacity: .9; }
 .online.live { color: #118a00; font-weight: 600; }
 .level-pill {
-  background: #e6f3ff;
-  border: 2px solid #8bb4d6;
-  color: #234;
+  background: var(--level-bg);
+  border: 2px solid var(--level-border);
+  color: var(--level-text);
   padding: 6px 10px;
   border-radius: 999px;
   font-weight: 600;
 }
 
 .stats-card {
-  background: #fffaf1;
-  border: 2px solid #ffc66e;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
   padding: 8px;
   display: grid;
@@ -695,7 +648,7 @@ async function saveDisplayName() {
   gap: 12px;
   padding: 8px 10px;
 }
-.stat-row + .stat-row { border-top: 1px dashed #ffd99a; }
+.stat-row + .stat-row { border-top: 1px dashed var(--border-tertiary); }
 .stat-row span { opacity: .85; }
 .stat-row b { font-size: 16px; }
 
@@ -715,14 +668,14 @@ async function saveDisplayName() {
   gap: 10px;
 }
 .team-slot {
-  background: #fffaf1;
-  border: 2px solid #ffc66e;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: 10px;
   padding: 8px;
 }
 .slot-vertical { display: grid; grid-template-rows: auto auto auto; justify-items: center; align-items: start; gap: 6px; text-align: center; }
 .slot-vertical.empty { opacity: .6; font-style: italic; }
-.slot-chicken { width: 56px; height: 56px; image-rendering: pixelated; border-radius: 8px; border: 1px solid #ffd99a; background: #fff; }
+.slot-chicken { width: 56px; height: 56px; image-rendering: pixelated; border-radius: 8px; border: 1px solid var(--border-tertiary); background: #fff; }
 .slot-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .slot-talent { font-size: 12px; opacity: .95; }
 
@@ -803,8 +756,8 @@ async function saveDisplayName() {
   }
 }
 .avatar-item {
-  background: #fffaf1;
-  border: 2px solid #ffc66e;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: 10px;
   padding: 8px;
   display: grid;
@@ -815,7 +768,31 @@ async function saveDisplayName() {
   transition: transform .05s ease;
 }
 .avatar-item:active { transform: translateY(1px); }
-.avatar-item img { width: 64px; height: 64px; image-rendering: pixelated; border-radius: 8px; background: #fff; border: 1px solid #ffd99a; }
+.avatar-item img { width: 64px; height: 64px; image-rendering: pixelated; border-radius: 8px; background: #fff; border: 1px solid var(--border-tertiary); }
 .avatar-item .label { font-size: 12px; opacity: .9; text-align: center; }
-.avatar-item.equipped img { outline: 3px solid #fff; box-shadow: 0 0 0 2px #ffc66e; }
+.avatar-item.equipped img { outline: 3px solid #fff; box-shadow: 0 0 0 2px var(--border-primary); }
+
+/* Badge APOCALYPSE */
+.apocalypse-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 16px;
+  animation: flame-flicker 1.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 4px rgba(255, 100, 0, 0.8));
+}
+
+@keyframes flame-flicker {
+  0% {
+    transform: scale(1) rotate(-2deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.1) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(-2deg);
+    opacity: 0.9;
+  }
+}
 </style>

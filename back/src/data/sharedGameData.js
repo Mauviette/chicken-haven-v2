@@ -172,7 +172,7 @@ export const talentsData = {
           reward: {
             type: 'resource',
             resource: 'eggs',
-            amount: { op: 'mul', args: [ { var: 'stockageMax' }, { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 1.5 ] } ] } ] }
+            amount: { op: 'mul', args: [ { var: 'stockageMax' }, { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] } ] }
           }
         }
       ]
