@@ -16,5 +16,5 @@ Sur un compte en apocalyse :
 - Sur les leaderboard de social et sur UserProfile, il y a un badge de flamme qui indique que le joueur est en mode apocalypse.
 - Dans ChickenDetail, (ou TeamReplacementPopup), on ne peut pas remplacer une poule (avec capacité activable) dont le cooldown n'est pas prêt.
 - Le clic de l'oeuf sur Production donne 10% des oeufs qu'il donnerait à la base.
-- Le clic d'oeuf blanc (Spawnable) donne 10% des oeufs qu'il donnerait à la base.
+- Le clic d'oeuf blanc (et autres Spawnable qui donnent des oeufs directement) donne 10% des oeufs qu'il donnerait à la base.
 - 
