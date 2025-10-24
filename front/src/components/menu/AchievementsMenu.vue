@@ -89,11 +89,11 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAchievements } from '@/composables/useAchievements'
-import { formatString, achievementsData } from '@/data/items.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { flyBlueberriesToAvatar } from '@/utils/blueberryAnimation.js'
 import { usePlayer } from '@/composables/usePlayer'
 import { useSound } from '@/composables/useSound'
+import { useGameData } from '@/composables/useGameData'
 
 const props = defineProps({
   visible: {
@@ -117,8 +117,12 @@ const {
   fetchGameData
 } = useAchievements()
 
+const { items } = useGameData()
 const { eggs, addEggs, addTokens, refreshPlayer } = usePlayer()
 const { confirm: sndConfirm } = useSound()
+
+// Données des items depuis le backend
+const itemsData = computed(() => items.value)
 
 const refreshing = ref(false)
 
@@ -209,20 +213,22 @@ const handleRefresh = async () => {
 
 const formatReward = (reward) => {
   if (!reward) return ''
-  return formatString(reward.type, reward.quantite)
+  const itemData = itemsData.value?.[reward.type]
+  if (!itemData || typeof reward.quantite !== 'number') return 'Valeur invalide'
+  return `${reward.quantite} ${reward.quantite === 1 ? itemData.nom_singulier : itemData.nom}`
 }
 
 const getRewardIcon = (reward) => {
   if (!reward) return '❓'
   
-  const itemData = achievementsData[reward.type]
+  const itemData = itemsData.value?.[reward.type]
   return itemData ? itemData.icon : '❓'
 }
 
 const getRewardDescription = (reward) => {
   if (!reward) return 'Aucune récompense'
   
-  const itemData = achievementsData[reward.type]
+  const itemData = itemsData.value?.[reward.type]
   if (!itemData) return 'Récompense inconnue'
   
   return `<strong>${formatReward(reward)}</strong><br>${itemData.description}`

@@ -27,8 +27,8 @@
 </template>
 
 <script setup>
-import { getResourceIcon } from '@/data/items.js'
 import { useSound } from '@/composables/useSound'
+import { useGameData } from '@/composables/useGameData'
 
 const props = defineProps({
   onClick: Function,
@@ -39,6 +39,7 @@ const props = defineProps({
 })
 
 const { click } = useSound()
+const { items } = useGameData()
 
 function handleClick() {
   if (props.disabled) return
@@ -47,13 +48,14 @@ function handleClick() {
 }
 
 function getPriceIcon(price = props.price) {
+  const itemsData = items.value
   if (typeof price === 'number') {
-    return getResourceIcon('eggs')
+    return itemsData?.eggs?.icon || '🥚'
   }
   if (price && typeof price === 'object' && price.type) {
-    return getResourceIcon(price.type) || getResourceIcon('eggs')
+    return itemsData?.[price.type]?.icon || itemsData?.eggs?.icon || '🥚'
   }
-  return getResourceIcon('eggs')
+  return itemsData?.eggs?.icon || '🥚'
 }
 </script>
 

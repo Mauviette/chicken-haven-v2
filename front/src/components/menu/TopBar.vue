@@ -65,7 +65,6 @@
 <script setup>
 import { usePlayer } from '@/composables/usePlayer'
 import Tooltip from '@/components/menu/Tooltip.vue'
-import { achievementsData } from '@/data/items.js'
 import { useGameData } from '@/composables/useGameData'
 import { useRouter, useRoute } from 'vue-router'
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
@@ -75,12 +74,15 @@ import { apiGet } from '@/utils/api.js'
 import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
 
 const { eggs, level, xp, xpRequired } = usePlayer()
-const { levelUnlocks, getLevelRewardsBetween } = useGameData()
+const { levelUnlocks, getLevelRewardsBetween, items } = useGameData()
 const router = useRouter()
 const route = useRoute()
 const { getImage, hiddenImage } = usePoules()
 const { achievements } = useAchievements()
 const { hasAvailableUpgrade, initUpgradesAvailability } = useUpgradesAvailability()
+
+// Données des items depuis le backend
+const itemsData = computed(() => items.value)
 
 const props = defineProps({
   achievementsOpen: {
@@ -206,7 +208,11 @@ function openMiningFromMenu() {
   showMobileMenu.value = false // Fermer le menu mobile
 }
 
-const eggTooltipHtml = `<strong>${achievementsData.eggs.nom.charAt(0).toUpperCase() + achievementsData.eggs.nom.slice(1)}</strong><br>${achievementsData.eggs.description}`
+const eggTooltipHtml = computed(() => {
+  const eggsData = itemsData.value?.eggs
+  if (!eggsData) return '<strong>🥚 Œufs</strong><br>La monnaie principale de votre ferme.'
+  return `<strong>${eggsData.nom.charAt(0).toUpperCase() + eggsData.nom.slice(1)}</strong><br>${eggsData.description}`
+})
 
 const levelTooltipHtml = () => {
   const l = level.value

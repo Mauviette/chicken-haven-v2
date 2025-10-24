@@ -2,7 +2,6 @@ import { ref, computed, watch } from 'vue'
 import { useGameData } from '@/composables/useGameData'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
-import { formatString } from '@/data/items.js'
 import { apiGet, apiPost } from '@/utils/api'
 
 const userAchievements = ref({
@@ -35,7 +34,15 @@ const notifiedAchievements = new Set()
 export function useAchievements() {
   const { token } = useAuth()
   const { eggs, refreshPlayerData } = usePlayer()
-  const { achievements: gameAchievements, fetchGameData } = useGameData()
+    const { achievements: gameAchievements, fetchGameData, items } = useGameData()
+
+  // Fonction utilitaire pour formater les récompenses
+  function formatString(type, count) {
+    const itemsData = items.value
+    const itemData = itemsData?.[type]
+    if (!itemData || typeof count !== 'number') return 'Valeur invalide'
+    return `${count} ${count === 1 ? itemData.nom_singulier : itemData.nom}`
+  }
 
   // Computed properties pour l'affichage
   const achievements = computed(() => {

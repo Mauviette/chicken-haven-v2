@@ -265,8 +265,3 @@ export function useGameData() {
     getUnlocksBetween
   }
 }
-
-export async function initializeGameData() {
-  const { initialize } = useGameData()
-  return await initialize()
-}

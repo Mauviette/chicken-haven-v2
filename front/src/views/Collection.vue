@@ -123,7 +123,7 @@ const {
   clearNew
 } = usePoules()
 
-const { especies: especeData, loading: gameDataLoading } = useGameData()
+const { especies: especeData, loading: gameDataLoading, artifacts: gameArtifacts } = useGameData()
 const { team, fetchTeam, artifactSlots, fetchArtifactSlots, level, getLevel } = usePlayer()
 const { artifacts, fetchArtifacts, enrichArtifacts } = useArtifacts()
 const route = useRoute()
@@ -198,8 +198,8 @@ async function onArtifactUpdated() {
 
 // Artefacts enrichis avec les données du jeu
 const enrichedArtifacts = computed(() => {
-  if (!useGameData().artifacts?.value || !artifacts.value) return []
-  return enrichArtifacts(useGameData().artifacts.value)
+  if (!gameArtifacts?.value || !artifacts.value) return []
+  return enrichArtifacts(gameArtifacts.value)
 })
 
 // Tri des artefacts (possédés en premier, puis par rareté)

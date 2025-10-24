@@ -3,13 +3,13 @@
     <div class="header-bar">
       <h2 class="section-title">🛒 Marché</h2>
       <div class="player-balance">
-      <Tooltip :text="`<strong>${achievementsData.stock_token.nom.charAt(0).toUpperCase() + achievementsData.stock_token.nom.slice(1)}</strong><br>${achievementsData.stock_token.description}`" position="bottom">
+      <Tooltip :text="stockTokenTooltip" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">📦</span>
           <span class="balance-amount">{{ stockTokens }}</span>
         </div>
       </Tooltip>
-      <Tooltip :text="`<strong>${achievementsData.production_token.nom.charAt(0).toUpperCase() + achievementsData.production_token.nom.slice(1)}</strong><br>${achievementsData.production_token.description}`" position="bottom">
+      <Tooltip :text="productionTokenTooltip" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">⚙️</span>
           <span class="balance-amount">{{ productionTokens }}</span>
@@ -237,8 +237,7 @@ import BuyButton from '@/components/menu/BuyButton.vue'
 import { apiGet, apiPost } from '@/utils/api.js'
 
 import BoxResults from '@/components/menu/BoxResults.vue'
-import { boxesData, getPossibleChickensFromBox, openBoxSimulation } from '@/data/boxes.js'
-import { formatPrice, achievementsData } from '@/data/items.js'
+import { boxesData } from '@/data/boxes.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
 
@@ -248,9 +247,12 @@ const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
 const { checkAchievements } = useAchievements()
 const { artifacts: ownedArtifacts, fetchArtifacts } = useArtifacts()
-const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes, artifacts: artifactsData } = useGameData()
+const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes, artifacts: artifactsData, items } = useGameData()
 const router = useRouter()
 const { click, open: sndOpen, close: sndClose, confirm: sndConfirm, boxOpen: sndBoxOpen, boxResults: sndBoxResults, legendaryDrop: sndLegend, epicDrop: sndEpic } = useSound()
+
+// Données des items depuis le backend
+const itemsData = computed(() => items.value)
 
 // État des onglets
 const activeTab = ref('boxes')
@@ -270,6 +272,10 @@ const lastOpenedBoxName = ref('')
 const availableBoxes = ref([])
 const showOpenAnim = ref(false)
 const currentBoxIcon = ref('📦')
+
+// Niveaux d'améliorations
+const upgradeLevels = ref({})
+const upgradesVersion = ref(0)
 
 // Animation d'achat d'amélioration (supprimée)
 
@@ -509,9 +515,18 @@ function getDiceTooltipText(box) {
   return tooltip.join('<br>')
 }
 
-// Données des améliorations avec progression (forcer recalcul via une version)
-const upgradesVersion = ref(0)
-const upgradeLevels = ref({}) // { [id]: level }
+// Tooltips pour les tokens
+const stockTokenTooltip = computed(() => {
+  const tokenData = itemsData.value?.stock_token
+  if (!tokenData) return '<strong>📦 Jetons de stock</strong><br>Jetons pour améliorer le stockage.'
+  return `<strong>${tokenData.nom.charAt(0).toUpperCase() + tokenData.nom.slice(1)}</strong><br>${tokenData.description}`
+})
+
+const productionTokenTooltip = computed(() => {
+  const tokenData = itemsData.value?.production_token
+  if (!tokenData) return '<strong>⚙️ Jetons de production</strong><br>Jetons pour améliorer la production.'
+  return `<strong>${tokenData.nom.charAt(0).toUpperCase() + tokenData.nom.slice(1)}</strong><br>${tokenData.description}`
+})
 
 // Helpers calcul côté front à partir des données serveur
 function getCurrentCostForLevel(costs, level) {

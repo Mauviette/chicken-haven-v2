@@ -57,66 +57,25 @@ export const boxesData = [
 ]
 
 // DEPRECATED - Utilisez useGameData() pour les données synchronisées
-import { useGameData } from '@/composables/useGameData.js'
+// import { useGameData } from '@/composables/useGameData.js'
 
 // Import des groupes depuis le fichier chickens.js pour harmonisation (DEPRECATED)
-export { groupes } from './chickens.js'
+// export { groupes } from './chickens.js'
 
 // Fonction utilitaire pour obtenir toutes les poules possibles d'une boîte (DEPRECATED - utilisez les données synchronisées)
-export function getPossibleChickensFromBox(box, especeData, unlockedChickens) {
-  const possibleChickens = []
-  
-  box.dropGroups.forEach(group => {
-    // Filtrer les poules du groupe qui sont débloquées
-    const groupChickens = Object.keys(especeData)
-      .filter(id => especeData[id].groupe === group.name)
-      .filter(id => unlockedChickens.includes(id) || especeData[id].groupe === 'fondamental') // Les poules fondamentales sont toujours disponibles
-    
-    possibleChickens.push(...groupChickens)
-  })
-  
-  // Supprimer les doublons
-  return [...new Set(possibleChickens)]
-}
+// export function getPossibleChickensFromBox(box, especeData, unlockedChickens) { ... }
 
 // Nouvelle fonction utilisant les données synchronisées
-export function getPossibleChickensFromBoxSync(box, unlockedChickens) {
-  const { especies } = useGameData()
-  return getPossibleChickensFromBox(box, especies.value, unlockedChickens)
-}
+// export function getPossibleChickensFromBoxSync(box, unlockedChickens) {
+//   const { especies } = useGameData()
+//   return getPossibleChickensFromBox(box, especies.value, unlockedChickens)
+// }
 
 // Fonction pour simuler l'ouverture d'une boîte (DEPRECATED - utilisez les données synchronisées)
-export function openBoxSimulation(box, especeData, unlockedChickens) {
-  const results = []
-  
-  for (const group of box.dropGroups) {
-    // Vérifier si ce groupe drop (basé sur la chance)
-    const roll = Math.random() * 100
-    if (roll <= group.chance) {
-      // Obtenir les poules disponibles pour ce groupe
-      const availableChickens = Object.keys(especeData)
-        .filter(id => especeData[id].groupe === group.name)
-        .filter(id => unlockedChickens.includes(id) || especeData[id].groupe === 'fondamental')
-      
-      if (availableChickens.length > 0) {
-        // Choisir aléatoirement les poules selon la quantité
-        for (let i = 0; i < group.quantity; i++) {
-          const randomIndex = Math.floor(Math.random() * availableChickens.length)
-          results.push({
-            chickenId: availableChickens[randomIndex],
-            groupName: group.name,
-            groupDescription: group.description
-          })
-        }
-      }
-    }
-  }
-  
-  return results
-}
+// export function openBoxSimulation(box, especeData, unlockedChickens) { ... }
 
 // Nouvelle fonction utilisant les données synchronisées
-export function openBoxSimulationSync(box, unlockedChickens) {
-  const { especies } = useGameData()
-  return openBoxSimulation(box, especies.value, unlockedChickens)
-}
+// export function openBoxSimulationSync(box, unlockedChickens) {
+//   const { especies } = useGameData()
+//   return openBoxSimulation(box, especies.value, unlockedChickens)
+// }
