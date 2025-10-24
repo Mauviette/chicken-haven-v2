@@ -41,9 +41,8 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
         throw new Error(`Ressources insuffisantes (${currentAmount}/${box.price.count})`)
       }
 
-      // Calculer les poules déjà possédées
+      // Calculer les poules déjà possédées (toutes les poules dans poulesPossedees, pas seulement celles avec quantité > 0)
       const ownedChickens = (user.poulesPossedees || [])
-        .filter(poule => poule.quantite > 0)
         .map(poule => poule.especeId)
 
       // Calculer les artefacts déjà possédés si c'est une boîte d'artefacts
