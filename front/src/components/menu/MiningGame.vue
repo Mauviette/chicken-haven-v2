@@ -583,7 +583,7 @@ function formatReward(reward, inCell = false) {
     eggs: '🥚',
     mining_token: '🪨',
     stock_token: '📦',
-    production_token: '⚡'
+    production_token: '⚙️'
   }
   const icon = icons[type] || (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[type]?.icon) || '❓'
   const qty = amount ? parseInt(amount) : NaN

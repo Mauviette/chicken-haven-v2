@@ -210,7 +210,7 @@ const createBuffEffectAtPosition = (rect, reward) => {
       color = '#FFD700'
       break
     case 'production':
-      icon = '⚡'
+      icon = '⚙️'
       color = '#FF6B35'
       break
     case 'storage':

@@ -18,7 +18,7 @@ export const achievementsData = {
     id: 'production_token',
     nom: 'jetons de production',
     nom_singulier: 'jeton de production',
-    icon: '⚡',
+    icon: '⚙️',
     description: 'Jetons précieux pour améliorer vos installations de production.'
   },
   'wild_token': {
