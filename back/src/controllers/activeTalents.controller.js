@@ -126,7 +126,8 @@ export async function activateTalent(req, res) {
         },
         {
           $set: { [`cooldowns.${key}`]: msToDate(now + cd) },
-          $push: { buffs: buffObj }
+          $push: { buffs: buffObj },
+          $inc: { 'achievements.progress.chickenAbilitiesUsed': 1 }
         },
         { new: true }
       )
@@ -171,7 +172,8 @@ export async function activateTalent(req, res) {
         },
         {
           $set: { [`cooldowns.${key}`]: msToDate(now + cd) },
-          $push: { buffs: buffObj }
+          $push: { buffs: buffObj },
+          $inc: { 'achievements.progress.chickenAbilitiesUsed': 1 }
         },
         { new: true }
       )
@@ -216,7 +218,8 @@ export async function activateTalent(req, res) {
         },
         {
           $set: { [`cooldowns.${key}`]: msToDate(now + cd) },
-          $push: { buffs: buffObj }
+          $push: { buffs: buffObj },
+          $inc: { 'achievements.progress.chickenAbilitiesUsed': 1 }
         },
         { new: true }
       )

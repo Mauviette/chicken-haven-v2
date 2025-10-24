@@ -191,6 +191,9 @@ export async function getPublicProfile(req, res) {
         maxEggsInOneClick: progress.maxEggsInOneClick || 0,
         chickenFound,
         achievementsCompleted
+      },
+      achievements: {
+        progress: progress
       }
     })
   } catch (err) {

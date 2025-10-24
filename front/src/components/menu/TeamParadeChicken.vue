@@ -80,6 +80,7 @@ import { useSound } from '@/composables/useSound'
 import { useEgg } from '@/composables/useEgg'
 import { useBuffs } from '@/composables/useBuffs'
 import { useChickenGifts } from '@/composables/useChickenGifts'
+import { useAchievements } from '@/composables/useAchievements'
 
 const props = defineProps({
   especeId: String,
@@ -234,6 +235,7 @@ const { click: sndClick, confirm: sndOk, giftCollect } = useSound()
 const { eggState, fetchEggStatus } = useEgg()
 const { fetchBuffs } = useBuffs()
 const { hasActiveGift, collectGift } = useChickenGifts()
+const { incrementProgress } = useAchievements()
 
 // État des cadeaux pour cette poule
 const hasChickenGift = computed(() => {
@@ -317,6 +319,8 @@ async function triggerActiveTalent(talentName) {
         window.$toast?.(`${talentName} activé`, 'power')
       }
       sndOk()
+      // Incrémenter le compteur des utilisations de capacités
+      incrementProgress('chickenAbilitiesUsed', 1)
       // Rafraîchir immédiatement les cooldowns et la liste des buffs
       await Promise.allSettled([ fetchEggStatus(), fetchBuffs?.() ])
     } else {

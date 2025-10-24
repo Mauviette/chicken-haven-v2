@@ -80,6 +80,9 @@
             
             <!-- NOUVEAU : afficher le nombre de cadeaux de poules collectés -->
             <div class="stat-row"><span>🎁 Cadeaux de poules collectés</span><b>{{ profile.achievements?.progress?.chickenGiftsCollected ?? 0 }}</b></div>
+            
+            <!-- NOUVEAU : afficher le nombre d'utilisations de capacités de poules -->
+            <div class="stat-row"><span>⚡ Capacités de poules utilisées</span><b>{{ profile.achievements?.progress?.chickenAbilitiesUsed ?? 0 }}</b></div>
           </div>
         </div>
         <div class="right">
@@ -200,7 +203,7 @@ async function loadProfile(id) {
   }
 }
 
-// NOUVEAU : charger le statut des achievements pour l'utilisateur courant et merger dans profile
+// NOUVEAU : charger le statut des achievements seulement pour le profil propre
 async function loadAchievementsStatusIfOwn() {
   try {
     if (!isOwnProfile.value) return

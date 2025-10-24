@@ -143,7 +143,8 @@ const UserSchema = new mongoose.Schema({
           miningCellsBroken: 0,
           miningNoRewardGame: 0,
           miningFullGridBroken: 0,
-          chickenGiftsCollected: 0
+          chickenGiftsCollected: 0,
+          chickenAbilitiesUsed: 0
         },
         completed: [],
         lastChecked: new Date()

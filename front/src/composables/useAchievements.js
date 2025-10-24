@@ -21,7 +21,8 @@ const userAchievements = ref({
     miningNoRewardGame: false,
     miningFullGridBroken: false,
     miningBestCellsInGame: 0,
-    chickenGiftsCollected: 0
+    chickenGiftsCollected: 0,
+    chickenAbilitiesUsed: 0
   },
   completed: [],
   lastChecked: new Date()
@@ -121,6 +122,8 @@ export function useAchievements() {
         return Math.min(userAchievements.value.progress.miningBestCellsInGame, achievement.objectif)
       case 'chickenGiftsCollected':
         return Math.min(userAchievements.value.progress.chickenGiftsCollected, achievement.objectif)
+      case 'chickenAbilitiesUsed':
+        return Math.min(userAchievements.value.progress.chickenAbilitiesUsed, achievement.objectif)
       default:
         return 0
     }
@@ -296,7 +299,8 @@ export function useAchievements() {
             miningNoRewardGame: false,
             miningFullGridBroken: false,
             miningBestCellsInGame: 0,
-            chickenGiftsCollected: 0
+            chickenGiftsCollected: 0,
+            chickenAbilitiesUsed: 0
           },
           completed: [],
           lastChecked: new Date()
@@ -326,7 +330,8 @@ export function useAchievements() {
             miningNoRewardGame: false,
             miningFullGridBroken: false,
             miningBestCellsInGame: 0,
-            chickenGiftsCollected: 0
+            chickenGiftsCollected: 0,
+            chickenAbilitiesUsed: 0
           },
           completed: [],
           lastChecked: new Date()

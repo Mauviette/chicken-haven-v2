@@ -895,6 +895,30 @@ export const achievementsData = {
       quantite: 5
     }
   },
+  'chicken_abilities_5': {
+    id: 'chicken_abilities_5',
+    nom: 'Maître des Capacités',
+    description: 'Utilisez les capacités de vos poules 5 fois',
+    icon: '⚡',
+    objectif: 5,
+    type: 'chickenAbilitiesUsed',
+    reward: {
+      type: 'blueberry',
+      quantite: 2
+    }
+  },
+  'chicken_abilities_25': {
+    id: 'chicken_abilities_25',
+    nom: 'Expert des Capacités',
+    description: 'Utilisez les capacités de vos poules 25 fois',
+    icon: '🌟',
+    objectif: 25,
+    type: 'chickenAbilitiesUsed',
+    reward: {
+      type: 'blueberry',
+      quantite: 3
+    }
+  },
   'team_stat_50': {
     id: 'team_stat_50',
     nom: 'Équipe Solide',
@@ -1188,6 +1212,11 @@ export const achievementCategories = {
     nom: 'Cadeaux',
     icon: '🎁',
     color: '#FF69B4'
+  },
+  'chickenAbilitiesUsed': {
+    nom: 'Capacités',
+    icon: '⚡',
+    color: '#FFD700'
   }
 }
 

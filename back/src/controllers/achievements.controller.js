@@ -48,6 +48,8 @@ Object.entries(achievementsData).forEach(([id, data]) => {
           return (progress.miningBestCellsInGame || 0) >= data.objectif
         case 'chickenGiftsCollected':
           return (progress.chickenGiftsCollected || 0) >= data.objectif
+        case 'chickenAbilitiesUsed':
+          return (progress.chickenAbilitiesUsed || 0) >= data.objectif
       }
     }
   }
@@ -81,7 +83,8 @@ export async function getAchievementsStatus(req, res) {
           miningNoRewardGame: false,
           miningFullGridBroken: false,
           miningBestCellsInGame: 0,
-          chickenGiftsCollected: 0
+          chickenGiftsCollected: 0,
+          chickenAbilitiesUsed: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -136,7 +139,8 @@ export async function checkAchievements(req, res) {
           miningNoRewardGame: false,
           miningFullGridBroken: false,
           miningBestCellsInGame: 0,
-          chickenGiftsCollected: 0
+          chickenGiftsCollected: 0,
+          chickenAbilitiesUsed: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -207,6 +211,9 @@ export async function checkAchievements(req, res) {
     }
     if (!user.achievements.progress.hasOwnProperty('chickenGiftsCollected')) {
       user.achievements.progress.chickenGiftsCollected = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('chickenAbilitiesUsed')) {
+      user.achievements.progress.chickenAbilitiesUsed = 0
     }
 
     // Calculer et mettre à jour les stats d'équipe avec les fonctions dédiées
@@ -424,7 +431,8 @@ export async function updateAchievementProgress(userId, progressType, value) {
           miningNoRewardGame: false,
           miningFullGridBroken: false,
           miningBestCellsInGame: 0,
-          chickenGiftsCollected: 0
+          chickenGiftsCollected: 0,
+          chickenAbilitiesUsed: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -479,6 +487,9 @@ export async function updateAchievementProgress(userId, progressType, value) {
     }
     if (!user.achievements.progress.hasOwnProperty('chickenGiftsCollected')) {
       user.achievements.progress.chickenGiftsCollected = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('chickenAbilitiesUsed')) {
+      user.achievements.progress.chickenAbilitiesUsed = 0
     }
 
     // Mettre à jour le progrès selon le type (inchangé)
@@ -567,7 +578,8 @@ export async function triggerAchievementCheck(userId) {
           miningNoRewardGame: false,
           miningFullGridBroken: false,
           miningBestCellsInGame: 0,
-          chickenGiftsCollected: 0
+          chickenGiftsCollected: 0,
+          chickenAbilitiesUsed: 0
         },
         completed: [],
         lastChecked: new Date()
