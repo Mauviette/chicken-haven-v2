@@ -132,13 +132,6 @@
               Continuer
             </ActionButton>
           </div>
-          <br>
-          <ActionButton 
-            :onClick="goToArtifacts"
-            style="background-color: #8B4513; border-color: #654321; margin-top: 10px;"
-          >
-            ⛏️ Voir mes Artefacts
-          </ActionButton>
         </div>
       </div>
 
@@ -161,6 +154,14 @@
         <ActionButton :onClick="resetGame">
           Rejouer (1 🪨)
         </ActionButton>
+        
+          <br>
+          <ActionButton 
+            :onClick="goToArtifacts"
+            style="background-color: #8B4513; border-color: #654321; margin-top: 10px;"
+          >
+            Voir mes Artefacts
+          </ActionButton>
       </div>
 
       <!-- Chargement initial uniquement -->
