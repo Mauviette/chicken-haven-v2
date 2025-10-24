@@ -40,6 +40,13 @@
         >
           {{ miningTokens >= 1 ? 'Démarrer (1 🪨)' : 'Pas assez de jetons' }}
         </ActionButton>
+        <br><br>
+        <ActionButton 
+          :onClick="goToArtifacts"
+          style="background-color: #8B4513; border-color: #654321;"
+        >
+          Voir mes Artefacts
+        </ActionButton>
       </div>
 
       <!-- Jeu actif -->
@@ -125,6 +132,13 @@
               Continuer
             </ActionButton>
           </div>
+          <br>
+          <ActionButton 
+            :onClick="goToArtifacts"
+            style="background-color: #8B4513; border-color: #654321; margin-top: 10px;"
+          >
+            ⛏️ Voir mes Artefacts
+          </ActionButton>
         </div>
       </div>
 
@@ -165,6 +179,7 @@ import { MINING_CONFIG } from '@/data/mining'
 import { apiPost } from '@/utils/api' // <-- nouveau import
 import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
+import { useRouter } from 'vue-router'
 
 const emit = defineEmits(['close', 'game-over'])
 
@@ -188,6 +203,8 @@ const {
 const { miningBasic, miningExplosion, miningContinue } = useSound()
 
 const { getItemInfo } = useGameData()
+
+const router = useRouter()
 
 // Copie locale pour forcer la réactivité
 const localEquippedArtifacts = ref([])
@@ -695,6 +712,11 @@ function handleClose() {
     emit('close')
   })()
  }
+
+function goToArtifacts() {
+  emit('close')
+  router.push('/collection?tab=artifacts')
+}
 
 function getToolIcon(tool) {
   return toolConfig[tool]?.icon || '🔧'

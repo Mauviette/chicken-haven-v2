@@ -321,6 +321,19 @@ watch(
   { immediate: true }
 )
 
+// Gérer le paramètre tab dans l'URL
+watch(
+  () => route.query.tab,
+  (tab) => {
+    if (tab === 'artifacts' && getLevel() >= 5) {
+      activeTab.value = 'artifacts'
+    } else if (tab === 'chickens') {
+      activeTab.value = 'chickens'
+    }
+  },
+  { immediate: true }
+)
+
 // Garder la sélection synchronisée si la liste des poules change (ex: après amélioration)
 watch(
   () => poules.value,
