@@ -132,13 +132,13 @@
       <div v-else-if="showResults" class="game-over">
         <h3>Partie terminée !</h3>
         <div class="rewards-list">
-          <p v-if="finalRewards.length === 0">Aucune récompense trouvée...</p>
+          <p v-if="groupedRewards.length === 0">Aucune récompense trouvée...</p>
           <div v-else>
             <p><strong>Récompenses obtenues :</strong></p>
             <ul>
-              <li v-for="(reward, idx) in finalRewards" :key="idx">
-                <Tooltip :text="getDugRewardTooltip(reward)" position="top">
-                  {{ formatReward(reward) }}
+              <li v-for="(reward, idx) in groupedRewards" :key="idx">
+                <Tooltip :text="getGroupedRewardTooltip(reward)" position="top">
+                  {{ formatGroupedReward(reward) }}
                 </Tooltip>
               </li>
             </ul>
@@ -252,24 +252,13 @@ const visibleTools = computed(() => {
 const continueTooltip = computed(() => {
   if (!gameOver.value || showResults.value) return ''
   
-  const rewards = finalRewards.value
+  const rewards = groupedRewards.value
   if (!rewards || rewards.length === 0) {
     return '<div style="text-align: center;">Aucune récompense trouvée</div>'
   }
   
-  const totalRewards = {}
-  rewards.forEach(reward => {
-    const [type, amount] = reward.split(':')
-    const qty = parseInt(amount)
-    if (totalRewards[type]) {
-      totalRewards[type] += qty
-    } else {
-      totalRewards[type] = qty
-    }
-  })
-  
-  const rewardLines = Object.entries(totalRewards).map(([type, amount]) => {
-    return `${formatReward(`${type}:${amount}`)}`
+  const rewardLines = rewards.map(reward => {
+    return `${formatGroupedReward(reward)}`
   })
   
   return `
@@ -351,6 +340,53 @@ function getDugRewardTooltip(reward) {
     </div>
   `
 }
+
+// Tooltip pour les récompenses groupées
+function getGroupedRewardTooltip(reward) {
+  if (!reward || !reward.type) return ''
+  
+  const itemData = getItemInfo(reward.type)
+  const desc = itemData?.description || 'Récompense inconnue'
+  const typeName = itemData?.nom || reward.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+  
+  return `
+    <div style="text-align: center;">
+      <div style="font-weight: bold;">${reward.amount} ${typeName}</div>
+      <div>${desc}</div>
+    </div>
+  `
+}
+
+// Grouper les récompenses par type pour les afficher stackées
+const groupedRewards = computed(() => {
+  const grouped = {}
+  finalRewards.value.forEach(reward => {
+    let type, amount
+    if (typeof reward === 'string') {
+      const parts = reward.split(':')
+      type = parts[0]
+      amount = parts[1]
+    } else if (typeof reward === 'object') {
+      type = reward.type
+      amount = reward.amount != null ? String(reward.amount) : undefined
+    }
+    
+    if (type) {
+      const qty = amount ? parseInt(amount) : 1
+      if (grouped[type]) {
+        grouped[type] += qty
+      } else {
+        grouped[type] = qty
+      }
+    }
+  })
+  
+  // Convertir en tableau d'objets pour l'affichage
+  return Object.entries(grouped).map(([type, amount]) => ({
+    type,
+    amount
+  }))
+})
 
 // Construire dynamiquement la config des outils à partir des données synchronisées
 const toolConfig = (() => {
@@ -747,6 +783,20 @@ function formatReward(reward, inCell = false) {
   if (!amount) return icon
 
   return `${icon} ${amount}`
+}
+
+function formatGroupedReward(reward) {
+  if (!reward || !reward.type) return ''
+  
+  const icons = {
+    eggs: '🥚',
+    mining_token: '🪨',
+    stock_token: '📦',
+    production_token: '⚙️'
+  }
+  const icon = icons[reward.type] || (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[reward.type]?.icon) || '❓'
+  
+  return `${icon} ${reward.amount}`
 }
 
 function isLargeReward(reward) {
