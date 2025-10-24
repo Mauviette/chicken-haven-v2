@@ -415,7 +415,7 @@ export const talentsData = {
   ,
   'Spaciale': {
     description: "Augmente votre stockage maximum de façon multiplicative.",
-    effet: "+{15 + niveau*15}% de stockage (multiplicatif, passif)",
+    effet: "+{15 + niveau*10}% de stockage (multiplicatif, passif)",
     nivType: 'legend',
     icon: '🪐',
     calculation: {
