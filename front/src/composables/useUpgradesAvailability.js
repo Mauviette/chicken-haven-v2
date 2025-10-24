@@ -23,13 +23,11 @@ export function useUpgradesAvailability() {
     
     // Ne pas calculer si les niveaux d'upgrades ne sont pas encore chargés
     if (!initialized.value || Object.keys(upgradeLevels.value).length === 0) {
-      //console.log('Niveaux d\'upgrades pas encore chargés, pas de calcul de disponibilité')
       return false
     }
     
     // Vérifier que les tokens sont bien chargés (pas null/undefined)
     if (stockTokens.value === null || productionTokens.value === null || wildTokens.value === null) {
-      //console.log('Tokens pas encore chargés, pas de calcul de disponibilité')
       return false
     }
     
@@ -41,8 +39,6 @@ export function useUpgradesAvailability() {
       wild_token: wildTokens.value ?? 0
     }
     
-    //console.log('Vérification disponibilité upgrades - Tokens disponibles:', tokens, 'Niveaux:', upgradeLevels.value)
-    
     return list.some(u => {
       const currentLevel = Number(upgradeLevels.value?.[u.id] || 0)
       const isMaxed = (u.maxLevel !== null && typeof u.maxLevel === 'number' && currentLevel >= u.maxLevel)
@@ -53,14 +49,7 @@ export function useUpgradesAvailability() {
       // Vérifier avec les tokens normalisés
       if (Number(price.count) <= 0) return false
       
-      const canAffordResult = canAfford(price)
-      
-      // Debug log pour comprendre le problème
-      if (canAffordResult) {
-        //console.log(`Upgrade ${u.id} disponible: niveau ${currentLevel}, coût ${cost} ${u.priceType}, tokens disponibles:`, tokens)
-      }
-      
-      return canAffordResult
+      return canAfford(price)
     })
   })
 
@@ -73,9 +62,6 @@ export function useUpgradesAvailability() {
         upgradeLevels.value = Object.fromEntries(
           Object.entries(upgrades).map(([k, v]) => [Number(k), Number(v) || 0])
         )
-        //console.log('Niveaux d\'upgrades mis à jour:', upgradeLevels.value)
-      } else {
-        //console.log('Aucun niveau d\'upgrade reçu ou format invalide')
       }
     } catch (e) {
       console.error('Erreur lors de la récupération des niveaux d\'upgrades:', e)
@@ -112,7 +98,6 @@ export function useUpgradesAvailability() {
   watch([stockTokens, productionTokens, wildTokens], (newTokens, oldTokens) => {
     // Si les tokens ont changé, il se peut que des upgrades aient été achetés/vendus
     if (initialized.value && (newTokens[0] !== oldTokens[0] || newTokens[1] !== oldTokens[1] || newTokens[2] !== oldTokens[2])) {
-      //console.log('Tokens changés, rafraîchissement des niveaux d\'upgrades')
       refreshUpgradeLevels()
     }
   })

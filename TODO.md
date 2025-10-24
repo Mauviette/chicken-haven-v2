@@ -1,4 +1,3 @@
-Login : Message d'erreur affiché : API Error 400: {"error":"Utilisateur non trouvé"} alors qu'il faudrait afficher juste le contenu
 
 Mettre un petit Badge jaune sur bouton de minage si un minage est dispo (au moins un jeton de minage)
 
@@ -10,6 +9,10 @@ Rework effets sonores :
 - BoxResults : élement "nouveau" : 
 - TeamParadeChicken : Cadeau de poule récupéré : 
 - ToastManager : un toast s'en va : retirer le bruit
+
+Traquer ces stats (et les afficher sur UserProfile) et ajouter succès :
+> Utiliser 5 capacités de poules (2 myrtilles)
+> Utiliser 25 capacités de poules (3 myrtilles)
 
 Baser items.js sur back-end (sharedgamedata via usegamedata) plutot que front end
 

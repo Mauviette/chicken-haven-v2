@@ -78,7 +78,23 @@
       emit('logged-in', res.token)
       //toast("Connexion réussie!", 'success')
     } catch (err) {
-      message.value = err.message || "Erreur de connexion"
+      // Essayer d'extraire le message d'erreur du JSON si possible
+      let errorMessage = err.message || "Erreur de connexion"
+      
+      // Si le message contient "API Error" suivi de JSON, extraire seulement le message d'erreur
+      if (errorMessage.includes('API Error') && errorMessage.includes('{"error":')) {
+        try {
+          const jsonMatch = errorMessage.match(/\{.*\}/)
+          if (jsonMatch) {
+            const errorData = JSON.parse(jsonMatch[0])
+            errorMessage = errorData.error || errorMessage
+          }
+        } catch (parseError) {
+          // Garder le message original si le parsing échoue
+        }
+      }
+      
+      message.value = errorMessage
     }
 
     loginBtn.disabled = false;

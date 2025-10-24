@@ -64,10 +64,8 @@ export function usePlayer() {
 
   async function refreshPlayer() {
     try {
-      //console.log('🔄 refreshPlayer: début')
       const token = localStorage.getItem('token')
       if (!token) {
-        //console.log('❌ refreshPlayer: pas de token')
         // Réinitialiser les données si pas de token
         clearPlayerData()
         return
@@ -75,13 +73,11 @@ export function usePlayer() {
 
       const data = await apiGet('/api/egg/status')
       if (data) {
-        //console.log('📊 refreshPlayer: données reçues:', data)
         eggs.value = data.totalEggs || 0
         stockTokens.value = data.stockTokens || 0
         productionTokens.value = data.productionTokens || 0
         wildTokens.value = data.wildTokens || 0
         chestKeys.value = data.chestKeys || 0
-        //console.log('✅ refreshPlayer: œufs mis à jour:', eggs.value)
       }
 
       // Récupérer l'XP / level (API unifiée /api/user/me)
