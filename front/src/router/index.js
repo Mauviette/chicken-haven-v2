@@ -5,7 +5,6 @@ import Collection from '@/views/Collection.vue'
 import Social from '@/views/Social.vue'
 import UserProfile from '@/views/UserProfile.vue'
 import Auth from '@/views/AuthView.vue'
-import { useAuth } from '@/composables/useAuth'
 
 const routes = [
   {
@@ -54,7 +53,8 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     redirect: () => {
-      const { isLoggedIn } = useAuth()
+      const auth = useAuth() || {}
+      const isLoggedIn = auth.isLoggedIn || (() => false)
       return isLoggedIn() ? '/production' : '/auth'
     }
   }
