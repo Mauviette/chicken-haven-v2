@@ -180,7 +180,7 @@ watch(() => props.text, () => {
 })
 </script>
 
-<style scoped>
+<style>
 .tooltip-wrapper {
   display: inline-block;
   position: relative;

@@ -143,7 +143,7 @@ export function useGameData() {
   const talentLevelUpgradeCost = computed(() => gameData.value?.talentLevelUpgradeCost || {})
   const levelUnlocks = computed(() => gameData.value?.levelUnlocks || {})
   const achievements = computed(() => gameData.value?.achievements || {})
-  const items = computed(() => gameData.value?.items || {})
+  const items = computed(() => gameData.value?.itemsData || gameData.value?.items || {})
   const categories = computed(() => gameData.value?.categories || {})
   const groupes = computed(() => gameData.value?.groupes || [])
   const levelRewards = computed(() => gameData.value?.levelRewards || {})

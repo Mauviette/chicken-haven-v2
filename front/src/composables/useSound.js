@@ -105,7 +105,7 @@ export function useSound() {
   }
   // Nouveaux helpers
   const eggClick = () => play('egg_click')
-  const incomeUp = () => play('income_up', { volume: 0.4 })
+  const incomeUp = () => play('income_up', { volume: 0.1 })
   // Marché
   // Marché (volume un peu plus présent pour feedback clair)
   const boxOpen = (volume = 0.9) => play('box_open', { volume })

@@ -74,7 +74,9 @@
                   class="reward"
                   :class="{ 'large-emoji': isLargeReward(cell.reward) }"
                 >
-                  {{ formatReward(cell.reward, true) }}
+                  <Tooltip :text="getDugRewardTooltip(cell.reward)" position="top">
+                    {{ formatReward(cell.reward, true) }}
+                  </Tooltip>
                 </div>
 
                 <!-- Récompense non obtenue : afficher en semi‑transparent quand la partie est terminée et le bouton 'Continuer' visible -->
@@ -83,7 +85,9 @@
                   class="reward unobtained"
                   :class="{ 'large-emoji': isLargeReward(cell.reward) }"
                 >
-                  {{ formatReward(cell.reward, true) }}
+                  <Tooltip :text="getDugRewardTooltip(cell.reward)" position="top">
+                    {{ formatReward(cell.reward, true) }}
+                  </Tooltip>
                 </div>
               </div>
           </div>
@@ -116,9 +120,11 @@
         
         <!-- Bouton Continuer quand tous les outils sont utilisés -->
         <div v-if="gameOver && !showResults" class="continue-button-container">
-          <ActionButton :onClick="() => { miningContinue(); showResults = true }">
-            Continuer
-          </ActionButton>
+          <div class="continue-wrapper">
+            <ActionButton :onClick="() => { miningContinue(); showResults = true; updateTokensAfterRewards() }">
+              Continuer
+            </ActionButton>
+          </div>
         </div>
       </div>
 
@@ -126,12 +132,14 @@
       <div v-else-if="showResults" class="game-over">
         <h3>Partie terminée !</h3>
         <div class="rewards-list">
-          <p v-if="aggregatedRewards.length === 0">Aucune récompense trouvée...</p>
+          <p v-if="finalRewards.length === 0">Aucune récompense trouvée...</p>
           <div v-else>
             <p><strong>Récompenses obtenues :</strong></p>
             <ul>
-              <li v-for="(reward, idx) in aggregatedRewards" :key="idx">
-                {{ formatReward(reward) }}
+              <li v-for="(reward, idx) in finalRewards" :key="idx">
+                <Tooltip :text="getDugRewardTooltip(reward)" position="top">
+                  {{ formatReward(reward) }}
+                </Tooltip>
               </li>
             </ul>
           </div>
@@ -156,6 +164,7 @@ import { useMining } from '@/composables/useMining'
 import { MINING_CONFIG } from '@/data/mining'
 import { apiPost } from '@/utils/api' // <-- nouveau import
 import { useSound } from '@/composables/useSound'
+import { useGameData } from '@/composables/useGameData'
 
 const emit = defineEmits(['close', 'game-over'])
 
@@ -177,6 +186,8 @@ const {
 } = useMining()
 
 const { miningBasic, miningExplosion, miningContinue } = useSound()
+
+const { getItemInfo } = useGameData()
 
 // Copie locale pour forcer la réactivité
 const localEquippedArtifacts = ref([])
@@ -206,6 +217,7 @@ const showResults = ref(false)
 const finalRewards = ref([])
 const animatingCells = ref(new Set())
 const toolUsed = ref(false)
+const tokensBeforeGameOver = ref(0) // Stocker les jetons avant gameOver
 
 // Normaliser la détection du hint (peut être boolean, string "true", number 1, etc.)
 function hasHint(cell) {
@@ -236,23 +248,109 @@ const visibleTools = computed(() => {
   return tools.value.slice(currentToolIndex.value)
 })
 
-// Récompenses agrégées par type
-const aggregatedRewards = computed(() => {
-  const totals = {}
+// Tooltip pour le bouton continuer
+const continueTooltip = computed(() => {
+  if (!gameOver.value || showResults.value) return ''
   
-  finalRewards.value.forEach(reward => {
+  const rewards = finalRewards.value
+  if (!rewards || rewards.length === 0) {
+    return '<div style="text-align: center;">Aucune récompense trouvée</div>'
+  }
+  
+  const totalRewards = {}
+  rewards.forEach(reward => {
     const [type, amount] = reward.split(':')
     const qty = parseInt(amount)
-    
-    if (totals[type]) {
-      totals[type] += qty
+    if (totalRewards[type]) {
+      totalRewards[type] += qty
     } else {
-      totals[type] = qty
+      totalRewards[type] = qty
     }
   })
   
-  return Object.entries(totals).map(([type, amount]) => `${type}:${amount}`)
+  const rewardLines = Object.entries(totalRewards).map(([type, amount]) => {
+    return `${formatReward(`${type}:${amount}`)}`
+  })
+  
+  return `
+    <div style="text-align: center;">
+      <div style="font-weight: bold; margin-bottom: 8px;">Récompenses obtenues :</div>
+      <div>${rewardLines.join('<br>')}</div>
+    </div>
+  `
 })
+
+// Tooltip pour les récompenses individuelles
+function getRewardTooltip(reward) {
+  if (!reward) return ''
+  
+  let type, amount
+  if (typeof reward === 'string') {
+    const parts = reward.split(':')
+    type = parts[0]
+    amount = parts[1]
+  } else if (typeof reward === 'object') {
+    type = reward.type
+    amount = reward.amount != null ? String(reward.amount) : undefined
+  }
+  
+  if (!type) return ''
+  
+  const icons = {
+    eggs: '🥚',
+    mining_token: '🪨',
+    stock_token: '📦',
+    production_token: '⚙️'
+  }
+  
+  const descriptions = {
+    eggs: 'Œufs - Ressource de base',
+    mining_token: 'Jeton de minage - Pour creuser',
+    stock_token: 'Jeton de stockage - Augmente la capacité',
+    production_token: 'Jeton de production - Booste la production'
+  }
+  
+  const icon = icons[type] || '❓'
+  const desc = descriptions[type] || 'Récompense inconnue'
+  const qty = amount ? parseInt(amount) : 1
+  
+  return `
+    <div style="text-align: center;">
+      <div style="font-size: 18px; margin-bottom: 4px;">${icon}</div>
+      <div style="font-weight: bold;">${qty} ${type.replace('_', ' ')}</div>
+      <div style="font-size: 12px; opacity: 0.8;">${desc}</div>
+    </div>
+  `
+}
+
+// Tooltip pour les récompenses récupérées (format spécial)
+function getDugRewardTooltip(reward) {
+  if (!reward) return ''
+  
+  let type, amount
+  if (typeof reward === 'string') {
+    const parts = reward.split(':')
+    type = parts[0]
+    amount = parts[1]
+  } else if (typeof reward === 'object') {
+    type = reward.type
+    amount = reward.amount != null ? String(reward.amount) : undefined
+  }
+  
+  if (!type) return ''
+  
+  const itemData = getItemInfo(type)
+  const desc = itemData?.description || 'Récompense inconnue'
+  const qty = amount ? parseInt(amount) : 1
+  const typeName = itemData?.nom || type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+  
+  return `
+    <div style="text-align: center;">
+      <div style="font-weight: bold;">${qty} ${typeName}</div>
+      <div>${desc}</div>
+    </div>
+  `
+}
 
 // Construire dynamiquement la config des outils à partir des données synchronisées
 const toolConfig = (() => {
@@ -446,16 +544,34 @@ async function digAt(row, col) {
     setTimeout(() => {
       animatingExplosions.value.clear()
       explosionActive.value = false
-    }, 600) // explosion slightly longer
+    }, 700) // explosion slightly longer
   } else {
     setTimeout(() => {
       animatingCells.value.delete(cellKey)
-    }, 300)
+    }, 400)
   }
   
   if (result?.gameOver) {
+    // Stocker les jetons avant mise à jour
+    tokensBeforeGameOver.value = miningTokens.value
     gameOver.value = true
     finalRewards.value = result.game.rewards
+    // Mettre à jour les jetons si fournis dans la réponse
+    if (result.miningTokens !== undefined) {
+      //console.log('[MiningGame] Mise à jour jetons après gameOver:', result.miningTokens, 'ancien:', miningTokens.value)
+      miningTokens.value = result.miningTokens
+    } else {
+      console.warn('[MiningGame] Pas de miningTokens dans la réponse gameOver')
+      // Calculer manuellement les jetons gagnés
+      const miningTokensGained = finalRewards.value.filter(reward => reward.startsWith('mining_token:')).reduce((sum, reward) => {
+        const amount = parseInt(reward.split(':')[1]) || 0
+        return sum + amount
+      }, 0)
+      if (miningTokensGained > 0) {
+        miningTokens.value = tokensBeforeGameOver.value + miningTokensGained
+        //console.log('[MiningGame] Jetons calculés manuellement:', miningTokens.value, 'gagnés:', miningTokensGained)
+      }
+    }
     emit('game-over', result.resources)
   }
 }
@@ -473,6 +589,30 @@ function resetGame() {
   startGame()
 }
 
+// Fonction pour forcer la mise à jour des jetons après attribution des récompenses
+async function updateTokensAfterRewards() {
+  try {
+    //console.log('[MiningGame] updateTokensAfterRewards - avant fetchState:', miningTokens.value)
+    // Récupérer l'état actuel pour s'assurer que les jetons sont à jour
+    await fetchState()
+    //console.log('[MiningGame] updateTokensAfterRewards - après fetchState:', miningTokens.value)
+    
+    // Si les jetons n'ont pas été mis à jour correctement, calculer manuellement
+    if (miningTokens.value === tokensBeforeGameOver.value && finalRewards.value.length > 0) {
+      const miningTokensGained = finalRewards.value.filter(reward => reward.startsWith('mining_token:')).reduce((sum, reward) => {
+        const amount = parseInt(reward.split(':')[1]) || 0
+        return sum + amount
+      }, 0)
+      if (miningTokensGained > 0) {
+        miningTokens.value = tokensBeforeGameOver.value + miningTokensGained
+        //console.log('[MiningGame] Jetons corrigés dans updateTokensAfterRewards:', miningTokens.value)
+      }
+    }
+  } catch (err) {
+    console.warn('Erreur lors de la mise à jour des jetons:', err)
+  }
+}
+
 function handleClose() {
   ;(async () => {
     try {
@@ -487,6 +627,10 @@ function handleClose() {
             gameActive.value = false
             gameOver.value = true
             finalRewards.value = resp.game?.rewards || []
+            // Mettre à jour les jetons si fournis par le serveur
+            if (resp.miningTokens !== undefined) {
+              miningTokens.value = resp.miningTokens
+            }
             if (resp.game) {
               // Synchroniser grille / outils côté client
               cells.value = resp.game.cells || cells.value
@@ -1138,6 +1282,12 @@ function getArtifactBadgeStyle(aid) {
   justify-content: center;
 }
 
+/* Wrapper pour le bouton continuer avec étoiles */
+.continue-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .game-over h3 {
   margin-bottom: 16px;
 }
@@ -1497,8 +1647,9 @@ function getArtifactBadgeStyle(aid) {
   opacity: 0.45;
   transform: translate(-50%, -50%) scale(0.95);
   filter: grayscale(30%) brightness(1.05);
-  pointer-events: none;
+  pointer-events: auto;
   font-size: 13px;
+  cursor: url('/src/assets/ui/cursor/mark_question.png') 0 0, help;
 }
 
 .reward.unobtained.large-emoji {

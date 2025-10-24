@@ -124,6 +124,10 @@ export function useMining() {
         if (data.gameOver) {
           // Ne pas désactiver gameActive pour garder la grille visible
           // gameActive.value = false
+          // Mettre à jour les jetons après attribution des récompenses
+          if (data.miningTokens !== undefined) {
+            miningTokens.value = data.miningTokens
+          }
           // Émettre un événement pour actualiser les ressources globales
           if (data.resources) {
             window.dispatchEvent(new CustomEvent('mining-game-over', { 
