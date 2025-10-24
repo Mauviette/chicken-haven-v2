@@ -561,7 +561,7 @@ async function digAt(row, col) {
       //console.log('[MiningGame] Mise à jour jetons après gameOver:', result.miningTokens, 'ancien:', miningTokens.value)
       miningTokens.value = result.miningTokens
     } else {
-      console.warn('[MiningGame] Pas de miningTokens dans la réponse gameOver')
+      //console.warn('[MiningGame] Pas de miningTokens dans la réponse gameOver')
       // Calculer manuellement les jetons gagnés
       const miningTokensGained = finalRewards.value.filter(reward => reward.startsWith('mining_token:')).reduce((sum, reward) => {
         const amount = parseInt(reward.split(':')[1]) || 0
@@ -609,7 +609,7 @@ async function updateTokensAfterRewards() {
       }
     }
   } catch (err) {
-    console.warn('Erreur lors de la mise à jour des jetons:', err)
+    //console.warn('Erreur lors de la mise à jour des jetons:', err)
   }
 }
 
@@ -647,7 +647,7 @@ function handleClose() {
             }
           }
         } catch (err) {
-          console.warn('Erreur lors de la clôture de la partie sur le serveur:', err)
+          //console.warn('Erreur lors de la clôture de la partie sur le serveur:', err)
           // continuer et fermer le popup même si l'appel échoue
         }
       }
