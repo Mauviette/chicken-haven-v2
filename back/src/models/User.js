@@ -16,7 +16,11 @@ const UserSchema = new mongoose.Schema({
     sound: { type: Boolean, default: true },
     animations: { type: Boolean, default: true },
     volume: { type: Number, default: 100 },
-    buffsEverywhere: { type: Boolean, default: false }
+    buffsEverywhere: { type: Boolean, default: false },
+    collectionSort: {
+      key: { type: String, default: 'quantite' },
+      order: { type: String, default: 'desc' }
+    }
   },
 
   // Avatar URL or key

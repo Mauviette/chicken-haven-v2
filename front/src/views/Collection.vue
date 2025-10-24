@@ -103,6 +103,7 @@ import { usePoules } from '@/composables/usePoules'
 import { useArtifacts } from '@/composables/useArtifacts'
 import { useGameData } from '@/composables/useGameData'
 import { usePlayer } from '@/composables/usePlayer'
+import { useSettings } from '@/composables/useSettings'
 
 onMounted(() => {
   // Collection initialisée
@@ -112,9 +113,6 @@ const activeTab = ref('chickens')
 const selectedPoule = ref(null)
 const selectedArtifact = ref(null)
 const searchQuery = ref('')
-// Tri par défaut: quantité décroissante
-const sortKey = ref('quantite')
-const sortOrder = ref('desc')
 
 const {
   poules,
@@ -126,8 +124,20 @@ const {
 const { especies: especeData, loading: gameDataLoading, artifacts: gameArtifacts } = useGameData()
 const { team, fetchTeam, artifactSlots, fetchArtifactSlots, level, getLevel } = usePlayer()
 const { artifacts, fetchArtifacts, enrichArtifacts } = useArtifacts()
+const { settings } = useSettings()
 const route = useRoute()
 const router = useRouter()
+
+// Utiliser les settings pour le tri
+const sortKey = computed({
+  get: () => settings.value.collectionSort.key,
+  set: (value) => { settings.value.collectionSort.key = value }
+})
+
+const sortOrder = computed({
+  get: () => settings.value.collectionSort.order,
+  set: (value) => { settings.value.collectionSort.order = value }
+})
 
 // Définir rareteOrder avant son utilisation
 const rareteOrder = {
