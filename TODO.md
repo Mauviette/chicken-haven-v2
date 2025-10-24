@@ -1,4 +1,4 @@
-Dans market, les icones de dé et de X/Y sont au desssus des poules de TeamParadeChicken en z-index, il faut que les poules soient dessus.
+
 
 
 Ajouter des poules

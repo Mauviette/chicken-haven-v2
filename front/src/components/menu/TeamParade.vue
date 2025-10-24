@@ -261,7 +261,7 @@ function handleCloseDetail() {
   pointer-events: none; /* Tooltip réactivé dans les enfants */
   display: block;
   overflow: visible; /* éviter la coupe du haut des sprites */
-  z-index: 2; /* au-dessus de la BottomBar (qui n'a pas de z-index) */
+  z-index: 25; /* au-dessus des éléments du marché (qui ont z-index: 10) */
 }
 
 /* Ajustements responsifs pour s'adapter à la BottomBar */

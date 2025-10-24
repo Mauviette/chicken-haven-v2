@@ -488,6 +488,7 @@ watch(() => props.containerWidth, () => {
   position: absolute;
   bottom: -4px; /* ancrer les pattes au bas de la scène, baissé de 1px */
   pointer-events: auto; /* nécessaire pour le tooltip */
+  z-index: 15;
 }
 
 /* Si fallback PNG, agrandir à 56x56 */
@@ -522,7 +523,7 @@ watch(() => props.containerWidth, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
+  z-index: 20;
 }
 
 .badge-activable .badge-subtype {
@@ -554,7 +555,7 @@ watch(() => props.containerWidth, () => {
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  z-index: 3;
+  z-index: 21;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
@@ -650,7 +651,7 @@ watch(() => props.containerWidth, () => {
   top: -35px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 4;
+  z-index: 22;
   pointer-events: none;
 }
 
