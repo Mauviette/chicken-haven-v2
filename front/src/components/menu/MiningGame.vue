@@ -573,6 +573,8 @@ async function digAt(row, col) {
       }
     }
     emit('game-over', result.resources)
+    // Déclencher la vérification automatique des succès
+    window.dispatchEvent(new CustomEvent('mining-action'))
   }
 }
 
@@ -640,6 +642,8 @@ function handleClose() {
               // informer le reste de l'app que des ressources ont été créditées
               window.dispatchEvent(new CustomEvent('mining-game-over', { detail: { resources: resp.resources } }))
             }
+            // Déclencher la vérification automatique des succès
+            window.dispatchEvent(new CustomEvent('mining-action'))
             // Mettre à jour le flag global mining
             if (typeof window !== 'undefined') {
               window.__miningActive = false

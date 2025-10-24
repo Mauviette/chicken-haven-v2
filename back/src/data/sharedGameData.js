@@ -1303,14 +1303,14 @@ export const miningData = {
     }
   },
   rewardPool: [
-    { type: 'eggs', amount: 25, weight: 25 },
-    { type: 'eggs', amount: 50, weight: 15 },
-    { type: 'eggs', amount: 100, weight: 5 },
+    { type: 'eggs', amount: 25, weight: 29 },
+    { type: 'eggs', amount: 50, weight: 18 },
+    { type: 'eggs', amount: 100, weight: 6 },
     { type: 'eggs', amount: 1000, weight: 1 },
     { type: 'eggs', amount: 10000, weight: 0.1 },
-    { type: 'mining_token', amount: 1, weight: 10 },
-    { type: 'stock_token', amount: 1, weight: 6 },
-    { type: 'production_token', amount: 1, weight: 6 },
+    { type: 'mining_token', amount: 1, weight: 6 },
+    { type: 'stock_token', amount: 1, weight: 4 },
+    { type: 'production_token', amount: 1, weight: 4 },
     { type: 'chest_key', amount: 1, weight: 10 }
   ],
   toolPool: [

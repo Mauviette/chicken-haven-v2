@@ -1,8 +1,5 @@
-Succès malchance a besoin que la page soit rafraichie pour le récupérer. Il faut qu'il se mette à jour automatiquement
-
 Dans market, les icones de dé et de X/Y sont au desssus des poules de TeamParadeChicken en z-index, il faut que les poules soient dessus.
 
-Garder en mémoire le tri choisi dans collection sur User.js et le recharger quand il le faut.
 
 Ajouter des poules
 > Légendaire fondamentale, 
