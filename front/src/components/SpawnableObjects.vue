@@ -414,9 +414,23 @@ const createRewardEffect = (clickedElement, amount) => {
   height: 50px;
 }
 
+
+.spawnable-pink_egg .spawnable-icon {
+  filter: brightness(1.2) saturate(1.4);
+  mix-blend-mode: color-dodge; /* ou color, ou screen */
+  text-shadow: 0 0 8px #ff07c9;
+}
+
+
+.spawnable-pink_egg .spawnable-glow {
+  background: radial-gradient(circle, rgba(245, 245, 220, 0.4) 0%, rgba(255, 248, 220, 0.2) 50%, transparent 70%);
+  width: 50px;
+  height: 50px;
+}
+
 .spawnable-chocolate .spawnable-icon {
   filter: drop-shadow(0 3px 6px rgba(139, 69, 19, 0.8)) brightness(1.3) contrast(1.2);
-  color: #8B4513; /* Brun chocolat */
+  color: #8B4513;
   animation: chocolate-shimmer 2s ease-in-out infinite alternate;
 }
 

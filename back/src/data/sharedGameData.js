@@ -145,6 +145,16 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'epique',
     stats: { intelligence: 2, energie: 3, charisme: 2 }
+  },
+  'crete': {
+    nom: 'Poulette à crête',
+    description: "Une poulette attirant l'attention et remuant sa crête à tout va.", 
+    image: 'chickens/crete/basic.png',
+    talent: 'Captivante',
+    groupe: 'discret',
+    categorie: 'eclosion',
+    rarete: 'epique',
+    stats: { intelligence: 2, energie: 2, charisme: 5 }
   }
 }
 
@@ -362,7 +372,7 @@ export const talentsData = {
   },
   'Majestueuse': {
     description: "Augmente le charisme.",
-    effet: "+{niveau*5} charisme",
+    effet: "+{niveau*10} charisme",
     nivType : 'basic',
     icon: '👑',
     calculation: {
@@ -372,7 +382,7 @@ export const talentsData = {
           type: 'stat_buff',
           target: 'me',
           stats: {
-            charisme: { op: 'mul', args: [ { var: 'niveau' }, 5 ] }
+            charisme: { op: 'mul', args: [ { var: 'niveau' }, 10 ] }
           }
         }
       ]
@@ -451,10 +461,10 @@ export const talentsData = {
     }
   },
   'Captivante': {
-    description: "Des œufs blancs apparaissent sur l'écran.",
-    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*1.5} œufs.",
+    description: "Des poussins roses apparaissent sur l'écran.",
+    effet: "Des poussins roses apparaissent régulièrement, en cliquer un donne votre charisme actuel x{2+niveau*1.5} œufs.",
     nivType : 'basic',
-    icon: '🍀',
+    icon: '🕶️',
     calculation: {
       combine: 'not_linear',
       triggers: [
@@ -463,14 +473,13 @@ export const talentsData = {
       effects: [
         {
           type: 'spawn_clickable',
-          spawner_id: 'pink-egg',
-          icon: '🥚',
-          style: 'pink-egg',
+          spawner_id: 'pink_egg',
+          icon: '🐣',
+          style: 'pink_egg',
           reward: {
             type: 'resource',
             resource: 'eggs',
-            amount: { op: 'mul', args: [ { var: 'teamEnergy' }, { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] } ] }
-          }
+            amount: { op: 'mul', args: [ { var: 'teamCharisme' }, { op: 'add', args: [ 2, { op: 'mul', args: [ { var: 'niveau' }, 1.5 ] } ] } ] } }
         }
       ]
     }
@@ -494,7 +503,7 @@ export const groupes = [
   { 
     name: 'discret', 
     description: 'Poule du groupe discret', 
-    rarityDropChance: [70, 25, 5, 0]
+    rarityDropChance: [65, 25, 10, 0]
   },
   { 
     name: 'chic', 

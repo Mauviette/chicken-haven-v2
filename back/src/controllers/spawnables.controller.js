@@ -40,7 +40,12 @@ const SPAWNABLE_TYPE_CONFIG = {
     spawnChance: 0.05,
     maxActivePerUser: 999,
     cooldownSeconds: 3
-  }
+  },
+  pink_egg: {
+    spawnChance: 0.05,
+    maxActivePerUser: 999,
+    cooldownSeconds: 3
+  },
 }
 
 const TALENT_SPAWN_CONFIG = {}
@@ -193,7 +198,8 @@ export async function checkAvailableSpawnables(req, res) {
       for (const spawnEffect of spawnEffects) {
         const spawnerIdToType = {
           'lucky_egg': 'white_egg',
-          'chocolate': 'chocolate'
+          'chocolate': 'chocolate',
+          'pink_egg': 'pink_egg'
         }
         const rawType = spawnEffect.spawner_id || spawnEffect.objectType || 'white_egg'
         const objectType = spawnerIdToType[rawType] || rawType
