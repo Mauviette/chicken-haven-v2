@@ -1,9 +1,5 @@
 
 
-Mettre un petit Badge jaune sur bouton de minage si un minage est dispo (au moins un jeton de minage)
-
-ChickenDetail : bouton améliorer : mettre les ressources dont le joueur n'a pas assez en rouge.
-
 ChickenDetail et ChickenCard : Au lieu d'afficher "eclosion", afficher le groupe de la poule (fondamental, chic, etc)
 
 Rework effets sonores :
@@ -12,10 +8,19 @@ Rework effets sonores :
 - Social : Clic sur un profil :
 - LevelUp : couper tous les autres bruitages
 - ToastManager : un toast s'en va : retirer le bruit
+> Mini jeu de minage :
+- 
+
+Mini-jeu de minage: Afficher un Tooltip du nom et de la description de l'item lors de l'affichage du bouton 'continuer' et du hover de l'objet.
 
 Traquer ces stats (et les afficher sur UserProfile) et ajouter succès :
 > Utiliser 5 capacités de poules (2 myrtilles)
 > Utiliser 25 capacités de poules (3 myrtilles)
+
+Ajouter des poules
+> 1 légendaire à mettre dans fondamental
+> 1 épique dans brillant
+> 1 épique dans chic
 
 Baser items.js sur back-end (sharedgamedata via usegamedata) plutot que front end
 

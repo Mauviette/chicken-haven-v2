@@ -9,7 +9,7 @@
           <span class="mobile-text">⚙️</span>
         </ActionButton>
       </div>
-      <div class="mining-button" style="margin-left:8px;">
+      <div class="mining-button badge-wrapper" style="margin-left:8px;">
         <Tooltip :text="!isMiningUnlocked ? 'Débloqué au niveau 5' : 'Accéder au mini-jeu de minage'">
           <ActionButton
             :onClick="() => emit('open-mining')"
@@ -19,6 +19,11 @@
             <span class="mobile-text">🪨</span>
           </ActionButton>
         </Tooltip>
+        <span
+          v-if="hasMiningTokens"
+          class="badge-dot badge-dot--yellow"
+          title="Jeton de minage disponible"
+        ></span>
       </div>
     </div>
 
@@ -129,6 +134,8 @@ onMounted(async () => {
   try {
     await fetchAchievements()
     await checkAchievements()
+    // Rafraîchir les données du joueur pour s'assurer que miningTokens est à jour
+    await refreshPlayer()
   } catch (_) {}
   startAutoCheck?.()
 })
@@ -138,7 +145,7 @@ onUnmounted(() => {
 })
 
 // Marché déverrouillé à partir du niveau défini dans les données centralisées
-const { level } = usePlayer()
+const { level, miningTokens, refreshPlayer } = usePlayer()
 const { levelUnlocks } = useGameData()
 const { poules } = usePoules()
 const isMarketUnlocked = computed(() => {
@@ -160,6 +167,8 @@ const isMiningUnlocked = computed(() => {
 })
 
 const hasNewChicken = computed(() => (poules?.value || []).some(p => !!p.new))
+
+const hasMiningTokens = computed(() => isMiningUnlocked.value && (miningTokens.value || 0) > 0)
 
 // Badge d'upgrade basé sur un calcul global (indépendant de la vue Market)
 const { hasAvailableUpgrade, initUpgradesAvailability, refreshUpgradeLevels } = useUpgradesAvailability()

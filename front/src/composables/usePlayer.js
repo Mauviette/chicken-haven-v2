@@ -6,6 +6,7 @@ const stockTokens = ref(0)
 const productionTokens = ref(0)
 const wildTokens = ref(0)
 const chestKeys = ref(0)
+const miningTokens = ref(0)
 const team = ref({ maxSlots: 3, slots: [] })
 const artifactSlots = ref({ slotsCount: 2, equipped: [] })
 const level = ref(1)
@@ -20,6 +21,7 @@ function clearPlayerData() {
   productionTokens.value = 0
   wildTokens.value = 0
   chestKeys.value = 0
+  miningTokens.value = 0
   player.value = null
   level.value = 1
   xp.value = 0
@@ -43,6 +45,7 @@ export function usePlayer() {
         if (resources.production_token !== undefined) productionTokens.value = resources.production_token
         if (resources.wild_token !== undefined) wildTokens.value = resources.wild_token
         if (resources.chest_key !== undefined) chestKeys.value = resources.chest_key
+        if (resources.mining_token !== undefined) miningTokens.value = resources.mining_token
       }
     }
     
@@ -78,6 +81,7 @@ export function usePlayer() {
         productionTokens.value = data.productionTokens || 0
         wildTokens.value = data.wildTokens || 0
         chestKeys.value = data.chestKeys || 0
+        miningTokens.value = data.miningTokens || 0
       }
 
       // Récupérer l'XP / level (API unifiée /api/user/me)
@@ -107,6 +111,7 @@ export function usePlayer() {
             productionTokens.value = Number(u.resources.production_token ?? productionTokens.value)
             wildTokens.value = Number(u.resources.wild_token ?? wildTokens.value)
             chestKeys.value = Number(u.resources.chest_key ?? chestKeys.value)
+            miningTokens.value = Number(u.resources.mining_token ?? miningTokens.value)
           }
           try {
             if (typeof window !== 'undefined') {
@@ -244,6 +249,8 @@ export function usePlayer() {
       wildTokens.value += amount
     } else if (type === 'chest_key') {
       chestKeys.value += amount
+    } else if (type === 'mining_token') {
+      miningTokens.value += amount
     }
   }
 
@@ -259,6 +266,9 @@ export function usePlayer() {
       return true
     } else if (type === 'chest_key' && chestKeys.value >= amount) {
       chestKeys.value -= amount
+      return true
+    } else if (type === 'mining_token' && miningTokens.value >= amount) {
+      miningTokens.value -= amount
       return true
     }
     return false
@@ -280,6 +290,8 @@ export function usePlayer() {
         return wildTokens.value >= price.count
       case 'chest_key':
         return chestKeys.value >= price.count
+      case 'mining_token':
+        return miningTokens.value >= price.count
       default:
         return false
     }
@@ -351,6 +363,7 @@ export function usePlayer() {
     productionTokens,
     wildTokens,
     chestKeys,
+    miningTokens,
     team,
     artifactSlots,
     level,
