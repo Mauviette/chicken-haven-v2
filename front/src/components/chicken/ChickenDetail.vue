@@ -61,6 +61,7 @@
                   :onClick="onUpgrade"
                   :disabled="!canUpgrade || upgrading"
                   :price="upgradePrices"
+                  :insufficient="insufficientResources"
                 >
                   {{ upgrading ? '...' : 'Améliorer' }}
                 </BuyButton>
@@ -195,6 +196,23 @@ const canUpgrade = computed(() => {
   // Pour les améliorations, vérifier la quantité réelle de poules possédées
   const hasChickens = Number(p.quantite || 0) >= needChickens
   return hasEggs && hasChickens
+})
+
+const insufficientResources = computed(() => {
+  const cost = nextCost.value
+  const p = currentPoule.value
+  if (!cost || !p) return []
+  
+  const insufficient = []
+  const needEggs = Number(cost.egg_cost || 0)
+  const needChickens = Number(cost.chicken_cost || 0)
+  const hasEggs = Number(eggs?.value ?? 0)
+  const hasChickens = Number(p.quantite || 0)
+  
+  if (hasEggs < needEggs) insufficient.push(0) // Index 0 pour les œufs
+  if (hasChickens < needChickens) insufficient.push(1) // Index 1 pour les poules
+  
+  return insufficient
 })
 
 const missingTooltip = computed(() => {

@@ -12,7 +12,7 @@
       </span>
       <template v-if="Array.isArray(price)">
         <div class="price-list">
-          <div v-for="(p, idx) in price" :key="idx" class="price-display">
+          <div v-for="(p, idx) in price" :key="idx" class="price-display" :class="{ 'insufficient': insufficient?.includes(idx) }">
             <span class="price-icon">{{ p._iconOverride || getPriceIcon(p) }}</span>
             <span class="price-amount">{{ p.count || p }}</span>
           </div>
@@ -34,7 +34,8 @@ const props = defineProps({
   onClick: Function,
   disabled: Boolean,
   price: [Object, Number, Array], // Peut être un nombre, un objet { type, count } ou un tableau de prix
-  title: String
+  title: String,
+  insufficient: Array // Tableau d'indices des ressources insuffisantes
 })
 
 const { click } = useSound()
@@ -114,12 +115,7 @@ function getPriceIcon(price = props.price) {
   color: #fff9e5;
 }
 
-/* Variante pour boutons désactivés */
-.buy-button.disabled .price-display {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.buy-button.disabled .price-amount {
-  color: #999;
+.price-display.insufficient .price-amount {
+  color: #ff6b6b;
 }
 </style>
