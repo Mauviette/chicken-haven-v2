@@ -76,7 +76,14 @@ const showMiningGame = ref(false)
 const { logout: performLogout } = useAuth()
 const { refreshPlayer, fetchTeam } = usePlayer()
 const { syncStatus } = useDataSync()
-const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = useSound()
+const soundComposable = useSound()
+const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = {
+  click: typeof soundComposable.click === 'function' ? soundComposable.click : () => {},
+  open: typeof soundComposable.open === 'function' ? soundComposable.open : () => {},
+  close: typeof soundComposable.close === 'function' ? soundComposable.close : () => {},
+  toast: typeof soundComposable.toast === 'function' ? soundComposable.toast : () => {},
+  achievement: typeof soundComposable.achievement === 'function' ? soundComposable.achievement : () => {}
+}
 const { setToastManager } = useToast()
 const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = useAppLoading()
 const { settings } = useSettings()
