@@ -79,7 +79,10 @@ const { refreshPlayer, fetchTeam } = {
   refreshPlayer: typeof playerComposable.refreshPlayer === 'function' ? playerComposable.refreshPlayer : () => Promise.resolve(),
   fetchTeam: typeof playerComposable.fetchTeam === 'function' ? playerComposable.fetchTeam : () => Promise.resolve()
 }
-const { syncStatus } = useDataSync()
+const dataSyncComposable = useDataSync()
+const { syncStatus } = {
+  syncStatus: dataSyncComposable.syncStatus || 'idle'
+}
 const soundComposable = useSound()
 const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: sndAchievement } = {
   click: typeof soundComposable.click === 'function' ? soundComposable.click : () => {},
@@ -88,9 +91,20 @@ const { click, open: sndOpen, close: sndClose, toast: toastSound, achievement: s
   toast: typeof soundComposable.toast === 'function' ? soundComposable.toast : () => {},
   achievement: typeof soundComposable.achievement === 'function' ? soundComposable.achievement : () => {}
 }
-const { setToastManager } = useToast()
-const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = useAppLoading()
-const { settings } = useSettings()
+const toastComposable = useToast()
+const { setToastManager } = {
+  setToastManager: typeof toastComposable.setToastManager === 'function' ? toastComposable.setToastManager : () => {}
+}
+const appLoadingComposable = useAppLoading()
+const { setGameDataLoading, setUserDataLoading, setSettingsLoading } = {
+  setGameDataLoading: typeof appLoadingComposable.setGameDataLoading === 'function' ? appLoadingComposable.setGameDataLoading : () => {},
+  setUserDataLoading: typeof appLoadingComposable.setUserDataLoading === 'function' ? appLoadingComposable.setUserDataLoading : () => {},
+  setSettingsLoading: typeof appLoadingComposable.setSettingsLoading === 'function' ? appLoadingComposable.setSettingsLoading : () => {}
+}
+const settingsComposable = useSettings()
+const { settings } = {
+  settings: settingsComposable.settings || ref({})
+}
 const chickenGiftsComposable = useChickenGifts()
 const { startPeriodicCheck } = {
   startPeriodicCheck: typeof chickenGiftsComposable.startPeriodicCheck === 'function' ? chickenGiftsComposable.startPeriodicCheck : () => {}
