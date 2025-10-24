@@ -1,6 +1,6 @@
 <template>
   <!-- Conteneur acteur positionné relativement à la scène (parent .stage) -->
-  <div class="actor" :style="{ left: x + 'px' }">
+  <div class="actor" :class="{ 'has-special': hasSpecialFeature }" :style="{ left: x + 'px' }">
     <Tooltip :text="tooltipHtml" :key="tooltipHtml" v-if="!isMobile">
       <div class="parade-wrapper">
         <img
@@ -241,6 +241,11 @@ const { incrementProgress } = useAchievements()
 const hasChickenGift = computed(() => {
   const hasGift = props.especeId ? hasActiveGift(props.especeId) : false
   return hasGift
+})
+
+// Propriété pour déterminer si la poule a une fonctionnalité spéciale (cadeau ou capacité)
+const hasSpecialFeature = computed(() => {
+  return hasChickenGift.value || isActivableTalent.value
 })
 
 // Badge amélioration disponible (similaire à ChickenCard)
@@ -489,6 +494,11 @@ watch(() => props.containerWidth, () => {
   bottom: -4px; /* ancrer les pattes au bas de la scène, baissé de 1px */
   pointer-events: auto; /* nécessaire pour le tooltip */
   z-index: 15;
+}
+
+/* Poules avec fonctionnalités spéciales (cadeau ou capacité) s'affichent devant */
+.actor.has-special {
+  z-index: 18;
 }
 
 /* Si fallback PNG, agrandir à 56x56 */
