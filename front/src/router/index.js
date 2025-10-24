@@ -5,6 +5,7 @@ import Collection from '@/views/Collection.vue'
 import Social from '@/views/Social.vue'
 import UserProfile from '@/views/UserProfile.vue'
 import Auth from '@/views/AuthView.vue'
+import { useAuth } from '@/composables/useAuth'
 
 const routes = [
   {

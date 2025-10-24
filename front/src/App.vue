@@ -75,26 +75,26 @@ const levelUpTo = ref(1)
 const showMiningGame = ref(false)
 const { logout: performLogout } = useAuth()
 const playerComposable = usePlayer() || {}
-const refreshPlayer = typeof playerComposable.refreshPlayer === 'function' ? playerComposable.refreshPlayer : () => Promise.resolve()
-const fetchTeam = typeof playerComposable.fetchTeam === 'function' ? playerComposable.fetchTeam : () => Promise.resolve()
+const refreshPlayer = playerComposable.refreshPlayer || (() => Promise.resolve())
+const fetchTeam = playerComposable.fetchTeam || (() => Promise.resolve())
 const dataSyncComposable = useDataSync() || {}
 const syncStatus = dataSyncComposable.syncStatus || 'idle'
 const soundComposable = useSound() || {}
-const click = typeof soundComposable.click === 'function' ? soundComposable.click : () => {}
-const sndOpen = typeof soundComposable.open === 'function' ? soundComposable.open : () => {}
-const sndClose = typeof soundComposable.close === 'function' ? soundComposable.close : () => {}
-const toastSound = typeof soundComposable.toast === 'function' ? soundComposable.toast : () => {}
-const sndAchievement = typeof soundComposable.achievement === 'function' ? soundComposable.achievement : () => {}
+const click = soundComposable.click || (() => {})
+const sndOpen = soundComposable.open || (() => {})
+const sndClose = soundComposable.close || (() => {})
+const toastSound = soundComposable.toast || (() => {})
+const sndAchievement = soundComposable.achievement || (() => {})
 const toastComposable = useToast() || {}
-const setToastManager = typeof toastComposable.setToastManager === 'function' ? toastComposable.setToastManager : () => {}
+const setToastManager = toastComposable.setToastManager || (() => {})
 const appLoadingComposable = useAppLoading() || {}
-const setGameDataLoading = typeof appLoadingComposable.setGameDataLoading === 'function' ? appLoadingComposable.setGameDataLoading : () => {}
-const setUserDataLoading = typeof appLoadingComposable.setUserDataLoading === 'function' ? appLoadingComposable.setUserDataLoading : () => {}
-const setSettingsLoading = typeof appLoadingComposable.setSettingsLoading === 'function' ? appLoadingComposable.setSettingsLoading : () => {}
+const setGameDataLoading = appLoadingComposable.setGameDataLoading || (() => {})
+const setUserDataLoading = appLoadingComposable.setUserDataLoading || (() => {})
+const setSettingsLoading = appLoadingComposable.setSettingsLoading || (() => {})
 const settingsComposable = useSettings() || {}
 const settings = settingsComposable.settings || ref({})
 const chickenGiftsComposable = useChickenGifts() || {}
-const startPeriodicCheck = typeof chickenGiftsComposable.startPeriodicCheck === 'function' ? chickenGiftsComposable.startPeriodicCheck : () => {}
+const startPeriodicCheck = chickenGiftsComposable.startPeriodicCheck || (() => {})
 
 onMounted(async () => {
   window.$toast = toast
@@ -108,7 +108,8 @@ onMounted(async () => {
   setGameDataLoading(true)
   
   // Charger les données du joueur si connecté
-  if (localStorage.getItem('token')) {
+  const token = localStorage.getItem('token')
+  if (token) {
     setUserDataLoading(true)
     setSettingsLoading(true)
     
