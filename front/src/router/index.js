@@ -5,14 +5,13 @@ import Collection from '@/views/Collection.vue'
 import Social from '@/views/Social.vue'
 import UserProfile from '@/views/UserProfile.vue'
 import Auth from '@/views/AuthView.vue'
-import { useAuth } from '@/composables/useAuth'
 
 const routes = [
   {
     path: '/',
     redirect: () => {
-      const { isLoggedIn } = useAuth()
-      return isLoggedIn() ? '/production' : '/auth'
+      const token = localStorage.getItem('token')
+      return token ? '/production' : '/auth'
     }
   },
   {
@@ -67,8 +66,8 @@ const router = createRouter({
 
 // 🛡️ Garde globale : bloque l’accès aux pages protégées
 router.beforeEach((to, from, next) => {
-  const { isLoggedIn } = useAuth()
-  if (to.meta.requiresAuth && !isLoggedIn()) {
+  const token = localStorage.getItem('token')
+  if (to.meta.requiresAuth && !token) {
     next('/auth')
   } else {
     next()
