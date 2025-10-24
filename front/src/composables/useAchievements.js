@@ -3,6 +3,7 @@ import { useGameData } from '@/composables/useGameData'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
 import { formatString } from '@/data/items.js'
+import { apiGet, apiPost } from '@/utils/api'
 
 const userAchievements = ref({
   progress: {
@@ -35,8 +36,6 @@ export function useAchievements() {
   const { token } = useAuth()
   const { eggs, refreshPlayerData } = usePlayer()
   const { achievements: gameAchievements, fetchGameData } = useGameData()
-  
-  const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/achievements`
 
   // Computed properties pour l'affichage
   const achievements = computed(() => {
@@ -130,24 +129,15 @@ export function useAchievements() {
     if (!token.value) return
 
     try {
-      const response = await fetch(`${API_BASE}/status`, {
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        userAchievements.value = {
-          progress: {
-            // Fusionner les données existantes avec les nouvelles pour éviter de perdre des champs
-            ...userAchievements.value.progress,
-            ...(data.progress || {})
-          },
-          completed: data.completed || [],
-          lastChecked: new Date(data.lastChecked || Date.now())
-        }
+      const data = await apiGet('/api/achievements/status')
+      userAchievements.value = {
+        progress: {
+          // Fusionner les données existantes avec les nouvelles pour éviter de perdre des champs
+          ...userAchievements.value.progress,
+          ...(data.progress || {})
+        },
+        completed: data.completed || [],
+        lastChecked: new Date(data.lastChecked || Date.now())
       }
     } catch (error) {
       console.error('Erreur lors de la récupération des succès:', error)
@@ -158,29 +148,19 @@ export function useAchievements() {
     if (!token.value) return
 
     try {
-      const response = await fetch(`${API_BASE}/check`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Mettre à jour les données utilisateur
-        if (data.updated) {
-          userAchievements.value = data.achievements
-        }
-
-        // Gérer les nouveaux succès débloqués
-        if (data.newAchievements && data.newAchievements.length > 0) {
-          handleNewAchievements(data.newAchievements)
-        }
-
-        return data.newAchievements || []
+      const data = await apiPost('/api/achievements/check')
+      
+      // Mettre à jour les données utilisateur
+      if (data.updated) {
+        userAchievements.value = data.achievements
       }
+
+      // Gérer les nouveaux succès débloqués
+      if (data.newAchievements && data.newAchievements.length > 0) {
+        handleNewAchievements(data.newAchievements)
+      }
+
+      return data.newAchievements || []
     } catch (error) {
       console.error('Erreur lors de la vérification des succès:', error)
     }
@@ -192,33 +172,23 @@ export function useAchievements() {
     if (!token.value) return false
 
     try {
-      const response = await fetch(`${API_BASE}/claim/${achievementId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Content-Type': 'application/json'
+      const data = await apiPost(`/api/achievements/claim/${achievementId}`)
+      
+      // Marquer la récompense comme réclamée
+      if (data.achievements) {
+        userAchievements.value = data.achievements
+      } else {
+        const completedAchievement = userAchievements.value.completed.find(
+          a => a.achievementId === achievementId
+        )
+        if (completedAchievement) {
+          completedAchievement.rewardClaimed = true
         }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        
-        // Marquer la récompense comme réclamée
-        if (data.achievements) {
-          userAchievements.value = data.achievements
-        } else {
-          const completedAchievement = userAchievements.value.completed.find(
-            a => a.achievementId === achievementId
-          )
-          if (completedAchievement) {
-            completedAchievement.rewardClaimed = true
-          }
-        }
-
-        // Rafraîchir les ressources du joueur (œufs, jetons, niveau)
-        try { await refreshPlayerData() } catch (_) {}
-        return data.reward
       }
+
+      // Rafraîchir les ressources du joueur (œufs, jetons, niveau)
+      try { await refreshPlayerData() } catch (_) {}
+      return data.reward
     } catch (error) {
       console.error('Erreur lors de la réclamation de récompense:', error)
     }
