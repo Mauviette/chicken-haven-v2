@@ -415,7 +415,7 @@ export const talentsData = {
   ,
   'Spaciale': {
     description: "Augmente votre stockage maximum de façon multiplicative.",
-    effet: "+{niveau*15}% de stockage (multiplicatif, passif)",
+    effet: "+{15 + niveau*15}% de stockage (multiplicatif, passif)",
     nivType: 'legend',
     icon: '🪐',
     calculation: {
@@ -423,7 +423,7 @@ export const talentsData = {
       effects: [
         {
           type: 'storage_multiplier',
-          amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
+          amount: { op: 'add', args: [ 1.15, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
         }
       ]
     }
