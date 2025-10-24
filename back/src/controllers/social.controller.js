@@ -12,42 +12,44 @@ export async function getLeaderboards(req, res) {
       displayName: 1,
       profileId: 1,
       avatar: 1,
+      'experience.level': 1,
       'achievements.progress.totalEggsCollected': 1,
       'achievements.progress.maxEggsInOneClick': 1,
       'achievements.progress.totalChickensOwned': 1,
+      'achievements.completed': 1,
       poulesPossedees: 1,
       lastSeen: 1,
       createdAt: 1
     }).lean()
 
-    // Fonction pour calculer les poules découvertes
-    const getChickensFound = (poulesPossedees) => {
-      if (!Array.isArray(poulesPossedees)) return 0
-      // Compter les poules débloquées (présentes dans poulesPossedees)
-      return poulesPossedees.length
+    // Fonction pour calculer les succès obtenus
+    const getAchievementsCompleted = (achievements) => {
+      if (!achievements || !Array.isArray(achievements.completed)) return 0
+      return achievements.completed.length
     }    // Préparer les données pour chaque leaderboard
     const userData = users.map(user => {
       const progress = user.achievements?.progress || {}
-      const chickensFound = getChickensFound(user.poulesPossedees)
+      const achievementsCompleted = getAchievementsCompleted(user.achievements)
       
       return {
         username: user.username || 'Joueur Anonyme',
         displayName: user.displayName || user.username || 'Joueur Anonyme',
         profileId: user.profileId || '',
         avatar: user.avatar || '',
+        level: user.experience?.level || 1,
         lastSeen: user.lastSeen,
         createdAt: user.createdAt,
         stats: {
           totalEggsCollected: Math.floor(progress.totalEggsCollected || 0),
           maxEggsInOneClick: Math.floor(progress.maxEggsInOneClick || 0),
-          chickensFound: chickensFound
+          achievementsCompleted: achievementsCompleted
         }
       }
     }).filter(user => 
       // Filtrer seulement les utilisateurs avec au moins une statistique > 0
       user.stats.totalEggsCollected > 0 || 
       user.stats.maxEggsInOneClick > 0 || 
-      user.stats.chickensFound > 0
+      user.stats.achievementsCompleted > 0
     )
 
     // Créer les 3 leaderboards
@@ -60,6 +62,7 @@ export async function getLeaderboards(req, res) {
         displayName: user.displayName,
         profileId: user.profileId,
         avatar: user.avatar,
+        level: user.level,
         value: user.stats.totalEggsCollected,
         lastSeen: user.lastSeen
       }))
@@ -73,12 +76,13 @@ export async function getLeaderboards(req, res) {
         displayName: user.displayName,
         profileId: user.profileId,
         avatar: user.avatar,
+        level: user.level,
         value: user.stats.maxEggsInOneClick,
         lastSeen: user.lastSeen
       }))
 
     const chickensLeaderboard = [...userData]
-      .sort((a, b) => b.stats.chickensFound - a.stats.chickensFound)
+      .sort((a, b) => b.stats.achievementsCompleted - a.stats.achievementsCompleted)
       .slice(0, 50) // Top 50
       .map((user, index) => ({
         rank: index + 1,
@@ -86,7 +90,8 @@ export async function getLeaderboards(req, res) {
         displayName: user.displayName,
         profileId: user.profileId,
         avatar: user.avatar,
-        value: user.stats.chickensFound,
+        level: user.level,
+        value: user.stats.achievementsCompleted,
         lastSeen: user.lastSeen
       }))
 
@@ -101,7 +106,7 @@ export async function getLeaderboards(req, res) {
           stats: {
             totalEggsCollected: Math.floor(currentUser.achievements?.progress?.totalEggsCollected || 0),
             maxEggsInOneClick: Math.floor(currentUser.achievements?.progress?.maxEggsInOneClick || 0),
-            chickensFound: getChickensFound(currentUser.poulesPossedees)
+            achievementsCompleted: getAchievementsCompleted(currentUser.achievements)
           }
         }
 
@@ -115,7 +120,7 @@ export async function getLeaderboards(req, res) {
           .findIndex(u => u.username === (currentUser.username || 'Joueur Anonyme')) + 1
 
         const chickensRank = userData
-          .sort((a, b) => b.stats.chickensFound - a.stats.chickensFound)
+          .sort((a, b) => b.stats.achievementsCompleted - a.stats.achievementsCompleted)
           .findIndex(u => u.username === (currentUser.username || 'Joueur Anonyme')) + 1
 
         userRankings = {
@@ -131,7 +136,7 @@ export async function getLeaderboards(req, res) {
           },
           chickens: {
             rank: chickensRank || null,
-            value: currentUserData.stats.chickensFound,
+            value: currentUserData.stats.achievementsCompleted,
             total: userData.length
           }
         }

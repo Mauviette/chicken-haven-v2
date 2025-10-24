@@ -42,6 +42,7 @@
                     :alt="leaderboardPlayer.username"
                     class="avatar-img"
                   />
+                  <span class="level-badge">{{ leaderboardPlayer.level }}</span>
                 </div>
                 <div class="player-info">
                   <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
@@ -88,6 +89,7 @@
                     :alt="leaderboardPlayer.username"
                     class="avatar-img"
                   />
+                  <span class="level-badge">{{ leaderboardPlayer.level }}</span>
                 </div>
                 <div class="player-info">
                   <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
@@ -111,10 +113,10 @@
           <!-- Classement Poules Découvertes -->
           <div class="individual-leaderboard">
             <div class="leaderboard-subheader">
-              <h4 class="leaderboard-subtitle">🐔 Poules Découvertes</h4>
+              <h4 class="leaderboard-subtitle">🏆 Succès Obtenus</h4>
               <div class="user-rank" v-if="userRankings?.chickens?.rank">
                 Votre rang: <strong>#{{ userRankings.chickens.rank }}</strong> / {{ userRankings.chickens.total }}
-                <span class="user-value">({{ userRankings.chickens.value }} poules)</span>
+                <span class="user-value">({{ userRankings.chickens.value }} succès)</span>
               </div>
             </div>
             <div class="leaderboard-list">
@@ -134,6 +136,7 @@
                     :alt="leaderboardPlayer.username"
                     class="avatar-img"
                   />
+                  <span class="level-badge">{{ leaderboardPlayer.level }}</span>
                 </div>
                 <div class="player-info">
                   <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
@@ -141,7 +144,7 @@
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
                 <div class="player-value">
-                  {{ leaderboardPlayer.value }} 🐔
+                  {{ leaderboardPlayer.value }} 🏆
                 </div>
               </div>
               <button 
@@ -205,6 +208,7 @@
                 :alt="leaderboardPlayer.username"
                 class="avatar-img"
               />
+              <span class="level-badge">{{ leaderboardPlayer.level }}</span>
             </div>
             <div class="player-info">
               <div class="player-name">{{ leaderboardPlayer.displayName || leaderboardPlayer.username }}</div>
@@ -335,7 +339,7 @@ const getLeaderboardTitle = (type) => {
   switch (type) {
     case 'totalEggs': return '🥚 Total d\'Œufs Récoltés'
     case 'maxEggs': return '⚡ Maximum en Un Clic'
-    case 'chickens': return '🐔 Poules Découvertes'
+    case 'chickens': return '🏆 Succès Obtenus'
     default: return 'Classement'
   }
 }
@@ -344,7 +348,7 @@ const getLeaderboardIcon = (type) => {
   switch (type) {
     case 'totalEggs': return '🥚'
     case 'maxEggs': return '⚡'
-    case 'chickens': return '🐔'
+    case 'chickens': return '🏆'
     default: return ''
   }
 }
@@ -596,6 +600,22 @@ const getLeaderboardIcon = (type) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+.level-badge {
+  position: absolute;
+  right: -4px;
+  bottom: 2px;
+  background: #7b61ff;
+  color: white;
+  font-weight: bold;
+  border: 2px solid #fff;
+  font-size: 12px;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .avatar-img {
@@ -786,6 +806,11 @@ const getLeaderboardIcon = (type) => {
     border-radius: 6px;
   }
   
+  .level-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+  
   .player-name {
     font-size: 14px;
     margin-bottom: 3px;
@@ -880,6 +905,11 @@ const getLeaderboardIcon = (type) => {
     border-radius: 5px;
   }
   
+  .level-badge {
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+  
   .player-info {
     margin-right: 8px;
     min-width: 0;
@@ -953,6 +983,11 @@ const getLeaderboardIcon = (type) => {
   .avatar-img, .default-avatar {
     width: 32px;
     height: 32px;
+  }
+  
+  .level-badge {
+    font-size: 9px;
+    padding: 1px 4px;
   }
   
   .player-name {
@@ -1098,6 +1133,11 @@ const getLeaderboardIcon = (type) => {
 .full-leaderboard-list .avatar-img {
   width: 44px;
   height: 44px;
+}
+
+.full-leaderboard-list .level-badge {
+  font-size: 11px;
+  padding: 2px 6px;
 }
 
 .full-leaderboard-list .player-name {
