@@ -209,6 +209,7 @@ function emitOpenDetail() {
       }
     }
     collectGift(props.especeId, position)
+    giftCollect()
     return
   }
 
@@ -229,7 +230,7 @@ function emitOpenDetail() {
 // Tooltip combinant nom en gras + effet du talent
 const { especies, poules, getTalentEffectSync, getTalentNextCost } = usePoules()
 const { talents } = useGameData()
-const { click: sndClick, confirm: sndOk } = useSound()
+const { click: sndClick, confirm: sndOk, giftCollect } = useSound()
 const { eggState, fetchEggStatus } = useEgg()
 const { fetchBuffs } = useBuffs()
 const { hasActiveGift, collectGift } = useChickenGifts()

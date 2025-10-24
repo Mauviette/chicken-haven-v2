@@ -84,10 +84,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import ActionButton from './ActionButton.vue'
 import Tooltip from './Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
+import { useSound } from '@/composables/useSound'
 
 const props = defineProps({
   showResults: {
@@ -106,6 +107,14 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 const { getImage, hiddenImage, poules, getTalentEffectSync } = usePoules()
+const { newItem } = useSound()
+
+// Jouer le son pour les nouveaux éléments quand le popup s'ouvre
+watch(() => props.showResults, (show) => {
+  if (show && props.results.some(r => r.isNew)) {
+    newItem()
+  }
+})
 
 function closeResults() {
   emit('close')

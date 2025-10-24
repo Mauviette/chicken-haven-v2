@@ -59,8 +59,6 @@ function showToast(message, type = 'info', duration = 5000) {
 }
 
 function removeToast(id) {
-  // Son de fermeture
-  sndClose()
   toasts.value = toasts.value.filter(t => t.id !== id)
 }
 

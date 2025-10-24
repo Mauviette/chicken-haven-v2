@@ -51,7 +51,6 @@ const emit = defineEmits(['close'])
 const { achievement: sndAchievement, close: sndClose } = useSound()
 
 function close() {
-  sndClose()
   emit('close')
 }
 
@@ -84,8 +83,7 @@ function launchConfetti() {
 
 onMounted(() => {
   launchConfetti()
-  // Son de réussite/level-up à l'ouverture
-  sndAchievement()
+  // Son de réussite/level-up à l'ouverture supprimé
 })
 
 onBeforeUnmount(() => {

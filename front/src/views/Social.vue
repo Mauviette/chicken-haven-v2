@@ -230,6 +230,7 @@ import { useSocial } from '@/composables/useSocial'
 import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
 import Popup from '@/components/menu/Popup.vue'
+import { useSound } from '@/composables/useSound'
 
 const { 
   leaderboards, 
@@ -243,6 +244,7 @@ const {
 const { player } = usePlayer()
 const { getImage: getChickenImage, hiddenImage } = usePoules()
 const router = useRouter()
+const { profileClick } = useSound()
 
 // État pour les popups
 const showFullLeaderboard = ref(null) // null, 'totalEggs', 'maxEggs', 'chickens'
@@ -309,6 +311,7 @@ const getPlayerAvatar = (leaderboardPlayer) => {
 
 const viewPlayer = (leaderboardPlayer) => {
   if (leaderboardPlayer.profileId) {
+    profileClick()
     router.push(`/user/${leaderboardPlayer.profileId}`)
   }
 }

@@ -116,7 +116,7 @@
         
         <!-- Bouton Continuer quand tous les outils sont utilisés -->
         <div v-if="gameOver && !showResults" class="continue-button-container">
-          <ActionButton :onClick="() => showResults = true">
+          <ActionButton :onClick="() => { miningContinue(); showResults = true }">
             Continuer
           </ActionButton>
         </div>
@@ -155,6 +155,7 @@ import Tooltip from '@/components/menu/Tooltip.vue'
 import { useMining } from '@/composables/useMining'
 import { MINING_CONFIG } from '@/data/mining'
 import { apiPost } from '@/utils/api' // <-- nouveau import
+import { useSound } from '@/composables/useSound'
 
 const emit = defineEmits(['close', 'game-over'])
 
@@ -174,6 +175,8 @@ const {
   dig,
   artifactModifiers
 } = useMining()
+
+const { miningBasic, miningExplosion, miningContinue } = useSound()
 
 // Copie locale pour forcer la réactivité
 const localEquippedArtifacts = ref([])
@@ -406,12 +409,14 @@ async function digAt(row, col) {
   // Ajouter l'animation de creusage (classique) si animation === 'mining'
   if (!config || config.animation === 'mining' || !config.animation) {
     animatingCells.value.add(cellKey)
+    miningBasic()
   }
 
   // Si l'outil a une animation 'explosion', marquer toutes les cases affectées pour l'animation explosion
   if (config && config.animation === 'explosion') {
     // marquer overlay global et cellules
     explosionActive.value = true
+    miningExplosion()
     // déterminer les cellules affectées localement (utilise willBeAffected qui se base sur hoveredCell)
     // fallback: inclure la case ciblée si hoveredCell absent
     const affected = []

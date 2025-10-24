@@ -33,7 +33,18 @@ const SOUND_MAP = {
   // Légendaire
   dark_item: new URL('../assets/sounds/ui/dark-item.mp3', import.meta.url).href,
   // Épique
-  epic_item: new URL('../assets/sounds/ui/confirmation_002.ogg', import.meta.url).href
+  epic_item: new URL('../assets/sounds/ui/confirmation_002.ogg', import.meta.url).href,
+  // Nouveaux sons
+  question: new URL('../assets/sounds/ui/question_003.ogg', import.meta.url).href,
+  select_001: new URL('../assets/sounds/ui/select_001.ogg', import.meta.url).href,
+  select_005: new URL('../assets/sounds/ui/select_005.ogg', import.meta.url).href,
+  scratch_001: new URL('../assets/sounds/ui/scratch_001.ogg', import.meta.url).href,
+  scratch_002: new URL('../assets/sounds/ui/scratch_002.ogg', import.meta.url).href,
+  scratch_003: new URL('../assets/sounds/ui/scratch_003.ogg', import.meta.url).href,
+  scratch_004: new URL('../assets/sounds/ui/scratch_004.ogg', import.meta.url).href,
+  scratch_005: new URL('../assets/sounds/ui/scratch_005.ogg', import.meta.url).href,
+  select_004: new URL('../assets/sounds/ui/select_004.ogg', import.meta.url).href,
+  pluck_002: new URL('../assets/sounds/ui/pluck_002.ogg', import.meta.url).href
 }
 
 function getAudio(key) {
@@ -89,7 +100,7 @@ export function useSound() {
   const toast = (type = 'info') => {
     if (type === 'success') play('toast_success')
     else if (type === 'error') play('toast_error')
-    else if (type === 'achievement') play('achievement', { volume: 0.5 })
+    else if (type === 'achievement') play('achievement', { volume: 0.25 })
     else play('toast_info')
   }
   // Nouveaux helpers
@@ -103,6 +114,17 @@ export function useSound() {
   const legendaryDrop = (volume = 1) => play('dark_item', { volume })
   // Drop épique
   const epicDrop = (volume = 0.9) => play('epic_item', { volume })
+  // Nouveaux helpers
+  const newItem = () => play('question')
+  const profileClick = () => play('select_001', { volume: 0.4 })
+  const giftCollect = () => play('select_005', { volume: 0.2 })
+  const miningBasic = () => {
+    const scratches = ['scratch_001', 'scratch_002', 'scratch_003', 'scratch_004', 'scratch_005']
+    const randomScratch = scratches[Math.floor(Math.random() * scratches.length)]
+    play(randomScratch, { volume: 0.15 })
+  }
+  const miningExplosion = () => play('select_004', { volume: 0.15 })
+  const miningContinue = () => play('pluck_002', { volume: 0.15 })
 
   return {
     play,
@@ -119,6 +141,12 @@ export function useSound() {
     boxOpen,
     boxResults,
     legendaryDrop,
-    epicDrop
+    epicDrop,
+    newItem,
+    profileClick,
+    giftCollect,
+    miningBasic,
+    miningExplosion,
+    miningContinue
   }
 }
