@@ -4,7 +4,7 @@
     <div class="levelup-card">
       <button class="close-btn" @click="close">✕</button>
       <div class="avatar-wrap">
-        <img src="@/assets/ui/avatar-default.svg" class="avatar" />
+        <img :src="playerAvatarSrc" class="avatar" />
         <span class="level-badge">{{ to }}</span>
       </div>
       <h3>Bravo !</h3>
@@ -41,6 +41,8 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
+import { usePlayer } from '@/composables/usePlayer'
+import { usePoules } from '@/composables/usePoules'
 import Tooltip from '@/components/menu/Tooltip.vue'
 const props = defineProps({
   from: { type: Number, required: true },
@@ -58,6 +60,17 @@ const { getUnlocksBetween, getLevelRewardsBetween, items } = useGameData()
 const unlocks = computed(() => getUnlocksBetween(props.from, props.to))
 
 const levelRewards = computed(() => getLevelRewardsBetween(props.from, props.to))
+
+// Récupération de l'avatar du joueur
+const { player } = usePlayer()
+const { getImage, hiddenImage } = usePoules()
+
+const playerAvatarSrc = computed(() => {
+  const avatar = player.value?.avatar
+  if (!avatar || avatar === 'hidden') return hiddenImage.value
+  // avatar est un especeId, convertir via getImage
+  return getImage(String(avatar))
+})
 
 // Confettis à l'ouverture du popup
 const confettiLayer = ref(null)
