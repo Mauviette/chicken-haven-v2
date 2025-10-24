@@ -16,12 +16,8 @@
         >
           <div
             class="team-member"
-            :class="{ 
-              selected: selectedIndex === index,
-              'cooldown-active': hasActiveCooldown(member?.especeId),
-              disabled: !canReplaceMember(member)
-            }"
-            @click="canReplaceMember(member) && (selectedIndex = index)"
+            :class="{ selected: selectedIndex === index }"
+            @click="selectedIndex = index"
           >
             <img 
               :src="getMemberImage(member?.especeId)" 
@@ -56,8 +52,6 @@ import Popup from '@/components/menu/Popup.vue'
 import Tooltip from '@/components/menu/Tooltip.vue' // <-- nouveau import
 import { useGameData } from '@/composables/useGameData'
 import { usePoules } from '@/composables/usePoules'
-import { usePlayer } from '@/composables/usePlayer'
-import { useEgg } from '@/composables/useEgg'
 
 const emit = defineEmits(['close', 'replace'])
 
@@ -68,8 +62,6 @@ const props = defineProps({
 
 const { especies } = useGameData()
 const { getTalentDisplayNameSync, getTalentEffectSync, getImage, poules } = usePoules()
-const { player, apocalypse } = usePlayer()
-const { eggState } = useEgg()
 
 const selectedIndex = ref(-1)
 
@@ -103,20 +95,10 @@ const getTalentTooltip = (especeId) => {
   return getTalentEffectSync(poule)
 }
 
-// Vérifier si une poule a un cooldown actif (pour le mode apocalypse)
-const hasActiveCooldown = (especeId) => {
-  if (!especeId || !apocalypse.value) return false
-  
-  const cooldowns = eggState.value?.cooldowns || {}
-  const cooldownKey = `talent_${especeId}`
-  
-  return cooldowns[cooldownKey] && cooldowns[cooldownKey] > Date.now()
-}
-
-// Vérifier si un membre peut être remplacé
-const canReplaceMember = (member) => {
-  if (!apocalypse.value) return true
-  return !hasActiveCooldown(member?.especeId)
+const confirmReplacement = () => {
+  if (selectedIndex.value !== -1) {
+    emit('replace', selectedIndex.value)
+  }
 }
 </script>
 
@@ -223,21 +205,8 @@ p {
   transform: translateY(-1px);
 }
 
-.team-member.disabled {
+.btn:disabled {
   opacity: 0.5;
   cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
-  filter: grayscale(0.5);
-}
-
-.team-member.cooldown-active {
-  border-color: #ff4444;
-  background: rgba(255, 68, 68, 0.1);
-}
-
-.team-member.cooldown-active .member-name::after {
-  content: ' (Cooldown actif)';
-  color: #ff6666;
-  font-size: 12px;
-  font-weight: normal;
 }
 </style>

@@ -449,6 +449,31 @@ export const talentsData = {
         }
       ]
     }
+  },
+  'Captivante': {
+    description: "Des œufs blancs apparaissent sur l'écran.",
+    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*1.5} œufs.",
+    nivType : 'basic',
+    icon: '🍀',
+    calculation: {
+      combine: 'not_linear',
+      triggers: [
+        { type: 'spawner' }
+      ],
+      effects: [
+        {
+          type: 'spawn_clickable',
+          spawner_id: 'pink-egg',
+          icon: '🥚',
+          style: 'pink-egg',
+          reward: {
+            type: 'resource',
+            resource: 'eggs',
+            amount: { op: 'mul', args: [ { var: 'teamEnergy' }, { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] } ] }
+          }
+        }
+      ]
+    }
   }
 }
 
