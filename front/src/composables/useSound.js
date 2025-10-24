@@ -104,7 +104,7 @@ export function useSound() {
     else play('toast_info')
   }
   // Nouveaux helpers
-  const eggClick = () => play('egg_click')
+  const eggClick = () => play('egg_click', { volume: 0.25 })
   const incomeUp = () => play('income_up', { volume: 0.05 })
   // Marché
   // Marché (volume un peu plus présent pour feedback clair)

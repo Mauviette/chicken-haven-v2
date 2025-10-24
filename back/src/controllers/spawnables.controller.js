@@ -31,11 +31,6 @@ const SPAWNABLE_TYPE_CONFIG = {
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
-  lucky_egg: {
-    spawnChance: 0.05,
-    maxActivePerUser: 999,
-    cooldownSeconds: 3
-  },
   chocolate: {
     spawnChance: 0.05,
     maxActivePerUser: 999,

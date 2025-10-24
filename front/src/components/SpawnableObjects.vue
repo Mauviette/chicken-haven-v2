@@ -33,7 +33,7 @@ import { useSpawnables } from '@/composables/useSpawnables'
 import { useSound } from '@/composables/useSound'
 
 const { activeSpawnables, clickObject } = useSpawnables()
-const { eggClick } = useSound()
+const { play } = useSound()
 
 const handleClick = async (obj, event) => {
   try {
@@ -43,7 +43,7 @@ const handleClick = async (obj, event) => {
         if (age >= obj.lifetime) return
     
     // Jouer un son
-    eggClick()
+    play('select_004', { volume: 0.25 })
     
     // Récupérer l'élément cliqué
     const element = event.currentTarget

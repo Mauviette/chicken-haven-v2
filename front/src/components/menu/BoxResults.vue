@@ -1,75 +1,77 @@
 <template>
   <div v-if="showResults" class="popup-overlay" @click.self="closeResults">
-    <div class="popup-content">
-      <button class="close-btn" @click="closeResults">✕</button>
-      
-      <div class="results-header">
-        <h3>🎉 Résultats de {{ boxName }}</h3>
-      </div>
-      
-      <div class="results-content">
-        <div v-if="results.length === 0" class="no-results">
-          <p>😢 Rien obtenu cette fois...</p>
+    <div class="popup-container">
+      <div class="popup-content">
+        <button class="close-btn" @click="closeResults">✕</button>
+        
+        <div class="results-header">
+          <h3>🎉 Résultats de {{ boxName }}</h3>
         </div>
         
-        <div v-else class="results-grid">
-          <div 
-            v-for="(result, index) in results" 
-            :key="index"
-            :class="['result-item', `rarity-${result.rarete}`, { 'epic-appear': result.rarete === 'epique' }]"
-          >
-            <!-- Poule -->
-            <template v-if="result.type === 'chicken'">
-            <div class="result-icon">
-              <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
-              <div class="box-results-tooltip">
-                <Tooltip :text="getTalentEffect(result)">
-                  <img 
-                    :src="getImage(result.especeId)" 
-                    :alt="result.nom"
-                    @error="onImageError"
-                  />
-                </Tooltip>
-              </div>
-            </div>              <div class="result-info">
-                <h4 :style="{ color: getRarityColor(result.rarete) }">
-                  {{ result.nom }}
-                </h4>
-                <p class="result-rarity">{{ getRarityLabel(result.rarete) }}</p>
-                <p class="result-group">Groupe: {{ result.groupe }}</p>
-              </div>
-            </template>
-
-            <!-- Artefact -->
-            <template v-else-if="result.type === 'artifact'">
+        <div class="results-content">
+          <div v-if="results.length === 0" class="no-results">
+            <p>😢 Rien obtenu cette fois...</p>
+          </div>
+          
+          <div v-else class="results-grid">
+            <div 
+              v-for="(result, index) in results" 
+              :key="index"
+              :class="['result-item', `rarity-${result.rarete}`, { 'epic-appear': result.rarete === 'epique' }]"
+            >
+              <!-- Poule -->
+              <template v-if="result.type === 'chicken'">
               <div class="result-icon">
                 <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
-                <div class="artifact-display">
-                  {{ result.icon }}
+                <div class="box-results-tooltip">
+                  <Tooltip :text="getTalentEffect(result)">
+                    <img 
+                      :src="getImage(result.especeId)" 
+                      :alt="result.nom"
+                      @error="onImageError"
+                    />
+                  </Tooltip>
                 </div>
-              </div>
-              
-              <div class="result-info">
-                <h4 :style="{ color: getRarityColor(result.rarete) }">
-                  {{ result.name }}
-                </h4>
-                <p class="result-rarity">{{ getRarityLabel(result.rarete) }}</p>
-                <p class="result-description">{{ result.description }}</p>
-              </div>
-            </template>
+              </div>              <div class="result-info">
+                  <h4 :style="{ color: getRarityColor(result.rarete) }">
+                    {{ result.nom }}
+                  </h4>
+                  <p class="result-rarity">{{ getRarityLabel(result.rarete) }}</p>
+                  <p class="result-group">Groupe: {{ result.groupe }}</p>
+                </div>
+              </template>
 
-            <!-- Item/Ressource -->
-            <template v-else-if="result.type === 'item'">
-              <div class="result-icon item-icon">
-                <div class="item-display">
-                  {{ getItemIcon(result.itemId) }}
+              <!-- Artefact -->
+              <template v-else-if="result.type === 'artifact'">
+                <div class="result-icon">
+                  <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
+                  <div class="artifact-display">
+                    {{ result.icon }}
+                  </div>
                 </div>
-              </div>
-              
-              <div class="result-info">
-                <h4>{{ result.amount }} {{ getItemName(result.itemId).toLowerCase() }}</h4>
-              </div>
-            </template>
+                
+                <div class="result-info">
+                  <h4 :style="{ color: getRarityColor(result.rarete) }">
+                    {{ result.name }}
+                  </h4>
+                  <p class="result-rarity">{{ getRarityLabel(result.rarete) }}</p>
+                  <p class="result-description">{{ result.description }}</p>
+                </div>
+              </template>
+
+              <!-- Item/Ressource -->
+              <template v-else-if="result.type === 'item'">
+                <div class="result-icon item-icon">
+                  <div class="item-display">
+                    {{ getItemIcon(result.itemId) }}
+                  </div>
+                </div>
+                
+                <div class="result-info">
+                  <h4>{{ result.amount }} {{ getItemName(result.itemId).toLowerCase() }}</h4>
+                </div>
+              </template>
+            </div>
           </div>
         </div>
       </div>
@@ -193,21 +195,28 @@ function getTalentEffect(result) {
   z-index: 10000;
 }
 
+.popup-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  width: 500px;
+  max-width: 90vw;
+}
+
 .popup-content {
   background: #f4f1e8;
   border: 3px solid #8B4513;
-  border-radius: 20px;
+  border-radius: 20px 20px 0 0;
+  border-bottom: none;
   padding: 24px;
-  width: 500px;
-  max-width: 90vw;
-  max-height: 80vh;
   overflow-y: auto;
   font-family: 'Fredoka', sans-serif;
   color: #2F1B14;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  position: relative;
   animation: popupEnter 0.25s ease-out;
   box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
 }
 
 .close-btn {
@@ -243,10 +252,6 @@ function getTalentEffect(result) {
   color: #8B4513;
   font-size: 18px;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
-}
-
-.results-content {
-  margin-bottom: 20px;
 }
 
 .no-results {
@@ -442,20 +447,24 @@ function getTalentEffect(result) {
 
 .results-footer {
   text-align: center;
-  margin-top: 16px;
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(180deg, rgba(244,241,232,0.6) 0%, #f4f1e8 60%);
-  padding-top: 8px;
-  padding-bottom: 6px;
-  border-top: 1px solid rgba(139, 69, 19, 0.25);
+  background: linear-gradient(180deg, rgba(244,241,232,0.95) 0%, #f4f1e8 100%);
+  padding: 16px 24px 12px 24px;
+  border: 3px solid #8B4513;
+  border-top: none;
+  border-radius: 0 0 17px 17px;
+  box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 /* Styles responsive */
 @media (max-width: 768px) {
-  .popup-content {
+  .popup-container {
     width: 95%;
-    margin: 20px;
+    max-height: 85vh;
+  }
+  
+  .popup-content {
+    padding: 20px;
   }
   
   .result-item {
@@ -471,6 +480,10 @@ function getTalentEffect(result) {
   .result-icon {
     width: 40px;
     height: 40px;
+  }
+  
+  .results-footer {
+    padding: 14px 20px 10px 20px;
   }
 }
 </style>

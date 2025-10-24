@@ -1,6 +1,5 @@
 
 
-
 Ajouter des poules
 > Légendaire fondamentale, 
 > 1 épique dans brillant

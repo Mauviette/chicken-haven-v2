@@ -169,7 +169,6 @@ export const talentsData = {
           spawner_id: 'lucky_egg',
           icon: '🥚',
           style: 'white-egg',
-          spawn_rate: { op: 'div', args: [ 15000, { var: 'niveau' } ] }, // 15s / nivea
           max_concurrent: { op: 'add', args: [ 1, { var: 'niveau' } ] }, // 1 + niveau
           lifetime: 8000, // 8 secondes
           reward: {
@@ -300,7 +299,6 @@ export const talentsData = {
           spawner_id: 'chocolate',
           icon: '🍫',
           style: 'chocolate',
-          spawn_rate: { op: 'div', args: [ 20000, { var: 'niveau' } ] },
           max_concurrent: 2,
           lifetime: 10000,
           reward: {
