@@ -169,8 +169,6 @@ export const talentsData = {
           spawner_id: 'lucky_egg',
           icon: '🥚',
           style: 'white-egg',
-          max_concurrent: { op: 'add', args: [ 1, { var: 'niveau' } ] }, // 1 + niveau
-          lifetime: 8000, // 8 secondes
           reward: {
             type: 'resource',
             resource: 'eggs',
@@ -299,8 +297,6 @@ export const talentsData = {
           spawner_id: 'chocolate',
           icon: '🍫',
           style: 'chocolate',
-          max_concurrent: 2,
-          lifetime: 10000,
           reward: {
             type: 'buff',
             buff_type: 'income_storage_multiplier',
@@ -1346,7 +1342,7 @@ export const artifactsData = {
     id: 'ancient-compass',
     name: 'Boussole Antique',
     icon: '🧭',
-    description: "Révèle 50% des cases avec récompenses au début de la partie.",
+    description: "Chaque case avec récompense a 50% de chance d'être révelée.",
     rarete: 'legendaire',
     effect: { type: 'reveal_rewards', chance: 0.5 }
   },
