@@ -27,22 +27,22 @@ const CLEANUP_INTERVAL = 5000
 
 const SPAWNABLE_TYPE_CONFIG = {
   white_egg: {
-    spawnChance: 0.05,
+    spawnChance: 0.04,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
   lucky_egg: {
-    spawnChance: 0.05,
+    spawnChance: 0.04,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
   chocolate: {
-    spawnChance: 0.05,
+    spawnChance: 0.04,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
   pink_egg: {
-    spawnChance: 0.05,
+    spawnChance: 0.04,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
@@ -55,7 +55,7 @@ function getSpawnableConfigForType(objectType, talentName) {
   const talentConfig = TALENT_SPAWN_CONFIG[talentName] || {}
   
   return {
-    spawnChance: talentConfig.spawnChanceOverride ?? typeConfig.spawnChance ?? 0.05,
+    spawnChance: talentConfig.spawnChanceOverride ?? typeConfig.spawnChance ?? 0.04,
     maxActivePerUser: talentConfig.maxActiveOverride ?? typeConfig.maxActivePerUser ?? 999,
     cooldownSeconds: talentConfig.cooldownSecondsOverride ?? typeConfig.cooldownSeconds ?? 3
   }
