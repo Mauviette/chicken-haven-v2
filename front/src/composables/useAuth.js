@@ -14,7 +14,6 @@ export function useAuth() {
       return
     }
     token.value = newToken
-    console.log("Tentative de login avec token:", newToken)
     localStorage.setItem('token', newToken)
     useSettings().fetchSettings()
     // Rafraîchir les données clés à la connexion

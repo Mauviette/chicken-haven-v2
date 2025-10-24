@@ -5,7 +5,6 @@ const getApiBaseUrl = () => {
   // Si une URL d'API est définie explicitement dans l'environnement, l'utiliser
   const envApiUrl = import.meta.env.VITE_API_BASE_URL
   if (envApiUrl && envApiUrl.trim() !== '') {
-    console.log('🔧 Using configured API URL:', envApiUrl)
     return envApiUrl
   }
   
@@ -15,13 +14,11 @@ const getApiBaseUrl = () => {
   
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     const apiUrl = 'http://localhost:3002'
-    console.log('📍 Detected localhost, using:', apiUrl)
     return apiUrl
   }
   
   // URL par défaut pour la production
   const defaultApiUrl = 'https://api.chicken-haven.fr'
-  console.log('🔧 Using default API URL:', defaultApiUrl)
   return defaultApiUrl
 }
 
