@@ -148,7 +148,7 @@
   
   <script setup>
   import { ref, computed } from 'vue'
-  import axios from 'axios'
+  import { apiPost } from '@/utils/api'
   import Tooltip from '@/components/menu/Tooltip.vue'
   import { containsForbiddenWords } from '@/utils/forbiddenWords.js'
   
@@ -360,21 +360,21 @@
     registerBtn.textContent = "Inscription...";
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
+      const res = await apiPost('/api/auth/register', {
         username: username.value.trim(),
         displayName: displayName.value.trim(),
         password: password.value
       })
       
       // Si on reçoit un token, connecter automatiquement
-      if (res.data.token) {
-        emit('auto-login', res.data.token)
+      if (res.token) {
+        emit('auto-login', res.token)
       } else {
         message.value = "Inscription réussie !"
         emit('registered')
       }
     } catch (err) {
-      message.value = err.response?.data?.error || "Erreur lors de l'inscription"
+      message.value = err.message || "Erreur lors de l'inscription"
     }
     
     registerBtn.disabled = false;

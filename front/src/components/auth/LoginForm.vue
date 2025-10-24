@@ -54,7 +54,7 @@
     </form>
   </template>  <script setup>
   import { ref } from 'vue'
-  import axios from 'axios'
+  import { apiPost } from '@/utils/api'
   
   const username = ref('')
   const password = ref('')
@@ -71,14 +71,14 @@
     loginBtn.textContent = "Connexion...";
     
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
+      const res = await apiPost('/api/auth/login', {
         username: username.value,
         password: password.value
       })
-      emit('logged-in', res.data.token)
+      emit('logged-in', res.token)
       //toast("Connexion réussie!", 'success')
     } catch (err) {
-      message.value = err.response?.data?.error || "Erreur de connexion"
+      message.value = err.message || "Erreur de connexion"
     }
 
     loginBtn.disabled = false;
