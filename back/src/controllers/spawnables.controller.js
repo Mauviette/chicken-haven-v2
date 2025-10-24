@@ -134,7 +134,7 @@ function computeActiveBuffMultipliers(user) {
         case 'production_multiplier':
           multipliers.production *= amount
           break
-        case 'team_intelligence':
+        case 'team_stat_intelligence':
           multipliers.teamStat.intelligence *= amount
           break
         case 'team_energie':

@@ -301,8 +301,8 @@ export const talentsData = {
             type: 'buff',
             buff_type: 'income_storage_multiplier',
             duration: 15000,
-            income_multiplier: { op: 'add', args: [ 0.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] },
-            storage_multiplier: { op: 'add', args: [ 0.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
+            income_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] },
+            storage_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
           }
         }
       ]

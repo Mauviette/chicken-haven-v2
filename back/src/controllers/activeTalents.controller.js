@@ -111,7 +111,7 @@ export async function activateTalent(req, res) {
 
       const buffObj = {
         origin: 'Talent Maligne',
-        buff_type: 'team_intelligence',
+        buff_type: 'team_stat_intelligence',
         lasts_until: new Date(now + duration),
         buff: { operation: 'mult', amount: String(multiplier) }
       }
