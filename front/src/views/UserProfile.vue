@@ -763,9 +763,11 @@ async function saveDisplayName() {
 
 /* Popup avatars */
 .avatar-popup { 
-  max-width: 720px; 
+  max-width: 720px;
   max-height: 80vh;
   overflow-y: auto;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 .avatar-popup h3 {
@@ -776,7 +778,7 @@ async function saveDisplayName() {
 
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-template-columns: repeat(3, minmax(80px, 1fr));
   gap: 10px;
 }
 
@@ -788,8 +790,9 @@ async function saveDisplayName() {
     padding: 16px;
   }
   
+  /* Sur mobile, conserver 3 colonnes mais réduire les minima pour tenir l'espace */
   .avatar-grid {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    grid-template-columns: repeat(3, minmax(64px, 1fr));
     gap: 8px;
   }
   
