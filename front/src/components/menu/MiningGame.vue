@@ -27,7 +27,7 @@
         <div class="tokens">
           🪨 {{ miningTokens }}
           <!-- Debug rapide: nombre de cases révélées (hint) -->
-          <span v-if="hintCount > 0" class="hint-counter" title="Cases révélées"> ❓ {{ hintCount }}</span>
+          <!--span v-if="hintCount > 0" class="hint-counter" title="Cases révélées"> ❓ {{ hintCount }}</span-->
         </div>
       </div>
 
@@ -87,10 +87,11 @@
                 </div>
 
                 <!-- Récompense non obtenue : afficher en semi‑transparent quand la partie est terminée et le bouton 'Continuer' visible -->
-                <div
+                <div 
                   v-else-if="gameOver && !showResults && cell.reward && (cell.hp == null || cell.hp > 0)"
                   class="reward unobtained"
                   :class="{ 'large-emoji': isLargeReward(cell.reward) }"
+                  :style="getMarkQuestionCursorStyle()"
                 >
                   <Tooltip :text="getDugRewardTooltip(cell.reward)" position="top">
                     {{ formatReward(cell.reward, true) }}
@@ -115,6 +116,7 @@
                       'current': idx === 0,
                       'used': idx === 0 && toolUsed
                     }"
+                    :style="getToolCursorStyle(tool, idx)"
                   >
                     <span class="tool-icon">{{ getToolIcon(tool) }}</span>
                     <span class="tool-name">{{ getToolName(tool) }}</span>
@@ -181,6 +183,22 @@ import { apiPost } from '@/utils/api' // <-- nouveau import
 import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
 import { useRouter } from 'vue-router'
+// Import des curseurs d'outils (résolus par le bundler)
+import cursor_hand from '@/assets/ui/cursor/hand_point.png'
+import cursor_shovel from '@/assets/ui/cursor/tool_shovel.png'
+import cursor_pickaxe from '@/assets/ui/cursor/tool_pickaxe.png'
+import cursor_hammer from '@/assets/ui/cursor/tool_hammer.png'
+import cursor_axe from '@/assets/ui/cursor/tool_axe.png'
+import cursor_axe_single from '@/assets/ui/cursor/tool_axe_single.png'
+import cursor_bomb from '@/assets/ui/cursor/tool_bomb.png'
+import cursor_dynamite from '@/assets/ui/cursor/tool_dynamite.png'
+import cursor_bow from '@/assets/ui/cursor/tool_bow.png'
+import cursor_hoe from '@/assets/ui/cursor/tool_hoe.png'
+import cursor_torch from '@/assets/ui/cursor/tool_torch.png'
+import cursor_wrench from '@/assets/ui/cursor/tool_wrench.png'
+import cursor_watering_can from '@/assets/ui/cursor/tool_watering_can.png'
+import cursor_shovel_alt from '@/assets/ui/cursor/tool_shovel.png'
+import cursor_mark_question from '@/assets/ui/cursor/mark_question.png'
 
 const emit = defineEmits(['close', 'game-over'])
 
@@ -407,6 +425,23 @@ const groupedRewards = computed(() => {
 })
 
 // Construire dynamiquement la config des outils à partir des données synchronisées
+// Map des curseurs importés résolus par le bundler
+const cursorMap = {
+  shovel: cursor_shovel,
+  pickaxe: cursor_pickaxe,
+  hammer: cursor_hammer,
+  axe: cursor_axe,
+  axe_single: cursor_axe_single,
+  bomb: cursor_bomb,
+  dynamite: cursor_dynamite,
+  bow: cursor_bow,
+  hoe: cursor_hoe,
+  torch: cursor_torch,
+  wrench: cursor_wrench,
+  watering_can: cursor_watering_can,
+  hand: cursor_hand
+}
+
 const toolConfig = (() => {
   const cfg = {}
   const shared = MINING_CONFIG && MINING_CONFIG.tools ? MINING_CONFIG.tools : {}
@@ -417,7 +452,8 @@ const toolConfig = (() => {
       icon: v.icon || '🔧',
       name: v.name || key,
       description: v.desc || v.description || '',
-      cursorPath: `/src/assets/ui/cursor/tool_${key}.png`,
+      // utiliser les imports résolus si disponibles, sinon fallback vers cursor_hand
+      cursorPath: cursorMap[key] || cursor_hand,
       // inclure secondary_damage (fallback 1) pour que la preview utilise la bonne valeur
       secondaryDamage: (typeof v.secondary_damage === 'number') ? v.secondary_damage : 1,
       // exposer le type d'animation (mining | explosion | null)
@@ -437,18 +473,29 @@ onMounted(async () => {
 
 // Curseur actuel basé sur l'outil
 const currentCursor = computed(() => {
+  // utiliser les imports résolus pour les curseurs afin que ça fonctionne en production
   if (!gameActive.value || currentToolIndex.value >= tools.value.length) {
-    // hotspot 0 0 pour éviter offset bizarre
-    return "url('/src/assets/ui/cursor/hand_point.png') 0 0, pointer"
+    return `url("${cursor_hand}") 0 0, pointer`
   }
   const tool = tools.value[currentToolIndex.value]
   const config = toolConfig[tool]
   if (config?.cursorPath) {
-    // hotspot 0 0 pour le curseur d'outil personnalisé
     return `url("${config.cursorPath}") 0 0, pointer`
   }
-  return "url('/src/assets/ui/cursor/hand_point.png') 0 0, pointer"
+  return `url("${cursor_hand}") 0 0, pointer`
 })
+
+// Retourne un style pour le curseur d'un outil (utilisé par les éléments de la pile d'outils)
+function getToolCursorStyle(tool, idx) {
+  // outil courant (idx === 0) : utiliser le curseur d'outil actif (currentCursor)
+  if (idx === 0) return { cursor: currentCursor.value }
+  // autres outils : curseur d'aide / question
+  return { cursor: `url("${cursor_mark_question}") 0 0, help` }
+}
+
+function getMarkQuestionCursorStyle() {
+  return { cursor: `url("${cursor_mark_question}") 0 0, help` }
+}
 
 function getCellClass(cell) {
   const classes = []
