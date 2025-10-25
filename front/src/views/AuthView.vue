@@ -31,7 +31,7 @@
       </div>
     </div>
     <div class="version-link" @click="openAnnouncements">
-      Version 2.0.0
+      Version 0.0.1
     </div>
   </div>    <div ref="eggContainer" class="falling-eggs-container"></div>
   </template>
