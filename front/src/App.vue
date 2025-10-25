@@ -1,5 +1,5 @@
 <template>
-  <div id="app" :class="{ 'apocalypse-mode': isApocalypseMode }">
+  <div id="app" :class="{ 'apocalypse-mode': isApocalypseMode, 'announcements-page': isAnnouncementsPage }">
     <TopBar v-if="!isAuthPage" 
       @open-profile="toast('Bientôt disponible !')"
       @open-achievements="toggleAchievementsWithSound"
@@ -10,13 +10,13 @@
     />
     <div class="main-content">
       <router-view />
-      <!-- Objets spawnables visibles sur toutes les vues principales -->
-      <SpawnableObjects />
-      <TeamParade v-if="!isAuthPage" />
+      <!-- Objets spawnables visibles sur toutes les vues principales sauf auth et announcements -->
+      <SpawnableObjects v-if="!isAuthPage && !isAnnouncementsPage" />
+      <TeamParade v-if="!isAuthPage && !isAnnouncementsPage" />
     </div>
   <!-- BuffsBar global supprimé: affichage des buffs désormais uniquement dans la vue Production -->
   <LevelUpPopup
-    v-if="levelUpVisible"
+    v-if="levelUpVisible && !isAnnouncementsPage"
     :from="levelUpFrom"
     :to="levelUpTo"
     @close="levelUpVisible = false"
@@ -38,6 +38,11 @@
     />
     <!-- Mining popup global accessible depuis la BottomBar -->
     <MiningGame v-if="showMiningGame && !isAuthPage" @close="showMiningGame = false" />
+    <UpdatePopup
+      v-if="updatePopupVisible && currentUpdateAnnouncement && !isAnnouncementsPage"
+      :announcement="currentUpdateAnnouncement"
+      @close="closeUpdatePopup"
+    />
   </div>
 </template>
 
@@ -54,6 +59,7 @@ import SpawnableObjects from '@/components/SpawnableObjects.vue'
 import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
 import LevelUpPopup from '@/components/menu/LevelUpPopup.vue'
 import AppLoading from '@/components/menu/AppLoading.vue'
+import UpdatePopup from '@/components/menu/UpdatePopup.vue'
 import { getUnlocksBetween } from '@/data/unlocks.js'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -65,6 +71,7 @@ import { useAppLoading } from '@/composables/useAppLoading'
 import { useSettings } from '@/composables/useSettings'
 import { useChickenGifts } from '@/composables/useChickenGifts'
 import { provideApocalypse } from '@/composables/useApocalypse'
+import { apiGet } from '@/utils/api'
 
 const router = useRouter()
 const toastManager = ref(null)
@@ -74,6 +81,8 @@ const levelUpVisible = ref(false)
 const levelUpFrom = ref(1)
 const levelUpTo = ref(1)
 const showMiningGame = ref(false)
+const updatePopupVisible = ref(false)
+const currentUpdateAnnouncement = ref(null)
 const { logout: performLogout } = useAuth()
 const playerComposable = usePlayer() || {}
 const refreshPlayer = playerComposable.refreshPlayer || (() => Promise.resolve())
@@ -123,6 +132,10 @@ onMounted(async () => {
         fetchTeam()
       ])
       setUserDataLoading(false)
+      
+      // Vérifier les mises à jour après le chargement du joueur
+      console.log('👤 Données joueur chargées, vérification des mises à jour...')
+      await checkForUpdates()
     } catch (error) {
       console.error('Erreur chargement données utilisateur:', error)
       setUserDataLoading(false)
@@ -151,11 +164,15 @@ onMounted(async () => {
   // Écoute de l'événement global level-up
   try {
     window.addEventListener('level-up', onLevelUp)
+    window.addEventListener('show-update-popup', onShowUpdatePopup)
   } catch (_) {}
 })
 
 onBeforeUnmount(() => {
-  try { window.removeEventListener('level-up', onLevelUp) } catch (_) {}
+  try {
+    window.removeEventListener('level-up', onLevelUp)
+    window.removeEventListener('show-update-popup', onShowUpdatePopup)
+  } catch (_) {}
 })
 
 
@@ -187,6 +204,77 @@ function onLevelUp(e) {
   }
 }
 
+function onShowUpdatePopup(e) {
+  const announcement = e?.detail
+  if (announcement) {
+    currentUpdateAnnouncement.value = announcement
+    updatePopupVisible.value = true
+  }
+}
+
+function closeUpdatePopup() {
+  updatePopupVisible.value = false
+  currentUpdateAnnouncement.value = null
+}
+
+// Fonction pour vérifier les mises à jour
+async function checkForUpdates() {
+  try {
+    //console.log('🔍 Vérification des mises à jour...')
+    
+    // Récupérer la dernière version vue par le joueur
+    const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '0.0.0'
+    //console.log('📋 Dernière version vue:', lastSeenVersion)
+    
+    // Récupérer la liste des annonces
+    const announcements = await apiGet('/api/announcements')
+    //console.log('📢 Annonces récupérées:', announcements?.length || 0)
+    
+    if (announcements && announcements.length > 0) {
+      // Prendre la première annonce (la plus récente)
+      const latestAnnouncement = announcements[0]
+      //console.log('🆕 Dernière annonce:', latestAnnouncement.title, 'Version:', latestAnnouncement.version)
+      
+      // Comparer les versions
+      const comparison = compareVersions(latestAnnouncement.version, lastSeenVersion)
+      //console.log('⚖️ Comparaison de versions:', latestAnnouncement.version, 'vs', lastSeenVersion, '=', comparison)
+      
+      if (comparison > 0) {
+        //console.log('🎉 Nouvelle version détectée, affichage de la popup')
+        // Nouvelle version disponible, afficher la popup
+        currentUpdateAnnouncement.value = latestAnnouncement
+        updatePopupVisible.value = true
+        
+        // Mettre à jour la dernière version vue
+        localStorage.setItem('lastSeenVersion', latestAnnouncement.version)
+        //console.log('💾 Version mise à jour dans localStorage:', latestAnnouncement.version)
+      } else {
+        //console.log('✅ Version déjà vue, pas de popup')
+      }
+    } else {
+      //console.log('❌ Aucune annonce trouvée')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la vérification des mises à jour:', error)
+  }
+}
+
+// Fonction utilitaire pour comparer les versions
+function compareVersions(version1, version2) {
+  const v1Parts = version1.split('.').map(Number)
+  const v2Parts = version2.split('.').map(Number)
+  
+  for (let i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
+    const v1Part = v1Parts[i] || 0
+    const v2Part = v2Parts[i] || 0
+    
+    if (v1Part > v2Part) return 1
+    if (v1Part < v2Part) return -1
+  }
+  
+  return 0
+}
+
 
 function toast(message, type = 'info') {
   if (toastManager.value?.showToast) {
@@ -199,8 +287,11 @@ function toast(message, type = 'info') {
 
 const route = useRoute()
 
-// Vérifie si la route actuelle est la page de connexion
-const isAuthPage = computed(() => route.name === 'Auth')
+// Vérifie si la route actuelle est la page de connexion ou une page publique
+const isAuthPage = computed(() => route.name === 'Auth' || route.name === 'Announcements' || route.name === 'AnnouncementDetail')
+
+// Vérifie si la route actuelle est une page d'annonces
+const isAnnouncementsPage = computed(() => route.name === 'Announcements' || route.name === 'AnnouncementDetail')
 
 // Handlers avec sons
 function goProduction() {
@@ -371,6 +462,11 @@ img,
   overflow: hidden;
   margin-bottom: 80px; /* espace pour la BottomBar fixe */
   position: relative;
+}
+
+/* Ajustements pour les pages d'annonces sans BottomBar */
+.announcements-page .main-content {
+  margin-bottom: 0;
 }
 
 /* Ajustements responsifs pour la main-content */

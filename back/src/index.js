@@ -18,6 +18,7 @@ import socialRoutes from './routes/social.routes.js';
 import miningRoutes from './routes/mining.routes.js';
 import chestRoutes from './routes/chest.routes.js';
 import chickenGiftsRoutes from './routes/chickenGifts.routes.js';
+import announcementsRoutes from './routes/announcements.routes.js';
 
 dotenv.config();
 const app = express();
@@ -48,6 +49,7 @@ app.use('/api/social', socialRoutes);
 app.use('/api/mining', miningRoutes);
 app.use('/api/chest', chestRoutes);
 app.use('/api/chicken-gifts', chickenGiftsRoutes);
+app.use('/api/announcements', announcementsRoutes);
 
 app.get('/', (req, res) => res.json({ message: 'API Chicken Haven OK 🐔', timestamp: new Date().toISOString() }));
 app.get('/health', (req, res) => res.json({ status: 'healthy', timestamp: new Date().toISOString() }));

@@ -5,6 +5,8 @@ import Collection from '@/views/Collection.vue'
 import Social from '@/views/Social.vue'
 import UserProfile from '@/views/UserProfile.vue'
 import Auth from '@/views/AuthView.vue'
+import Announcements from '@/views/Announcements.vue'
+import AnnouncementDetail from '@/views/AnnouncementDetail.vue'
 
 const routes = [
   {
@@ -49,7 +51,18 @@ const routes = [
     component: UserProfile,
     meta: { requiresAuth: false }
   },
-  // Catch-all: redirige toute route invalide vers une page valide selon l'état d'auth
+  {
+    path: '/announcements',
+    name: 'Announcements',
+    component: Announcements,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/announcements/:slug',
+    name: 'AnnouncementDetail',
+    component: AnnouncementDetail,
+    meta: { requiresAuth: false }
+  },
   {
     path: '/:pathMatch(.*)*',
     redirect: () => {

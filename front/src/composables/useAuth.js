@@ -2,13 +2,14 @@ import { ref } from 'vue'
 import { useSettings } from './useSettings'
 import { usePlayer } from './usePlayer'
 import { usePoules } from './usePoules'
+import { apiGet, apiPatch } from '@/utils/api'
 
 const token = ref(localStorage.getItem('token'))
 
 export function useAuth() {
   const isLoggedIn = () => !!token.value
 
-  const login = (newToken) => {
+  const login = async (newToken) => {
     if (!newToken) {
       console.error('Tentative de login avec token invalide:', newToken)
       return
@@ -19,13 +20,21 @@ export function useAuth() {
     // Rafraîchir les données clés à la connexion
     try {
       const { refreshPlayer, fetchTeam } = usePlayer()
-      refreshPlayer()
+      await refreshPlayer()
       fetchTeam()
     } catch (_) {}
     try {
       const { fetchPoules } = usePoules()
       fetchPoules()
     } catch (_) {}
+
+    // Vérifier les mises à jour après le chargement des données utilisateur
+    try {
+      await checkForUpdates()
+    } catch (error) {
+      console.error('Erreur lors de la vérification des mises à jour:', error)
+    }
+
     // Événement global pour que d'autres composables réagissent
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('auth-login'))
@@ -50,10 +59,61 @@ export function useAuth() {
   }
 
 
+  const checkForUpdates = async () => {
+    try {
+      // Récupérer les informations utilisateur actuelles
+      const userData = await apiGet('/api/user/me')
+      if (!userData) return
+
+      // Importer la version actuelle du jeu
+      const { CURRENT_GAME_VERSION } = await import('@/data/sharedGameData.js')
+
+      const currentVersion = userData.lastSeenVersion || '1.0.0'
+      const latestVersion = CURRENT_GAME_VERSION
+
+      // Si la version actuelle est plus récente, mettre à jour et afficher le popup
+      if (isVersionNewer(latestVersion, currentVersion)) {
+        // Mettre à jour la version vue par l'utilisateur
+        await apiPatch('/api/user/me', { lastSeenVersion: latestVersion })
+
+        // Récupérer les détails de la dernière annonce
+        const announcements = await apiGet('/api/announcements')
+        const latestAnnouncement = announcements.find(ann => ann.version === latestVersion)
+
+        if (latestAnnouncement) {
+          // Émettre un événement pour afficher le popup de mise à jour
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('show-update-popup', {
+              detail: latestAnnouncement
+            }))
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification des mises à jour:', error)
+    }
+  }
+
+  const isVersionNewer = (newVersion, oldVersion) => {
+    const newParts = newVersion.split('.').map(Number)
+    const oldParts = oldVersion.split('.').map(Number)
+
+    for (let i = 0; i < Math.max(newParts.length, oldParts.length); i++) {
+      const newPart = newParts[i] || 0
+      const oldPart = oldParts[i] || 0
+
+      if (newPart > oldPart) return true
+      if (newPart < oldPart) return false
+    }
+
+    return false
+  }
+
   return {
     token,
     isLoggedIn,
     login,
-    logout
+    logout,
+    checkForUpdates
   }
 }

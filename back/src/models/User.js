@@ -87,9 +87,12 @@ const UserSchema = new mongoose.Schema({
     production_token : { type : Number, default: 0},
     mining_token : { type : Number, default: 0},
     chest_key : { type : Number, default: 0}
-  },
+},
 
   apocalypse: { type: Boolean, default: false },
+
+  // Version du jeu vue par l'utilisateur (pour les annonces de mise à jour)
+  lastSeenVersion: { type: String, default: '0.0.0' },
 
   // Artéfacts de minage: collection du joueur et emplacements équipables
   // Les artefacts n'ont pas de quantité - une fois débloqué, débloqué pour toujours

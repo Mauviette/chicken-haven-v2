@@ -1,8 +1,6 @@
-En cas de level up lorsque le joueur n'a pas défini d'image, il n'y en a aucune de trouvée alors qu'il faudrait une default
 
 Ajouter des poules
 > Légendaire fondamentale, 
-> 1 épique dans brillant
 > 1 épique dans chic
 
 Mode APOCALYPSE : 
@@ -24,3 +22,12 @@ Sur un compte en apocalyse :
 Faire un système d'annonces/mises à jour:
 Chaque user a un attribut qui stocke la dernière version à laquelle il s'est connecté. Lors de chaque login, si la version de sharedGameData est supérieure à celle du joueur connecté, alors la version du compte du joueur est corrigée. Dans ce cas, un popup apparait pour informer des infos de la dernière mise à jour.
 Système de pages d'annonces/mises à jour:
+FRONT-END :
+https://app.chicken-haven.fr/annonces mènera à la page qui liste tous les blogs d'annonces, plus récentes en haut, plus vieilles en bas (chargement dynamique)
+https://app.chicken-haven.fr/annonces/mise-a-jour-25-oct mènera donc à la page d'annonce du dossier "mise-a-jour-25-oct" stockée en back end.
+Accès aux https://app.chicken-haven.fr/annonces depuis la page Social, à la place de 'Bientot', avec une preview des dernières annonces.
+Chaque preview pourra avoir une image "main", stockée dans le dossier correspondant. Utiliser la preview sur le popup de mise à jour, avec le titre de l'annonce et un résumé qui sera stocké sur un autre fichier texte
+BACK-END :
+Stocker donc la dernière version du jeu comme dit précedemment,
+Gérer dans un répertoire tous les dossiers de blogs.
+Je ne sais pas quelle est la meilleure organisation, mais il faut trouver un moyen d'avoir des fichiers textes où on peut écrire en gras, mettre des tableaux, des titres, ajouter des images, etc...

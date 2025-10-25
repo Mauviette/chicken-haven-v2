@@ -38,7 +38,7 @@ export async function apiCall(endpoint, options = {}) {
   const token = localStorage.getItem('token')
   
   // Si pas de token et endpoint protégé, rejeter immédiatement
-  if (!token && endpoint.includes('/api/') && !endpoint.includes('/api/auth/') && !endpoint.includes('/api/game-data')) {
+  if (!token && endpoint.includes('/api/') && !endpoint.includes('/api/auth/') && !endpoint.includes('/api/game-data') && !endpoint.includes('/api/announcements')) {
     console.warn('⚠️ API call rejected: no token for protected endpoint', endpoint)
     throw new Error('Non authentifié')
   }
@@ -131,7 +131,7 @@ export async function apiCallJSON(endpoint, options = {}) {
 export const apiGet = (endpoint) => {
   // Vérification simple côté client
   const token = localStorage.getItem('token')
-  if (!token && endpoint.includes('/api/') && !endpoint.includes('/api/auth/') && !endpoint.includes('/api/game-data')) {
+  if (!token && endpoint.includes('/api/') && !endpoint.includes('/api/auth/') && !endpoint.includes('/api/game-data') && !endpoint.includes('/api/announcements')) {
     return Promise.reject(new Error('Non authentifié'))
   }
   return apiCallJSON(endpoint, { method: 'GET' })

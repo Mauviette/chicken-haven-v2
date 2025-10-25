@@ -30,6 +30,9 @@
         />
       </div>
     </div>
+    <div class="version-link" @click="openAnnouncements">
+      Version 2.0.0
+    </div>
   </div>    <div ref="eggContainer" class="falling-eggs-container"></div>
   </template>
   
@@ -109,6 +112,10 @@
     window.$toast("Connexion réussie !", 'success')
   }
   
+  function openAnnouncements() {
+    window.open('/announcements', '_blank')
+  }
+  
   </script>
 
   <style scoped>
@@ -167,6 +174,11 @@
       width: 100%;
       padding: 0;
     }
+    .version-link {
+      bottom: 8px;
+      left: 8px;
+      font-size: 11px;
+    }
   }
 
   @media (max-width: 480px) {
@@ -184,6 +196,11 @@
       min-height: 160px;
       width: 100%;
       padding: 0;
+    }
+    .version-link {
+      bottom: 4px;
+      left: 4px;
+      font-size: 10px;
     }
   }
   
@@ -259,6 +276,22 @@
     justify-content: center;
     width: 100%;
     box-sizing: border-box;
+  }
+
+  .version-link {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    font-size: 12px;
+    color: #6d3c00;
+    cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    user-select: none;
+  }
+
+  .version-link:hover {
+    opacity: 1;
   }
   </style>
 

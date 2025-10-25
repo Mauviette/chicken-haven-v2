@@ -175,10 +175,48 @@
         </div>
       </div>
 
-      <!-- Colonne de droite : Bientôt -->
+      <!-- Colonne de droite : Annonces -->
       <div class="sidebar-column">
-        <div class="coming-soon-section">
-          <h3 class="section-title">Bientôt</h3>
+        <div class="announcements-section">
+          <div class="announcements-header">
+            <h3 class="section-title">Annonces</h3>
+            <button class="view-all-button" @click="goToAnnouncements">
+              Voir tout →
+            </button>
+          </div>
+
+          <div v-if="announcementsLoading" class="announcements-loading">
+            <div class="loading-text">Chargement...</div>
+          </div>
+
+          <div v-else-if="announcementsError" class="announcements-error">
+            <div class="error-text">{{ announcementsError }}</div>
+          </div>
+
+          <div v-else-if="announcements.length > 0" class="announcements-preview">
+            <div
+              v-for="announcement in announcements"
+              :key="announcement.slug"
+              class="announcement-preview-item"
+              @click="viewAnnouncement(announcement.slug)"
+            >
+              <div class="announcement-preview-image" v-if="announcement.image">
+                <img :src="getAnnouncementImageUrl(announcement.image)" :alt="announcement.title" />
+              </div>
+              <div class="announcement-preview-content">
+                <h4 class="announcement-preview-title">{{ announcement.title }}</h4>
+                <p class="announcement-preview-summary">{{ announcement.summary }}</p>
+                <div class="announcement-preview-meta">
+                  <span class="announcement-preview-date">{{ formatAnnouncementDate(announcement.date) }}</span>
+                  <span class="announcement-preview-version">v{{ announcement.version }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="no-announcements">
+            <div class="no-announcements-text">Aucune annonce disponible</div>
+          </div>
         </div>
       </div>
     </div>
@@ -247,6 +285,7 @@ import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
 import Popup from '@/components/menu/Popup.vue'
 import { useSound } from '@/composables/useSound'
+import { apiGet } from '@/utils/api'
 
 const { 
   leaderboards, 
@@ -265,8 +304,14 @@ const { profileClick } = useSound()
 // État pour les popups
 const showFullLeaderboard = ref(null) // null, 'totalEggs', 'maxEggs', 'chickens'
 
+// État pour les annonces
+const announcements = ref([])
+const announcementsLoading = ref(false)
+const announcementsError = ref(null)
+
 onMounted(async () => {
   await fetchLeaderboards()
+  await loadAnnouncements()
 })
 
 const refreshLeaderboards = async () => {
@@ -363,6 +408,43 @@ const getLeaderboardIcon = (type) => {
     case 'chickens': return '🏆'
     default: return ''
   }
+}
+
+const goToAnnouncements = () => {
+  profileClick()
+  window.open('/announcements', '_blank')
+}
+
+// Fonctions pour les annonces
+const loadAnnouncements = async () => {
+  try {
+    announcementsLoading.value = true
+    announcementsError.value = null
+    const data = await apiGet('/api/announcements')
+    announcements.value = data.slice(0, 3) // Limiter à 3 dernières annonces
+  } catch (err) {
+    console.error('Erreur lors du chargement des annonces:', err)
+    announcementsError.value = 'Impossible de charger les annonces.'
+  } finally {
+    announcementsLoading.value = false
+  }
+}
+
+const viewAnnouncement = (slug) => {
+  profileClick()
+  router.push(`/announcements/${slug}`)
+}
+
+const formatAnnouncementDate = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('fr-FR', {
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+const getAnnouncementImageUrl = (imageName) => {
+  return `/api/announcements/images/${imageName}`
 }
 </script>
 
@@ -505,6 +587,139 @@ const getLeaderboardIcon = (type) => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.announcements-section {
+  background: #fffaf1;
+  border: 2px solid #ffc66e;
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.announcements-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-title {
+  font-size: 18px;
+  color: #6d3c00;
+  margin: 0;
+}
+
+.view-all-button {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 2px solid var(--border-primary);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 12px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
+  transition: all 0.2s ease;
+}
+
+.view-all-button:hover {
+  background: var(--button-hover);
+  transform: translateY(-1px);
+}
+
+.announcements-loading, .announcements-error, .no-announcements {
+  text-align: center;
+  padding: 20px;
+}
+
+.loading-text, .error-text, .no-announcements-text {
+  font-size: 14px;
+  color: #8B4513;
+}
+
+.announcements-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.announcement-preview-item {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ffd99a;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.announcement-preview-item:hover {
+  background: rgba(255, 215, 0, 0.05);
+  border-color: #d4af37;
+  transform: translateY(-1px);
+}
+
+.announcement-preview-image {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.announcement-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.announcement-preview-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.announcement-preview-title {
+  font-size: 14px;
+  color: #4b2e06;
+  margin: 0 0 4px 0;
+  font-weight: bold;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+}
+
+.announcement-preview-summary {
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+}
+
+.announcement-preview-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #8B4513;
+}
+
+.announcement-preview-date, .announcement-preview-version {
+  background: rgba(255, 215, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 8px;
 }
 
 .leaderboard-header {
@@ -734,18 +949,46 @@ const getLeaderboardIcon = (type) => {
     overflow-y: visible;
   }
   
-  .coming-soon-section {
-    min-height: 80px;
-    margin-bottom: 60px;
+  .announcements-section {
     padding: 16px;
   }
   
-  .unified-leaderboard-section {
-    padding: 16px;
+  .announcements-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
   }
   
-  .individual-leaderboard + .individual-leaderboard {
-    padding-top: 20px;
+  .section-title {
+    font-size: 16px;
+  }
+  
+  .view-all-button {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+  
+  .announcement-preview-item {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .announcement-preview-image {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .announcement-preview-title {
+    font-size: 13px;
+  }
+  
+  .announcement-preview-summary {
+    font-size: 11px;
+    margin: 0 0 4px 0;
+  }
+  
+  .announcement-preview-meta {
+    font-size: 10px;
   }
 }
 
@@ -950,18 +1193,40 @@ const getLeaderboardIcon = (type) => {
     text-align: right;
   }
   
-  .coming-soon-section {
-    min-height: 60px;
+  .announcements-section {
     padding: 12px;
   }
   
-  .footer-info {
-    margin-top: 20px;
-    padding: 10px;
+  .section-title {
+    font-size: 14px;
   }
   
-  .meta-info {
+  .view-all-button {
     font-size: 10px;
+    padding: 2px 5px;
+  }
+  
+  .announcement-preview-item {
+    padding: 8px;
+    gap: 8px;
+  }
+  
+  .announcement-preview-image {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .announcement-preview-title {
+    font-size: 12px;
+  }
+  
+  .announcement-preview-summary {
+    font-size: 10px;
+    margin: 0 0 4px 0;
+  }
+  
+  .announcement-preview-meta {
+    font-size: 9px;
   }
 }
 
@@ -1020,9 +1285,40 @@ const getLeaderboardIcon = (type) => {
     min-width: 45px;
   }
   
-  .user-rank {
+  .announcements-section {
+    padding: 10px;
+  }
+  
+  .section-title {
+    font-size: 13px;
+  }
+  
+  .view-all-button {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+  
+  .announcement-preview-item {
+    padding: 6px;
+    gap: 6px;
+  }
+  
+  .announcement-preview-image {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .announcement-preview-title {
     font-size: 11px;
-    padding: 4px 6px;
+  }
+  
+  .announcement-preview-summary {
+    font-size: 9px;
+    margin: 0 0 3px 0;
+  }
+  
+  .announcement-preview-meta {
+    font-size: 8px;
   }
 }
 
