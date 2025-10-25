@@ -165,7 +165,7 @@ export const especeData = {
 export const talentsData = {
   'Chanceuse': {
     description: "Des œufs blancs apparaissent sur l'écran.",
-    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*1.5} œufs.",
+    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*0.5} œufs.",
     nivType : 'basic',
     icon: '🍀',
     calculation: {
@@ -364,7 +364,7 @@ export const talentsData = {
           target: 'team',
           duration: 20000,
           stats: {
-            intelligence: { op: 'add', args: [ 0.5, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }
+            intelligence: { op: 'add', args: [ 1.5, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] }
           }
         }
       ]
@@ -400,14 +400,14 @@ export const talentsData = {
           type: 'apply_buff',
           buff_type: 'storage',
           duration: 15000,
-          amount: { op: 'add', args: [ 0.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
+          amount: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
         }
       ]
     }
   },
   'Joyeuse': {
     description: "Cliquez-moi pour augmenter les revenus temporairement.",
-    effet: "Cliquez moi pour augmenter le revenu de {100+niveau*50}% pendant 10s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
+    effet: "Cliquez moi pour augmenter le revenu de {100+niveau*50}% pendant 10s. Cooldown 1 minute",
     icon: '🎉',
     calculation: {
       triggers: [ { type: 'active' } ],
@@ -417,7 +417,7 @@ export const talentsData = {
           type: 'apply_buff',
           buff_type: 'income_multiplier',
           duration: 10000,
-          amount: { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] } // 1 + niveau*0.5  => 100% + niveau*50%
+          amount: { op: 'add', args: [ 2, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] } 
         }
       ]
     }
