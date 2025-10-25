@@ -31,7 +31,14 @@
   </span>
   <!-- Indicateur cadeau disponible: brillance et icône cadeau -->
   <div v-if="hasChickenGift" class="gift-indicator">
-    <span class="gift-icon">🎁</span>
+    <span
+      class="gift-icon"
+      role="button"
+      tabindex="0"
+      aria-label="Collecter le cadeau"
+      @click.stop="onGiftClick"
+      @keydown.stop.prevent="onGiftKeydown"
+    >🎁</span>
   </div>
       </div>
     </Tooltip>
@@ -64,7 +71,14 @@
   </span>
   <!-- Indicateur cadeau disponible pour mobile -->
   <div v-if="hasChickenGift" class="gift-indicator">
-    <span class="gift-icon">🎁</span>
+    <span
+      class="gift-icon"
+      role="button"
+      tabindex="0"
+      aria-label="Collecter le cadeau"
+      @click.stop="onGiftClick"
+      @keydown.stop.prevent="onGiftKeydown"
+    >🎁</span>
   </div>
     </div>
   </div>
@@ -236,6 +250,35 @@ const { eggState, fetchEggStatus } = useEgg()
 const { fetchBuffs } = useBuffs()
 const { hasActiveGift, collectGift } = useChickenGifts()
 const { incrementProgress } = useAchievements()
+
+// Collecte de cadeau déclenchée depuis l'UI (icone)
+function onGiftClick(e) {
+  try {
+    // empêcher la propagation vers le click sur la poule
+    if (e && e.stopPropagation) e.stopPropagation()
+  } catch (_) {}
+  if (!props.especeId) return
+  if (!hasChickenGift.value) return
+  // position centrale de la poule pour l'animation
+  let position = null
+  if (chickenRef.value) {
+    try {
+      const rect = chickenRef.value.getBoundingClientRect()
+      position = { x: rect.left + rect.width / 2, y: rect.top - 20 }
+    } catch (_) { position = null }
+  }
+  // Appeler la fonction du composable
+  collectGift(props.especeId, position)
+  // son local
+  try { giftCollect() } catch (_) {}
+}
+
+function onGiftKeydown(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    onGiftClick(e)
+  }
+}
 
 // État des cadeaux pour cette poule
 const hasChickenGift = computed(() => {
@@ -662,7 +705,8 @@ watch(() => props.containerWidth, () => {
   left: 50%;
   transform: translateX(-50%);
   z-index: 22;
-  pointer-events: none;
+  /* Permettre clics et focus sur l'icône du cadeau */
+  pointer-events: auto;
 }
 
 .gift-icon {
@@ -671,6 +715,8 @@ watch(() => props.containerWidth, () => {
   animation: gift-float 3s ease-in-out infinite;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
   text-shadow: 0 0 10px rgba(255,255,255,0.8);
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  user-select: none;
 }
 
 @keyframes gift-float {
