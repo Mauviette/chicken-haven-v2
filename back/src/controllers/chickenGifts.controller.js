@@ -57,9 +57,8 @@ const GIFT_LEVEL_CONFIG = {
       { type: 'production_tokens', weight: 12, amount: 1 },
 
       //25
-      { type: 'mining_token', weight: 21, amount: 1 },
-      { type: 'mining_token', weight: 4, amount: 2 },
-      { type: 'mining_token', weight: 1, amount: 3 }
+      { type: 'mining_token', weight: 20, amount: 1 },
+      { type: 'mining_token', weight: 5, amount: 2 },
     ]
   }
 }
