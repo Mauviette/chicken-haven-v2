@@ -53,9 +53,8 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     redirect: () => {
-      const auth = useAuth() || {}
-      const isLoggedIn = auth.isLoggedIn || (() => false)
-      return isLoggedIn() ? '/production' : '/auth'
+      const token = localStorage.getItem('token')
+      return token ? '/production' : '/auth'
     }
   }
 ]

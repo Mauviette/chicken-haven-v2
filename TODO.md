@@ -18,3 +18,9 @@ Sur un compte en apocalyse :
 - Le clic de l'oeuf sur Production donne 10% des oeufs qu'il donnerait à la base.
 - Le clic d'oeuf blanc (et autres Spawnable qui donnent des oeufs directement) donne 10% des oeufs qu'il donnerait à la base.
 - Les prix d'améliorations dans le marché sont multipliés par 2
+
+
+
+Faire un système d'annonces/mises à jour:
+Chaque user a un attribut qui stocke la dernière version à laquelle il s'est connecté. Lors de chaque login, si la version de sharedGameData est supérieure à celle du joueur connecté, alors la version du compte du joueur est corrigée. Dans ce cas, un popup apparait pour informer des infos de la dernière mise à jour.
+Système de pages d'annonces/mises à jour:
