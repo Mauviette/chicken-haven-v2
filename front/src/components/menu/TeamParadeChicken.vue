@@ -332,7 +332,7 @@ const talentSubIcon = computed(() => {
     if (income) return '💰'
     // Cas buff de stockage (ex: Rapide)
     const storage = effs.find(e => e?.type === 'apply_buff' && (e?.buff_type === 'storage' || e?.buff_type === 'storage_multiplier'))
-    if (storage) return '📦'
+    if (storage) return '🧺'
     return '✨'
   } catch (_) {
     return '✨'

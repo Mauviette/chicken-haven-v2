@@ -145,7 +145,7 @@ function getRarityLabel(rarity) {
 function getItemIcon(itemId) {
   const icons = {
     eggs: '🥚',
-    stock_token: '📦',
+    stock_token: '🧺',
     production_token: '⚙️',
     wild_token: '🃏',
     chest_key: '🗝️',

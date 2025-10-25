@@ -324,7 +324,7 @@ function getRewardTooltip(reward) {
   const icons = {
     eggs: '🥚',
     mining_token: '🪨',
-    stock_token: '📦',
+    stock_token: '🧺',
     production_token: '⚙️'
   }
   
@@ -841,7 +841,7 @@ function formatReward(reward, inCell = false) {
   const icons = {
     eggs: '🥚',
     mining_token: '🪨',
-    stock_token: '📦',
+    stock_token: '🧺',
     production_token: '⚙️'
   }
   const icon = icons[type] || (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[type]?.icon) || '❓'
@@ -861,7 +861,7 @@ function formatGroupedReward(reward) {
   const icons = {
     eggs: '🥚',
     mining_token: '🪨',
-    stock_token: '📦',
+    stock_token: '🧺',
     production_token: '⚙️'
   }
   const icon = icons[reward.type] || (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[reward.type]?.icon) || '❓'

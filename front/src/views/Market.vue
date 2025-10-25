@@ -5,7 +5,7 @@
       <div class="player-balance">
       <Tooltip :text="stockTokenTooltip" position="bottom">
         <div class="balance-item">
-          <span class="balance-icon">📦</span>
+          <span class="balance-icon">🧺</span>
           <span class="balance-amount">{{ stockTokens }}</span>
         </div>
       </Tooltip>
@@ -518,7 +518,7 @@ function getDiceTooltipText(box) {
 // Tooltips pour les tokens
 const stockTokenTooltip = computed(() => {
   const tokenData = itemsData.value?.stock_token
-  if (!tokenData) return '<strong>📦 Jetons de stock</strong><br>Jetons pour améliorer le stockage.'
+  if (!tokenData) return '<strong>🧺 Jetons de stock</strong><br>Jetons pour améliorer le stockage.'
   return `<strong>${tokenData.nom.charAt(0).toUpperCase() + tokenData.nom.slice(1)}</strong><br>${tokenData.description}`
 })
 

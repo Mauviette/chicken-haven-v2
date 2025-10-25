@@ -214,7 +214,7 @@ const createBuffEffectAtPosition = (rect, reward) => {
       color = '#FF6B35'
       break
     case 'storage':
-      icon = '📦'
+      icon = '🧺'
       color = '#4ECDC4'
       break
   }

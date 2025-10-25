@@ -1129,7 +1129,7 @@ export const itemsData = {
     id: 'stock_token',
     nom: 'jetons de stock',
     nom_singulier: 'jeton de stock',
-    icon: '📦',
+    icon: '🧺',
     description: 'Jetons permettant d\'acheter des améliorations de stockage.'
   },
   'production_token': {

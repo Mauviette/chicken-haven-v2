@@ -76,7 +76,7 @@ export function useBuffs() {
         emoji = '⚙️'; break
       case 'storage':
       case 'storage_multiplier':
-        emoji = '📦'; break
+        emoji = '🧺'; break
       case 'team_stat_intelligence':
         emoji = '🧠'; break
       case 'team_stat_energie':
@@ -180,7 +180,7 @@ export function useBuffs() {
         return '⚡'
       case 'storage':
       case 'storage_multiplier':
-        return '📦'
+        return '🧺'
       case 'income_storage_multiplier':
         return '🍫'
       case 'team_stat_intelligence':

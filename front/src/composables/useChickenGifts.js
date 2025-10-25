@@ -127,7 +127,7 @@ const createChickenGiftRewardEffect = (reward, position = null) => {
         break
       case 'stock_tokens':
         text = `+${reward.amount}`
-        icon = '📦'
+        icon = '🧺'
         color = '#ec864bff'
         break
       case 'production_tokens':
