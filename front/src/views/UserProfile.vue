@@ -420,6 +420,49 @@ async function validateDisplayName() {
     validatingDisplayName.value = false
   }, 500) // Attendre 500ms après la dernière frappe
 }
+
+// Enregistrer le nouveau displayName (appel API)
+async function saveDisplayName() {
+  try {
+    if (!isOwnProfile.value) return
+    const value = (newDisplayName.value || '').trim()
+    if (!value) return
+    // Ne pas envoyer si une erreur de validation est présente
+    if (displayNameError.value) {
+      window.$toast?.(displayNameError.value, 'error')
+      return
+    }
+
+    // Annuler debounce de validation en cours
+    if (validationTimeout) {
+      clearTimeout(validationTimeout)
+      validationTimeout = null
+    }
+
+    validatingDisplayName.value = true
+
+    // Appel API. Hypothèse raisonnable : endpoint '/api/user/me/displayName' (similaire à avatar endpoint)
+    const resp = await apiPatch('/api/user/me/displayName', { displayName: value })
+
+    if (!resp || !resp.success) {
+      const err = resp?.error || 'Impossible de mettre à jour le nom d\'affichage'
+      window.$toast?.(err, 'error')
+      validatingDisplayName.value = false
+      return
+    }
+
+    // Mettre à jour l'objet de profil localement
+    profile.value = { ...profile.value, displayName: resp.displayName || value }
+    window.$toast?.('Nom d\'affichage mis à jour', 'success')
+    editingDisplayName.value = false
+    newDisplayName.value = ''
+  } catch (e) {
+    console.error('Erreur saveDisplayName:', e)
+    window.$toast?.('Erreur réseau', 'error')
+  } finally {
+    validatingDisplayName.value = false
+  }
+}
 </script>
 
 <style scoped>
