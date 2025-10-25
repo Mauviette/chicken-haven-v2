@@ -213,11 +213,15 @@ export async function checkAvailableChickenGifts(req, res) {
       return res.json({ gifts: [] })
     }
 
-    const now = Date.now()
-    const userLevel = user.experience?.level || 1
+  const now = Date.now()
+  const userLevel = user.experience?.level || 1
 
-    // Les cadeaux sont maintenant permanents - pas de nettoyage nécessaire
-    const availableGifts = []
+  // Les cadeaux sont maintenant permanents - pas de nettoyage nécessaire
+  const availableGifts = []
+
+  // S'assurer que les structures attendues existent (compatibilité DB)
+  if (!user.activeChickenGifts) user.activeChickenGifts = []
+  if (!user.lastChickenGifts || typeof user.lastChickenGifts !== 'object') user.lastChickenGifts = {}
 
     for (const especeId of activeTeam) {
       const poule = user.poulesPossedees?.find(p => p.especeId === especeId)
@@ -243,15 +247,16 @@ export async function checkAvailableChickenGifts(req, res) {
       }
 
       // Vérifier le cooldown
-      const cooldownKey = `chicken_gift_${especeId}`
-      const lastGift = user.lastChickenGifts?.get(cooldownKey) || new Date(0)
-      const cooldownMs = config.cooldownSeconds * 1000
+  const cooldownKey = `chicken_gift_${especeId}`
+  // lastChickenGifts is stored as plain object (date ISO string) in Mongo
+  const lastGift = user.lastChickenGifts && user.lastChickenGifts[cooldownKey] ? new Date(user.lastChickenGifts[cooldownKey]) : new Date(0)
+  const cooldownMs = config.cooldownSeconds * 1000
 
       if (now - new Date(lastGift).getTime() >= cooldownMs) {
         // Chance de spawn d'un cadeau
         const spawnChance = Math.random()
 
-        if (spawnChance < config.spawnChance) {
+          if (spawnChance < config.spawnChance) {
           const uniqueGiftId = `gift_${especeId}_${now}_${Math.random().toString(36).substr(2, 9)}`
           const expiresAt = new Date(now + GIFT_LIFETIME)
 
@@ -270,10 +275,8 @@ export async function checkAvailableChickenGifts(req, res) {
 
           user.activeChickenGifts.push(newGift)
 
-          if (!user.lastChickenGifts) {
-            user.lastChickenGifts = new Map()
-          }
-          user.lastChickenGifts.set(cooldownKey, new Date(now))
+          // Enregistrer la date du dernier cadeau pour cette poule (objet simple pour persistance)
+          user.lastChickenGifts[cooldownKey] = new Date(now).toISOString()
         }
       }
     }
