@@ -27,7 +27,7 @@ const CLEANUP_INTERVAL = 5000
 
 const SPAWNABLE_TYPE_CONFIG = {
   white_egg: {
-    spawnChance: 0.04,
+    spawnChance: 0.03,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
@@ -208,18 +208,22 @@ export async function checkAvailableSpawnables(req, res) {
         const configType = spawnEffect.spawner_id || objectType
         const config = getSpawnableConfigForType(configType, talentName)
         
-        const existingSpawnable = user.activeSpawnables.find(s => 
-          s.talentName === talentName && 
-          s.especeId === especeId && 
-          s.spawnableId.includes(`_${objectType}`)
-        )
-        
-        if (existingSpawnable) {
+        // Compter le nombre d'instances actives de ce type pour cette poule/talent
+        const existingCount = (user.activeSpawnables || []).filter(s => 
+          s.talentName === talentName &&
+          s.especeId === especeId &&
+          (s.type === objectType || (s.spawnableId && s.spawnableId.includes(`_${objectType}`)))
+        ).length
+
+        // Si on a déjà atteint le nombre maximum d'instances autorisées, ne pas en créer d'autres
+        if (existingCount >= (config.maxActivePerUser || 0)) {
           continue
         }
         
-        const cooldownKey = `${talentName}_${especeId}_${objectType}`
-        const lastSpawn = user.lastSpawns?.get(cooldownKey) || new Date(0)
+  const cooldownKey = `${talentName}_${especeId}_${objectType}`
+  // user.lastSpawns is persisted as a plain object with ISO strings (not a Map)
+  const lastSpawnIso = (user.lastSpawns && user.lastSpawns[cooldownKey]) || null
+  const lastSpawn = lastSpawnIso ? new Date(lastSpawnIso) : new Date(0)
 
         const totalStorage = calculateTotalStorage(user)
         const ctx = {
@@ -261,10 +265,10 @@ export async function checkAvailableSpawnables(req, res) {
               expiresAt: expiresAt
             })
             
-            if (!user.lastSpawns) {
-              user.lastSpawns = new Map()
+            if (!user.lastSpawns || typeof user.lastSpawns !== 'object') {
+              user.lastSpawns = {}
             }
-            user.lastSpawns.set(cooldownKey, new Date(now))
+            user.lastSpawns[cooldownKey] = new Date(now).toISOString()
           }
         }
       }
