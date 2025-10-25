@@ -63,11 +63,12 @@ const levelRewards = computed(() => getLevelRewardsBetween(props.from, props.to)
 
 // Récupération de l'avatar du joueur
 const { player } = usePlayer()
+
 const { getImage, hiddenImage } = usePoules()
 
 const playerAvatarSrc = computed(() => {
   const avatar = player.value?.avatar
-  if (!avatar || avatar === 'hidden') return hiddenImage.value
+  if (!avatar || avatar === 'hidden') return hiddenImage
   // avatar est un especeId, convertir via getImage
   return getImage(String(avatar))
 })
