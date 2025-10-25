@@ -47,7 +47,15 @@
       </div>
       <div class="top-right">
         <Tooltip :text="eggTooltipHtml" position="bottom">
-          <div class="egg-counter">
+          <div
+            class="egg-counter"
+            :class="{ clickable: isMarketUnlocked, disabled: !isMarketUnlocked }"
+            role="button"
+            tabindex="0"
+            @click="openMarketFromEggCounter"
+            @keydown.enter.prevent="openMarketFromEggCounter"
+            @keydown.space.prevent="openMarketFromEggCounter"
+          >
             <span>🥚 {{ eggs }} œufs</span>
           </div>
         </Tooltip>
@@ -248,6 +256,39 @@ const levelTooltipHtml = () => {
 
   return html
 }
+
+function getMarketRequiredLevel() {
+  try {
+    const map = levelUnlocks?.value || {}
+    for (const k of Object.keys(map)) {
+      const arr = map[k] || []
+      if (arr.some(u => u && u.id === 'market')) return Number(k)
+    }
+  } catch (_) {}
+  return null
+}
+
+function getMarketLockedTitle() {
+  const lvl = getMarketRequiredLevel()
+  return lvl ? `Débloqué au niveau ${lvl}` : 'Marché verrouillé'
+}
+
+function openMarketFromEggCounter() {
+  try {
+    if (isMarketUnlocked.value) {
+      router.push('/market')
+    } else {
+      const lvl = getMarketRequiredLevel()
+      if (lvl) {
+        window.$toast?.(`Marché débloqué au niveau ${lvl}`, 'error')
+      } else {
+        window.$toast?.('Marché verrouillé', 'error')
+      }
+    }
+  } catch (e) {
+    console.error('openMarketFromEggCounter error', e)
+  }
+}
 </script>
 
 
@@ -447,6 +488,9 @@ const levelTooltipHtml = () => {
   white-space: nowrap;
   box-shadow: 0 1px 2px var(--shadow-primary);
 }
+
+.egg-counter.clickable { cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer; }
+.egg-counter.disabled { cursor: not-allowed; opacity: 0.85 }
 
 .profile-btn {
   background: none;
