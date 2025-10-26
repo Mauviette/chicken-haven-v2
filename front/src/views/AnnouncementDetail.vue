@@ -41,6 +41,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { apiGet } from '@/utils/api'
+import { getApiBaseUrl } from '@/utils/api'
 import { useSound } from '@/composables/useSound'
 
 const router = useRouter()
@@ -85,8 +86,8 @@ const formatDate = (dateString) => {
 }
 
 const getImageUrl = (imageName) => {
-  // Les images seront servies depuis le backend ou un CDN
-  return `/api/announcements/images/${imageName}`
+  // Utiliser la même URL de base que l'API
+  return `${getApiBaseUrl()}/api/announcements/images/${imageName}`
 }
 
 const renderMarkdown = (markdown) => {

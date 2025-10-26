@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
+import { getApiBaseUrl } from '@/utils/api'
 import { useRouter } from 'vue-router'
 import Popup from '@/components/menu/Popup.vue'
 
@@ -63,8 +63,8 @@ const formatDate = (dateString) => {
 }
 
 const getImageUrl = (imageName) => {
-  // Les images seront servies depuis le backend ou un CDN
-  return `/api/announcements/images/${imageName}`
+  // Utiliser la même URL de base que l'API
+  return `${getApiBaseUrl()}/api/announcements/images/${imageName}`
 }
 </script>
 

@@ -286,6 +286,7 @@ import { usePoules } from '@/composables/usePoules'
 import Popup from '@/components/menu/Popup.vue'
 import { useSound } from '@/composables/useSound'
 import { apiGet } from '@/utils/api'
+import { getApiBaseUrl } from '@/utils/api'
 
 const { 
   leaderboards, 
@@ -444,7 +445,7 @@ const formatAnnouncementDate = (dateString) => {
 }
 
 const getAnnouncementImageUrl = (imageName) => {
-  return `/api/announcements/images/${imageName}`
+  return `${getApiBaseUrl()}/api/announcements/images/${imageName}`
 }
 </script>
 
