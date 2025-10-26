@@ -15,13 +15,13 @@
           <span class="balance-amount">{{ productionTokens }}</span>
         </div>
       </Tooltip>
-      <Tooltip v-if="getLevel() >= 5" text="<strong>Clés à coffre</strong><br>Ouvrez des coffres de trésors pour obtenir des artefacts de minage" position="bottom">
+      <Tooltip v-if="getLevel() >= 5" :text="chestKeyTooltip" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">🗝️</span>
           <span class="balance-amount">{{ chestKeys }}</span>
         </div>
       </Tooltip>
-      <Tooltip v-if="getLevel() >= 5" :text="'Pierres précieuses - Ressource rare obtenue en minant'" position="bottom">
+      <Tooltip v-if="getLevel() >= 5" :text="preciousStoneTooltip" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">💎</span>
           <span class="balance-amount">{{ preciousStones }}</span>
@@ -591,6 +591,18 @@ const productionTokenTooltip = computed(() => {
   return `<strong>${tokenData.nom.charAt(0).toUpperCase() + tokenData.nom.slice(1)}</strong><br>${tokenData.description}`
 })
 
+const chestKeyTooltip = computed(() => {
+  const tokenData = itemsData.value?.chest_key
+  if (!tokenData) return '<strong>🗝️ Clés à coffre</strong><br>Ouvrez des coffres de trésors pour obtenir des artefacts de minage.'
+  return `<strong>${tokenData.nom.charAt(0).toUpperCase() + tokenData.nom.slice(1)}</strong><br>${tokenData.description}`
+})
+
+const preciousStoneTooltip = computed(() => {
+  const tokenData = itemsData.value?.precious_stone
+  if (!tokenData) return '<strong>💎 Pierres précieuses</strong><br>Ressource rare obtenue en minant.'
+  return `<strong>${tokenData.nom.charAt(0).toUpperCase() + tokenData.nom.slice(1)}</strong><br>${tokenData.description}`
+})
+
 // Helpers calcul côté front à partir des données serveur
 function getCurrentCostForLevel(costs, level) {
   if (!Array.isArray(costs) || costs.length === 0) return Infinity
@@ -609,29 +621,38 @@ function getDisplayLevel(currentLevel, maxLevel) {
 
 const expansionOffers = computed(() => {
   const list = expansionsData?.value || []
-  return list.map(expansion => {
-    const currentLevel = getExpansionLevel(expansion.id)
-    const nextLevel = getNextExpansionLevel(expansion.id)
-    const canUpgrade = canUpgradeExpansion(expansion.id)
-    const cost = getExpansionCost(expansion.id)
-    const reward = getExpansionReward(expansion.id)
-    const canBuy = canUpgrade && getLevel() >= (expansion.unlock_level || 1) && canAffordMultiple(cost)
-    
-    // Générer le texte d'effet basé sur le template
-    const effectText = expansion.effectTemplate.replace('{reward}', reward || 'inconnu')
-    
-    return {
-      ...expansion,
-      currentLevel,
-      nextLevel,
-      canUpgrade,
-      cost,
-      reward,
-      canBuy,
-      effect: effectText,
-      displayLevel: currentLevel > 0 ? `${reward || 1} emplacements` : 'Non acheté'
-    }
-  })
+  const playerLevel = getLevel()
+  return list
+    .filter(expansion => {
+      // Hide artifact slot expansions if player level < 5
+      if (expansion.name && expansion.name.toLowerCase().includes('emplacements d\'artéfact') && playerLevel < 5) {
+        return false
+      }
+      return true
+    })
+    .map(expansion => {
+      const currentLevel = getExpansionLevel(expansion.id)
+      const nextLevel = getNextExpansionLevel(expansion.id)
+      const canUpgrade = canUpgradeExpansion(expansion.id)
+      const cost = getExpansionCost(expansion.id)
+      const reward = getExpansionReward(expansion.id)
+      const canBuy = canUpgrade && playerLevel >= (expansion.unlock_level || 1) && canAffordMultiple(cost)
+      
+      // Générer le texte d'effet basé sur le template
+      const effectText = expansion.effectTemplate.replace('{reward}', reward || 'inconnu')
+      
+      return {
+        ...expansion,
+        currentLevel,
+        nextLevel,
+        canUpgrade,
+        cost,
+        reward,
+        canBuy,
+        effect: effectText,
+        displayLevel: currentLevel > 0 ? `${reward || 1} emplacements` : 'Non acheté'
+      }
+    })
 })
 
 const upgradeOffers = computed(() => {

@@ -463,7 +463,7 @@ const formatAnnouncementDate = (dateString) => {
 
 const getAnnouncementImageUrl = (imageName) => {
   const url = `${getApiBaseUrl()}/api/announcements/images/${imageName}`
-  console.log('🔗 Image URL générée (social):', url)
+  //console.log('🔗 Image URL générée (social):', url)
   return url
 }
 </script>

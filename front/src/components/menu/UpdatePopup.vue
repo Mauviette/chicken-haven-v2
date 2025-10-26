@@ -85,7 +85,7 @@ const formatDate = (dateString) => {
 const getImageUrl = (imageName) => {
   // Utiliser la même URL de base que l'API
   const url = `${getApiBaseUrl()}/api/announcements/images/${imageName}`
-  console.log('🔗 Image URL générée (popup):', url)
+  //console.log('🔗 Image URL générée (popup):', url)
   return url
 }
 </script>

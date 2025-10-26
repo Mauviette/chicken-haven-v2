@@ -29,7 +29,7 @@ function loadForbiddenWords() {
         .map(word => word.toLowerCase())
       
       lastModified = stats.mtimeMs
-      console.log(`📝 Loaded ${forbiddenWords.length} forbidden words from forbidden-words.txt`)
+      //console.log(`📝 Loaded ${forbiddenWords.length} forbidden words from forbidden-words.txt`)
     }
   } catch (error) {
     console.warn('⚠️ Could not load forbidden-words.txt, using fallback list:', error.message)

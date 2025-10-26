@@ -82,9 +82,9 @@ const loadAnnouncement = async () => {
     loading.value = true
     error.value = null
     const slug = route.params.slug
-    console.log('📄 Chargement de l\'annonce:', slug)
+    //console.log('📄 Chargement de l\'annonce:', slug)
     const data = await apiGet(`/api/announcements/${slug}`)
-    console.log('📄 Données reçues:', data)
+    //console.log('📄 Données reçues:', data)
     announcement.value = data
   } catch (err) {
     console.error('❌ Erreur lors du chargement de l\'annonce:', err)
@@ -111,14 +111,14 @@ const formatDate = (dateString) => {
 const getImageUrl = (imageName) => {
   // Utiliser la même URL de base que l'API
   const url = `${getApiBaseUrl()}/api/announcements/images/${imageName}`
-  console.log('🔗 Image URL générée:', url)
+  //console.log('🔗 Image URL générée:', url)
   return url
 }
 
 const renderMarkdown = (markdown) => {
   if (!markdown) return ''
 
-  console.log('📝 Rendering markdown:', markdown.substring(0, 100) + '...')
+  //console.log('📝 Rendering markdown:', markdown.substring(0, 100) + '...')
 
   // Simple markdown renderer (basic implementation)
   let html = markdown
@@ -126,7 +126,7 @@ const renderMarkdown = (markdown) => {
   // Images - doit être traité en premier pour éviter les conflits
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, src) => {
     const imageUrl = getImageUrl(src)
-    console.log('🖼️ Image markdown trouvée:', match, '->', imageUrl)
+    //console.log('🖼️ Image markdown trouvée:', match, '->', imageUrl)
     return `<img src="${imageUrl}" alt="${alt}" class="markdown-image" />`
   })
 
