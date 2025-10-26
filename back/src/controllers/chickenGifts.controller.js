@@ -28,7 +28,7 @@ const CLEANUP_INTERVAL = 5000 // ne change rien
 // Configuration par niveau du joueur
 const GIFT_LEVEL_CONFIG = {
   1: {
-    spawnChance: 0.08,
+    spawnChance: 0.24,
     rewards: [
       //50
       { type: 'eggs', weight: 30, amount: 10 },
@@ -43,7 +43,7 @@ const GIFT_LEVEL_CONFIG = {
     ]
   },
   5: {
-    spawnChance: 0.08,
+    spawnChance: 0.24,
     rewards: [
     //50
       { type: 'eggs', weight: 30, amount: 50 },
@@ -58,7 +58,32 @@ const GIFT_LEVEL_CONFIG = {
 
       //25
       { type: 'mining_token', weight: 20, amount: 1 },
-      { type: 'mining_token', weight: 5, amount: 2 },
+      { type: 'mining_token', weight: 4, amount: 2 },
+      { type: 'mining_token', weight: 1, amount: 3 },
+    ]
+  },
+  10: {
+    spawnChance: 0.24,
+    rewards: [
+    //50
+      { type: 'eggs', weight: 30, amount: 200 },
+      { type: 'eggs', weight: 15, amount: 500 },
+      { type: 'eggs', weight: 4, amount: 1000 },
+      { type: 'eggs', weight: 1, amount: 10000 },
+      { type: 'eggs', weight: 0.1, amount: 100000 },
+
+      //12
+      { type: 'stock_tokens', weight: 10, amount: 1 },
+      { type: 'stock_tokens', weight: 2, amount: 2 },
+
+      //12
+      { type: 'production_tokens', weight: 10, amount: 1 },
+      { type: 'production_tokens', weight: 2, amount: 2 },
+
+      //25
+      { type: 'mining_token', weight: 15, amount: 1 },
+      { type: 'mining_token', weight: 9, amount: 2 },
+      { type: 'mining_token', weight: 1, amount: 3 },
     ]
   }
 }
@@ -212,15 +237,19 @@ export async function checkAvailableChickenGifts(req, res) {
       return res.json({ gifts: [] })
     }
 
-  const now = Date.now()
-  const userLevel = user.experience?.level || 1
+    const now = Date.now()
+    const userLevel = user.experience?.level || 1
 
-  // Les cadeaux sont maintenant permanents - pas de nettoyage nécessaire
-  const availableGifts = []
+    // Les cadeaux sont maintenant permanents - pas de nettoyage nécessaire
+    const availableGifts = []
 
-  // S'assurer que les structures attendues existent (compatibilité DB)
-  if (!user.activeChickenGifts) user.activeChickenGifts = []
-  if (!user.lastChickenGifts || typeof user.lastChickenGifts !== 'object') user.lastChickenGifts = {}
+    // S'assurer que les structures attendues existent (compatibilité DB)
+    if (!user.activeChickenGifts) user.activeChickenGifts = []
+    if (!user.lastChickenGifts || typeof user.lastChickenGifts !== 'object') user.lastChickenGifts = {}
+
+    // D'abord, collecter toutes les poules équipées qui n'ont pas de cadeau actif
+    const freeChickens = []
+    const busyChickens = new Set()
 
     for (const especeId of activeTeam) {
       const poule = user.poulesPossedees?.find(p => p.especeId === especeId)
@@ -228,12 +257,8 @@ export async function checkAvailableChickenGifts(req, res) {
         continue
       }
 
-      const config = getGiftConfigForLevel(userLevel)
-
       // Vérifier s'il y a déjà un cadeau actif pour cette poule
-      const existingGift = user.activeChickenGifts.find(g =>
-        g.especeId === especeId
-      )
+      const existingGift = user.activeChickenGifts.find(g => g.especeId === especeId)
 
       if (existingGift) {
         // Ajouter le cadeau existant à la liste des disponibles
@@ -242,41 +267,55 @@ export async function checkAvailableChickenGifts(req, res) {
           especeId: existingGift.especeId,
           expiresAt: existingGift.expiresAt
         })
-        continue
+        busyChickens.add(especeId)
+      } else {
+        // Cette poule est libre
+        freeChickens.push(especeId)
       }
+    }
 
-      // Vérifier le cooldown
-  const cooldownKey = `chicken_gift_${especeId}`
-  // lastChickenGifts is stored as plain object (date ISO string) in Mongo
-  const lastGift = user.lastChickenGifts && user.lastChickenGifts[cooldownKey] ? new Date(user.lastChickenGifts[cooldownKey]) : new Date(0)
-  const cooldownMs = config.cooldownSeconds * 1000
+    // Si aucune poule libre, pas de génération possible
+    if (freeChickens.length === 0) {
+      return res.json({ gifts: availableGifts })
+    }
+
+    const config = getGiftConfigForLevel(userLevel)
+
+    // Calcul fixe : déterminer si un cadeau doit être généré
+    const shouldSpawnGift = Math.random() < config.spawnChance
+
+    if (shouldSpawnGift) {
+      // Choisir une poule libre aléatoirement
+      const randomIndex = Math.floor(Math.random() * freeChickens.length)
+      const selectedChicken = freeChickens[randomIndex]
+
+      // Vérifier le cooldown pour cette poule
+      const cooldownKey = `chicken_gift_${selectedChicken}`
+      const lastGift = user.lastChickenGifts && user.lastChickenGifts[cooldownKey] ? new Date(user.lastChickenGifts[cooldownKey]) : new Date(0)
+      const cooldownMs = config.cooldownSeconds * 1000
 
       if (now - new Date(lastGift).getTime() >= cooldownMs) {
-        // Chance de spawn d'un cadeau
-        const spawnChance = Math.random()
+        // Générer le cadeau pour la poule sélectionnée
+        const uniqueGiftId = `gift_${selectedChicken}_${now}_${Math.random().toString(36).substr(2, 9)}`
+        const expiresAt = new Date(now + GIFT_LIFETIME)
 
-          if (spawnChance < config.spawnChance) {
-          const uniqueGiftId = `gift_${especeId}_${now}_${Math.random().toString(36).substr(2, 9)}`
-          const expiresAt = new Date(now + GIFT_LIFETIME)
-
-          const newGift = {
-            id: uniqueGiftId,
-            especeId: especeId,
-            createdAt: new Date(now),
-            expiresAt: expiresAt
-          }
-
-          availableGifts.push({
-            id: uniqueGiftId,
-            especeId: especeId,
-            expiresAt: expiresAt
-          })
-
-          user.activeChickenGifts.push(newGift)
-
-          // Enregistrer la date du dernier cadeau pour cette poule (objet simple pour persistance)
-          user.lastChickenGifts[cooldownKey] = new Date(now).toISOString()
+        const newGift = {
+          id: uniqueGiftId,
+          especeId: selectedChicken,
+          createdAt: new Date(now),
+          expiresAt: expiresAt
         }
+
+        availableGifts.push({
+          id: uniqueGiftId,
+          especeId: selectedChicken,
+          expiresAt: expiresAt
+        })
+
+        user.activeChickenGifts.push(newGift)
+
+        // Enregistrer la date du dernier cadeau pour cette poule
+        user.lastChickenGifts[cooldownKey] = new Date(now).toISOString()
       }
     }
 

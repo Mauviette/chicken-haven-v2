@@ -23,7 +23,7 @@
       <div class="section">
         <div class="label">Talent</div>
         <div class="value">
-          <Tooltip :text="`${getTalentEffect(currentPoule || poule)}<br/><em>Niveau max: ${maxTalentLevel}</em>`" >      
+          <Tooltip :text="`${getTalentEffect(currentPoule || poule)}`" >      
             {{ getTalentDisplayName(currentPoule || poule) }}
           </Tooltip>
         </div>
