@@ -23,6 +23,7 @@
               <template v-if="result.type === 'chicken'">
               <div class="result-icon">
                 <span v-if="result.isNew" class="new-badge">NOUVEAU!</span>
+                <span v-if="result.count > 1" class="count-badge">x{{ result.count }}</span>
                 <div class="box-results-tooltip">
                   <Tooltip :text="getTalentEffect(result)">
                     <img 
@@ -365,6 +366,22 @@ function getTalentEffect(result) {
   z-index: 10;
   transform: rotate(-12deg);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.count-badge {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  background: #27ae60;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 8px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  min-width: 20px;
+  text-align: center;
 }
 
 .result-info {

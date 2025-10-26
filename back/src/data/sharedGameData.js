@@ -664,6 +664,9 @@ export const levelUnlocks = {
   ],
   5: [
     { id: 'mining', label: 'Mini-jeu de minage débloqué', icon: '🪨' }
+  ],
+  10: [
+    { id: 'hundred_opening', label: 'Ouvertures de boites x100', icon: '📦' }
   ]
 }
 

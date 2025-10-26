@@ -40,10 +40,28 @@ export function useBoxes() {
     }
   }
 
+  // Ouvrir plusieurs boîtes à la fois
+  async function openBoxMultiple(boxId, count) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const result = await apiPost(`/api/boxes/${boxId}/open-multiple`, { count })
+      return result
+    } catch (err) {
+      error.value = err.message
+      console.error('Erreur openBoxMultiple:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     loading,
     error,
     getAvailableBoxes,
-    openBox
+    openBox,
+    openBoxMultiple
   }
 }

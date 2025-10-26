@@ -98,11 +98,19 @@
                 Ouvrir
               </BuyButton>
               <BuyButton
-                :price="getBulkPrice(box.price, 10)"
-                :onClick="() => openBoxMultiple(box, 10)"
-                :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(getBulkPrice(box.price, 10))"
+                :price="getBulkPrice(box.price, bulkOpenCount10)"
+                :onClick="() => openBoxMultiple(box, bulkOpenCount10)"
+                :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(getBulkPrice(box.price, bulkOpenCount10))"
               >
                 Ouvrir x10
+              </BuyButton>
+              <BuyButton
+                v-if="bulkOpenCount100"
+                :price="getBulkPrice(box.price, bulkOpenCount100)"
+                :onClick="() => openBoxMultiple(box, bulkOpenCount100)"
+                :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(getBulkPrice(box.price, bulkOpenCount100))"
+              >
+                Ouvrir x100
               </BuyButton>
             </div>
           </div>
@@ -155,11 +163,19 @@
                   Ouvrir
                 </BuyButton>
                 <BuyButton
-                  :price="getBulkPrice(box.price, 10)"
-                  :onClick="() => openBoxMultiple(box, 10)"
-                  :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(getBulkPrice(box.price, 10))"
+                  :price="getBulkPrice(box.price, bulkOpenCount10)"
+                  :onClick="() => openBoxMultiple(box, bulkOpenCount10)"
+                  :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(getBulkPrice(box.price, bulkOpenCount10))"
                 >
                   Ouvrir x10
+                </BuyButton>
+                <BuyButton
+                  v-if="bulkOpenCount100"
+                  :price="getBulkPrice(box.price, bulkOpenCount100)"
+                  :onClick="() => openBoxMultiple(box, bulkOpenCount100)"
+                  :disabled="(box.unlock_level && getLevel() < box.unlock_level) || !canAfford(getBulkPrice(box.price, bulkOpenCount100))"
+                >
+                  Ouvrir x100
                 </BuyButton>
               </div>
             </div>
@@ -244,7 +260,7 @@ import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
 const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, chestKeys, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
 const { fetchEggStatus } = useEgg()
 const { poules, refreshPoules } = usePoules()
-const { loading: boxLoading, openBox: openBoxAPI, getAvailableBoxes } = useBoxes()
+const { loading: boxLoading, openBox: openBoxAPI, openBoxMultiple: openBoxMultipleAPI, getAvailableBoxes } = useBoxes()
 const { checkAchievements } = useAchievements()
 const { artifacts: ownedArtifacts, fetchArtifacts } = useArtifacts()
 const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes, artifacts: artifactsData, items } = useGameData()
@@ -262,6 +278,10 @@ function switchTab(id) {
     activeTab.value = id
   }
 }
+
+// Nombre d'ouvertures multiples selon le niveau
+const bulkOpenCount10 = 10
+const bulkOpenCount100 = computed(() => getLevel() >= 10 ? 100 : null)
 
 // État des popups
 const showBoxResults = ref(false)
@@ -642,7 +662,7 @@ async function openBox(box) {
     showOpenAnim.value = true
     sndBoxOpen(0.95)
 
-    const minAnim = new Promise(res => setTimeout(res, 600))
+    const minAnim = new Promise(res => setTimeout(res, 1000)) // 1s minimum pour x1
     const apiCall = openBoxAPI(box.id)
     const result = await Promise.all([minAnim, apiCall]).then(([, r]) => r)
 
@@ -732,6 +752,13 @@ function buyChicken(offer) {
   // Cette fonction n'est plus utilisée car on achète des boîtes maintenant
 }
 
+// Fonction pour obtenir le délai d'animation minimum selon le nombre d'ouvertures
+function getMinAnimationDelay(count) {
+  if (count >= 100) return 2000 
+  if (count >= 10) return 1000  
+  return 500
+}
+
 async function openBoxMultiple(box, times = 10) {
   try {
     const desired = Math.max(1, Number(times) || 1)
@@ -745,26 +772,19 @@ async function openBoxMultiple(box, times = 10) {
     showOpenAnim.value = true
     sndBoxOpen(0.95)
 
-    const combined = []
-    let opened = 0
-    for (let i = 0; i < affordable; i++) {
-      try {
-        if (i === 0) {
-          await new Promise(res => setTimeout(res, 600))
-        }
-        const result = await openBoxAPI(box.id)
-        if (Array.isArray(result?.results)) {
-          combined.push(...result.results)
-        }
-        opened++
-      } catch (err) {
-        console.warn('Ouverture interrompue à', i + 1, err)
-        break
-      }
-    }
+    // Utiliser le délai minimum selon le nombre d'ouvertures
+    const minAnimDelay = getMinAnimationDelay(affordable)
+    const minAnim = new Promise(res => setTimeout(res, minAnimDelay))
+
+    // Utiliser la nouvelle API optimisée pour ouvrir plusieurs boîtes à la fois
+    const result = await openBoxMultipleAPI(box.id, affordable)
+
+    // Attendre que l'animation minimum soit terminée
+    await minAnim
 
     showOpenAnim.value = false
-    if (opened > 0) {
+
+    if (result && result.results && result.results.length > 0) {
       // --- NOUVEAU : rafraîchir artefacts et boîtes après les ouvertures
       try {
         await fetchArtifacts()
@@ -776,9 +796,11 @@ async function openBoxMultiple(box, times = 10) {
 
       // Trier par rareté (les plus rares en haut)
       const rarityOrder = { legendaire: 4, légendaire: 4, epique: 3, épique: 3, rare: 2, commune: 1 }
+      const combined = Array.isArray(result.results) ? [...result.results] : []
       combined.sort((a, b) => (rarityOrder[b?.rarete] || 0) - (rarityOrder[a?.rarete] || 0))
       boxResults.value = combined
-      lastOpenedBoxName.value = `${box.name} x${opened}`
+      lastOpenedBoxName.value = `${box.name} x${result.count || affordable}`
+
       // Effet et son spéciaux si un légendaire est présent dans le lot
       try {
         const hasLegendary = combined.some(r => (r?.rarete === 'legendaire' || r?.rarete === 'légendaire'))
@@ -790,8 +812,10 @@ async function openBoxMultiple(box, times = 10) {
           sndEpic(0.95)
         }
       } catch (_) {}
+
       sndBoxResults(0.9)
       showBoxResults.value = true
+
       // Rafraîchir les données du joueur et les poules
       await Promise.all([refreshPlayerData(), refreshPoules()])
       
@@ -810,10 +834,11 @@ async function openBoxMultiple(box, times = 10) {
           window.dispatchEvent(new CustomEvent('chicken-bought', { detail: { especeId: r.especeId, isNew: r.isNew } }))
         }
       } catch (_) {}
-      // Optionnel: toast résumé
+
+      // Toast résumé
       const newCount = combined.filter(r => r.isNew).length
       const total = combined.length
-      // window.$toast && window.$toast(`🎉 ${opened} boîte${opened>1?'s':''} ouvertes: ${total} poule${total>1?'s':''} obtenue${total>1?'s':''}${newCount>0?` (${newCount} nouvelle${newCount>1?'s':''})`:''}`, 'success')
+      // window.$toast && window.$toast(`🎉 ${result.count || affordable} boîte${(result.count || affordable)>1?'s':''} ouvertes: ${total} poule${total>1?'s':''} obtenue${total>1?'s':''}${newCount>0?` (${newCount} nouvelle${newCount>1?'s':''})`:''}`, 'success')
     } else {
       window.$toast && window.$toast('Aucune boîte ouverte', 'warning')
     }

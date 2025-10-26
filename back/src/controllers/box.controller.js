@@ -65,88 +65,14 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
         throw new Error('Échec de la déduction du coût')
       }
 
-      const responseResults = []
+      // Grouper les résultats pour optimiser les opérations DB
+      const groupedResults = groupResults(results)
       
-      // Traiter les résultats un par un de manière atomique
-      for (const result of results) {
-        if (result.type === 'chicken') {
-          // Tenter d'incrémenter la quantité si la poule existe déjà
-          // Vérifier l'existence de la poule avant d'ajouter
-          const alreadyHasChicken = await User.findOne({
-            _id: userId,
-            'poulesPossedees.especeId': result.chickenId
-          });
+      // Traiter tous les résultats en opérations bulk optimisées
+      await processBulkResults(userId, groupedResults)
 
-          // Logique classique : si la poule existe, on incrémente la quantité, sinon on ajoute
-          const user = await User.findById(userId);
-          const pouleIndex = user.poulesPossedees.findIndex(p => p.especeId === result.chickenId);
-          if (pouleIndex !== -1) {
-            await User.updateOne(
-              { _id: userId, [`poulesPossedees.${pouleIndex}.especeId`]: result.chickenId },
-              { $inc: { [`poulesPossedees.${pouleIndex}.quantite`]: 1 } }
-            );
-          } else {
-            await User.updateOne(
-              { _id: userId },
-              {
-                $push: {
-                  poulesPossedees: {
-                    especeId: result.chickenId,
-                    quantite: 1,
-                    niveauTalent: 1,
-                    new: true
-                  }
-                }
-              }
-            );
-          }
-
-          // Préparer les données de réponse
-          const chickenData = especeData[result.chickenId];
-          responseResults.push({
-            type: 'chicken',
-            especeId: result.chickenId,
-            nom: chickenData?.nom || result.chickenId,
-            rarete: chickenData?.rarete || 'commune',
-            groupe: result.groupName,
-            isNew: !ownedChickens.includes(result.chickenId)
-          });
-        } else if (result.type === 'artifact') {
-          // Utiliser $addToSet pour éviter les doublons d'artefacts
-          await User.updateOne(
-            { _id: userId },
-            {
-              $addToSet: {
-                artifacts: { artifactId: result.artifactId }
-              }
-            }
-          )
-
-          // Préparer les données de réponse
-          const artifactData = artifactsData[result.artifactId]
-          responseResults.push({
-            type: 'artifact',
-            artifactId: result.artifactId,
-            name: artifactData?.name || result.artifactId,
-            icon: artifactData?.icon || '❖',
-            rarete: artifactData?.rarete || 'commune',
-            description: artifactData?.description || '',
-            isNew: !ownedArtifacts.includes(result.artifactId)
-          })
-        } else if (result.type === 'item') {
-          // Ajouter les ressources de manière atomique
-          await User.updateOne(
-            { _id: userId },
-            { $inc: { [`resources.${result.itemId}`]: result.amount } }
-          )
-
-          responseResults.push({
-            type: 'item',
-            itemId: result.itemId,
-            amount: result.amount
-          })
-        }
-      }
+      // Préparer les données de réponse groupées
+      const responseResults = buildGroupedResponseResults(groupedResults, ownedChickens, ownedArtifacts)
 
       // Récupérer l'utilisateur mis à jour pour les nouvelles ressources
       const updatedUser = await User.findById(userId)
@@ -173,6 +99,158 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
       throw error
     }
   }
+}
+
+// Fonction pour grouper les résultats par type et identifiant
+function groupResults(results) {
+  const grouped = {
+    chickens: new Map(), // especeId -> { count, groupName, rarity }
+    artifacts: new Set(), // artifactId
+    items: new Map() // itemId -> totalAmount
+  }
+
+  for (const result of results) {
+    if (result.type === 'chicken') {
+      const key = result.chickenId
+      if (!grouped.chickens.has(key)) {
+        grouped.chickens.set(key, {
+          count: 0,
+          groupName: result.groupName,
+          rarity: result.rarity
+        })
+      }
+      grouped.chickens.get(key).count++
+    } else if (result.type === 'artifact') {
+      grouped.artifacts.add(result.artifactId)
+    } else if (result.type === 'item') {
+      const key = result.itemId
+      grouped.items.set(key, (grouped.items.get(key) || 0) + result.amount)
+    }
+  }
+
+  return grouped
+}
+
+// Fonction pour traiter tous les résultats en opérations bulk optimisées
+async function processBulkResults(userId, groupedResults) {
+  const bulkOps = []
+
+  // Traiter les poules : incrémenter les existantes et ajouter les nouvelles
+  if (groupedResults.chickens.size > 0) {
+    // Récupérer l'utilisateur actuel pour connaître l'état des poules
+    const user = await User.findById(userId)
+    const existingChickens = new Map(
+      (user.poulesPossedees || []).map(p => [p.especeId, p])
+    )
+
+    const chickensToIncrement = []
+    const chickensToAdd = []
+
+    for (const [especeId, data] of groupedResults.chickens) {
+      if (existingChickens.has(especeId)) {
+        chickensToIncrement.push({ especeId, increment: data.count })
+      } else {
+        chickensToAdd.push({
+          especeId,
+          quantite: data.count,
+          niveauTalent: 1,
+          new: true
+        })
+      }
+    }
+
+    // Incrémenter les poules existantes
+    for (const { especeId, increment } of chickensToIncrement) {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: userId, 'poulesPossedees.especeId': especeId },
+          update: { $inc: { 'poulesPossedees.$.quantite': increment } }
+        }
+      })
+    }
+
+    // Ajouter les nouvelles poules
+    if (chickensToAdd.length > 0) {
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: userId },
+          update: { $push: { poulesPossedees: { $each: chickensToAdd } } }
+        }
+      })
+    }
+  }
+
+  // Traiter les artefacts : utiliser $addToSet pour éviter les doublons
+  if (groupedResults.artifacts.size > 0) {
+    const artifactsToAdd = Array.from(groupedResults.artifacts).map(artifactId => ({ artifactId }))
+    bulkOps.push({
+      updateOne: {
+        filter: { _id: userId },
+        update: { $addToSet: { artifacts: { $each: artifactsToAdd } } }
+      }
+    })
+  }
+
+  // Traiter les items : incrémenter les ressources
+  for (const [itemId, amount] of groupedResults.items) {
+    bulkOps.push({
+      updateOne: {
+        filter: { _id: userId },
+        update: { $inc: { [`resources.${itemId}`]: amount } }
+      }
+    })
+  }
+
+  // Exécuter toutes les opérations en bulk si il y en a
+  if (bulkOps.length > 0) {
+    await User.bulkWrite(bulkOps, { ordered: true })
+  }
+}
+
+// Fonction pour construire les résultats de réponse groupés
+function buildGroupedResponseResults(groupedResults, ownedChickens, ownedArtifacts) {
+  const responseResults = []
+
+  // Poules groupées
+  for (const [especeId, data] of groupedResults.chickens) {
+    const chickenData = especeData[especeId]
+    responseResults.push({
+      type: 'chicken',
+      especeId: especeId,
+      nom: chickenData?.nom || especeId,
+      rarete: chickenData?.rarete || 'commune',
+      groupe: data.groupName,
+      count: data.count,
+      isNew: !ownedChickens.includes(especeId)
+    })
+  }
+
+  // Artefacts (toujours uniques)
+  for (const artifactId of groupedResults.artifacts) {
+    const artifactData = artifactsData[artifactId]
+    responseResults.push({
+      type: 'artifact',
+      artifactId: artifactId,
+      name: artifactData?.name || artifactId,
+      icon: artifactData?.icon || '❖',
+      rarete: artifactData?.rarete || 'commune',
+      description: artifactData?.description || '',
+      count: 1,
+      isNew: !ownedArtifacts.includes(artifactId)
+    })
+  }
+
+  // Items groupés
+  for (const [itemId, amount] of groupedResults.items) {
+    responseResults.push({
+      type: 'item',
+      itemId: itemId,
+      amount: amount,
+      count: 1 // Pour cohérence avec l'affichage
+    })
+  }
+
+  return responseResults
 }
 
 // GET /api/boxes - Récupérer les boîtes disponibles
@@ -357,6 +435,128 @@ export async function openBox(req, res) {
     }
     
     res.status(500).json({ error: 'Erreur serveur lors de l\'ouverture de la boîte' })
+  }
+}
+
+// POST /api/boxes/:boxId/open-multiple - Ouvrir plusieurs boîtes à la fois
+export async function openBoxMultiple(req, res) {
+  try {
+    const boxId = parseInt(req.params.boxId)
+    const { count = 1 } = req.body
+
+    if (count < 1 || count > 100) {
+      return res.status(400).json({ error: 'Le nombre de boîtes doit être entre 1 et 100' })
+    }
+
+    const box = boxesData.find(b => b.id === boxId)
+    if (!box) {
+      return res.status(404).json({ error: 'Boîte introuvable' })
+    }
+
+    // Vérifier le niveau requis
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    const playerLevel = user.experience?.level || 1
+    if ((box.unlock_level || 1) > playerLevel) {
+      return res.status(403).json({ error: 'Niveau insuffisant pour cette boîte' })
+    }
+
+    // Vérification spéciale pour les boîtes d'artefacts (niveau 5 minimum)
+    if (box.category === 'artifacts' && playerLevel < 5) {
+      return res.status(403).json({ error: 'Vous devez atteindre le niveau 5 pour ouvrir des boîtes d\'artefacts' })
+    }
+
+    // Vérifier les ressources pour toutes les boîtes
+    const resourceType = box.price.type === 'eggs' ? 'eggs' : 
+                        box.price.type === 'stock_token' ? 'stock_token' : 
+                        box.price.type === 'production_token' ? 'production_token' :
+                        box.price.type === 'chest_key' ? 'chest_key' : null
+
+    if (!resourceType) {
+      return res.status(400).json({ error: 'Type de ressource invalide' })
+    }
+
+    const playerResources = user.resources || {}
+    const currentAmount = playerResources[resourceType] || 0
+    const totalCost = box.price.count * count
+
+    if (currentAmount < totalCost) {
+      return res.status(400).json({ error: `Ressources insuffisantes (${currentAmount}/${totalCost})` })
+    }
+
+    // Calculer les poules et artefacts déjà possédés
+    const ownedChickens = (user.poulesPossedees || []).map(poule => poule.especeId)
+    const ownedArtifacts = box.category === 'artifacts' ? 
+      (user.artifacts || []).map(a => a.artifactId) : []
+
+    // Ouvrir toutes les boîtes et agréger les résultats
+    const allResults = []
+    for (let i = 0; i < count; i++) {
+      const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts)
+      allResults.push(...results)
+    }
+
+    // Grouper tous les résultats agrégés
+    const groupedResults = groupResults(allResults)
+
+    // Décrémenter le coût total d'abord
+    const costUpdate = await User.findByIdAndUpdate(
+      req.userId,
+      { $inc: { [`resources.${resourceType}`]: -totalCost } },
+      { new: true }
+    )
+    
+    if (!costUpdate) {
+      return res.status(500).json({ error: 'Échec de la déduction du coût' })
+    }
+
+    // Traiter tous les résultats agrégés en opérations bulk
+    await processBulkResults(req.userId, groupedResults)
+
+    // Construire la réponse groupée
+    const responseResults = buildGroupedResponseResults(groupedResults, ownedChickens, ownedArtifacts)
+
+    // Récupérer l'utilisateur mis à jour
+    const updatedUser = await User.findById(req.userId)
+    const newBalance = updatedUser.resources[resourceType]
+
+    // Mettre à jour les succès
+    try {
+      await updateAchievementProgress(req.userId, 'increment', {
+        totalBoxesOpened: count
+      })
+      
+      await updateAchievementProgress(req.userId, 'max', {
+        totalChickensOwned: updatedUser.poulesPossedees.length
+      })
+    } catch (achievementError) {
+      console.warn('Erreur lors de la mise à jour des succès:', achievementError)
+    }
+
+    res.json({
+      success: true,
+      box: { id: box.id, name: box.name, cost: box.price },
+      count: count,
+      results: responseResults,
+      newBalance: { [resourceType]: newBalance }
+    })
+
+  } catch (err) {
+    console.error('Erreur openBoxMultiple:', err)
+    
+    // Gestion d'erreurs spécifiques
+    if (err.message.includes('Ressources insuffisantes')) {
+      return res.status(400).json({ error: err.message })
+    }
+    if (err.message.includes('Niveau insuffisant')) {
+      return res.status(403).json({ error: err.message })
+    }
+    if (err.message.includes('introuvable')) {
+      return res.status(404).json({ error: err.message })
+    }
+    
+    res.status(500).json({ error: 'Erreur serveur lors de l\'ouverture des boîtes' })
   }
 }
 
