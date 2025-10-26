@@ -51,7 +51,7 @@
           <span class="mobile-text">🛒</span>
         </ActionButton>
         <span
-          v-if="avalaibleUpgrade"
+          v-if="avalaibleUpgrade && route.path !== '/market'"
           class="badge-dot badge-dot--yellow"
           title="Amélioration disponible"
         ></span>
