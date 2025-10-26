@@ -714,6 +714,8 @@ export const levelRewards = {
   8: [ { type: 'stock_token', count: 3 }, { type: 'mining_token', count: 3 } ],
   9: [ { type: 'production_token', count: 5 }, { type: 'mining_token', count: 3 } ],
   10: [ { type: 'stock_token', count: 5 }, { type: 'mining_token', count: 3 } ],
+  11: [ { type: 'production_token', count: 6 }, { type: 'mining_token', count: 5 } ],
+  12: [ { type: 'stock_token', count: 6 }, { type: 'mining_token', count: 5 } ],
 }
 
 export const talentLevelUpgradeCost = {
