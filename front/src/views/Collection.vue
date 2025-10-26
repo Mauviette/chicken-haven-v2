@@ -29,6 +29,7 @@
         <select v-model="sortKey" class="sort-select">
           <option value="rarete">Rareté</option>
           <option value="quantite">Quantité</option>
+          <option value="niveauTalent">Niveau</option>
         </select>
         <button @click="toggleSortOrder" class="sort-order">
           {{ sortOrder === 'asc' ? '⬆️' : '⬇️' }}
@@ -278,8 +279,19 @@ const filteredPoules = computed(() => {
     
     // Si on ne recherche rien, appliquer le tri choisi directement
     if (!query && sortKey.value) {
-      const valA = sortKey.value === 'rarete' ? a._rareteIndex : (a[sortKey.value] ?? 0)
-      const valB = sortKey.value === 'rarete' ? b._rareteIndex : (b[sortKey.value] ?? 0)
+      let valA, valB
+      
+      if (sortKey.value === 'rarete') {
+        valA = a._rareteIndex
+        valB = b._rareteIndex
+      } else if (sortKey.value === 'niveauTalent') {
+        valA = a.niveauTalent || 0
+        valB = b.niveauTalent || 0
+      } else {
+        valA = a[sortKey.value] ?? 0
+        valB = b[sortKey.value] ?? 0
+      }
+      
       const dir = sortOrder.value === 'asc' ? 1 : -1
       
       if (valA !== valB) return (valA - valB) * dir

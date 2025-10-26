@@ -1159,7 +1159,7 @@ export const itemsData = {
     nom: 'clés à coffre',
     nom_singulier: 'clé à coffre',
     icon: '🗝️',
-    description: 'Clés spéciales permettant d\'ouvrir des coffres de trésors contenant des artefacts de minage.'
+    description: 'Clés spéciales permettant d\'ouvrir des coffres de trésors contenant des artefacts de minage. Peuvent être obtenus en minant.'
   },
   'blueberry': {
     id: 'blueberry',
