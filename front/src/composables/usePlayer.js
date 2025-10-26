@@ -1,4 +1,4 @@
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, getCurrentInstance } from 'vue'
 import { apiGet, apiPut } from '@/utils/api'
 
 const eggs = ref(0)
@@ -37,34 +37,37 @@ function clearPlayerData() {
 
 export function usePlayer() {
   // Écouter les événements de déconnexion pour nettoyer les données
-  onMounted(() => {
-    const handleLogout = () => {
-      clearPlayerData()
-    }
-    
-    const handleMiningGameOver = (event) => {
-      const resources = event.detail?.resources
-      if (resources) {
-        if (resources.eggs !== undefined) eggs.value = resources.eggs
-        if (resources.stock_token !== undefined) stockTokens.value = resources.stock_token
-        if (resources.production_token !== undefined) productionTokens.value = resources.production_token
-        if (resources.wild_token !== undefined) wildTokens.value = resources.wild_token
-        if (resources.chest_key !== undefined) chestKeys.value = resources.chest_key
-        if (resources.mining_token !== undefined) miningTokens.value = resources.mining_token
-        if (resources.precious_stone !== undefined) preciousStones.value = resources.precious_stone
+  // Seulement si on est dans un contexte de composant (avec getCurrentInstance)
+  if (typeof getCurrentInstance === 'function' && getCurrentInstance()) {
+    onMounted(() => {
+      const handleLogout = () => {
+        clearPlayerData()
       }
-    }
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('auth-logout', handleLogout)
-      window.addEventListener('mining-game-over', handleMiningGameOver)
       
-      onBeforeUnmount(() => {
-        window.removeEventListener('auth-logout', handleLogout)
-        window.removeEventListener('mining-game-over', handleMiningGameOver)
-      })
-    }
-  })
+      const handleMiningGameOver = (event) => {
+        const resources = event.detail?.resources
+        if (resources) {
+          if (resources.eggs !== undefined) eggs.value = resources.eggs
+          if (resources.stock_token !== undefined) stockTokens.value = resources.stock_token
+          if (resources.production_token !== undefined) productionTokens.value = resources.production_token
+          if (resources.wild_token !== undefined) wildTokens.value = resources.wild_token
+          if (resources.chest_key !== undefined) chestKeys.value = resources.chest_key
+          if (resources.mining_token !== undefined) miningTokens.value = resources.mining_token
+          if (resources.precious_stone !== undefined) preciousStones.value = resources.precious_stone
+        }
+      }
+      
+      if (typeof window !== 'undefined') {
+        window.addEventListener('auth-logout', handleLogout)
+        window.addEventListener('mining-game-over', handleMiningGameOver)
+        
+        onBeforeUnmount(() => {
+          window.removeEventListener('auth-logout', handleLogout)
+          window.removeEventListener('mining-game-over', handleMiningGameOver)
+        })
+      }
+    })
+  }
 
   // Initialiser les données du joueur si pas déjà fait
   if (!player.value && typeof localStorage !== 'undefined' && localStorage.getItem('token')) {
@@ -108,9 +111,21 @@ export function usePlayer() {
           // Mémorise le dernier utilisateur pour éviter un faux level-up lors d'un switch de compte
           const lastProfileId = (typeof window !== 'undefined') ? window.__lastProfileId : undefined
           const newLevel = u?.experience?.level ?? 1
+          
+          // N'émettre le level-up que si :
+          // 1. C'est le même utilisateur (évite les faux levelup lors du switch de compte)
+          // 2. Le nouveau niveau est strictement supérieur à l'ancien
+          // 3. L'ancien niveau n'était pas undefined (évite les levelup au premier chargement)
+          const shouldEmitLevelUp = lastProfileId && 
+                                   currentProfileId && 
+                                   lastProfileId === currentProfileId && 
+                                   typeof prevLevel === 'number' && 
+                                   newLevel > prevLevel
+          
           level.value = newLevel
           xp.value = u?.experience?.points ?? 0
           xpRequired.value = u?.experience?.required_points ?? 2
+          
           // Synchroniser aussi les ressources centrales (incluant tokens)
           if (u?.resources) {
             eggs.value = Number(u.resources.eggs ?? eggs.value)
@@ -121,10 +136,10 @@ export function usePlayer() {
             miningTokens.value = Number(u.resources.mining_token ?? miningTokens.value)
             preciousStones.value = Number(u.resources.precious_stone ?? preciousStones.value)
           }
+          
           try {
             if (typeof window !== 'undefined') {
-              // N'émettre le level-up que si le même utilisateur passe un niveau
-              if (lastProfileId && currentProfileId && lastProfileId === currentProfileId && newLevel > prevLevel) {
+              if (shouldEmitLevelUp) {
                 window.dispatchEvent(new CustomEvent('level-up', { detail: { from: prevLevel, to: newLevel } }))
               }
               // Mettre à jour le dernier profileId après traitement

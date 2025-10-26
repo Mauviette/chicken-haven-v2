@@ -65,28 +65,28 @@ export function useAuth() {
       const userData = await apiGet('/api/user/me')
       if (!userData) return
 
-      // Importer la version actuelle du jeu
-      const { CURRENT_GAME_VERSION } = await import('@/data/sharedGameData.js')
+      // Récupérer la liste des annonces pour déterminer la dernière version
+      const announcements = await apiGet('/api/announcements')
+      if (!announcements || announcements.length === 0) return
 
-      const currentVersion = userData.lastSeenVersion || '1.0.0'
-      const latestVersion = CURRENT_GAME_VERSION
+      // Prendre la première annonce (la plus récente)
+      const latestAnnouncement = announcements[0]
+      const latestVersion = latestAnnouncement.version
+
+      if (!latestVersion) return
+
+      const currentVersion = userData.lastSeenVersion || '0.0.0'
 
       // Si la version actuelle est plus récente, mettre à jour et afficher le popup
       if (isVersionNewer(latestVersion, currentVersion)) {
         // Mettre à jour la version vue par l'utilisateur
         await apiPatch('/api/user/me', { lastSeenVersion: latestVersion })
 
-        // Récupérer les détails de la dernière annonce
-        const announcements = await apiGet('/api/announcements')
-        const latestAnnouncement = announcements.find(ann => ann.version === latestVersion)
-
-        if (latestAnnouncement) {
-          // Émettre un événement pour afficher le popup de mise à jour
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('show-update-popup', {
-              detail: latestAnnouncement
-            }))
-          }
+        // Émettre un événement pour afficher le popup de mise à jour
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('show-update-popup', {
+            detail: latestAnnouncement
+          }))
         }
       }
     } catch (error) {
@@ -95,6 +95,8 @@ export function useAuth() {
   }
 
   const isVersionNewer = (newVersion, oldVersion) => {
+    if (!newVersion || !oldVersion) return false
+    
     const newParts = newVersion.split('.').map(Number)
     const oldParts = oldVersion.split('.').map(Number)
 

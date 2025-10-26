@@ -97,7 +97,7 @@ const getImageUrl = (imageName) => {
 }
 
 .update-title {
-  color: var(--text-primary);
+  color: #2c1810;
   font-size: 24px;
   margin-bottom: 16px;
   font-weight: bold;
@@ -109,13 +109,14 @@ const getImageUrl = (imageName) => {
   gap: 16px;
   margin-bottom: 20px;
   font-size: 14px;
-  color: var(--text-secondary);
+  color: #6b4423;
 }
 
 .update-date, .update-version {
-  background: var(--bg-secondary);
+  background: #f6e4c3;
   padding: 4px 12px;
   border-radius: 12px;
+  border: 1px solid #d4a574;
 }
 
 .update-image {
@@ -126,7 +127,7 @@ const getImageUrl = (imageName) => {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
-  box-shadow: var(--shadow-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .update-summary {
@@ -137,7 +138,7 @@ const getImageUrl = (imageName) => {
 
 .update-summary p {
   margin: 0;
-  color: var(--text-primary);
+  color: #2c1810;
 }
 
 .update-actions {
@@ -155,25 +156,33 @@ const getImageUrl = (imageName) => {
   font-size: 16px;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
   transition: all 0.2s ease;
+  font-weight: 600;
 }
 
 .action-button.primary {
-  background: var(--button-bg);
-  color: var(--button-text);
+  background: linear-gradient(135deg, #8b4513, #a0552a);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
 }
 
 .action-button.primary:hover {
-  background: var(--button-hover);
+  background: linear-gradient(135deg, #a0552a, #b8653a);
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(139, 69, 19, 0.4);
 }
 
 .action-button.secondary {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 2px solid var(--border-primary);
+  background: #f9f3e8;
+  color: #8b4513;
+  border: 2px solid #d4a574;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .action-button.secondary:hover {
-  background: var(--bg-tertiary);
+  background: #f0e6d2;
+  border-color: #b8653a;
+  color: #6b4423;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 </style>

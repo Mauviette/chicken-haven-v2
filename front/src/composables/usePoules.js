@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { useGameData } from './useGameData.js'
 import { usePlayer } from './usePlayer.js'
 import { apiGet, apiPost, apiPut } from '@/utils/api.js'
@@ -96,28 +96,31 @@ export function usePoules() {
     loading.value = false
   }
 
-  onMounted(() => {
-    // Charge seulement si connecté
-    if (isLoggedIn() && (!rawPoules.value || rawPoules.value.length === 0)) {
-      fetchPoulesSingleton()
-    } else if (!isLoggedIn()) {
-      // Pas connecté: pas d'appel réseau et pas d'état de chargement bloqué
-      loading.value = false
-    }
+  // Seulement utiliser les hooks si on est dans un contexte de composant
+  if (typeof getCurrentInstance === 'function' && getCurrentInstance()) {
+    onMounted(() => {
+      // Charge seulement si connecté
+      if (isLoggedIn() && (!rawPoules.value || rawPoules.value.length === 0)) {
+        fetchPoulesSingleton()
+      } else if (!isLoggedIn()) {
+        // Pas connecté: pas d'appel réseau et pas d'état de chargement bloqué
+        loading.value = false
+      }
 
-    // Écoute les événements globaux pour réagir aux changements d'auth
-    try {
-      window.addEventListener('auth-login', onLogin)
-      window.addEventListener('auth-logout', onLogout)
-    } catch (_) {}
-  })
+      // Écoute les événements globaux pour réagir aux changements d'auth
+      try {
+        window.addEventListener('auth-login', onLogin)
+        window.addEventListener('auth-logout', onLogout)
+      } catch (_) {}
+    })
 
-  onUnmounted(() => {
-    try {
-      window.removeEventListener('auth-login', onLogin)
-      window.removeEventListener('auth-logout', onLogout)
-    } catch (_) {}
-  })
+    onUnmounted(() => {
+      try {
+        window.removeEventListener('auth-login', onLogin)
+        window.removeEventListener('auth-logout', onLogout)
+      } catch (_) {}
+    })
+  }
 
   const poules = computed(() => {
     // Accéder correctement aux données d'espèces

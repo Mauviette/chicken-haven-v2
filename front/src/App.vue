@@ -134,7 +134,7 @@ onMounted(async () => {
       setUserDataLoading(false)
       
       // Vérifier les mises à jour après le chargement du joueur
-      console.log('👤 Données joueur chargées, vérification des mises à jour...')
+      //console.log('👤 Données joueur chargées, vérification des mises à jour...')
       await checkForUpdates()
     } catch (error) {
       console.error('Erreur chargement données utilisateur:', error)
@@ -220,39 +220,32 @@ function closeUpdatePopup() {
 // Fonction pour vérifier les mises à jour
 async function checkForUpdates() {
   try {
-    //console.log('🔍 Vérification des mises à jour...')
-    
     // Récupérer la dernière version vue par le joueur
-    const lastSeenVersion = localStorage.getItem('lastSeenVersion') || '0.0.0'
-    //console.log('📋 Dernière version vue:', lastSeenVersion)
+    let lastSeenVersion = localStorage.getItem('lastSeenVersion') || '0.0.0'
     
     // Récupérer la liste des annonces
     const announcements = await apiGet('/api/announcements')
-    //console.log('📢 Annonces récupérées:', announcements?.length || 0)
     
     if (announcements && announcements.length > 0) {
       // Prendre la première annonce (la plus récente)
       const latestAnnouncement = announcements[0]
-      //console.log('🆕 Dernière annonce:', latestAnnouncement.title, 'Version:', latestAnnouncement.version)
       
       // Comparer les versions
       const comparison = compareVersions(latestAnnouncement.version, lastSeenVersion)
-      //console.log('⚖️ Comparaison de versions:', latestAnnouncement.version, 'vs', lastSeenVersion, '=', comparison)
       
-      if (comparison > 0) {
-        //console.log('🎉 Nouvelle version détectée, affichage de la popup')
+      // Afficher la popup si :
+      // 1. Nouvelle version supérieure à l'ancienne (comparison > 0)
+      // 2. OU si l'ancienne version semble invalide/ancienne et qu'on a une annonce récente
+      const shouldShowPopup = comparison > 0 || (lastSeenVersion === '0.0.0' && latestAnnouncement.version !== '0.0.0')
+      
+      if (shouldShowPopup) {
         // Nouvelle version disponible, afficher la popup
         currentUpdateAnnouncement.value = latestAnnouncement
         updatePopupVisible.value = true
         
         // Mettre à jour la dernière version vue
         localStorage.setItem('lastSeenVersion', latestAnnouncement.version)
-        //console.log('💾 Version mise à jour dans localStorage:', latestAnnouncement.version)
-      } else {
-        //console.log('✅ Version déjà vue, pas de popup')
       }
-    } else {
-      //console.log('❌ Aucune annonce trouvée')
     }
   } catch (error) {
     console.error('❌ Erreur lors de la vérification des mises à jour:', error)
