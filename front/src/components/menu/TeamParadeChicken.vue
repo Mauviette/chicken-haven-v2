@@ -1,7 +1,7 @@
 <template>
   <!-- Conteneur acteur positionné relativement à la scène (parent .stage) -->
   <div class="actor" :class="{ 'has-special': hasSpecialFeature }" :style="{ left: x + 'px' }">
-    <Tooltip :text="tooltipHtml" :key="tooltipHtml" v-if="!isMobile">
+      <Tooltip :text="tooltipHtml" :key="tooltipHtml" v-if="!isMobile" :force-hide="forceHideTooltip">
       <div class="parade-wrapper">
         <img
         v-if="currentImg"
@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
@@ -115,6 +115,7 @@ const currentImg = ref('')
 const stateUntil = ref(Date.now() + 2000)
 const isFallback = ref(false)
 const isActivating = ref(false)
+const forceHideTooltip = ref(false)
 
 // Référence à l'élément poule pour obtenir sa position
 const chickenRef = ref(null)
@@ -224,6 +225,11 @@ function emitOpenDetail() {
       }
     }
     collectGift(props.especeId, position)
+    // Forcer la fermeture de la tooltip
+    forceHideTooltip.value = true
+    nextTick(() => {
+      forceHideTooltip.value = false
+    })
     giftCollect()
     return
   }
@@ -269,6 +275,11 @@ function onGiftClick(e) {
   }
   // Appeler la fonction du composable
   collectGift(props.especeId, position)
+  // Forcer la fermeture de la tooltip
+  forceHideTooltip.value = true
+  nextTick(() => {
+    forceHideTooltip.value = false
+  })
   // son local
   try { giftCollect() } catch (_) {}
 }

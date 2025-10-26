@@ -28,6 +28,7 @@ const props = defineProps({
   text: String,
   position: { type: String, default: 'top' }, // 'top' | 'bottom' | 'left' | 'right'
   followMouse: { type: Boolean, default: true },
+  forceHide: { type: Boolean, default: false }
 })
 
 const wrapper = ref(null)
@@ -176,6 +177,13 @@ watch(() => props.text, () => {
     nextTick(() => {
       show.value = true
     })
+  }
+})
+
+// Forcer la fermeture de la tooltip si forceHide devient true
+watch(() => props.forceHide, (newVal) => {
+  if (newVal) {
+    show.value = false
   }
 })
 </script>
