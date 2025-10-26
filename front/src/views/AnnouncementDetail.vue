@@ -31,6 +31,10 @@
 
         <div class="announcement-body">
           <div class="markdown-content" v-html="renderMarkdown(announcement.content)"></div>
+          <!-- Fallback pour les images qui ne se chargent pas -->
+          <div v-if="announcement.content && announcement.content.includes('![')" class="image-fallback-notice" style="display: none;">
+            Si les images ne s'affichent pas, essayez de rafraîchir la page.
+          </div>
         </div>
       </div>
     </div>
@@ -38,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { apiGet } from '@/utils/api'
 import { getApiBaseUrl } from '@/utils/api'
@@ -54,6 +58,23 @@ const error = ref(null)
 
 onMounted(() => {
   loadAnnouncement()
+  
+  // Gérer les erreurs d'images après le rendu
+  nextTick(() => {
+    const images = document.querySelectorAll('.markdown-image')
+    images.forEach(img => {
+      img.addEventListener('error', function() {
+        console.log('❌ Erreur de chargement d\'image, retry:', this.src)
+        // Retry avec un timestamp pour éviter le cache
+        setTimeout(() => {
+          this.src = this.src.split('?')[0] + '?t=' + Date.now()
+        }, 1000)
+      })
+      img.addEventListener('load', function() {
+        console.log('✅ Image chargée:', this.src)
+      })
+    })
+  })
 })
 
 const loadAnnouncement = async () => {
@@ -61,10 +82,12 @@ const loadAnnouncement = async () => {
     loading.value = true
     error.value = null
     const slug = route.params.slug
+    console.log('📄 Chargement de l\'annonce:', slug)
     const data = await apiGet(`/api/announcements/${slug}`)
+    console.log('📄 Données reçues:', data)
     announcement.value = data
   } catch (err) {
-    console.error('Erreur lors du chargement de l\'annonce:', err)
+    console.error('❌ Erreur lors du chargement de l\'annonce:', err)
     error.value = 'Impossible de charger l\'annonce. Veuillez réessayer.'
   } finally {
     loading.value = false
@@ -87,18 +110,24 @@ const formatDate = (dateString) => {
 
 const getImageUrl = (imageName) => {
   // Utiliser la même URL de base que l'API
-  return `${getApiBaseUrl()}/api/announcements/images/${imageName}`
+  const url = `${getApiBaseUrl()}/api/announcements/images/${imageName}`
+  console.log('🔗 Image URL générée:', url)
+  return url
 }
 
 const renderMarkdown = (markdown) => {
   if (!markdown) return ''
+
+  console.log('📝 Rendering markdown:', markdown.substring(0, 100) + '...')
 
   // Simple markdown renderer (basic implementation)
   let html = markdown
 
   // Images - doit être traité en premier pour éviter les conflits
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, src) => {
-    return `<img src="${getImageUrl(src)}" alt="${alt}" class="markdown-image" />`
+    const imageUrl = getImageUrl(src)
+    console.log('🖼️ Image markdown trouvée:', match, '->', imageUrl)
+    return `<img src="${imageUrl}" alt="${alt}" class="markdown-image" />`
   })
 
   // Tables - approche plus simple et robuste

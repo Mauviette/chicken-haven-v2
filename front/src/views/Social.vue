@@ -278,7 +278,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSocial } from '@/composables/useSocial'
 import { usePlayer } from '@/composables/usePlayer'
@@ -313,6 +313,23 @@ const announcementsError = ref(null)
 onMounted(async () => {
   await fetchLeaderboards()
   await loadAnnouncements()
+  
+  // Gérer les erreurs d'images après le rendu
+  nextTick(() => {
+    const images = document.querySelectorAll('.announcement-preview-image img')
+    images.forEach(img => {
+      img.addEventListener('error', function() {
+        console.log('❌ Erreur de chargement d\'image (social), retry:', this.src)
+        // Retry avec un timestamp pour éviter le cache
+        setTimeout(() => {
+          this.src = this.src.split('?')[0] + '?t=' + Date.now()
+        }, 1000)
+      })
+      img.addEventListener('load', function() {
+        console.log('✅ Image chargée (social):', this.src)
+      })
+    })
+  })
 })
 
 const refreshLeaderboards = async () => {
@@ -433,7 +450,7 @@ const loadAnnouncements = async () => {
 
 const viewAnnouncement = (slug) => {
   profileClick()
-  router.push(`/announcements/${slug}`)
+  window.open(`/announcements/${slug}`, '_blank')
 }
 
 const formatAnnouncementDate = (dateString) => {
@@ -445,7 +462,9 @@ const formatAnnouncementDate = (dateString) => {
 }
 
 const getAnnouncementImageUrl = (imageName) => {
-  return `${getApiBaseUrl()}/api/announcements/images/${imageName}`
+  const url = `${getApiBaseUrl()}/api/announcements/images/${imageName}`
+  console.log('🔗 Image URL générée (social):', url)
+  return url
 }
 </script>
 

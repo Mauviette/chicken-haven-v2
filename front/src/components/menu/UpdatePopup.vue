@@ -32,6 +32,7 @@
 import { getApiBaseUrl } from '@/utils/api'
 import { useRouter } from 'vue-router'
 import Popup from '@/components/menu/Popup.vue'
+import { nextTick, onMounted } from 'vue'
 
 const props = defineProps({
   announcement: {
@@ -44,12 +45,31 @@ const router = useRouter()
 
 const emit = defineEmits(['close'])
 
+onMounted(() => {
+  // Gérer les erreurs d'images après le rendu
+  nextTick(() => {
+    const images = document.querySelectorAll('.update-image img')
+    images.forEach(img => {
+      img.addEventListener('error', function() {
+        console.log('❌ Erreur de chargement d\'image (popup), retry:', this.src)
+        // Retry avec un timestamp pour éviter le cache
+        setTimeout(() => {
+          this.src = this.src.split('?')[0] + '?t=' + Date.now()
+        }, 1000)
+      })
+      img.addEventListener('load', function() {
+        console.log('✅ Image chargée (popup):', this.src)
+      })
+    })
+  })
+})
+
 const close = () => {
   emit('close')
 }
 
 const viewFullAnnouncement = () => {
-  router.push(`/announcements/${props.announcement.slug}`)
+  window.open(`/announcements/${props.announcement.slug}`, '_blank')
   close()
 }
 
@@ -64,7 +84,9 @@ const formatDate = (dateString) => {
 
 const getImageUrl = (imageName) => {
   // Utiliser la même URL de base que l'API
-  return `${getApiBaseUrl()}/api/announcements/images/${imageName}`
+  const url = `${getApiBaseUrl()}/api/announcements/images/${imageName}`
+  console.log('🔗 Image URL générée (popup):', url)
+  return url
 }
 </script>
 

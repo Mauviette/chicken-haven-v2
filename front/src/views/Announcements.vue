@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiGet } from '@/utils/api'
 import { getApiBaseUrl } from '@/utils/api'
@@ -55,6 +55,23 @@ const error = ref(null)
 
 onMounted(() => {
   loadAnnouncements()
+  
+  // Gérer les erreurs d'images après le rendu
+  nextTick(() => {
+    const images = document.querySelectorAll('.announcement-image img')
+    images.forEach(img => {
+      img.addEventListener('error', function() {
+        console.log('❌ Erreur de chargement d\'image (liste), retry:', this.src)
+        // Retry avec un timestamp pour éviter le cache
+        setTimeout(() => {
+          this.src = this.src.split('?')[0] + '?t=' + Date.now()
+        }, 1000)
+      })
+      img.addEventListener('load', function() {
+        console.log('✅ Image chargée (liste):', this.src)
+      })
+    })
+  })
 })
 
 const loadAnnouncements = async () => {
@@ -87,7 +104,9 @@ const formatDate = (dateString) => {
 
 const getImageUrl = (imageName) => {
   // Utiliser la même URL de base que l'API
-  return `${getApiBaseUrl()}/api/announcements/images/${imageName}`
+  const url = `${getApiBaseUrl()}/api/announcements/images/${imageName}`
+  console.log('🔗 Image URL générée (liste):', url)
+  return url
 }
 </script>
 
