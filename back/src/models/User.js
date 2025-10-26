@@ -86,7 +86,8 @@ const UserSchema = new mongoose.Schema({
     stock_token : { type : Number, default: 0},
     production_token : { type : Number, default: 0},
     mining_token : { type : Number, default: 0},
-    chest_key : { type : Number, default: 0}
+    chest_key : { type : Number, default: 0},
+    precious_stone : { type : Number, default: 0}
 },
 
   apocalypse: { type: Boolean, default: false },
@@ -103,7 +104,7 @@ const UserSchema = new mongoose.Schema({
   ],
 
   artifactSlots: {
-    slotsCount: { type: Number, default: 2 }, // nombre total d'emplacements disponibles
+    slotsCount: { type: Number, default: 1 }, // nombre total d'emplacements disponibles
     equipped: [ { type: String, default: null } ] // array d'artifactId ou null
   },
 
@@ -136,6 +137,12 @@ const UserSchema = new mongoose.Schema({
     default: function () { return {} }
   },
 
+  // Expansions achetées (ex: { 'team_slot_2': true, 'artifact_slot_2': true })
+  expansions: {
+    type: mongoose.Schema.Types.Mixed,
+    default: function () { return {} }
+  },
+
   achievements: {
     type: mongoose.Schema.Types.Mixed,
     default: function() {
@@ -162,7 +169,7 @@ const UserSchema = new mongoose.Schema({
   },
 
   team: {
-    maxSlots: { type: Number, default: 3, required: true },
+    maxSlots: { type: Number, default: 1, required: true },
     slots: [
       {
         especeId: { type: String, default: null }

@@ -21,6 +21,12 @@
           <span class="balance-amount">{{ chestKeys }}</span>
         </div>
       </Tooltip>
+      <Tooltip v-if="getLevel() >= 5" :text="'Pierres précieuses - Ressource rare obtenue en minant'" position="bottom">
+        <div class="balance-item">
+          <span class="balance-icon">💎</span>
+          <span class="balance-amount">{{ preciousStones }}</span>
+        </div>
+      </Tooltip>
       </div>
     </div>
 
@@ -201,7 +207,6 @@
             </div>
             <div class="item-info">
               <h4 class="item-name">{{ upgrade.name }}</h4>
-              <!--p class="item-description">{{ upgrade.description }}</p-->
               <div class="upgrade-level">
                 <span class="level-text">{{ upgrade.displayLevel }}</span>
               </div>
@@ -213,15 +218,51 @@
               <BuyButton
                 :price="upgrade.price"
                 :onClick="() => buyUpgrade(upgrade)"
-                :disabled="!canAfford(upgrade.price) || !upgrade.canBuy"
+                :disabled="!upgrade.canBuy"
               >
                 {{ upgrade.canBuy ? 'Acheter' : 'MAX' }}
               </BuyButton>
             </div>
           </div>
         </div>
-      </div>
 
+        <!-- Sous-section Agrandissement -->
+        <div class="subsection-header">
+          <h4>🏗️ Agrandissement</h4>
+          <p class="subsection-description">Augmentez la taille de votre équipe et de vos emplacements d'artéfacts !</p>
+        </div>
+        
+        <div class="market-grid">
+          <div 
+            v-for="expansion in expansionOffers" 
+            :key="expansion.id"
+            class="market-item expansion-item"
+            :class="{ 'purchased': !expansion.canUpgrade }"
+          >
+            <div class="expansion-icon">
+              {{ expansion.icon }}
+            </div>
+            <div class="item-info">
+              <h4 class="item-name">{{ expansion.name }}</h4>
+              <div class="expansion-description">
+                <span class="description-text">{{ expansion.description }}</span>
+              </div>
+              <div class="expansion-effect">
+                <span class="effect-text">{{ expansion.effect }}</span>
+              </div>
+            </div>
+            <div class="item-purchase">
+              <BuyButton
+                :price="expansion.cost"
+                :onClick="() => buyExpansionOffer(expansion)"
+                :disabled="!expansion.canBuy"
+              >
+                {{ expansion.canUpgrade ? 'Améliorer' : 'Max atteint' }}
+              </BuyButton>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div>
 
@@ -247,6 +288,7 @@ import { useGameData } from '@/composables/useGameData'
 import { useBoxes } from '@/composables/useBoxes'
 import { useAchievements } from '@/composables/useAchievements'
 import { useArtifacts } from '@/composables/useArtifacts'
+import { useExpansions } from '@/composables/useExpansions'
 import { useSound } from '@/composables/useSound'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
@@ -257,13 +299,14 @@ import { boxesData } from '@/data/boxes.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
 
-const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, chestKeys, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
+const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, chestKeys, preciousStones, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
 const { fetchEggStatus } = useEgg()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, openBoxMultiple: openBoxMultipleAPI, getAvailableBoxes } = useBoxes()
 const { checkAchievements } = useAchievements()
 const { artifacts: ownedArtifacts, fetchArtifacts } = useArtifacts()
-const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, groupes, artifacts: artifactsData, items } = useGameData()
+const { especies: especeData, boxes: gameBoxes, levelUnlocks, upgrades: serverUpgrades, expansions: expansionsData, groupes, artifacts: artifactsData, items } = useGameData()
+const { expansionLevels, loading: expansionsLoading, fetchExpansionLevels, buyExpansion, getExpansionLevel, getNextExpansionLevel, canUpgradeExpansion, getExpansionCost, getExpansionReward } = useExpansions()
 const router = useRouter()
 const { click, open: sndOpen, close: sndClose, confirm: sndConfirm, boxOpen: sndBoxOpen, boxResults: sndBoxResults, legendaryDrop: sndLegend, epicDrop: sndEpic } = useSound()
 
@@ -564,25 +607,50 @@ function getDisplayLevel(currentLevel, maxLevel) {
   return `Niveau ${currentLevel}`
 }
 
-const upgradeOffers = computed(() => {
-  void upgradesVersion.value
-  const list = serverUpgrades?.value || []
-  return list.map(u => {
-    const currentLevel = Number(upgradeLevels.value?.[u.id] || 0)
-    const canBuy = !(u.maxLevel !== null && typeof u.maxLevel === 'number' && currentLevel >= u.maxLevel)
-    const nextCost = canBuy ? getCurrentCostForLevel(u.costs, currentLevel) : null
-    const nextReward = canBuy ? getCurrentRewardForLevel(u.rewards, currentLevel) : null
-    const effect = typeof u.effectTemplate === 'string'
-      ? u.effectTemplate.replace('{reward}', nextReward ?? 0)
-      : ''
+const expansionOffers = computed(() => {
+  const list = expansionsData?.value || []
+  return list.map(expansion => {
+    const currentLevel = getExpansionLevel(expansion.id)
+    const nextLevel = getNextExpansionLevel(expansion.id)
+    const canUpgrade = canUpgradeExpansion(expansion.id)
+    const cost = getExpansionCost(expansion.id)
+    const reward = getExpansionReward(expansion.id)
+    const canBuy = canUpgrade && getLevel() >= (expansion.unlock_level || 1) && canAffordMultiple(cost)
+    
+    // Générer le texte d'effet basé sur le template
+    const effectText = expansion.effectTemplate.replace('{reward}', reward || 'inconnu')
+    
     return {
-      ...u,
+      ...expansion,
       currentLevel,
+      nextLevel,
+      canUpgrade,
+      cost,
+      reward,
       canBuy,
-      nextCost,
-      nextReward,
-      displayLevel: getDisplayLevel(currentLevel, u.maxLevel ?? null),
-      price: canBuy ? { type: u.priceType, count: nextCost } : { type: u.priceType, count: 0 },
+      effect: effectText,
+      displayLevel: currentLevel > 0 ? `${reward || 1} emplacements` : 'Non acheté'
+    }
+  })
+})
+
+const upgradeOffers = computed(() => {
+  const list = serverUpgrades?.value || []
+  return list.map(upgrade => {
+    const currentLevel = Number(upgradeLevels.value?.[upgrade.id] || 0)
+    // Les améliorations de ferme n'ont pas de niveau max - elles peuvent être améliorées à l'infini
+    const cost = getCurrentCostForLevel(upgrade.costs, currentLevel)
+    const price = { type: upgrade.priceType, count: Number(cost) || 0 }
+    const canBuy = Number(price.count) > 0 && canAfford(price)
+    const displayLevel = `Niveau ${currentLevel}`
+    const effect = upgrade.effectTemplate?.replace('{reward}', getCurrentRewardForLevel(upgrade.rewards, currentLevel)) || 'Effet inconnu'
+    
+    return {
+      ...upgrade,
+      currentLevel,
+      displayLevel,
+      price,
+      canBuy,
       effect
     }
   })
@@ -595,10 +663,7 @@ const hasAvailableUpgrade = computed(() => {
 
   return list.some(u => {
     const currentLevel = Number(upgradeLevels.value?.[u.id] || 0)
-    // Skip si niveau max atteint
-    const isMaxed = (u.maxLevel !== null && typeof u.maxLevel === 'number' && currentLevel >= u.maxLevel)
-    if (isMaxed) return false
-    // Coût du prochain niveau et solvabilité
+    // Les améliorations de ferme n'ont pas de niveau max
     const cost = getCurrentCostForLevel(u.costs, currentLevel)
     const price = { type: u.priceType, count: Number(cost) || 0 }
     return Number(price.count) > 0 ? canAfford(price) : false
@@ -752,11 +817,14 @@ function buyChicken(offer) {
   // Cette fonction n'est plus utilisée car on achète des boîtes maintenant
 }
 
-// Fonction pour obtenir le délai d'animation minimum selon le nombre d'ouvertures
-function getMinAnimationDelay(count) {
-  if (count >= 100) return 2000 
-  if (count >= 10) return 1000  
-  return 500
+// Fonction helper pour vérifier si on peut payer un coût multiple
+function canAffordMultiple(costArray) {
+  if (!Array.isArray(costArray)) return canAfford(costArray)
+  
+  for (const cost of costArray) {
+    if (!canAfford(cost)) return false
+  }
+  return true
 }
 
 async function openBoxMultiple(box, times = 10) {
@@ -849,6 +917,31 @@ async function openBoxMultiple(box, times = 10) {
   }
 }
 
+async function buyExpansionOffer(expansion) {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      window.$toast && window.$toast('Vous devez être connecté(e)', 'error')
+      return
+    }
+
+    sndConfirm(0.8) // Son d'achat
+
+    const result = await buyExpansion(expansion.id)
+    if (result.success) {
+      // Rafraîchir les données du joueur
+      await refreshPlayerData()
+
+      window.$toast && window.$toast(`${expansion.name} acheté !`, 'success')
+    } else {
+      window.$toast && window.$toast(result.error || 'Erreur lors de l\'achat', 'error')
+    }
+  } catch (e) {
+    console.error('buyExpansionOffer error:', e)
+    window.$toast && window.$toast('Erreur lors de l\'achat', 'error')
+  }
+}
+
 async function buyUpgrade(upgrade) {
   try {
     const token = localStorage.getItem('token')
@@ -856,50 +949,22 @@ async function buyUpgrade(upgrade) {
       window.$toast && window.$toast('Vous devez être connecté(e)', 'error')
       return
     }
-    
+
     sndConfirm(0.8) // Son d'achat
-    
-    const data = await apiPost('/api/upgrades/buy', { upgradeId: upgrade.id })
-    
-    // Mettre à jour le niveau courant localement
-    upgradeLevels.value = { ...upgradeLevels.value, [upgrade.id]: Number(data?.newLevel || 0) }
-    // Forcer le recalcul des offres
-    upgradesVersion.value++
-    
-    // Créer un message personnalisé basé sur l'amélioration
-    let toastMessage = `${upgrade.name} amélioré !`
-    let toastType = 'power'
-    
-    // Déterminer le type de bonus basé sur l'upgrade
-    if (upgrade.nextReward && upgrade.nextReward > 0) {
-      if (upgrade.name.toLowerCase().includes('production') || upgrade.name.toLowerCase().includes('producteur')) {
-        toastMessage = `+${upgrade.nextReward} de production !`
-        toastType = 'power'
-      } else if (upgrade.name.toLowerCase().includes('stockage') || upgrade.name.toLowerCase().includes('stock')) {
-        toastMessage = `+${upgrade.nextReward} de stockage !`
-        toastType = 'power'
-      } else if (upgrade.name.toLowerCase().includes('vitesse') || upgrade.name.toLowerCase().includes('speed')) {
-        toastMessage = `Vitesse +${upgrade.nextReward}% !`
-        toastType = 'power'
-      } else if (upgrade.name.toLowerCase().includes('revenu') || upgrade.name.toLowerCase().includes('income')) {
-        toastMessage = `Revenu +${upgrade.nextReward} !`
-        toastType = 'power'
-      } else {
-        toastMessage = `${upgrade.name} +${upgrade.nextReward} !`
-        toastType = 'power'
-      }
+
+    const result = await apiPost('/api/upgrades/buy', { upgradeId: upgrade.id })
+    if (result.success) {
+      // Mettre à jour le niveau local
+      upgradeLevels.value = { ...upgradeLevels.value, [upgrade.id]: result.newLevel }
+      upgradesVersion.value++
+
+      // Rafraîchir les données du joueur
+      await refreshPlayerData()
+
+      window.$toast && window.$toast(`${upgrade.name} amélioré au niveau ${result.newLevel} !`, 'success')
+    } else {
+      window.$toast && window.$toast(result.error || 'Erreur lors de l\'achat', 'error')
     }
-    
-    // Rafraîchir les soldes (tokens)
-  try { await refreshPlayerData() } catch (_) {}
-  // Rafraîchir immédiatement le statut de l'œuf (income / maxIncome)
-  try { await fetchEggStatus() } catch (_) {}
-  // Émettre un événement global pour que d'autres vues/composables réagissent si besoin
-  try { window.dispatchEvent(new CustomEvent('upgrade-bought', { detail: { upgradeId: upgrade.id, newLevel: Number(data?.newLevel || 0) } })) } catch (_) {}
-    
-    window.$toast && window.$toast(toastMessage, toastType)
-    // Recalculer et diffuser la dispo d'upgrade
-    broadcastUpgradeAvailability()
   } catch (e) {
     console.error('buyUpgrade error:', e)
     window.$toast && window.$toast('Erreur lors de l\'achat', 'error')
@@ -944,6 +1009,11 @@ onMounted(async () => {
         }
       }
     } catch (e) { console.warn('Chargement upgrades échoué:', e) }
+
+    // Charger les niveaux d'expansions depuis l'API
+    try {
+      await fetchExpansionLevels()
+    } catch (e) { console.warn('Chargement expansions échoué:', e) }
     
     // Charger les artefacts possédés
     try { await fetchArtifacts() } catch (_) {}
@@ -1099,6 +1169,25 @@ function triggerLegendaryFX() {
   margin: 0;
   color: #8b4513;
   font-size: 14px;
+}
+
+.subsection-header {
+  margin: 40px 0 24px 0;
+  text-align: center;
+  border-top: 2px solid #e0d0b0;
+  padding-top: 32px;
+}
+
+.subsection-header h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #6d3c00;
+}
+
+.subsection-description {
+  margin: 0;
+  color: #8b4513;
+  font-size: 13px;
 }
 
 /* Grille des éléments */
@@ -1361,6 +1450,49 @@ function triggerLegendaryFX() {
 .upgrade-item .item-info {
   text-align: left;
   flex: 1;
+}
+
+/* Expansions */
+.expansion-item {
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+}
+
+.expansion-item.purchased {
+  opacity: 0.6;
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+  border-color: #4caf50;
+}
+
+.expansion-icon {
+  font-size: 32px;
+  margin-right: 12px;
+}
+
+.expansion-item .item-info {
+  text-align: left;
+  flex: 1;
+}
+
+.expansion-description {
+  margin: 8px 0;
+}
+
+.description-text {
+  font-size: 12px;
+  color: #8b4513;
+  line-height: 1.4;
+}
+
+.expansion-effect {
+  margin: 8px 0;
+}
+
+.effect-text {
+  font-size: 12px;
+  color: #27ae60;
+  font-weight: bold;
 }
 
 /* Achat */

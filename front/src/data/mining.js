@@ -37,7 +37,8 @@ const fallback = {
     mining_token: { name: 'Jeton de minage', icon: '🪨', color: '#8b6914' },
     stock_token: { name: 'Jeton de stock', icon: '📦', color: '#7a3e10' },
     production_token: { name: 'Jeton de production', icon: '⚙️', color: '#ffc66e' },
-    chest_key: { name: 'Clé à coffre', icon: '🗝️', color: '#b8860b' }
+    chest_key: { name: 'Clé à coffre', icon: '🗝️', color: '#b8860b' },
+    precious_stone: { name: 'Pierre précieuse', icon: '💎', color: '#9370db' }
   },
   cellStates: {
     intact: { hp: 3, backgroundColor: '#8b6914', borderColor: '#a17e1a', description: 'Case intacte' },

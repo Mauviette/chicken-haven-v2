@@ -7,6 +7,7 @@ const productionTokens = ref(0)
 const wildTokens = ref(0)
 const chestKeys = ref(0)
 const miningTokens = ref(0)
+const preciousStones = ref(0)
 const team = ref({ maxSlots: 3, slots: [] })
 const artifactSlots = ref({ slotsCount: 2, equipped: [] })
 const level = ref(1)
@@ -25,6 +26,7 @@ function clearPlayerData() {
   wildTokens.value = 0
   chestKeys.value = 0
   miningTokens.value = 0
+  preciousStones.value = 0
   player.value = null
   level.value = 1
   xp.value = 0
@@ -49,6 +51,7 @@ export function usePlayer() {
         if (resources.wild_token !== undefined) wildTokens.value = resources.wild_token
         if (resources.chest_key !== undefined) chestKeys.value = resources.chest_key
         if (resources.mining_token !== undefined) miningTokens.value = resources.mining_token
+        if (resources.precious_stone !== undefined) preciousStones.value = resources.precious_stone
       }
     }
     
@@ -116,6 +119,7 @@ export function usePlayer() {
             wildTokens.value = Number(u.resources.wild_token ?? wildTokens.value)
             chestKeys.value = Number(u.resources.chest_key ?? chestKeys.value)
             miningTokens.value = Number(u.resources.mining_token ?? miningTokens.value)
+            preciousStones.value = Number(u.resources.precious_stone ?? preciousStones.value)
           }
           try {
             if (typeof window !== 'undefined') {
@@ -255,6 +259,8 @@ export function usePlayer() {
       chestKeys.value += amount
     } else if (type === 'mining_token') {
       miningTokens.value += amount
+    } else if (type === 'precious_stone') {
+      preciousStones.value += amount
     }
   }
 
@@ -273,6 +279,9 @@ export function usePlayer() {
       return true
     } else if (type === 'mining_token' && miningTokens.value >= amount) {
       miningTokens.value -= amount
+      return true
+    } else if (type === 'precious_stone' && preciousStones.value >= amount) {
+      preciousStones.value -= amount
       return true
     }
     return false
@@ -296,6 +305,8 @@ export function usePlayer() {
         return chestKeys.value >= price.count
       case 'mining_token':
         return miningTokens.value >= price.count
+      case 'precious_stone':
+        return preciousStones.value >= price.count
       default:
         return false
     }
@@ -368,6 +379,7 @@ export function usePlayer() {
     wildTokens,
     chestKeys,
     miningTokens,
+    preciousStones,
     team,
     artifactSlots,
     level,

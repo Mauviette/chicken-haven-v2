@@ -639,6 +639,45 @@ export const upgradesData = [
 ]
 
 // ========================
+// AGRANDISSEMENTS (EXPANSIONS)
+// ========================
+// Améliorations spéciales pour agrandir l'équipe et les emplacements d'artéfacts
+// Maintenant fonctionnent comme des améliorations en chaîne avec niveaux progressifs
+export const expansionsData = [
+  {
+    id: 'team_slot',
+    name: 'Emplacements d\'équipe',
+    description: 'Augmente le nombre d\'emplacements pour votre équipe de poules',
+    icon: '🐔',
+    category: 'team',
+    costs: [
+      [{ type: 'eggs', count: 50 }],
+      [{ type: 'eggs', count: 500 }],
+      [{ type: 'eggs', count: 1000000 }, { type: 'precious_stone', count: 10 }]
+    ],
+    rewards: [2, 3, 4],
+    effectTemplate: '{reward} emplacements d\'équipe',
+    maxLevel: null,
+    unlock_level: 1
+  },
+  {
+    id: 'artifact_slot',
+    name: 'Emplacements d\'artéfact',
+    description: 'Augmente le nombre d\'emplacements pour équiper des artéfacts de minage',
+    icon: '💎',
+    category: 'artifacts',
+    costs: [
+      [{ type: 'precious_stone', count: 1 }],
+      [{ type: 'precious_stone', count: 10 }]
+    ],
+    rewards: [2, 3],
+    effectTemplate: '{reward} emplacements d\'artéfact',
+    maxLevel: null,
+    unlock_level: 5
+  }
+]
+
+// ========================
 // DÉBLOCAGES PAR NIVEAU
 // ========================
 // Centralise ce qui se débloque à chaque niveau
@@ -1168,6 +1207,13 @@ export const itemsData = {
     nom_singulier: 'myrtille',
     icon: '🫐',
     description: 'Fruits délicieux qui augmentent votre niveau! Survolez votre icone de profil pour plus d\'infos.'
+  },
+  'precious_stone': {
+    id: 'precious_stone',
+    nom: 'pierres précieuses',
+    nom_singulier: 'pierre précisue',
+    icon: '💎',
+    description: 'Pierre rare obtenue en minant, permet de trouver de nouvelles poules et d\'améliorer son équipe.'
   }
 }
 
@@ -1276,6 +1322,7 @@ export function getAllGameData() {
     groupes,
     boxes: boxesData,
     upgrades: upgradesData,
+    expansions: expansionsData,
     levelUnlocks,
     levelRewards,
     achievements: achievementsData,
@@ -1348,7 +1395,8 @@ export const miningData = {
     { type: 'mining_token', amount: 1, weight: 2 },
     { type: 'stock_token', amount: 1, weight: 3 },
     { type: 'production_token', amount: 1, weight: 3 },
-    { type: 'chest_key', amount: 1, weight: 10 }
+    { type: 'chest_key', amount: 1, weight: 10 },
+    { type: 'precious_stone', amount: 1, weight: 3, rare:true }
   ],
   toolPool: [
     { type: 'shovel', weight: 33 },

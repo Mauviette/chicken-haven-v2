@@ -506,6 +506,8 @@ export async function digCell(req, res) {
           user.resources.production_token = (user.resources.production_token || 0) + amt
         } else if (type === 'chest_key') {
           user.resources.chest_key = (user.resources.chest_key || 0) + amt
+        } else if (type === 'precious_stone') {
+          user.resources.precious_stone = (user.resources.precious_stone || 0) + amt
         }
       }
 
@@ -548,7 +550,8 @@ export async function digCell(req, res) {
         mining_token: user.resources.mining_token,
         stock_token: user.resources.stock_token,
         production_token: user.resources.production_token,
-        chest_key: user.resources.chest_key
+        chest_key: user.resources.chest_key,
+        precious_stone: user.resources.precious_stone
       } : undefined
     })
   } catch (err) {
@@ -589,6 +592,8 @@ export async function finishMining(req, res) {
         user.resources.production_token = (user.resources.production_token || 0) + amt
       } else if (type === 'chest_key') {
         user.resources.chest_key = (user.resources.chest_key || 0) + amt
+      } else if (type === 'precious_stone') {
+        user.resources.precious_stone = (user.resources.precious_stone || 0) + amt
       }
     }
 
@@ -624,7 +629,8 @@ export async function finishMining(req, res) {
         mining_token: user.resources.mining_token,
         stock_token: user.resources.stock_token,
         production_token: user.resources.production_token,
-        chest_key: user.resources.chest_key
+        chest_key: user.resources.chest_key,
+        precious_stone: user.resources.precious_stone
       }
     })
   } catch (err) {

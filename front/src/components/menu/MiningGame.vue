@@ -79,7 +79,7 @@
                 <div 
                   v-if="cell.hp === 0 && cell.reward" 
                   class="reward"
-                  :class="{ 'large-emoji': isLargeReward(cell.reward) }"
+                  :class="{ 'large-emoji': isLargeReward(cell.reward), 'rare-reward': isRareReward(cell.reward) }"
                 >
                   <Tooltip :text="getDugRewardTooltip(cell.reward)" position="top">
                     {{ formatReward(cell.reward, true) }}
@@ -858,13 +858,7 @@ function formatReward(reward, inCell = false) {
 function formatGroupedReward(reward) {
   if (!reward || !reward.type) return ''
   
-  const icons = {
-    eggs: '🥚',
-    mining_token: '🪨',
-    stock_token: '🧺',
-    production_token: '⚙️'
-  }
-  const icon = icons[reward.type] || (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[reward.type]?.icon) || '❓'
+  const icon = (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[reward.type]?.icon) || '❓'
   
   return `${icon} ${reward.amount}`
 }
@@ -878,6 +872,28 @@ function isLargeReward(reward) {
     amount = reward.amount
   }
   return parseInt(amount) === 1
+}
+
+function isRareReward(reward) {
+  if (!reward) return false
+  
+  let type
+  if (typeof reward === 'string') {
+    type = reward.split(':')[0]
+  } else if (typeof reward === 'object') {
+    type = reward.type
+  }
+  
+  if (!type) return false
+  
+  // Vérifier si cette récompense est marquée comme rare dans les données de minage
+  try {
+    const miningData = MINING_CONFIG.rewardPool || []
+    const rewardData = miningData.find(r => r.type === type)
+    return rewardData && rewardData.rare === true
+  } catch (e) {
+    return false
+  }
 }
 
 // NOUVEAU : style dynamique en fonction de la rareté
@@ -1264,6 +1280,22 @@ function getArtifactBadgeStyle(aid) {
 
 .reward.large-emoji {
   font-size: 28px;
+}
+
+.reward.rare-reward {
+  animation: rareShine 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(147, 112, 219, 0.6));
+}
+
+@keyframes rareShine {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    filter: drop-shadow(0 0 8px rgba(147, 112, 219, 0.6)) brightness(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    filter: drop-shadow(0 0 12px rgba(147, 112, 219, 0.9)) brightness(1.2);
+  }
 }
 
 .tools-panel {
