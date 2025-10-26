@@ -171,7 +171,6 @@ export const talentsData = {
   'Chanceuse': {
     description: "Des œufs blancs apparaissent sur l'écran.",
     effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*0.5} œufs.",
-    nivType : 'basic',
     icon: '🍀',
     calculation: {
       combine: 'not_linear',
@@ -196,7 +195,6 @@ export const talentsData = {
   'Énergétique': {
     description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
     effet: "+{niveau*0.2} de revenu par seconde pour chaque point d'énergie dans l'équipe.",
-    nivType : 'basic',
     icon: '⚡',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -218,7 +216,6 @@ export const talentsData = {
   'Persévérante': {
     description: "Augmente l'énergie et l'intelligence de l'équipe.",
     effet: "+{niveau} énergie et intelligence à toutes les poules de l'équipe.",
-    nivType : 'basic',
     icon: '🏋️',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -237,7 +234,6 @@ export const talentsData = {
   'Vive': {
     description: "Augmente les revenus en fonction de l'intelligence ou de l'énergie de l'équipe.",
     effet: "{niveau*0.1} de revenu par seconde pour chaque point d'énergie ou d'intelligence dans l'équipe.",
-    nivType: 'basic',
     icon: '🏃',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -326,7 +322,6 @@ export const talentsData = {
   'Protectrice': {
     description: "Augmente la production et le stockage max en fonction de l'intelligence.",
     effet: "Augmente le stockage de {niveau} et la production de {niveau*0.1} par point d'intelligence dans l'équipe.",
-    nivType: 'basic',
     icon: '🛡️',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -378,7 +373,6 @@ export const talentsData = {
   'Majestueuse': {
     description: "Augmente le charisme.",
     effet: "+{niveau*10} charisme",
-    nivType : 'basic',
     icon: '👑',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -431,7 +425,6 @@ export const talentsData = {
   'Spaciale': {
     description: "Augmente votre stockage maximum de façon multiplicative.",
     effet: "+{15 + niveau*10}% de stockage (multiplicatif, passif)",
-    nivType: 'legend',
     icon: '🪐',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -446,7 +439,6 @@ export const talentsData = {
   'Canard': {
     description: "Augmente le revenu par seconde en fonction de TOUTES les stats d'équipe.",
     effet: "+{0.1*niveau} /s par point de stat (Intelligence + Énergie + Charisme)",
-    nivType: 'basic',
     icon: '🦆',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -468,7 +460,6 @@ export const talentsData = {
   'Captivante': {
     description: "Des poussins roses apparaissent sur l'écran.",
     effet: "Des poussins roses apparaissent régulièrement, en cliquer un donne votre charisme actuel x{2+niveau*1.5} œufs.",
-    nivType : 'basic',
     icon: '🕶️',
     calculation: {
       combine: 'not_linear',
@@ -687,15 +678,25 @@ export const levelRewards = {
 }
 
 export const talentLevelUpgradeCost = {
-  basic : { 
+  commune : { 
     limit: 10, 
-    egg_cost : [100, 2000, 5000, 10000, 50000, 100000, 500000, 1000000, 10000000],
+    egg_cost : [100, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000],
     chicken_cost : [2, 4, 8, 16, 32, 64, 128, 256, 512]
   },
-  legend: {
-    limit: 5,
-    egg_cost: [10000, 25000, 50000, 100000],
-    chicken_cost: [2, 4, 8, 16]
+  rare: {
+    limit: 9,
+    egg_cost : [100, 1000, 5000, 10000, 50000, 100000, 750000, 5000000],
+    chicken_cost : [2, 4, 8, 16, 32, 64, 128, 256]
+  },
+  epique: {
+    limit: 8,
+    egg_cost : [100, 1000, 5000, 50000, 100000, 750000, 5000000],
+    chicken_cost : [2, 4, 8, 16, 32, 64, 128]
+  },
+  legendaire: {
+    limit: 6,
+    egg_cost: [10000, 25000, 50000, 100000, 5000000],
+    chicken_cost: [2, 4, 8, 16, 32]
   }
 }
 

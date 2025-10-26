@@ -191,15 +191,16 @@ export function usePoules() {
     try {
       const tName = (especies.value?.[poule.especeId]?.talent) || null
       const tInfo = talents.value?.[tName] || {}
-      const nivType = tInfo?.nivType || 'basic'
+      // Utiliser la rareté de la poule au lieu de nivType
+      const rarete = especies.value?.[poule.especeId]?.rarete || 'commune'
       const table = talentLevelUpgradeCost.value || null
-      if (!table || !table[nivType]) return null
+      if (!table || !table[rarete]) return null
       const current = Number(poule.niveauTalent || 1)
       const next = current + 1
-      const limit = Number(table[nivType].limit || 0)
+      const limit = Number(table[rarete].limit || 0)
       if (limit && next > limit) return { maxed: true }
-      const egg_cost = table[nivType].egg_cost?.[current - 1]
-      const chicken_cost = table[nivType].chicken_cost?.[current - 1]
+      const egg_cost = table[rarete].egg_cost?.[current - 1]
+      const chicken_cost = table[rarete].chicken_cost?.[current - 1]
       if (egg_cost == null || chicken_cost == null) return null
       return { egg_cost: Number(egg_cost), chicken_cost: Number(chicken_cost) }
     } catch (_) { return null }

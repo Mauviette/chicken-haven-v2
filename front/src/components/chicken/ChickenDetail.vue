@@ -15,7 +15,7 @@
             </div>
 
           <div class="rarete" :class="espece.rarete">{{ formatRareté(espece.rarete) }}</div>
-          <div class="categorie">{{ formatGroupe(espece.id) }}</div>
+          <div class="categorie">{{ formatGroupe(espece.id) }} (niv. {{ currentPoule?.niveauTalent || 1 }}/{{ maxTalentLevel }})</div>
           <div class="quantite"></div>
         </div>
       </div>
@@ -23,11 +23,12 @@
       <div class="section">
         <div class="label">Talent</div>
         <div class="value">
-          <Tooltip :text="getTalentEffect(currentPoule || poule)" >      
+          <Tooltip :text="`${getTalentEffect(currentPoule || poule)}<br/><em>Niveau max: ${maxTalentLevel}</em>`" >      
             {{ getTalentDisplayName(currentPoule || poule) }}
           </Tooltip>
         </div>
       </div>
+
 
 
       <div class="section">
@@ -118,7 +119,7 @@ const props = defineProps({
 const { getTalentDisplayNameSync, getTalentEffectSync, getTalentNextCost, upgradeTalent, poules, getDescription } = usePoules()
 const { isInTeam, equipChicken, unequipChicken, eggs, replaceTeamMember } = usePlayer()
 const { click, confirm, close: sndClose } = useSound()
-const { getEspeceInfo } = useGameData()
+const { getEspeceInfo, talentLevelUpgradeCost } = useGameData()
 
 // Variables pour le système de remplacement d'équipe
 const showTeamReplacement = ref(false)
@@ -178,6 +179,12 @@ const currentPoule = computed(() => {
 })
 
 const inTeam = computed(() => isInTeam(currentPoule.value?.especeId))
+
+const maxTalentLevel = computed(() => {
+  const rarete = props.espece?.rarete || 'commune'
+  const table = talentLevelUpgradeCost.value?.[rarete]
+  return table?.limit || 1
+})
 
 const upgrading = ref(false)
 const nextCost = computed(() => getTalentNextCost(currentPoule.value))

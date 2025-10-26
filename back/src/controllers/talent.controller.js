@@ -11,8 +11,9 @@ function getCostForNextLevel(poule) {
   const talentName = getTalentForEspece(poule.especeId)
   if (!talentName) return null
   const tInfo = talentsData[talentName] || {}
-  const nivType = tInfo.nivType || 'basic'
-  const rules = talentLevelUpgradeCost[nivType]
+  // Utiliser la rareté de la poule au lieu de nivType
+  const rarete = especeData[poule.especeId]?.rarete || 'commune'
+  const rules = talentLevelUpgradeCost[rarete]
   if (!rules) return null
   const current = Number(poule.niveauTalent || 1)
   const nextLevel = current + 1
