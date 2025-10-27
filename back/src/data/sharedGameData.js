@@ -1108,7 +1108,7 @@ export const achievementsData = {
   'mining_cells_10': {
     id: 'mining_cells_10',
     nom: 'Mineur Débutant',
-    description: 'Brisez 10 cases au total en minage',
+    description: 'Brisez 50 cases au total en minage',
     icon: '⛏️',
     objectif: 50,
     type: 'mining_cells',
@@ -1120,7 +1120,7 @@ export const achievementsData = {
   'mining_cells_25': {
     id: 'mining_cells_25',
     nom: 'Mineur Expérimenté',
-    description: 'Brisez 25 cases au total en minage',
+    description: 'Brisez 100 cases au total en minage',
     icon: '⚒️',
     objectif: 100,
     type: 'mining_cells',
@@ -1132,7 +1132,7 @@ export const achievementsData = {
   'mining_cells_100': {
     id: 'mining_cells_100',
     nom: 'Mineur Légendaire',
-    description: 'Brisez 100 cases au total en minage',
+    description: 'Brisez 250 cases au total en minage',
     icon: '💥',
     objectif: 250,
     type: 'mining_cells',

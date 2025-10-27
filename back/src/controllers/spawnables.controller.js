@@ -32,7 +32,7 @@ const SPAWNABLE_TYPE_CONFIG = {
     cooldownSeconds: 3
   },
   chocolate: {
-    spawnChance: 0.02,
+    spawnChance: 0.025,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },

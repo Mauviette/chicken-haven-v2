@@ -484,23 +484,21 @@ export async function getEggStatus(req, res) {
 
     // Talents passifs
     const incomeBonus = runTalentIncome(user)
-  const storageBonus = runTalentStorage(user)
+    const storageBonus = runTalentStorage(user)
     
     // Appliquer les buffs temporaires
     const buffMultipliers = computeActiveBuffMultipliers(user)
     
     const effectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
-  const effectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier * buffMultipliers.storage)
+    const effectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier * buffMultipliers.storage)
     
     /*console.log(`  income talents: totalBonus=${incomeBonus.bonusPerSecond}`)
     console.log(`  storage talents: totalBonus=${storageBonus.storageBonus}`)
     console.log(`  effective: income=${effectiveIncome}, maxIncome=${effectiveMaxIncome}`)*/
 
     // Calculer les gains actuels basés sur le temps écoulé
-  const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
-  const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)
-    
-    /*console.log('  timeDiffSeconds:', timeDiffSeconds)
+    const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
+    const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)    /*console.log('  timeDiffSeconds:', timeDiffSeconds)
     console.log('  currentStocked:', currentStocked)*/
 
     res.json({
@@ -515,9 +513,10 @@ export async function getEggStatus(req, res) {
       chestKeys: user.resources?.chest_key || 0,
       miningTokens: user.resources?.mining_token || 0,
       preciousStones: user.resources?.precious_stone || 0,
-      // Optionnel: debug serveur pour le front si besoin
+      /* Lines 518-519 omitted */
       incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
-  storageBonus: { storageBonus: storageBonus.storageBonus, storageMultiplier: storageBonus.storageMultiplier, breakdown: storageBonus.breakdown },
+      storageBonus: { storageBonus: storageBonus.storageBonus, storageMultiplier: storageBonus.storageMultiplier, breakdown: storageBonus.breakdown },
+      buffMultipliers, // Ajouter les multiplicateurs pour l'affichage côté client
       cooldowns: user.cooldowns || {}
     })
   } catch (err) {
@@ -548,15 +547,23 @@ export async function clickEgg(req, res) {
     // Appliquer les buffs temporaires
     const buffMultipliers = computeActiveBuffMultipliers(user)
     
-    const effectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
-  const effectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier * buffMultipliers.storage)
-  const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)
+    // Calculer les taux effectifs SANS les buffs temporaires pour les gains accumulés
+    // Les buffs temporaires n'affectent que les gains futurs, pas les gains passés
+    const baseEffectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond))
+  const baseEffectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier)
+    
+    // Calculer les taux affichés AVEC les buffs temporaires
+    const displayedIncome = Math.max(0, baseEffectiveIncome * buffMultipliers.income)
+  const displayedMaxIncome = Math.max(0, baseEffectiveMaxIncome * buffMultipliers.storage)
+    
+    // Calculer les gains accumulés avec les taux de base (sans buffs temporaires rétrospectifs)
+  const currentStocked = Math.min(timeDiffSeconds * baseEffectiveIncome, baseEffectiveMaxIncome)
 
     // Log d'entrée côté serveur pour faciliter le debug
     try {
       console.log(`[Egg] clickEgg called for user=${user.username || user._id} at ${now.toISOString()}`)
       console.log(`       timeDiffSeconds=${timeDiffSeconds}, baseIncome=${baseIncome}, incomeBonus=${incomeBonus.bonusPerSecond}, storageBonus=${storageBonus.storageBonus}`)
-      console.log(`       effectiveIncome=${effectiveIncome}, effectiveMaxIncome=${effectiveMaxIncome}, currentStocked=${currentStocked}`)
+      console.log(`       baseEffectiveIncome=${baseEffectiveIncome}, baseEffectiveMaxIncome=${baseEffectiveMaxIncome}, currentStocked=${currentStocked}`)
     } catch (_) { /* no-op */ }
 
     // Vérifier si l'œuf est cliquable (income >= 1)
@@ -668,11 +675,12 @@ export async function clickEgg(req, res) {
       message: 'Œuf cliqué avec succès',
       eggsGained: Math.floor(currentStocked),
       totalEggs: user.resources.eggs,
-      income: effectiveIncome,
-      maxIncome,
+      income: displayedIncome,
+      maxIncome: displayedMaxIncome,
       currentStocked: 0,
       lastClick: now,
       incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
+      buffMultipliers, // Ajouter les multiplicateurs pour l'affichage côté client
       // Infos talent Chanceuse pour le frontend (optionnel pour déclencher un effet visuel)
       chanceuse: {
         active: chanceuse.active,

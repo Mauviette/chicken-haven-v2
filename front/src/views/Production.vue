@@ -453,7 +453,8 @@ const incomeTooltipHtml = computed(() => {
   const bonusDetails = talentBonusDetails.value
   const talentBonus = Number(bonusDetails.income.total || 0)
   const displayedTalentBonus = isApocalypse ? talentBonus / 10 : talentBonus
-  const base = Math.max(0, effective / getIncomeBuffMultiplier() - talentBonus)
+  // Les buffs temporaires sont déjà inclus dans effective, donc on ne les soustrait pas
+  const base = Math.max(0, effective - talentBonus)
   const displayedBase = isApocalypse ? base / 10 : base
   const subtotal = base + talentBonus
   const displayedSubtotal = isApocalypse ? subtotal / 10 : subtotal
@@ -471,26 +472,22 @@ const incomeTooltipHtml = computed(() => {
     html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
   }
 
-  // Section buffs temporaires
+  // Section buffs temporaires (maintenant inclus dans le total)
   const incomeBuffs = getActiveIncomeBuffs()
-  /*if (incomeBuffs.length > 0) {
+  if (incomeBuffs.length > 0) {
     html += `<div style="margin-top:8px;border-top:1px solid #d4752a;padding-top:4px;">`
-    html += `<div style="font-weight:bold;color:#d4752a;margin-bottom:2px;">🍫 Buffs Temporaires</div>`
+    html += `<div style="font-weight:bold;color:#d4752a;margin-bottom:2px;">🍫 Buffs Temporaires Actifs</div>`
     for (const buff of incomeBuffs) {
       const multiplier = parseFloat(buff.buff?.amount || 1)
       const percentage = Math.round((multiplier - 1) * 100)
       const timeRemaining = getTimeRemaining(buff)
-      html += `<div style="color:#8B4513;">${buff.origin || 'Buff'} (+${percentage}%): <strong>x${multiplier.toFixed(1)}</strong> <span style="opacity:0.7;">(${timeRemaining})</span></div>`
+      html += `<div style="color:#8B4513;">${buff.origin || 'Buff'} (+${percentage}%): <strong>${timeRemaining}</strong></div>`
     }
     html += `</div>`
-  }*/
+  }
 
   html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">`
   html += `<div>Sous-total: <strong>${isApocalypse ? Math.floor(displayedSubtotal) : formatIncome(displayedSubtotal)}</strong>/s</div>`
-  if (incomeBuffs.length > 0) {
-    const buffMultiplier = getIncomeBuffMultiplier()
-    html += `<div>Multiplicateur buffs: <strong>x${buffMultiplier.toFixed(2)}</strong></div>`
-  }
   html += `<div style="font-weight:bold;">Total: <strong>${isApocalypse ? formatIncome(displayedEffective) : formatIncome(displayedEffective)}</strong>/s</div>`
   html += `</div>`
   html += `</div>`
@@ -505,7 +502,8 @@ const storageTooltipHtml = computed(() => {
   const bonusDetails = talentBonusDetails.value
   const talentBonus = Number(bonusDetails.storage.total || 0)
   const displayedTalentBonus = isApocalypse ? talentBonus / 10 : talentBonus
-  const base = Math.max(0, effective / getStorageBuffMultiplier() - talentBonus)
+  // Les buffs temporaires sont déjà inclus dans effective, donc on ne les soustrait pas
+  const base = Math.max(0, effective - talentBonus)
   const displayedBase = isApocalypse ? base / 10 : base
   const subtotal = base + talentBonus
   const displayedSubtotal = isApocalypse ? subtotal / 10 : subtotal
@@ -523,26 +521,22 @@ const storageTooltipHtml = computed(() => {
     html += `<div style="opacity:.8;">Aucun bonus de talent actif</div>`
   }
 
-  // Section buffs temporaires
+  // Section buffs temporaires (maintenant inclus dans le total)
   const storageBuffs = getActiveStorageBuffs()
-  /*if (storageBuffs.length > 0) {
+  if (storageBuffs.length > 0) {
     html += `<div style="margin-top:8px;border-top:1px solid #d4752a;padding-top:4px;">`
-    html += `<div style="font-weight:bold;color:#d4752a;margin-bottom:2px;">🍫 Buffs Temporaires</div>`
+    html += `<div style="font-weight:bold;color:#d4752a;margin-bottom:2px;">🍫 Buffs Temporaires Actifs</div>`
     for (const buff of storageBuffs) {
       const multiplier = parseFloat(buff.buff?.amount || 1)
       const percentage = Math.round((multiplier - 1) * 100)
       const timeRemaining = getTimeRemaining(buff)
-      html += `<div style="color:#8B4513;">${buff.origin || 'Buff'} (+${percentage}%): <strong>x${multiplier.toFixed(1)}</strong> <span style="opacity:0.7;">(${timeRemaining})</span></div>`
+      html += `<div style="color:#8B4513;">${buff.origin || 'Buff'} (+${percentage}%): <strong>${timeRemaining}</strong></div>`
     }
     html += `</div>`
-  }*/
+  }
 
   html += `<div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">`
   html += `<div>Sous-total: <strong>${isApocalypse ? Math.floor(displayedSubtotal) : Math.round(displayedSubtotal)}</strong></div>`
-  if (storageBuffs.length > 0) {
-    const buffMultiplier = getStorageBuffMultiplier()
-    html += `<div>Multiplicateur buffs: <strong>x${buffMultiplier.toFixed(2)}</strong></div>`
-  }
   html += `<div style="font-weight:bold;">Total: <strong>${isApocalypse ? Math.floor(displayedEffective) : Math.round(displayedEffective)}</strong></div>`
   html += `</div>`
   html += `</div>`
