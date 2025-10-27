@@ -31,6 +31,7 @@
 <script setup>
 import { useSpawnables } from '@/composables/useSpawnables'
 import { useSound } from '@/composables/useSound'
+import { formatNumber } from '@/utils/format.js'
 
 const { activeSpawnables, clickObject } = useSpawnables()
 const { play } = useSound()
@@ -89,7 +90,7 @@ const createRewardEffectAtPosition = (rect, amount) => {
   
   // Effet principal du nombre
   const effectEl = document.createElement('div')
-  effectEl.textContent = `+${amount}`
+  effectEl.textContent = `+${formatNumber(amount)}`
   effectEl.className = 'reward-effect'
   effectEl.style.cssText = `
     position: fixed;

@@ -6,25 +6,25 @@
       <Tooltip :text="stockTokenTooltip" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">🧺</span>
-          <span class="balance-amount">{{ stockTokens }}</span>
+          <span class="balance-amount">{{ formatNumber(stockTokens) }}</span>
         </div>
       </Tooltip>
       <Tooltip :text="productionTokenTooltip" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">⚙️</span>
-          <span class="balance-amount">{{ productionTokens }}</span>
+          <span class="balance-amount">{{ formatNumber(productionTokens) }}</span>
         </div>
       </Tooltip>
       <Tooltip v-if="getLevel() >= 5" :text="chestKeyTooltip" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">🗝️</span>
-          <span class="balance-amount">{{ chestKeys }}</span>
+          <span class="balance-amount">{{ formatNumber(chestKeys) }}</span>
         </div>
       </Tooltip>
       <Tooltip v-if="getLevel() >= 5" :text="preciousStoneTooltip" position="bottom">
         <div class="balance-item">
           <span class="balance-icon">💎</span>
-          <span class="balance-amount">{{ preciousStones }}</span>
+          <span class="balance-amount">{{ formatNumber(preciousStones) }}</span>
         </div>
       </Tooltip>
       </div>
@@ -301,6 +301,7 @@ import BoxResults from '@/components/menu/BoxResults.vue'
 import { boxesData } from '@/data/boxes.js'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
+import { formatNumber } from '@/utils/format.js'
 
 const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, chestKeys, preciousStones, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
 const { fetchEggStatus } = useEgg()

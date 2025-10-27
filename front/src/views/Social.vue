@@ -286,6 +286,7 @@ import Popup from '@/components/menu/Popup.vue'
 import { useSound } from '@/composables/useSound'
 import { apiGet } from '@/utils/api'
 import { getApiBaseUrl } from '@/utils/api'
+import { formatNumber } from '@/utils/format.js'
 
 const { 
   leaderboards, 
@@ -346,16 +347,6 @@ const getRankClass = (rank) => {
   if (rank === 3) return 'rank-bronze'
   if (rank <= 10) return 'rank-top10'
   return 'rank-normal'
-}
-
-const formatNumber = (num) => {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M'
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'k'
-  }
-  return num.toString()
 }
 
 const formatLastSeen = (date) => {

@@ -68,27 +68,27 @@
             <div class="stat-row"><span>🏆 Succès obtenus</span><b>{{ profile.stats?.achievementsCompleted ?? 0 }} / {{ totalAchievements }} ({{ Math.round(((profile.stats?.achievementsCompleted ?? 0) / Math.max(1, totalAchievements)) * 100) }}%)</b></div>
             <div class="stat-row"><span>🥚 Oeufs récoltés</span><b>{{ formatEggsCollected(profile.stats?.totalEggsCollected ?? 0, profile?.apocalypse) }}</b></div>
             <div class="stat-row"><span>🐣 Poules découvertes</span><b>{{ (profile.stats?.chickenFound ?? 0) }} / {{ totalEspeces }}</b></div>
-            <div class="stat-row"><span>📦 Boîtes ouvertes</span><b>{{ profile.stats?.totalBoxesOpened ?? 0 }}</b></div>
+            <div class="stat-row"><span>📦 Boîtes ouvertes</span><b>{{ formatNumber(profile.stats?.totalBoxesOpened ?? 0) }}</b></div>
             <div class="stat-row"><span>🥚 Max en un clic</span><b>{{ formatMaxEggsInClick(profile.stats?.maxEggsInOneClick ?? 0, profile?.apocalypse) }}</b></div>
 
             <!-- NOUVELLES STATS DE MINAGE -->
-            <div class="stat-row"><span>🎮 Parties de minage jouées</span><b>{{ profile.achievements?.progress?.miningGamesPlayed ?? 0 }}</b></div>
+            <div class="stat-row"><span>🎮 Parties de minage jouées</span><b>{{ formatNumber(profile.achievements?.progress?.miningGamesPlayed ?? 0) }}</b></div>
             <div class="stat-row"><span>💎 Artéfacts de minage trouvés</span><b>{{ profile.achievements?.progress?.miningArtifactsFound ?? 0 }} / 8 ({{ Math.round(((profile.achievements?.progress?.miningArtifactsFound ?? 0) / 8) * 100) }}%)</b></div>
-            <div class="stat-row"><span>⛏️ Cases brisées</span><b>{{ profile.achievements?.progress?.miningCellsBroken ?? 0 }}</b></div>
+            <div class="stat-row"><span>⛏️ Cases brisées</span><b>{{ formatNumber(profile.achievements?.progress?.miningCellsBroken ?? 0) }}</b></div>
 
             <!-- NOUVEAU : afficher les meilleures stats d'équipe historiques provenant des achievements.progress -->
-            <div class="stat-row"><span>⚡ Meilleure énergie d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamEnergy ?? 0 }}</b></div>
-            <div class="stat-row"><span>🧠 Meilleure intelligence d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamIntelligence ?? 0 }}</b></div>
-            <div class="stat-row"><span>✨ Meilleur charisme d'équipe</span><b>{{ profile.achievements?.progress?.bestTeamCharisme ?? 0 }}</b></div>
+            <div class="stat-row"><span>⚡ Meilleure énergie d'équipe</span><b>{{ formatNumber(profile.achievements?.progress?.bestTeamEnergy ?? 0) }}</b></div>
+            <div class="stat-row"><span>🧠 Meilleure intelligence d'équipe</span><b>{{ formatNumber(profile.achievements?.progress?.bestTeamIntelligence ?? 0) }}</b></div>
+            <div class="stat-row"><span>✨ Meilleur charisme d'équipe</span><b>{{ formatNumber(profile.achievements?.progress?.bestTeamCharisme ?? 0) }}</b></div>
             
             <!-- NOUVEAU : afficher le nombre de cadeaux de poules collectés -->
-            <div class="stat-row"><span>🎁 Cadeaux de poules collectés</span><b>{{ profile.achievements?.progress?.chickenGiftsCollected ?? 0 }}</b></div>
+            <div class="stat-row"><span>🎁 Cadeaux de poules collectés</span><b>{{ formatNumber(profile.achievements?.progress?.chickenGiftsCollected ?? 0) }}</b></div>
             
             <!-- NOUVEAU : afficher le nombre d'utilisations de capacités de poules -->
-            <div class="stat-row"><span>⚡ Capacités de poules utilisées</span><b>{{ profile.achievements?.progress?.chickenAbilitiesUsed ?? 0 }}</b></div>
+            <div class="stat-row"><span>⚡ Capacités de poules utilisées</span><b>{{ formatNumber(profile.achievements?.progress?.chickenAbilitiesUsed ?? 0) }}</b></div>
 
             <!-- NOUVEAU : afficher les tomates pourries reçues en mode apocalypse -->
-            <div v-if="profile?.apocalypse" class="stat-row"><span>🍅 Tomates pourries reçues</span><b>{{ profile.achievements?.progress?.rottenTomatoesReceived ?? 0 }}</b></div>
+            <div v-if="profile?.apocalypse" class="stat-row"><span>🍅 Tomates pourries reçues</span><b>{{ formatNumber(profile.achievements?.progress?.rottenTomatoesReceived ?? 0) }}</b></div>
           </div>
         </div>
         <div class="right">
@@ -146,6 +146,7 @@ import { useGameData } from '@/composables/useGameData'
 import Popup from '@/components/menu/Popup.vue'
 import { apiGet, apiPatch } from '@/utils/api.js'
 import { containsForbiddenWords } from '@/utils/forbiddenWords.js'
+import { formatNumber } from '@/utils/format.js'
 
 const route = useRoute()
 const loading = ref(true)

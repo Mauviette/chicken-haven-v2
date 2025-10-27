@@ -14,13 +14,13 @@
         <div class="price-list">
           <div v-for="(p, idx) in price" :key="idx" class="price-display" :class="{ 'insufficient': insufficient?.includes(idx) }">
             <span class="price-icon">{{ p._iconOverride || getPriceIcon(p) }}</span>
-            <span class="price-amount">{{ p.count || p }}</span>
+            <span class="price-amount">{{ formatNumber(p.count || p) }}</span>
           </div>
         </div>
       </template>
       <div class="price-display" v-else-if="price">
         <span class="price-icon">{{ getPriceIcon(price) }}</span>
-        <span class="price-amount">{{ price.count || price }}</span>
+        <span class="price-amount">{{ formatNumber(price.count || price) }}</span>
       </div>
     </div>
   </button>
@@ -29,6 +29,7 @@
 <script setup>
 import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
+import { formatNumber } from '@/utils/format.js'
 
 const props = defineProps({
   onClick: Function,

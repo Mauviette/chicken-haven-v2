@@ -53,7 +53,7 @@
             @keydown.enter.prevent="openMarketFromEggCounter"
             @keydown.space.prevent="openMarketFromEggCounter"
           >
-            <span>🥚 {{ eggs }} œufs</span>
+              <span>🥚 {{ formatNumber(eggs) }} œufs</span>
           </div>
         </Tooltip>
         <div v-else
@@ -98,6 +98,7 @@ import { injectApocalypse } from '@/composables/useApocalypse'
 import { useAchievements } from '@/composables/useAchievements'
 import { apiGet } from '@/utils/api.js'
 import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
+import { formatNumber } from '@/utils/format.js'
 
 const { eggs, level, xp, xpRequired } = usePlayer()
 const { levelUnlocks, getLevelRewardsBetween, items } = useGameData()

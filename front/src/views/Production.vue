@@ -27,13 +27,13 @@
     <!-- Bandeau des stats d'équipe -->
     <div class="team-stats-banner">
       <Tooltip :text="intelligenceTooltipHtml">
-        <span class="stat-chip" :class="{ buffed: teamStatMult.intelligence > 1 }">🧠 {{ Math.round(teamStats.intelligence) }}</span>
+        <span class="stat-chip" :class="{ buffed: teamStatMult.intelligence > 1 }">🧠 {{ formatNumber(Math.round(teamStats.intelligence)) }}</span>
       </Tooltip>
       <Tooltip :text="energieTooltipHtml">
-        <span class="stat-chip" :class="{ buffed: teamStatMult.energie > 1 }">⚡ {{ Math.round(teamStats.energie) }}</span>
+        <span class="stat-chip" :class="{ buffed: teamStatMult.energie > 1 }">⚡ {{ formatNumber(Math.round(teamStats.energie)) }}</span>
       </Tooltip>
       <Tooltip :text="charismeTooltipHtml">
-        <span class="stat-chip" :class="{ buffed: teamStatMult.charisme > 1 }">✨ {{ Math.round(teamStats.charisme) }}</span>
+        <span class="stat-chip" :class="{ buffed: teamStatMult.charisme > 1 }">✨ {{ formatNumber(Math.round(teamStats.charisme)) }}</span>
       </Tooltip>
       
       <!-- (Mine accessible depuis la barre du bas) -->
@@ -85,7 +85,7 @@
               </div>
               <div class="gains-text">
                 <Tooltip :text="storageTooltipHtml">
-                  <span>{{ Math.floor(displayedCurrentGains) }} / {{ Math.floor(displayedMaxIncome) }}</span>
+                  <span>{{ formatNumber(Math.floor(displayedCurrentGains)) }} / {{ formatNumber(Math.floor(displayedMaxIncome)) }}</span>
                 </Tooltip>
               </div>
               <div class="gains-per-click">
@@ -120,6 +120,7 @@ import { useSound } from '@/composables/useSound'
 import { useBuffs } from '@/composables/useBuffs'
 import { apiPost } from '@/utils/api'
 import Tooltip from '@/components/menu/Tooltip.vue'
+import { formatNumber } from '@/utils/format.js'
 
 const { 
   eggState, 
@@ -168,6 +169,7 @@ function evalExpr(expr, ctx) {
 const formatIncome = (n) => {
   const x = Number(n || 0)
   if (x === 0) return '0'
+  if (x >= 1000) return formatNumber(Math.floor(x))
   if (x >= 1) return x.toFixed(1)
   return x.toFixed(2)
 }
