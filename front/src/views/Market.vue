@@ -218,9 +218,9 @@
               <BuyButton
                 :price="upgrade.price"
                 :onClick="() => buyUpgrade(upgrade)"
-                :disabled="!upgrade.canBuy"
+                :disabled="!canAfford(upgrade.price)"
               >
-                {{ upgrade.canBuy ? 'Acheter' : 'MAX' }}
+                Acheter
               </BuyButton>
             </div>
           </div>
@@ -606,8 +606,8 @@ const preciousStoneTooltip = computed(() => {
 // Helpers calcul côté front à partir des données serveur
 function getCurrentCostForLevel(costs, level) {
   if (!Array.isArray(costs) || costs.length === 0) return Infinity
-  if (level >= costs.length) return costs[costs.length - 1]
-  return costs[level]
+  // Pour les améliorations infinies, toujours utiliser le prix le plus élevé
+  return Math.max(...costs)
 }
 function getCurrentRewardForLevel(rewards, level) {
   if (!Array.isArray(rewards) || rewards.length === 0) return 0
