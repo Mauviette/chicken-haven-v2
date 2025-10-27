@@ -89,6 +89,7 @@
       @updated="onArtifactUpdated"
     />
 
+    <br/>
   <br/><br/><br/>
   </div>
 </template>

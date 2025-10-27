@@ -108,6 +108,11 @@
         </div>
       </div>
     </div>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+
   </div>
   
     <Popup v-if="avatarPopup" @close="avatarPopup=false">
@@ -650,7 +655,7 @@ async function saveDisplayName() {
 }
 
 .real-username {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: normal;
   font-family: monospace;

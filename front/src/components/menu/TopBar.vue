@@ -33,12 +33,9 @@
               🏆 Succès
               <span v-if="hasUnclaimedRewards" class="menu-badge"></span>
             </div>
-            <Tooltip :text="!isMiningUnlocked ? 'Débloqué au niveau 5' : 'Accéder au mini-jeu de minage'">
-              <div class="mobile-menu-item" @click="isMiningUnlocked ? openMiningFromMenu() : null" :class="{ disabled: !isMiningUnlocked }">
-                🪨 Minage 
-                <span v-if="!isMiningUnlocked" class="level-requirement"> Niv. 5</span>
-              </div>
-            </Tooltip>
+            <div v-if="isMiningUnlocked" class="mobile-menu-item" @click="isMiningUnlocked ? openMiningFromMenu() : null" :class="{ disabled: !isMiningUnlocked }">
+              🪨 Minage 
+            </div>
             <div class="mobile-menu-item" @click="openOptions">
               ⚙️ Paramètres
             </div>
@@ -46,7 +43,7 @@
         </div>
       </div>
       <div class="top-right">
-        <Tooltip :text="eggTooltipHtml" position="bottom">
+        <Tooltip v-if="showTooltips" :text="eggTooltipHtml" position="bottom">
           <div
             class="egg-counter"
             :class="{ clickable: isMarketUnlocked, disabled: !isMarketUnlocked }"
@@ -59,7 +56,18 @@
             <span>🥚 {{ eggs }} œufs</span>
           </div>
         </Tooltip>
-        <Tooltip :text="levelTooltipHtml()">
+        <div v-else
+          class="egg-counter"
+          :class="{ clickable: isMarketUnlocked, disabled: !isMarketUnlocked }"
+          role="button"
+          tabindex="0"
+          @click="openMarketFromEggCounter"
+          @keydown.enter.prevent="openMarketFromEggCounter"
+          @keydown.space.prevent="openMarketFromEggCounter"
+        >
+          <span>🥚 {{ eggs }} œufs</span>
+        </div>
+        <Tooltip v-if="showTooltips" :text="levelTooltipHtml()">
           <button class="profile-btn" @click="openProfile">
             <div class="avatar-wrap">
               <img id="avatar-anchor" :src="topAvatarSrc" alt="avatar" class="avatar noselect" draggable="false" />
@@ -67,6 +75,12 @@
             </div>
           </button>
         </Tooltip>
+        <button v-else class="profile-btn" @click="openProfile">
+          <div class="avatar-wrap">
+            <img id="avatar-anchor" :src="topAvatarSrc" alt="avatar" class="avatar noselect" draggable="false" />
+            <span class="level-badge">{{ level }}</span>
+          </div>
+        </button>
       </div>
     </div>
   </div>
@@ -147,7 +161,17 @@ const apocalypseTooltipHtml = computed(() => {
   return `<strong>Mode apocalypse</strong><br>- Chaque cadeau de poule a 50% de chance de donner une tomate pourrie à la place de la récompense de base.<br>- Chaque case de minage avec récompense a 25% que la récompense soit une tomate pourrie à la place.<br>- On ne peut pas remplacer une poule (avec capacité activable) dont le cooldown n'est pas prêt.<br>- Les production d'oeufs donnent 10% des oeufs.<br>- Les prix d'améliorations dans le marché sont multipliés par 2`
 })
 
+const showTooltips = ref(true)
+
+// Détecter si on est sur mobile
+const updateShowTooltips = () => {
+  showTooltips.value = window.innerWidth > 768
+}
+
 onMounted(async () => {
+  updateShowTooltips()
+  window.addEventListener('resize', updateShowTooltips)
+  
   try {
     const token = localStorage.getItem('token')
     if (!token) return
@@ -177,6 +201,7 @@ onMounted(async () => {
 
 // Nettoyage des event listeners
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateShowTooltips)
   window.removeEventListener('avatar-updated', avatarUpdateHandler)
 })
 
@@ -209,6 +234,13 @@ function openProfile() {
     router.push(`/user/${myProfileId.value}`)
   } else {
     emit('open-profile')
+  }
+  // Sur mobile uniquement : fermer les menus
+  if (window.innerWidth <= 768) {
+    showMobileMenu.value = false // Fermer le menu mobile
+    if (props.achievementsOpen) {
+      emit('close-achievements') // Fermer le menu achievements s'il est ouvert
+    }
   }
 }
 

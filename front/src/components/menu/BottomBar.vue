@@ -10,7 +10,6 @@
         </ActionButton>
       </div>
       <div class="mining-button badge-wrapper" style="margin-left:8px;">
-        <Tooltip :text="!isMiningUnlocked ? 'Débloqué au niveau 5' : 'Accéder au mini-jeu de minage'">
           <ActionButton
             :onClick="() => emit('open-mining')"
             :disabled="!isMiningUnlocked"
@@ -18,7 +17,6 @@
             <span class="desktop-text">🪨</span>
             <span class="mobile-text">🪨</span>
           </ActionButton>
-        </Tooltip>
         <span
           v-if="hasMiningTokens"
           class="badge-dot badge-dot--yellow"

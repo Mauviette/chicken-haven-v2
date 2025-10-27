@@ -87,13 +87,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAchievements } from '@/composables/useAchievements'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { flyBlueberriesToAvatar } from '@/utils/blueberryAnimation.js'
 import { usePlayer } from '@/composables/usePlayer'
 import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
+import { useRoute } from 'vue-router'
 
 const props = defineProps({
   visible: {
@@ -120,6 +121,7 @@ const {
 const { items } = useGameData()
 const { eggs, addEggs, addTokens, refreshPlayer, apocalypse } = usePlayer()
 const { confirm: sndConfirm } = useSound()
+const route = useRoute()
 
 // Données des items depuis le backend
 const itemsData = computed(() => items.value)
@@ -140,6 +142,13 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopAutoCheck()
+})
+
+// Fermer automatiquement le menu sur mobile lors de la navigation vers un profil utilisateur
+watch(() => route.path, (newPath) => {
+  if (props.visible && newPath.startsWith('/user/') && window.innerWidth <= 768) {
+    closeMenu()
+  }
 })
 
 const getCurrentProgress = (achievement) => {

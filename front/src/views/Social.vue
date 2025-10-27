@@ -273,7 +273,6 @@
       </div>
     </Popup>
 
-    <br/><br/><br/>
   </div>
 </template>
 
@@ -476,7 +475,6 @@ const getAnnouncementImageUrl = (imageName) => {
   flex: 1;
   width: 100%;
   overflow-y: auto;
-  max-height: 100vh;
   box-sizing: border-box;
   position: relative;
 }
@@ -581,9 +579,6 @@ const getAnnouncementImageUrl = (imageName) => {
 .main-container {
   display: flex;
   gap: 24px;
-  height: 100%;
-  min-height: 0;
-  flex: 1;
 }
 
 .leaderboards-column {
@@ -1016,7 +1011,6 @@ const getAnnouncementImageUrl = (imageName) => {
 @media (max-width: 768px) {
   .social-view {
     padding: 16px;
-    max-height: none;
   }
   
   .header-bar {
@@ -1119,6 +1113,7 @@ const getAnnouncementImageUrl = (imageName) => {
 @media (max-width: 480px) {
   .social-view {
     padding: 12px;
+    padding-bottom: 100px;
   }
   
   .header-bar {
@@ -1254,6 +1249,7 @@ const getAnnouncementImageUrl = (imageName) => {
 @media (max-width: 360px) {
   .social-view {
     padding: 8px;
+    padding-bottom: 60px;
   }
   
   .unified-leaderboard-section {
