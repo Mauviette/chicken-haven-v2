@@ -193,7 +193,7 @@ async function confirmDelete() {
 }
 
 .delete-confirm-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  opacity: 0.6;  
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
 }
 </style>

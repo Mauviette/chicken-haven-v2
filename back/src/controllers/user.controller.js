@@ -426,7 +426,7 @@ export async function deleteAccount(req, res) {
     const bcrypt = (await import('bcrypt')).default
     const isPasswordValid = await bcrypt.compare(password, user.password)
     if (!isPasswordValid) {
-      return res.status(401).json({ success: false, error: 'Mot de passe incorrect' })
+      return res.status(400).json({ success: false, error: 'Mot de passe incorrect' })
     }
 
     // Supprimer complètement le compte
