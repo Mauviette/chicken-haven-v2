@@ -19,7 +19,8 @@ export async function getLeaderboards(req, res) {
       'achievements.completed': 1,
       poulesPossedees: 1,
       lastSeen: 1,
-      createdAt: 1
+      createdAt: 1,
+      apocalypse: 1
     }).lean()
 
     // Fonction pour calculer les succès obtenus
@@ -39,6 +40,7 @@ export async function getLeaderboards(req, res) {
         level: user.experience?.level || 1,
         lastSeen: user.lastSeen,
         createdAt: user.createdAt,
+        apocalypse: Boolean(user.apocalypse),
         stats: {
           totalEggsCollected: Math.floor(progress.totalEggsCollected || 0),
           maxEggsInOneClick: Math.floor(progress.maxEggsInOneClick || 0),
@@ -64,7 +66,8 @@ export async function getLeaderboards(req, res) {
         avatar: user.avatar,
         level: user.level,
         value: user.stats.totalEggsCollected,
-        lastSeen: user.lastSeen
+        lastSeen: user.lastSeen,
+        apocalypse: user.apocalypse
       }))
 
     const eggsMaxLeaderboard = [...userData]
@@ -78,7 +81,8 @@ export async function getLeaderboards(req, res) {
         avatar: user.avatar,
         level: user.level,
         value: user.stats.maxEggsInOneClick,
-        lastSeen: user.lastSeen
+        lastSeen: user.lastSeen,
+        apocalypse: user.apocalypse
       }))
 
     const chickensLeaderboard = [...userData]
@@ -92,7 +96,8 @@ export async function getLeaderboards(req, res) {
         avatar: user.avatar,
         level: user.level,
         value: user.stats.achievementsCompleted,
-        lastSeen: user.lastSeen
+        lastSeen: user.lastSeen,
+        apocalypse: user.apocalypse
       }))
 
     // Trouver la position de l'utilisateur connecté dans chaque leaderboard

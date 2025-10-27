@@ -15,7 +15,7 @@
               <Tooltip v-if="profile?.apocalypse" text="Cet utilisateur a choisi d'avoir la vie dure.">
                 <span class="apocalypse-badge">🔥</span>
               </Tooltip>
-              <Tooltip v-if="profile?.dev" text="Cet utilisateur est un développeur du jeu.">
+              <Tooltip v-if="profile?.dev" text="Ce compte est un compte développeur, il n'est pas comptabilisé dans les classements.">
                 <span class="dev-badge">👨‍💻</span>
               </Tooltip>
               <button v-if="isOwnProfile" class="edit-name-btn" @click="startEditDisplayName" title="Modifier le nom d'affichage">
@@ -827,51 +827,19 @@ async function saveDisplayName() {
 .avatar-item .label { font-size: 12px; opacity: .9; text-align: center; }
 .avatar-item.equipped img { outline: 3px solid #fff; box-shadow: 0 0 0 2px var(--border-primary); }
 
-/* Badge APOCALYPSE */
-.apocalypse-badge {
-  display: inline-block;
-  margin-left: 8px;
-  font-size: 16px;
-  animation: flame-flicker 1.5s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 4px rgba(255, 100, 0, 0.8));
-}
 
-@keyframes flame-flicker {
-  0% {
-    transform: scale(1) rotate(-2deg);
-    opacity: 0.9;
-  }
-  50% {
-    transform: scale(1.1) rotate(2deg);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1) rotate(-2deg);
-    opacity: 0.9;
-  }
-}
-
-/* Badge DÉVELOPPEUR */
+/* Badges*/
 .dev-badge {
   display: inline-block;
   margin-left: 8px;
   font-size: 16px;
-  animation: code-glow 2s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 4px rgba(0, 123, 255, 0.8));
+  filter: drop-shadow(0 0 1px rgba(0, 123, 255, 0.8));
 }
 
-@keyframes code-glow {
-  0% {
-    transform: scale(1) rotate(-1deg);
-    opacity: 0.9;
-  }
-  50% {
-    transform: scale(1.05) rotate(1deg);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1) rotate(-1deg);
-    opacity: 0.9;
-  }
+.apocalypse-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 16px;
+  filter: drop-shadow(0 0 1px rgba(255, 100, 0, 0.8));
 }
 </style>
