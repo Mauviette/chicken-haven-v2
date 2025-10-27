@@ -5,7 +5,7 @@
 // ========================
 // VERSION ACTUELLE DU JEU
 // ========================
-export const CURRENT_GAME_VERSION = '0.0.2'
+export const CURRENT_GAME_VERSION = '0.0.3'
 
 // ========================
 // DONNÉES DES ESPÈCES

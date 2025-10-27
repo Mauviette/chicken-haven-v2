@@ -45,7 +45,7 @@
       </div>
     </div>
     <div class="version-link" @click="openAnnouncements">
-      Version {{ dataVersion || '0.0.2' }}
+      Version {{ dataVersion || '0.0.0' }}
     </div>
   </div>    <div ref="eggContainer" class="falling-eggs-container"></div>
   </template>
