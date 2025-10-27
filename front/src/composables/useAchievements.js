@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { useGameData } from '@/composables/useGameData'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
+import { usePoules } from '@/composables/usePoules'
 import { apiGet, apiPost } from '@/utils/api'
 
 const userAchievements = ref({
@@ -35,6 +36,7 @@ const notifiedAchievements = new Set()
 export function useAchievements() {
   const { token } = useAuth()
   const { eggs, refreshPlayerData } = usePlayer()
+  const { poules } = usePoules()
     const { achievements: gameAchievements, fetchGameData, items } = useGameData()
 
   // Fonction utilitaire pour formater les récompenses
@@ -90,12 +92,11 @@ export function useAchievements() {
       case 'boxes_opened':
         return Math.min(userAchievements.value.progress.totalBoxesOpened, achievement.objectif)
       case 'talent_level':
-        // Pour les succès de niveau de talent, le progrès est géré côté serveur
-        // On retourne soit 0 (pas atteint) soit l'objectif (atteint)
-        const completedEntry = userAchievements.value.completed.find(
-          c => c.achievementId === achievement.id
-        )
-        return completedEntry ? achievement.objectif : 0
+        // Calculer le niveau maximum atteint par n'importe quelle poule
+        const maxTalentLevel = poules.value.reduce((max, poule) => {
+          return Math.max(max, poule.niveauTalent || 1)
+        }, 1)
+        return Math.min(maxTalentLevel, achievement.objectif)
       case 'avatar_change':
         return Math.min(userAchievements.value.progress.avatarChanged, achievement.objectif)
       case 'name_change':
