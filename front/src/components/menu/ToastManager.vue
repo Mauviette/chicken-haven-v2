@@ -165,6 +165,22 @@ onBeforeUnmount(() => {
   animation: slideOut 0.3s ease forwards;
 }
 
+/* Mode SOMBRE */
+.dark-mode .toast {
+  background-color: #2a2a2a;
+  border: 2px solid #666666;
+  background-image: none;
+  color: #e0e0e0;
+}
+
+.dark-mode .toast .close-btn {
+  color: #e0e0e0;
+}
+
+.dark-mode .toast .close-btn:hover {
+  color: #ffffff;
+}
+
 /* Mode Apocalypse */
 .apocalypse-mode .toast {
   background-color: #662222;

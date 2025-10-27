@@ -253,7 +253,56 @@ function formatRareté(r) {
     font-size: 11px;
   }
 }
-</style>
+
+/* Mode SOMBRE */
+.dark-mode .artifact-card {
+  background: rgba(42, 42, 42, 0.9) !important;
+  border-color: rgba(102, 102, 102, 0.8) !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .artifact-card .info {
+  color: #cccccc !important;
+}
+
+.dark-mode .artifact-card.commune {
+  border-color: rgba(102, 102, 102, 0.8) !important;
+}
+.dark-mode .artifact-card.rare {
+  border-color: rgba(119, 119, 119, 0.8) !important;
+}
+.dark-mode .artifact-card.epique {
+  border-color: rgba(136, 136, 136, 0.8) !important;
+}
+.dark-mode .artifact-card.legendaire {
+  border-color: rgba(153, 153, 153, 0.8) !important;
+}
+
+.dark-mode .artifact-card.commune .badge-equipped { background: rgba(102, 102, 102, 0.9) !important; border: 2px solid rgba(102, 102, 102, 0.9) !important; }
+.dark-mode .artifact-card.rare .badge-equipped { background: rgba(119, 119, 119, 0.9) !important; border: 2px solid rgba(119, 119, 119, 0.9) !important; }
+.dark-mode .artifact-card.epique .badge-equipped { background: rgba(136, 136, 136, 0.9) !important; border: 2px solid rgba(136, 136, 136, 0.9) !important; }
+.dark-mode .artifact-card.legendaire .badge-equipped { background: rgba(153, 153, 153, 0.9) !important; border: 2px solid rgba(153, 153, 153, 0.9) !important; color: #1a1a1a !important; }
+
+.dark-mode .artifact-card.commune .rarete {
+  background: rgba(102, 102, 102, 0.3) !important;
+  color: #cccccc !important;
+}
+.dark-mode .artifact-card.rare .rarete {
+  background: rgba(119, 119, 119, 0.3) !important;
+  color: #e0e0e0 !important;
+}
+.dark-mode .artifact-card.epique .rarete {
+  background: rgba(136, 136, 136, 0.3) !important;
+  color: #e0e0e0 !important;
+}
+.dark-mode .artifact-card.legendaire .rarete {
+  background: rgba(153, 153, 153, 0.3) !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .artifact-card .effect {
+  color: #aaaaaa !important;
+}
 
 /* Mode APOCALYPSE */
 .apocalypse-mode .artifact-card {
@@ -304,3 +353,5 @@ function formatRareté(r) {
 .apocalypse-mode .artifact-card .effect {
   color: #ffaaaa !important;
 }
+
+</style>

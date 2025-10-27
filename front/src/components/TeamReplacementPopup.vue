@@ -209,4 +209,53 @@ p {
   opacity: 0.5;
   cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
 }
+
+/* Dark Mode */
+.dark-mode .team-replacement {
+  color: #e0e0e0 !important;
+}
+
+.dark-mode h3 {
+  color: #ffb366 !important;
+}
+
+.dark-mode p {
+  color: #cc9966 !important;
+}
+
+.dark-mode .team-member {
+  border: 2px solid #555 !important;
+  background: rgba(42, 42, 42, 0.8) !important;
+}
+
+.dark-mode .team-member:hover {
+  background: rgba(64, 64, 64, 0.8) !important;
+}
+
+.dark-mode .team-member.selected {
+  border-color: #ff6b6b !important;
+  background: rgba(255, 107, 107, 0.2) !important;
+}
+
+.dark-mode .member-image {
+  border: 2px solid #555 !important;
+  background: #2a2a2a !important;
+}
+
+.dark-mode .member-talent {
+  color: #cc9966 !important;
+}
+
+.dark-mode .btn.cancel {
+  background: #441111 !important;
+  border-color: #ff6666 !important;
+  color: #ffaaaa !important;
+}
+
+.dark-mode .btn.confirm {
+  background: #1a3a5c !important;
+  border-color: #4a90e2 !important;
+  color: #87ceeb !important;
+}
+
 </style>

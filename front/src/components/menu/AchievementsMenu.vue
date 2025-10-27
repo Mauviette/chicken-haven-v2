@@ -665,4 +665,194 @@ const getRewardDescription = (reward) => {
   .achievements-overlay.apocalypse-mode .achievements-menu {
     border-bottom: 2px solid #8b0000;
   }
-}</style>
+}
+
+/* Dark Mode */
+.dark-mode .achievements-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dark-mode .achievements-menu {
+  background: #1a1a1a;
+  border-left: 4px solid #444444;
+}
+
+.dark-mode .achievements-header {
+  background: #2a2a2a;
+  border-bottom: 2px solid #444444;
+}
+
+.dark-mode .achievements-header h2 {
+  color: #e0e0e0;
+}
+
+.dark-mode .close-btn,
+.dark-mode .refresh-btn {
+  background: #444444;
+  border: 2px solid #666666;
+  color: #e0e0e0;
+}
+
+.dark-mode .close-btn:hover,
+.dark-mode .refresh-btn:hover:not(:disabled) {
+  background: #555555;
+}
+
+.dark-mode .achievements-stats {
+  background: rgba(26, 26, 26, 0.8);
+}
+
+.dark-mode .stat-number {
+  color: #cccccc;
+}
+
+.dark-mode .achievement-item {
+  background: rgba(26, 26, 26, 0.9);
+  border-color: #666666;
+}
+
+.dark-mode .achievement-item.completed {
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.dark-mode .achievement-name {
+  color: #e0e0e0;
+}
+
+.dark-mode .achievement-description {
+  color: #cccccc;
+}
+
+.dark-mode .progress-bar {
+  background: #2a2a2a;
+  border-color: #666666;
+}
+
+.dark-mode .progress-fill {
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+}
+
+.dark-mode .progress-text {
+  color: #cccccc;
+}
+
+.dark-mode .achievement-reward {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #ffd700;
+}
+
+.dark-mode .claim-reward-btn {
+  background: linear-gradient(145deg, #ffd700, #FFA500);
+  border-color: #444444;
+}
+
+.dark-mode .claim-reward-btn:hover {
+  background: linear-gradient(145deg, #FFA500, #FF8C00);
+}
+
+.dark-mode .reward-preview {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #666666;
+}
+
+.dark-mode .reward-amount {
+  color: #e0e0e0;
+}
+
+/* Dark Mode + Apocalypse */
+.dark-mode.apocalypse-mode .achievements-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dark-mode.apocalypse-mode .achievements-menu {
+  background: #1a0f0f;
+  border-left: 4px solid #8b0000;
+}
+
+.dark-mode.apocalypse-mode .achievements-header {
+  background: #1a0f0f;
+  border-bottom: 2px solid #8b0000;
+}
+
+.dark-mode.apocalypse-mode .achievements-header h2 {
+  color: #ffaaaa;
+}
+
+.dark-mode.apocalypse-mode .close-btn,
+.dark-mode.apocalypse-mode .refresh-btn {
+  background: #4a1a0a;
+  border: 2px solid #ff4444;
+  color: #ffaaaa;
+}
+
+.dark-mode.apocalypse-mode .close-btn:hover,
+.dark-mode.apocalypse-mode .refresh-btn:hover:not(:disabled) {
+  background: #5a2a1a;
+}
+
+.dark-mode.apocalypse-mode .achievements-stats {
+  background: rgba(26, 15, 15, 0.8);
+}
+
+.dark-mode.apocalypse-mode .stat-number {
+  color: #ff6b6b;
+}
+
+.dark-mode.apocalypse-mode .achievement-item {
+  background: rgba(26, 15, 15, 0.9);
+  border-color: #ff4444;
+}
+
+.dark-mode.apocalypse-mode .achievement-item.completed {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.dark-mode.apocalypse-mode .achievement-name {
+  color: #ffaaaa;
+}
+
+.dark-mode.apocalypse-mode .achievement-description {
+  color: #ff8888;
+}
+
+.dark-mode.apocalypse-mode .progress-bar {
+  background: #1a0f0f;
+  border-color: #ff4444;
+}
+
+.dark-mode.apocalypse-mode .progress-fill {
+  background: linear-gradient(90deg, #ff6b6b, #ff4444);
+}
+
+.dark-mode.apocalypse-mode .progress-text {
+  color: #ffaaaa;
+}
+
+.dark-mode.apocalypse-mode .achievement-reward {
+  background: rgba(255, 68, 68, 0.2);
+  border-color: #ff4444;
+}
+
+.dark-mode.apocalypse-mode .claim-reward-btn {
+  background: linear-gradient(145deg, #ff4444, #cc3333);
+  border-color: #8b0000;
+}
+
+.dark-mode.apocalypse-mode .claim-reward-btn:hover {
+  background: linear-gradient(145deg, #cc3333, #aa2222);
+}
+
+.dark-mode.apocalypse-mode .reward-preview {
+  background: rgba(26, 15, 15, 0.3);
+  border-color: #ff4444;
+}
+
+.dark-mode.apocalypse-mode .reward-amount {
+  color: #ffaaaa;
+}
+
+</style>

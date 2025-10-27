@@ -8,6 +8,7 @@ const settings = ref({
   animations: true,
   volume: 100,
   buffsEverywhere: false, // Option pour afficher les buffs sur toutes les pages
+  darkMode: false, // Mode sombre pour une meilleure visibilité de nuit
   collectionSort: {
     key: 'quantite',
     order: 'desc'
@@ -38,6 +39,7 @@ export function useSettings() {
         animations: true,
         volume: 100,
         buffsEverywhere: false,
+        darkMode: false,
         collectionSort: {
           key: 'quantite',
           order: 'desc'
@@ -81,6 +83,7 @@ export function useSettings() {
           animations: Boolean(settings.value?.animations),
           volume: Math.max(0, Math.min(100, Number(settings.value?.volume ?? 100))),
           buffsEverywhere: Boolean(settings.value?.buffsEverywhere),
+          darkMode: Boolean(settings.value?.darkMode),
           collectionSort: {
             key: settings.value?.collectionSort?.key || 'quantite',
             order: settings.value?.collectionSort?.order || 'desc'

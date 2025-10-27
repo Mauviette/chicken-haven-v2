@@ -150,4 +150,60 @@ function getPriceIcon(price = props.price) {
   color: #ff4444;
 }
 
+/* Dark Mode */
+.dark-mode .buy-button {
+  background-color: #2a2a2a !important;
+  border: 2px solid #555 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .buy-button:hover:not(.disabled) {
+  background-color: #3a3a3a !important;
+}
+
+.dark-mode .buy-button.disabled {
+  background-color: #1a1a1a !important;
+  color: #888 !important;
+}
+
+.dark-mode .price-display {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark-mode .price-amount {
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .price-display.insufficient .price-amount {
+  color: #ff6b6b !important;
+}
+
+/* Dark Mode + Apocalypse */
+.dark-mode.apocalypse-mode .buy-button {
+  background-color: #441111 !important;
+  border: 2px solid #ff6666 !important;
+  color: #ffaaaa !important;
+}
+
+.dark-mode.apocalypse-mode .buy-button:hover:not(.disabled) {
+  background-color: #662222 !important;
+}
+
+.dark-mode.apocalypse-mode .buy-button.disabled {
+  background-color: #220000 !important;
+  color: #996666 !important;
+}
+
+.dark-mode.apocalypse-mode .price-display {
+  background: rgba(255, 102, 102, 0.1) !important;
+}
+
+.dark-mode.apocalypse-mode .price-amount {
+  color: #ffaaaa !important;
+}
+
+.dark-mode.apocalypse-mode .price-display.insufficient .price-amount {
+  color: #ff4444 !important;
+}
+
 </style>

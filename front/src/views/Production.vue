@@ -1224,6 +1224,69 @@ watch(() => displayedIncome.value, (nv, ov) => {
   filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.6));
 }
 
+/* Mode SOMBRE */
+.dark-mode .production-screen {
+  background: url('@/assets/background/main/1.png') no-repeat center center;
+  background-size: cover;
+  filter: brightness(0.75) contrast(1.2) saturate(0.8);
+}
+
+.dark-mode .egg-clicker {
+  background-color: #1a1a1a;
+  border-color: #444444;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.dark-mode .gains-display {
+  background: rgba(26, 26, 26, 0.95);
+  border-color: #555555;
+}
+
+.dark-mode .gains-bar {
+  background: #2a2a2a;
+  border-color: #666666;
+}
+
+.dark-mode .gains-progress {
+  background: #666666;
+}
+
+.dark-mode .gains-text {
+  color: #cccccc;
+}
+
+.dark-mode .income-rate {
+  background: #1a1a1a;
+  border-color: #444444;
+  color: #aaaaaa;
+}
+
+.dark-mode .team-stats-banner {
+  color: #cccccc;
+  text-shadow: 0 1px 0 #000;
+}
+
+.dark-mode .team-stats-banner .stat-chip {
+  background: rgba(26, 26, 26, 0.8);
+  border-color: #666666;
+  color: #cccccc;
+}
+
+.dark-mode .team-stats-banner .stat-chip.buffed {
+  color: #ffd700;
+}
+
+@keyframes apocalypse-egg-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    filter: brightness(0.7) contrast(1.2) hue-rotate(0deg) saturate(0.8);
+  }
+  50% { 
+    transform: scale(1.05);
+    filter: brightness(0.8) contrast(1.3) hue-rotate(5deg) saturate(0.9);
+  }
+}
+
 @keyframes apocalypse-egg-pulse {
   0%, 100% { 
     transform: scale(1);

@@ -199,14 +199,14 @@ watch(() => props.forceHide, (newVal) => {
 
 .tooltip-box {
   position: fixed;
-  background: #fff9e5;
-  color: #6d3c00;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 13px;
   white-space: normal;
-  border: 2px solid #ffc66e;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--border-primary);
+  box-shadow: 0 2px 8px var(--shadow-tertiary);
   z-index: 999999;
   pointer-events: none;
   max-width: min(300px, 90vw);
@@ -214,13 +214,5 @@ watch(() => props.forceHide, (newVal) => {
   transition: opacity 0.2s ease;
   line-height: 1.4;
   word-wrap: break-word;
-}
-
-/* Mode APOCALYPSE */
-.apocalypse-mode .tooltip-box {
-  background: #2d1b1b;
-  color: #ffcccc;
-  border: 2px solid #ff4444;
-  box-shadow: 0 2px 8px rgba(102, 0, 0, 0.3);
 }
 </style>

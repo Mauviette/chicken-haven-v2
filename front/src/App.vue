@@ -1,6 +1,7 @@
 <template>
-  <div id="app" :class="{ 'apocalypse-mode': isApocalypseMode, 'announcements-page': isAnnouncementsPage }">
-    <TopBar v-if="!isAuthPage" 
+  <div id="app" :class="{ 'apocalypse-mode': isApocalypseMode, 'dark-mode': settingsLoaded && settings.darkMode, 'announcements-page': isAnnouncementsPage, 'auth-page': isAuthPage }">
+    <TopBar
+      v-if="!isAuthPage"
       @open-profile="toast('Bientôt disponible !')"
       @open-achievements="toggleAchievementsWithSound"
       @open-options="openOptions"
@@ -47,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ToastManager from '@/components/menu/ToastManager.vue'
 import Options from '@/components/menu/Options.vue'
@@ -103,11 +104,37 @@ const setUserDataLoading = appLoadingComposable.setUserDataLoading || (() => {})
 const setSettingsLoading = appLoadingComposable.setSettingsLoading || (() => {})
 const settingsComposable = useSettings() || {}
 const settings = settingsComposable.settings || ref({})
+const { isLoaded: settingsLoaded } = settingsComposable
 const chickenGiftsComposable = useChickenGifts() || {}
 const startPeriodicCheck = chickenGiftsComposable.startPeriodicCheck || (() => {})
 
 // Fournir l'état apocalypse à tous les composants enfants
 const { isApocalypseMode } = provideApocalypse()
+
+const route = useRoute()
+
+// Vérifie si la route actuelle est la page de connexion ou une page publique
+const isAuthPage = computed(() => route.name === 'Auth' || route.name === 'Announcements' || route.name === 'AnnouncementDetail')
+
+// Vérifie si la route actuelle est une page d'annonces
+const isAnnouncementsPage = computed(() => route.name === 'Announcements' || route.name === 'AnnouncementDetail')
+
+// Synchroniser les classes de thème sur le body pour les éléments téléportés
+function syncThemeClasses() {
+  // N'appliquer les classes que quand les settings sont chargés
+  if (!settingsLoaded.value) return
+  
+  const classes = []
+  if (isApocalypseMode.value) classes.push('apocalypse-mode')
+  if (settings.value?.darkMode) classes.push('dark-mode')
+  if (isAnnouncementsPage.value) classes.push('announcements-page')
+  if (isAuthPage.value) classes.push('auth-page')
+  
+  document.body.className = classes.join(' ')
+}
+
+// Watcher pour synchroniser les classes sur le body
+watch([isApocalypseMode, () => settings.value?.darkMode, isAnnouncementsPage, isAuthPage, settingsLoaded], syncThemeClasses, { immediate: true })
 
 onMounted(async () => {
   window.$toast = toast
@@ -278,14 +305,6 @@ function toast(message, type = 'info') {
   }
 }
 
-const route = useRoute()
-
-// Vérifie si la route actuelle est la page de connexion ou une page publique
-const isAuthPage = computed(() => route.name === 'Auth' || route.name === 'Announcements' || route.name === 'AnnouncementDetail')
-
-// Vérifie si la route actuelle est une page d'annonces
-const isAnnouncementsPage = computed(() => route.name === 'Announcements' || route.name === 'AnnouncementDetail')
-
 // Handlers avec sons
 function goProduction() {
   click(); router.push('/production')
@@ -405,6 +424,51 @@ function closeAchievements() {
   --shadow-tertiary: rgba(0, 0, 0, 0.3);
 }
 
+.dark-mode {
+  /* Couleurs mode sombre */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2a2a2a;
+  --bg-tertiary: #3a3a3a;
+  --bg-header: #2a2a2a;
+  --bg-menu: #1a1a1a;
+  --bg-overlay: rgba(26, 26, 26, 0.9);
+  --bg-achievement: rgba(26, 26, 26, 0.95);
+  --text-primary: #e0e0e0;
+  --text-secondary: #cccccc;
+  --text-accent: #aaaaaa;
+  --text-header: #cccccc;
+  --text-menu: #e0e0e0;
+  --text-achievement: #cccccc;
+  --border-primary: #555555;
+  --border-secondary: #666666;
+  --border-tertiary: #777777;
+  --border-menu: #444444;
+  --accent-primary: #ffd700;
+  --button-bg: #3a3a3a;
+  --button-hover: #4a4a4a;
+  --button-text: #e0e0e0;
+  --level-bg: #2a2a2a;
+  --level-border: #555555;
+  --level-text: #e0e0e0;
+  --error-bg: #3a1a1a;
+  --error-border: #ff6b6b;
+  --error-text: #ff6b6b;
+  --success-bg: #1a3a1a;
+  --success-border: #4CAF50;
+  --cancel-bg: #3a1a1a;
+  --cancel-border: #ff6b6b;
+  --progress-bg: #2a2a2a;
+  --progress-border: #555555;
+  --progress-fill: linear-gradient(90deg, #4CAF50, #8BC34A);
+  --reward-bg: rgba(255, 215, 0, 0.1);
+  --reward-border: #ffd700;
+  --reward-claimed-bg: rgba(76, 175, 80, 0.1);
+  --reward-claimed-border: #4CAF50;
+  --shadow-primary: rgba(0, 0, 0, 0.5);
+  --shadow-secondary: rgba(0, 0, 0, 0.3);
+  --shadow-tertiary: rgba(0, 0, 0, 0.7);
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -464,12 +528,27 @@ img,
   margin-bottom: 0;
 }
 
+/* Ajustements pour les pages d'auth sans TopBar ni BottomBar */
+.auth-page .main-content {
+  margin-bottom: 0;
+  margin-top: 0;
+  height: 100vh;
+  max-height: 100vh;
+}
+
 /* Ajustements responsifs pour la main-content */
 @media (max-width: 768px) {
   .main-content {
     margin-bottom: 0; /* pas de BottomBar sur mobile */
     height: calc(100vh - 60px); /* hauteur TopBar */
     max-height: calc(100vh - 60px);
+  }
+  
+  /* Pages sans TopBar utilisent toute la hauteur */
+  .auth-page .main-content,
+  .announcements-page .main-content {
+    height: 100vh;
+    max-height: 100vh;
   }
   
   html, body {
@@ -488,6 +567,13 @@ img,
     margin-bottom: 0; /* pas de BottomBar sur très petits écrans */
     height: calc(100vh - 60px);
     max-height: calc(100vh - 60px);
+  }
+  
+  /* Pages sans TopBar utilisent toute la hauteur */
+  .auth-page .main-content,
+  .announcements-page .main-content {
+    height: 100vh;
+    max-height: 100vh;
   }
   
   html, body {

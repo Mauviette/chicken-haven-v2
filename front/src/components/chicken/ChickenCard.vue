@@ -369,13 +369,79 @@ function formatGroupe(especeId) {
     font-size: 12px;
   }
 
+  .categorie,
+  .talent,
+  .quantite {
+    font-size: 12px;
+  }
+
   .name {
     font-size: 14px;
     font-weight: bold;
   }
 }
 
-</style>
+/* Mode SOMBRE */
+.dark-mode .poule-card {
+  background: #2a2a2a !important;
+  border-color: #666666 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .poule-card .info {
+  color: #cccccc !important;
+}
+
+.dark-mode .poule-card.commune {
+  border-color: #666666 !important;
+}
+.dark-mode .poule-card.rare {
+  border-color: #777777 !important;
+}
+.dark-mode .poule-card.epique {
+  border-color: #888888 !important;
+}
+.dark-mode .poule-card.legendaire {
+  border-color: #999999 !important;
+}
+
+.dark-mode .poule-card.commune .badge-team { background: #666666 !important; border: 2px solid #666666 !important; }
+.dark-mode .poule-card.rare .badge-team { background: #777777 !important; border: 2px solid #777777 !important; }
+.dark-mode .poule-card.epique .badge-team { background: #888888 !important; border: 2px solid #888888 !important; }
+.dark-mode .poule-card.legendaire .badge-team { background: #999999 !important; border: 2px solid #999999 !important; color: #1a1a1a !important; }
+
+.dark-mode .poule-card .quantite {
+  color: #aaaaaa !important;
+}
+
+.dark-mode .poule-card.commune .rarete {
+  background: rgba(102, 102, 102, 0.2) !important;
+  color: #cccccc !important;
+}
+.dark-mode .poule-card.rare .rarete {
+  background: rgba(119, 119, 119, 0.2) !important;
+  color: #e0e0e0 !important;
+}
+.dark-mode .poule-card.epique .rarete {
+  background: rgba(136, 136, 136, 0.2) !important;
+  color: #e0e0e0 !important;
+}
+.dark-mode .poule-card.legendaire .rarete {
+  background: rgba(153, 153, 153, 0.2) !important;
+  color: #e0e0e0 !important;
+}
+
+/* Badge NOUVEAU en mode sombre */
+.dark-mode .new-badge {
+  background: #666666 !important;
+  color: #ffffff !important;
+}
+
+/* Badge upgrade en mode sombre */
+.dark-mode .badge-upgrade {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important;
+  border: 2px solid #4CAF50 !important;
+}
 
 /* Mode APOCALYPSE */
 .apocalypse-mode .poule-card {
@@ -438,4 +504,6 @@ function formatGroupe(especeId) {
   background: linear-gradient(135deg, #ff6666 0%, #cc3333 100%) !important;
   border: 2px solid #ff4444 !important;
 }
+
+</style>
 

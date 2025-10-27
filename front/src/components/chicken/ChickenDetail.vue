@@ -479,7 +479,81 @@ async function onUpgrade() {
   text-align: center;
 }
 
-/* Mode Apocalypse */
+/* Mode SOMBRE */
+.dark-mode .chicken-img {
+  background-color: #3a3a3a !important;
+  border-color: #666666 !important;
+}
+
+.dark-mode .name {
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .rarete {
+  color: #cccccc !important;
+}
+
+.dark-mode .categorie {
+  color: #cccccc !important;
+}
+
+.dark-mode .rarete.commune {
+  color: #888888 !important;
+}
+.dark-mode .rarete.rare {
+  color: #999999 !important;
+}
+.dark-mode .rarete.epique {
+  color: #aaaaaa !important;
+}
+.dark-mode .rarete.legendaire {
+  color: #bbbbbb !important;
+}
+
+.dark-mode .section {
+  background: rgba(42, 42, 42, 0.3) !important;
+  border: 1px solid #666666 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .label {
+  color: #cccccc !important;
+}
+
+.dark-mode .stars {
+  color: #ffd700 !important;
+}
+
+.dark-mode .stat-line {
+  color: #cccccc !important;
+}
+
+.dark-mode .btn {
+  background: #2a2a2a !important;
+  border-color: #666666 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .btn.equip {
+  background: #1a3a1a !important;
+  border-color: #4CAF50 !important;
+}
+
+.dark-mode .btn.unequip {
+  background: #3a1a1a !important;
+  border-color: #f44336 !important;
+}
+
+.dark-mode .btn.upgrade {
+  background: #1a2a3a !important;
+  border-color: #2196F3 !important;
+}
+
+.dark-mode .loading-content {
+  color: #cccccc !important;
+}
+
+/* Mode APOCALYPSE */
 .apocalypse-mode .chicken-img {
   background-color: #441111 !important;
   border-color: #ff6666 !important;
@@ -552,7 +626,6 @@ async function onUpgrade() {
 .apocalypse-mode .loading-content {
   color: #ff6666 !important;
 }
-
 
 
 

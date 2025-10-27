@@ -1496,6 +1496,95 @@ const getAnnouncementImageUrl = (imageName) => {
   }
 }
 
+/* Mode SOMBRE */
+.dark-mode .leaderboard-item {
+  background: rgba(26, 26, 26, 0.8);
+  border-color: #555555;
+}
+
+.dark-mode .leaderboard-item:hover {
+  background: rgba(42, 42, 42, 0.9);
+  border-color: #777777;
+}
+
+.dark-mode .leaderboard-item.current-user {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: #4CAF50;
+}
+
+.dark-mode .player-name {
+  color: #e0e0e0;
+}
+
+.dark-mode .player-username {
+  color: #cccccc;
+}
+
+.dark-mode .last-seen {
+  color: #aaaaaa;
+}
+
+.dark-mode .player-value {
+  color: #cccccc;
+}
+
+.dark-mode .user-rank {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+}
+
+.dark-mode .user-value {
+  color: #cccccc;
+}
+
+.dark-mode .announcement-preview-item {
+  background: rgba(26, 26, 26, 0.8);
+  border-color: #555555;
+}
+
+.dark-mode .announcement-preview-item:hover {
+  background: rgba(42, 42, 42, 0.9);
+  border-color: #777777;
+}
+
+.dark-mode .announcement-preview-title {
+  color: #e0e0e0;
+}
+
+.dark-mode .announcement-preview-summary {
+  color: #cccccc;
+}
+
+.dark-mode .announcement-preview-meta {
+  color: #aaaaaa;
+}
+
+.dark-mode .announcement-preview-date,
+.dark-mode .announcement-preview-version {
+  background: rgba(255, 215, 0, 0.15);
+  color: #ffd700;
+}
+
+.dark-mode .show-more-button {
+  background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
+  border-color: #666666;
+  color: #e0e0e0;
+}
+
+.dark-mode .show-more-button:hover {
+  background: linear-gradient(135deg, #4a4a4a, #5a5a5a);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.dark-mode .footer-info {
+  background: rgba(26, 26, 26, 0.5);
+  border-color: #555555;
+}
+
+.dark-mode .meta-info {
+  color: #cccccc;
+}
+
 /* Mode Apocalypse */
 .apocalypse-mode .rank-gold {
   background: linear-gradient(135deg, #ff6666, #cc3333);

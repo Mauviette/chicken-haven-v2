@@ -15,6 +15,17 @@
       <span>{{ settings.volume }}%</span>
     </div>
 
+    <!-- Mode sombre - visible seulement si pas en mode apocalypse -->
+    <div v-if="!isApocalypseMode" class="option-line">
+      <label for="dark-mode-toggle">🌙 Mode sombre</label>
+      <input
+        id="dark-mode-toggle"
+        type="checkbox"
+        v-model="settings.darkMode"
+        style="width: 20px; height: 20px; accent-color: #ffd700; margin-left: 8px;"
+      />
+    </div>
+
     <!--div class="option-line">
       <label for="buffs-everywhere-toggle">Buffs visibles partout</label>
       <input
@@ -52,6 +63,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useSettings } from '@/composables/useSettings'
+import { useApocalypse } from '@/composables/useApocalypse'
 import Popup from '@/components/menu/Popup.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
 import AccountSettings from '@/components/menu/AccountSettings.vue'
@@ -61,6 +73,7 @@ defineProps({
 })
 
 const { settings, fetchSettings } = useSettings()
+const { isApocalypseMode } = useApocalypse()
 const emit = defineEmits(['close','logout'])
 
 const showAccountSettings = ref(false)

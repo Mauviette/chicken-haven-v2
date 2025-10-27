@@ -1618,6 +1618,138 @@ function getMinAnimationDelay(count) {
   }
 }
 
+/* Mode SOMBRE */
+.dark-mode .market-view {
+  background: #1a1a1a;
+}
+
+.dark-mode .section-title,
+.dark-mode .subsection-header h4,
+.dark-mode .subsection-header h3 {
+  color: #cccccc;
+}
+
+.dark-mode .section-description,
+.dark-mode .subsection-description {
+  color: #aaaaaa;
+}
+
+.dark-mode .balance-item {
+  background-color: #2a2a2a;
+  border: 2px solid #555555;
+  color: #e0e0e0;
+}
+
+.dark-mode .market-tabs {
+  border-bottom-color: #333333;
+}
+
+.dark-mode .tab-button {
+  background: #2a2a2a;
+  border: 2px solid #555555;
+  color: #e0e0e0;
+}
+
+.dark-mode .tab-button:hover {
+  background: #3a3a3a;
+}
+
+.dark-mode .tab-button.active {
+  background: #4a4a4a;
+  border-bottom-color: #1a1a1a;
+}
+
+.dark-mode .market-item {
+  background: #2a2a2a;
+  border: 3px solid #666666;
+}
+
+.dark-mode .market-item:hover {
+  border-color: #888888;
+}
+
+.dark-mode .box-item {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border: 3px solid #666666;
+}
+
+.dark-mode .box-item:hover {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  border-color: #888888;
+}
+
+.dark-mode .box-contents {
+  background: rgba(102, 102, 102, 0.1);
+  border: 1px solid #666666;
+}
+
+.dark-mode .drop-group {
+  background: rgba(42, 42, 42, 0.5);
+}
+
+.dark-mode .group-label {
+  color: #cccccc;
+}
+
+.dark-mode .group-quantity {
+  color: #e0e0e0;
+  background: rgba(102, 102, 102, 0.1);
+}
+
+.dark-mode .item-name {
+  color: #e0e0e0;
+}
+
+.dark-mode .item-description,
+.dark-mode .description-text {
+  color: #cccccc;
+}
+
+.dark-mode .item-stats,
+.dark-mode .upgrade-effect,
+.dark-mode .effect-text {
+  color: #4CAF50;
+}
+
+.dark-mode .level-text {
+  background: rgba(102, 102, 102, 0.2);
+  border: 1px solid #666666;
+  color: #e0e0e0;
+}
+
+.dark-mode .expansion-item.purchased {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border-color: #4CAF50;
+}
+
+.dark-mode .price {
+  color: #e0e0e0;
+}
+
+.dark-mode .original-price {
+  color: #888888;
+}
+
+.dark-mode .rarity-badge.commune {
+  background: #666666;
+  color: #e0e0e0;
+}
+
+.dark-mode .rarity-badge.rare {
+  background: #555555;
+  color: #e0e0e0;
+}
+
+.dark-mode .rarity-badge.épique {
+  background: #777777;
+  color: #ffffff;
+}
+
+.dark-mode .rarity-badge.légendaire {
+  background: #888888;
+  color: #ffffff;
+}
+
 /* Mode Apocalypse */
 .apocalypse-mode .market-view {
   background: #1a0a0a;
