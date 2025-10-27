@@ -65,7 +65,7 @@
           @keydown.enter.prevent="openMarketFromEggCounter"
           @keydown.space.prevent="openMarketFromEggCounter"
         >
-          <span>🥚 {{ eggs }} œufs</span>
+          <span>🥚 {{ formatNumber(eggs) }} œufs</span>
         </div>
         <Tooltip v-if="showTooltips" :text="levelTooltipHtml()">
           <button class="profile-btn" @click="openProfile">
