@@ -18,22 +18,6 @@
         <div v-if="usernameError" class="field-error">{{ usernameError }}</div>
       </div>
       
-      <!-- Nom d'affichage -->
-      <div class="input-group">
-        <input 
-          v-model="displayName" 
-          placeholder="Nom d'affichage" 
-          required 
-          :class="{ 'input-error': displayNameError }"
-          @input="validateDisplayName"
-          class="input-with-help-only"
-        />
-        <Tooltip :text="tooltipInfo.displayName.html" position="right" :followMouse="false">
-          <span class="help-icon" title="Aide">?</span>
-        </Tooltip>
-        <div v-if="displayNameError" class="field-error">{{ displayNameError }}</div>
-      </div>
-      
       <!-- Mot de passe -->
       <div class="input-group">
         <input 
@@ -153,7 +137,6 @@
   import { containsForbiddenWords } from '@/utils/forbiddenWords.js'
   
   const username = ref('')
-  const displayName = ref('')
   const password = ref('')
   const confirmPassword = ref('')
   const message = ref('')
@@ -164,7 +147,6 @@
   
   // Erreurs de validation
   const usernameError = ref('')
-  const displayNameError = ref('')
   const passwordError = ref('')
   const confirmPasswordError = ref('')
   
@@ -221,47 +203,6 @@
     usernameError.value = ''
   }
   
-  // Validation du nom d'affichage
-  async function validateDisplayName() {
-    const value = displayName.value.trim()
-    if (!value) {
-      displayNameError.value = ''
-      return
-    }
-    
-    if (value.length < 2) {
-      displayNameError.value = 'Minimum 2 caractères'
-      return
-    }
-    
-    if (value.length > 30) {
-      displayNameError.value = 'Maximum 30 caractères'
-      return
-    }
-    
-    if (!/^[a-zA-Z0-9À-ÿ\s_-]+$/.test(value)) {
-      displayNameError.value = 'Caractères alphanumériques uniquement'
-      return
-    }
-    
-    // Vérification asynchrone des mots interdits
-    try {
-      validatingForbiddenWords.value = true
-      const hasForbiddenWord = await containsForbiddenWords(value)
-      if (hasForbiddenWord) {
-        displayNameError.value = 'Nom d\'affichage non autorisé'
-        return
-      }
-    } catch (error) {
-      console.warn('Erreur validation mots interdits:', error)
-      // En cas d'erreur, continuer sans bloquer
-    } finally {
-      validatingForbiddenWords.value = false
-    }
-    
-    displayNameError.value = ''
-  }
-  
   // Validation du mot de passe
   function validatePassword() {
     const value = password.value
@@ -306,11 +247,9 @@
   // Formulaire valide
   const isFormValid = computed(() => {
     return username.value.trim() && 
-           displayName.value.trim() && 
            password.value && 
            confirmPassword.value &&
            !usernameError.value && 
-           !displayNameError.value && 
            !passwordError.value && 
            !confirmPasswordError.value
   })
@@ -326,15 +265,6 @@
              • Pas d'espaces<br>
              • Doit être unique<br>
              • Ne peut pas être modifié`
-    },
-    displayName: {
-      html: `<strong>Nom d'affichage</strong><br>
-             Le nom visible par les autres joueurs dans le jeu.<br><br>
-             <strong>Règles :</strong><br>
-             • 2 à 30 caractères<br>
-             • Lettres, chiffres, espaces, accents autorisés<br>
-             • Peut être modifié plus tard<br>
-             • Visible dans votre profil et les classements`
     },
     password: {
       html: `<strong>Mot de passe</strong><br>
@@ -353,7 +283,6 @@
   async function submit() {
     // Valider tous les champs avant soumission
     validateUsername()
-    validateDisplayName()
     validatePassword()
     validateConfirmPassword()
     
@@ -369,7 +298,7 @@
     try {
       const res = await apiPost('/api/auth/register', {
         username: username.value.trim(),
-        displayName: displayName.value.trim(),
+        displayName: username.value.trim(), // Utiliser username comme displayName par défaut
         password: password.value,
         apocalypse: props.apocalypseMode
       })

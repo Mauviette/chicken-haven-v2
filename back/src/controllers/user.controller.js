@@ -229,7 +229,7 @@ export async function updateDisplayName(req, res) {
     }
     
     // Vérifier les caractères autorisés (mêmes que l'inscription)
-    if (!/^[a-zA-Z0-9À-ÿ\s_-]+$/.test(trimmed)) {
+    if (!/^[a-zA-Z0-9À-ÿ\s_.,:;!?()[\]{}+\-*\/@#$%^&'"`~|\\]+$/.test(trimmed)) {
       return res.status(400).json({ error: 'Caractères alphanumériques uniquement' })
     }
     

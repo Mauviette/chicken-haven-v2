@@ -1,6 +1,6 @@
 <template>
   <Popup v-if="visible" @close="emit('close')">
-    <h2>👤 Paramètres du compte</h2>
+    <h2>Paramètres du compte</h2>
 
     <div class="settings-section">
       <h3>⚠️ Zone dangereuse</h3>
@@ -40,7 +40,7 @@
             :onClick="() => { showDeleteConfirmation = false; deletePassword = '' }"
             style="background-color: #6c757d; border-color: #6c757d;"
           >
-            ❌ Annuler
+            Annuler
           </ActionButton>
 
           <ActionButton

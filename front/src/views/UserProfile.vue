@@ -404,8 +404,8 @@ async function validateDisplayName() {
     return
   }
 
-  if (!/^[a-zA-Z0-9À-ÿ\s_-]+$/.test(value)) {
-    displayNameError.value = 'Caractères alphanumériques uniquement'
+  if (!/^[a-zA-Z0-9À-ÿ\s_.,:;!?()[\]{}+\-*\/@#$%^&'"`~|\\]+$/.test(value)) {
+    displayNameError.value = 'Certains caractères ne sont pas autorisés'
     validatingDisplayName.value = false
     return
   }
