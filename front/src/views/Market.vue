@@ -1061,6 +1061,15 @@ function triggerLegendaryFX() {
   } catch (_) {}
 }
 
+
+
+// Fonction pour obtenir le délai d'animation minimum selon le nombre d'ouvertures
+function getMinAnimationDelay(count) {
+  if (count >= 100) return 2000 
+  if (count >= 10) return 1000  
+  return 500
+}
+
 // Effet épique désormais géré directement sur la carte dans BoxResults.vue
 </script>
 
