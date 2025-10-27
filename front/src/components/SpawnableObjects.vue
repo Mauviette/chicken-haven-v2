@@ -402,13 +402,13 @@ const createRewardEffect = (clickedElement, amount) => {
 
 /* Styles spécifiques pour différents types d'objets */
 .spawnable-white_egg .spawnable-icon,
-.spawnable-lucky_egg .spawnable-icon {
+.spawnable-white_egg .spawnable-icon {
   filter: drop-shadow(0 3px 6px rgba(255, 240, 200, 0.6)) brightness(1.2) contrast(1.1) saturate(0.8);
   color: #F5F5DC; /* Beige crème au lieu du blanc pur */
 }
 
 .spawnable-white_egg .spawnable-glow,
-.spawnable-lucky_egg .spawnable-glow {
+.spawnable-white_egg .spawnable-glow {
   background: radial-gradient(circle, rgba(245, 245, 220, 0.4) 0%, rgba(255, 248, 220, 0.2) 50%, transparent 70%);
   width: 50px;
   height: 50px;

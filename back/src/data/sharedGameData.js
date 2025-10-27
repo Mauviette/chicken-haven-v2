@@ -180,7 +180,7 @@ export const talentsData = {
       effects: [
         {
           type: 'spawn_clickable',
-          spawner_id: 'lucky_egg',
+          spawner_id: 'white_egg',
           icon: '🥚',
           style: 'white-egg',
           reward: {

@@ -20,14 +20,14 @@ router.get('/test-sync', verifyToken, (req, res) => {
     success: true,
     synchronization: {
       spawnerIdMapping: {
-        'lucky_egg': 'white_egg',
+        'white_egg': 'white_egg',
         'chocolate': 'chocolate'
       },
-      supportedTypes: ['white_egg', 'lucky_egg', 'chocolate'],
+      supportedTypes: ['white_egg', 'white_egg', 'chocolate'],
       buffTypes: ['income_storage_multiplier', 'income', 'storage'],
-      cssClasses: ['spawnable-white_egg', 'spawnable-lucky_egg', 'spawnable-chocolate'],
+      cssClasses: ['spawnable-white_egg', 'spawnable-white_egg', 'spawnable-chocolate'],
       icons: {
-        'lucky_egg': '🥚',
+        'white_egg': '🥚',
         'chocolate': '🍫'
       },
       timings: {

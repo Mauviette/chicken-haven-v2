@@ -27,22 +27,17 @@ const CLEANUP_INTERVAL = 5000
 
 const SPAWNABLE_TYPE_CONFIG = {
   white_egg: {
-    spawnChance: 0.03,
-    maxActivePerUser: 999,
-    cooldownSeconds: 3
-  },
-  lucky_egg: {
-    spawnChance: 0.03,
+    spawnChance: 0.025,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
   chocolate: {
-    spawnChance: 0.03,
+    spawnChance: 0.02,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
   pink_egg: {
-    spawnChance: 0.03,
+    spawnChance: 0.025,
     maxActivePerUser: 999,
     cooldownSeconds: 3
   },
@@ -197,7 +192,7 @@ export async function checkAvailableSpawnables(req, res) {
 
       for (const spawnEffect of spawnEffects) {
         const spawnerIdToType = {
-          'lucky_egg': 'white_egg',
+          'white_egg': 'white_egg',
           'chocolate': 'chocolate',
           'pink_egg': 'pink_egg'
         }
