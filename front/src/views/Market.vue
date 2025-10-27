@@ -639,7 +639,7 @@ const expansionOffers = computed(() => {
       const canBuy = canUpgrade && playerLevel >= (expansion.unlock_level || 1) && canAffordMultiple(cost)
       
       // Générer le texte d'effet basé sur le template
-      const effectText = expansion.effectTemplate.replace('{reward}', reward || 'inconnu')
+      const effectText = expansion.effectTemplate.replace('{reward}', reward || 'Ø')
       
       return {
         ...expansion,
@@ -952,6 +952,8 @@ async function buyExpansionOffer(expansion) {
     if (result.success) {
       // Rafraîchir les données du joueur
       await refreshPlayerData()
+      // Rafraîchir les niveaux d'expansions
+      await fetchExpansionLevels()
 
       window.$toast && window.$toast(`${expansion.name} acheté !`, 'success')
     } else {

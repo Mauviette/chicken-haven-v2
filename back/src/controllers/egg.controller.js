@@ -514,6 +514,7 @@ export async function getEggStatus(req, res) {
       wildTokens: user.resources?.wild_token || 0,
       chestKeys: user.resources?.chest_key || 0,
       miningTokens: user.resources?.mining_token || 0,
+      preciousStones: user.resources?.precious_stone || 0,
       // Optionnel: debug serveur pour le front si besoin
       incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
   storageBonus: { storageBonus: storageBonus.storageBonus, storageMultiplier: storageBonus.storageMultiplier, breakdown: storageBonus.breakdown },

@@ -134,6 +134,7 @@ export async function getMe(req, res) {
         wild_token: resources?.wild_token ?? 0,
         chest_key: resources?.chest_key ?? 0,
         mining_token: resources?.mining_token ?? 0,
+        precious_stone: resources?.precious_stone ?? 0,
       },
       upgrades: upgrades || {}
     })
