@@ -102,9 +102,31 @@ export function useSpawnables() {
 
   const cleanupExpiredObjects = () => {
     const now = Date.now()
-    spawnedObjects.value = spawnedObjects.value.filter(obj => {
+    const objectsToRemove = []
+    
+    spawnedObjects.value = spawnedObjects.value.map(obj => {
       const age = now - obj.timestamp
-      return age < obj.lifetime
+      
+      // Si l'objet vient d'expirer (dans les dernières 500ms), le marquer comme expirant
+      if (age >= obj.lifetime && age < obj.lifetime + POLLING_INTERVAL && !obj.expiring) {
+        return { ...obj, expiring: true }
+      }
+      
+      // Si l'objet est en train d'expirer et que l'animation est terminée (1 seconde), le marquer pour suppression
+      if (obj.expiring && age >= obj.lifetime + 1000) {
+        objectsToRemove.push(obj)
+        return null
+      }
+      
+      return obj
+    }).filter(obj => obj !== null)
+    
+    // Supprimer les objets marqués pour suppression
+    objectsToRemove.forEach(obj => {
+      const index = spawnedObjects.value.findIndex(o => o.id === obj.id)
+      if (index !== -1) {
+        spawnedObjects.value.splice(index, 1)
+      }
     })
   }
 
@@ -130,7 +152,8 @@ export function useSpawnables() {
     const now = Date.now()
     return spawnedObjects.value.filter(obj => {
       const age = now - obj.timestamp
-      return age < obj.lifetime
+      // Inclure les objets non expirés et ceux en cours d'expiration (pendant 1 seconde après expiration)
+      return age < obj.lifetime || (obj.expiring && age < obj.lifetime + 1000)
     })
   })
 

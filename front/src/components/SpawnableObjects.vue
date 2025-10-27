@@ -7,7 +7,7 @@
       v-for="obj in activeSpawnables"
       :key="obj.id"
       class="spawnable-object"
-      :class="[`spawnable-${obj.type}`, { 'spawnable-animate': true }]"
+      :class="[`spawnable-${obj.type}`, { 'spawnable-animate': true, 'spawnable-expiring': obj.expiring }]"
       :style="{
         left: obj.x + '%',
         top: obj.y + '%',
@@ -506,8 +506,16 @@ const createRewardEffect = (clickedElement, amount) => {
   transition: transform 0.1s ease;
 }
 
-.spawnable-object.clicked {
-  filter: brightness(1.5) drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+.spawnable-expiring {
+  animation: spawnable-expire 1s ease-out forwards;
+}
+
+.spawnable-expiring .spawnable-icon {
+  animation: spawnable-icon-expire 1s ease-out forwards;
+}
+
+.spawnable-expiring .spawnable-glow {
+  animation: spawnable-glow-expire 1s ease-out forwards;
 }
 
 /* Animation de récompense */
@@ -516,26 +524,44 @@ const createRewardEffect = (clickedElement, amount) => {
   will-change: transform, opacity;
 }
 
-@keyframes reward-float {
+@keyframes spawnable-expire {
   0% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(0) scale(0.3);
-    filter: brightness(3);
-  }
-  25% {
     opacity: 1;
-    transform: translateX(-50%) translateY(-25px) scale(1.4);
-    filter: brightness(1.8);
+    transform: translate(-50%, -50%) scale(1);
   }
-  60% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(-50px) scale(1.2);
-    filter: brightness(1.4);
+  50% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1.1);
   }
   100% {
     opacity: 0;
-    transform: translateX(-50%) translateY(-90px) scale(0.8);
-    filter: brightness(1);
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+}
+
+@keyframes spawnable-icon-expire {
+  0% {
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4)) brightness(1.3) contrast(1.2);
+    transform: rotate(0deg);
+  }
+  50% {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) brightness(1.1) contrast(1.1);
+    transform: rotate(180deg);
+  }
+  100% {
+    filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0)) brightness(0.8) contrast(0.8);
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spawnable-glow-expire {
+  0% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
   }
 }
 </style>

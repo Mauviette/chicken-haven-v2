@@ -153,8 +153,8 @@
             </ul>
           </div>
         </div>
-        <ActionButton :onClick="resetGame">
-          Rejouer (1 🪨)
+        <ActionButton :onClick="resetGame" :disabled="miningTokens < 1">
+          {{ miningTokens >= 1 ? 'Rejouer (1 🪨)' : 'Pas assez de jetons' }}
         </ActionButton>
         
           <br>
