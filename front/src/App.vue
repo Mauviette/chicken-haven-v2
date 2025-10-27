@@ -39,7 +39,7 @@
     <!-- Mining popup global accessible depuis la BottomBar -->
     <MiningGame v-if="showMiningGame && !isAuthPage" @close="showMiningGame = false" />
     <UpdatePopup
-      v-if="updatePopupVisible && currentUpdateAnnouncement && !isAnnouncementsPage"
+      v-if="updatePopupVisible && currentUpdateAnnouncement && !isAuthPage"
       :announcement="currentUpdateAnnouncement"
       @close="closeUpdatePopup"
     />
