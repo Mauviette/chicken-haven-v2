@@ -407,3 +407,36 @@ export async function unequipArtifact(req, res) {
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }
+
+// DELETE /api/user/delete-account - Supprime définitivement le compte utilisateur
+export async function deleteAccount(req, res) {
+  try {
+    const { password } = req.body
+
+    if (!password || typeof password !== 'string') {
+      return res.status(400).json({ success: false, error: 'Mot de passe requis' })
+    }
+
+    const user = await User.findById(req.userId)
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Utilisateur introuvable' })
+    }
+
+    // Vérifier le mot de passe
+    const bcrypt = (await import('bcrypt')).default
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (!isPasswordValid) {
+      return res.status(401).json({ success: false, error: 'Mot de passe incorrect' })
+    }
+
+    // Supprimer complètement le compte
+    await User.findByIdAndDelete(req.userId)
+
+    console.log(`🗑️ Compte supprimé: ${user.username} (${req.userId})`)
+
+    res.json({ success: true, message: 'Compte supprimé avec succès' })
+  } catch (err) {
+    console.error('Erreur suppression compte:', err)
+    res.status(500).json({ success: false, error: 'Erreur serveur lors de la suppression du compte' })
+  }
+}

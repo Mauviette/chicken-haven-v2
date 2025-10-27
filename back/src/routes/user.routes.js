@@ -9,7 +9,8 @@ import {
   getArtifacts,
   getArtifactSlots,
   equipArtifact,
-  unequipArtifact
+  unequipArtifact,
+  deleteAccount
 } from '../controllers/user.controller.js'
 
 const router = express.Router()
@@ -28,5 +29,8 @@ router.get('/artifacts', verifyToken, getArtifacts)
 router.get('/artifact-slots', verifyToken, getArtifactSlots)
 router.put('/artifact/equip/:artifactId', verifyToken, equipArtifact)
 router.put('/artifact/unequip/:artifactId', verifyToken, unequipArtifact)
+
+// Account deletion
+router.delete('/delete-account', verifyToken, deleteAccount)
 
 export default router

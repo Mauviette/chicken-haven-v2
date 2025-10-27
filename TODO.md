@@ -1,1 +1,1 @@
-- Responsive
+Le formatage de egg-counter n'est pas 

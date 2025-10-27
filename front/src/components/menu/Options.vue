@@ -27,19 +27,34 @@
 
     <br>
     <ActionButton
+      :onClick="() => showAccountSettings = true"
+      style="display: block; margin: 10px auto;"
+    >
+      👤 Paramètres du compte
+    </ActionButton>
+
+    <ActionButton
       :onClick="() => emit('logout')"
       style="display: block; margin: 10px auto;"
     >
       🚪 Déconnexion
     </ActionButton>
   </Popup>
+
+  <!-- Popup des paramètres du compte -->
+  <AccountSettings
+    :visible="showAccountSettings"
+    @close="showAccountSettings = false"
+    @accountDeleted="handleAccountDeleted"
+  />
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useSettings } from '@/composables/useSettings'
 import Popup from '@/components/menu/Popup.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
+import AccountSettings from '@/components/menu/AccountSettings.vue'
 
 defineProps({
   visible: Boolean
@@ -47,6 +62,14 @@ defineProps({
 
 const { settings, fetchSettings } = useSettings()
 const emit = defineEmits(['close','logout'])
+
+const showAccountSettings = ref(false)
+
+function handleAccountDeleted() {
+  showAccountSettings.value = false
+  emit('close')
+  // Le logout est déjà géré dans AccountSettings
+}
 
 onMounted(() => {
   fetchSettings().catch(() => {})

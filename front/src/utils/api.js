@@ -165,4 +165,12 @@ export const apiPatch = (endpoint, data = null) => apiCallJSON(endpoint, {
   body: data ? JSON.stringify(data) : null
 })
 
+/**
+ * DELETE request avec JSON parsing
+ */
+export const apiDelete = (endpoint, data = null) => apiCallJSON(endpoint, {
+  method: 'DELETE',
+  body: data ? JSON.stringify(data) : null
+})
+
 export { getApiBaseUrl }
