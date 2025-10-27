@@ -1811,4 +1811,118 @@ function getArtifactBadgeStyle(aid) {
 .reward.unobtained.large-emoji {
   font-size: 22px;
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .mining-popup {
+  background-color: rgba(26, 10, 10, 0.95);
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .mining-popup :deep(.popup-content) {
+  background-color: rgba(42, 17, 17, 0.98);
+  border-color: #ff6666;
+}
+
+
+.apocalypse-mode .mining-popup :deep(.popup-title) {
+  color: #ff6666;
+}
+
+.apocalypse-mode .mining-popup :deep(.popup-close) {
+  color: #ff6666;
+}
+
+.apocalypse-mode .mining-popup :deep(.popup-close:hover) {
+  background-color: #331111;
+}
+
+.apocalypse-mode .grid {
+  background: #1a0a0a;
+  border-color: #441111;
+}
+
+.apocalypse-mode .cell {
+  background: #2a1111;
+  border-color: #662222;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .cell.intact {
+  background: #331111;
+}
+
+.apocalypse-mode .cell.cracked-light {
+  background: #2a0f0f;
+}
+
+.apocalypse-mode .cell.cracked-heavy {
+  background: #220a0a;
+}
+
+.apocalypse-mode .cell.dug {
+  background: #1a0808;
+}
+
+.apocalypse-mode .tools-panel {
+  background: #1a0a0a;
+  border-color: #441111;
+}
+
+.apocalypse-mode .tool-item {
+  background: #2a1111;
+  border-color: #662222;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .tool-item.current {
+  background: #331111;
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .tool-item:hover {
+  background: #3a1515;
+}
+
+.apocalypse-mode .tokens {
+  background-color: #662222;
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .hint-counter {
+  background-color: #441111;
+  border-color: #662222;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .artifact-badge {
+  background: #ff6666;
+  border-color: #cc3333;
+  color: #ffffff;
+}
+
+.apocalypse-mode .tools-stack-container::-webkit-scrollbar-track {
+  background: rgba(42, 10, 10, 0.5);
+}
+
+.apocalypse-mode .tools-stack-container::-webkit-scrollbar-thumb {
+  background: #ff6666;
+}
+
+.apocalypse-mode .tools-stack-container::-webkit-scrollbar-thumb:hover {
+  background: #ff8888;
+}
+
+.apocalypse-mode .rewards-list {
+  background-color: rgba(42, 10, 10, 0.5);
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .cell-hint {
+  background: linear-gradient(180deg, rgba(255, 102, 102, 0.5), rgba(204, 51, 51, 0.35));
+  border-color: rgba(255, 102, 102, 0.5);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(255, 102, 102, 0.45);
+}
+
 </style>

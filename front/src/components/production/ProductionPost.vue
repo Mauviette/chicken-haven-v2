@@ -144,4 +144,32 @@ function formatStat(stat) {
   flex-wrap: wrap;
   margin-top: 8px;
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .production-post {
+  background-color: #2a1111;
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .poste-locked {
+  background: #1a0a0a;
+  border-color: #662222;
+}
+
+.apocalypse-mode .poste-locked-title {
+  color: #662222;
+}
+
+.apocalypse-mode .post-title {
+  color: #ff6666;
+}
+
+.apocalypse-mode .stat-cle {
+  color: #cc3333;
+}
+
+.apocalypse-mode .infos {
+  color: #ff6666;
+}
+
 </style>

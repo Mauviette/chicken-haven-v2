@@ -376,3 +376,66 @@ function formatGroupe(especeId) {
 }
 
 </style>
+
+/* Mode APOCALYPSE */
+.apocalypse-mode .poule-card {
+  background: #2d1b1b !important;
+  border-color: #ff4444 !important;
+  color: #ffcccc !important;
+}
+
+.apocalypse-mode .poule-card .info {
+  color: #ffaaaa !important;
+}
+
+.apocalypse-mode .poule-card.commune {
+  border-color: #ff4444 !important;
+}
+.apocalypse-mode .poule-card.rare {
+  border-color: #ff6b6b !important;
+}
+.apocalypse-mode .poule-card.epique {
+  border-color: #ff6b6b !important;
+}
+.apocalypse-mode .poule-card.legendaire {
+  border-color: #ff6b6b !important;
+}
+
+.apocalypse-mode .poule-card.commune .badge-team { background: #ff4444 !important; border: 2px solid #ff4444 !important; }
+.apocalypse-mode .poule-card.rare .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; }
+.apocalypse-mode .poule-card.epique .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; }
+.apocalypse-mode .poule-card.legendaire .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; color: #ffcccc !important; }
+
+.apocalypse-mode .poule-card .quantite {
+  color: #ffaaaa !important;
+}
+
+.apocalypse-mode .poule-card.commune .rarete {
+  background: rgba(255, 68, 68, 0.2) !important;
+  color: #ffaaaa !important;
+}
+.apocalypse-mode .poule-card.rare .rarete {
+  background: rgba(255, 107, 107, 0.2) !important;
+  color: #ffcccc !important;
+}
+.apocalypse-mode .poule-card.epique .rarete {
+  background: rgba(255, 107, 107, 0.2) !important;
+  color: #ffcccc !important;
+}
+.apocalypse-mode .poule-card.legendaire .rarete {
+  background: rgba(255, 107, 107, 0.2) !important;
+  color: #ffcccc !important;
+}
+
+/* Badge NOUVEAU en mode apocalypse */
+.apocalypse-mode .new-badge {
+  background: #ff4444 !important;
+  color: #ffffff !important;
+}
+
+/* Badge upgrade en mode apocalypse */
+.apocalypse-mode .badge-upgrade {
+  background: linear-gradient(135deg, #ff6666 0%, #cc3333 100%) !important;
+  border: 2px solid #ff4444 !important;
+}
+

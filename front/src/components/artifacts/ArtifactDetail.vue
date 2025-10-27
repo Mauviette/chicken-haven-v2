@@ -306,4 +306,22 @@ async function onUnequip() {
   opacity: 0.5;
   cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .btn {
+  background: #2a1111;
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .btn.equip {
+  background: #1a1515;
+  border-color: #ff8888;
+}
+
+.apocalypse-mode .btn.unequip {
+  background: #331111;
+  border-color: #ff6666;
+}
+
 </style>

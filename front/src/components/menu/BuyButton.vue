@@ -121,4 +121,33 @@ function getPriceIcon(price = props.price) {
 .price-display.insufficient .price-amount {
   color: #ff6b6b;
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .buy-button {
+  background-color: #662222;
+  border: 2px solid #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .buy-button:hover:not(.disabled) {
+  background-color: #883333;
+}
+
+.apocalypse-mode .buy-button.disabled {
+  background-color: #441111;
+  color: #996666;
+}
+
+.apocalypse-mode .price-display {
+  background: rgba(255, 102, 102, 0.2);
+}
+
+.apocalypse-mode .price-amount {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .price-display.insufficient .price-amount {
+  color: #ff4444;
+}
+
 </style>

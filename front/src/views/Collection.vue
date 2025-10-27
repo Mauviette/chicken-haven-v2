@@ -366,7 +366,7 @@ watch(
 
 .collection-view {
   padding: 24px;
-  background: #f9f3e8;
+  background: var(--bg-primary);
   font-family: 'Fredoka', sans-serif;
   flex: 1;
   width: 100%;
@@ -379,12 +379,12 @@ watch(
 .section-title {
   font-size: 20px;
   margin-bottom: 20px;
-  color: #6d3c00;
+  color: var(--text-header);
 }
 
 .team-indicator {
   font-size: 14px;
-  color: #8B4513;
+  color: var(--text-achievement);
   margin-left: 10px;
 }
 
@@ -416,8 +416,8 @@ watch(
 .tab-btn {
   padding: 8px 16px;
   border-radius: 8px;
-  border: 2px solid #ffc66e;
-  background: #fffaf1;
+  border: 2px solid var(--border-primary);
+  background: var(--bg-secondary);
   font-family: 'Fredoka', sans-serif;
   font-weight: bold;
   font-size: 14px;
@@ -426,20 +426,20 @@ watch(
 }
 
 .tab-btn:hover {
-  background: #fff9e5;
+  background: var(--bg-menu);
   transform: translateY(-1px);
 }
 
 .tab-btn.active {
-  background: #ffc66e;
-  color: #5c2c08;
-  border-color: #ff9800;
+  background: var(--border-primary);
+  color: var(--text-primary);
+  border-color: var(--border-tertiary);
 }
 
 .info {
   text-align: center;
   font-size: 14px;
-  color: #5c2c08;
+  color: var(--text-primary);
 }
 
 .controls {
@@ -461,7 +461,7 @@ watch(
   flex: 1;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 2px solid #ffc66e;
+  border: 2px solid var(--border-primary);
   font-family: 'Fredoka', sans-serif;
   cursor: url('@/assets/ui/cursor/bracket_a_vertical.png') 0 0, auto;
 }
@@ -470,8 +470,8 @@ watch(
 .sort-order {
   padding: 8px 12px;
   border-radius: 8px;
-  border: 2px solid #ffc66e;
-  background: #fffaf1;
+  border: 2px solid var(--border-primary);
+  background: var(--bg-secondary);
   font-family: 'Fredoka', sans-serif;
     cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
@@ -489,7 +489,7 @@ watch(
 .loading-message {
   text-align: center;
   font-size: 16px;
-  color: #6d3c00;
+  color: var(--text-header);
   padding: 40px;
   width: 100%;
 }

@@ -215,4 +215,12 @@ watch(() => props.forceHide, (newVal) => {
   line-height: 1.4;
   word-wrap: break-word;
 }
+
+/* Mode APOCALYPSE */
+.apocalypse-mode .tooltip-box {
+  background: #2d1b1b;
+  color: #ffcccc;
+  border: 2px solid #ff4444;
+  box-shadow: 0 2px 8px rgba(102, 0, 0, 0.3);
+}
 </style>

@@ -325,15 +325,16 @@ function closeAchievements() {
   --bg-overlay: rgba(255, 255, 255, 0.8);
   --bg-achievement: rgba(255, 255, 255, 0.9);
   --text-primary: #4b2e06;
-  --text-secondary: #ffaaaa;
-  --text-accent: #ffcccc;
+  --text-secondary: #666666;
+  --text-accent: #888888;
   --text-header: #6d3c00;
   --text-menu: #fff9e5;
   --text-achievement: #8B4513;
   --border-primary: #ffc66e;
-  --border-secondary: #ff4444;
+  --border-secondary: #cccccc;
   --border-tertiary: #ffd99a;
   --border-menu: #8B4513;
+  --accent-primary: #ffd700;
   --button-bg: #7a3e10;
   --button-hover: #8a4a1c;
   --button-text: #fff9e5;
@@ -378,6 +379,7 @@ function closeAchievements() {
   --border-secondary: #ff4444;
   --border-tertiary: #ff4444;
   --border-menu: #8b0000;
+  --accent-primary: #ff4444;
   --button-bg: #4a1a0a;
   --button-hover: #5a2a1a;
   --button-text: #ffcccc;

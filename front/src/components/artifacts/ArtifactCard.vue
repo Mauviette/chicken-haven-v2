@@ -254,3 +254,53 @@ function formatRareté(r) {
   }
 }
 </style>
+
+/* Mode APOCALYPSE */
+.apocalypse-mode .artifact-card {
+  background: rgba(45, 27, 27, 0.9) !important;
+  border-color: rgba(255, 68, 68, 0.8) !important;
+  color: #ffcccc !important;
+}
+
+.apocalypse-mode .artifact-card .info {
+  color: #ffaaaa !important;
+}
+
+.apocalypse-mode .artifact-card.commune {
+  border-color: rgba(255, 68, 68, 0.8) !important;
+}
+.apocalypse-mode .artifact-card.rare {
+  border-color: rgba(255, 107, 107, 0.8) !important;
+}
+.apocalypse-mode .artifact-card.epique {
+  border-color: rgba(255, 107, 107, 0.8) !important;
+}
+.apocalypse-mode .artifact-card.legendaire {
+  border-color: rgba(255, 107, 107, 0.8) !important;
+}
+
+.apocalypse-mode .artifact-card.commune .badge-equipped { background: rgba(255, 68, 68, 0.9) !important; border: 2px solid rgba(255, 68, 68, 0.9) !important; }
+.apocalypse-mode .artifact-card.rare .badge-equipped { background: rgba(255, 107, 107, 0.9) !important; border: 2px solid rgba(255, 107, 107, 0.9) !important; }
+.apocalypse-mode .artifact-card.epique .badge-equipped { background: rgba(255, 107, 107, 0.9) !important; border: 2px solid rgba(255, 107, 107, 0.9) !important; }
+.apocalypse-mode .artifact-card.legendaire .badge-equipped { background: rgba(255, 107, 107, 0.9) !important; border: 2px solid rgba(255, 107, 107, 0.9) !important; color: #ffcccc !important; }
+
+.apocalypse-mode .artifact-card.commune .rarete {
+  background: rgba(255, 68, 68, 0.3) !important;
+  color: #ffaaaa !important;
+}
+.apocalypse-mode .artifact-card.rare .rarete {
+  background: rgba(255, 107, 107, 0.3) !important;
+  color: #ffcccc !important;
+}
+.apocalypse-mode .artifact-card.epique .rarete {
+  background: rgba(255, 107, 107, 0.3) !important;
+  color: #ffcccc !important;
+}
+.apocalypse-mode .artifact-card.legendaire .rarete {
+  background: rgba(255, 107, 107, 0.3) !important;
+  color: #ffcccc !important;
+}
+
+.apocalypse-mode .artifact-card .effect {
+  color: #ffaaaa !important;
+}

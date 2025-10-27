@@ -140,4 +140,25 @@ const showDetail = ref(false)
 .assign-btn:hover {
   background-color: #8a4a1c;
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .chicken-post-card {
+  background: #2a1111;
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .talent {
+  color: #ff8888;
+}
+
+.apocalypse-mode .assign-btn {
+  background-color: #662222;
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .assign-btn:hover {
+  background-color: #883333;
+}
+
 </style>

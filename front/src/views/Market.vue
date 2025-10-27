@@ -610,8 +610,10 @@ const preciousStoneTooltip = computed(() => {
 // Helpers calcul côté front à partir des données serveur
 function getCurrentCostForLevel(costs, level) {
   if (!Array.isArray(costs) || costs.length === 0) return Infinity
-  // Pour les améliorations infinies, toujours utiliser le prix le plus élevé
-  return Math.max(...costs)
+  // Pour les améliorations infinies, utiliser le coût du niveau actuel (index level)
+  // Si le niveau dépasse la longueur du tableau, utiliser le dernier coût
+  if (level >= costs.length) return costs[costs.length - 1]
+  return costs[level]
 }
 function getCurrentRewardForLevel(rewards, level) {
   if (!Array.isArray(rewards) || rewards.length === 0) return 0
@@ -1615,6 +1617,139 @@ function getMinAnimationDelay(count) {
     max-width: 800px;
   }
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .market-view {
+  background: #1a0a0a;
+}
+
+.apocalypse-mode .section-title,
+.apocalypse-mode .subsection-header h4,
+.apocalypse-mode .subsection-header h3 {
+  color: #ff4444;
+}
+
+.apocalypse-mode .section-description,
+.apocalypse-mode .subsection-description {
+  color: #cc3333;
+}
+
+.apocalypse-mode .balance-item {
+  background-color: #2a1111;
+  border: 2px solid #ff6666;
+  color: #ff6666;
+}
+
+.apocalypse-mode .market-tabs {
+  border-bottom-color: #441111;
+}
+
+.apocalypse-mode .tab-button {
+  background: #2a1111;
+  border: 2px solid #ff6666;
+  color: #ff6666;
+}
+
+.apocalypse-mode .tab-button:hover {
+  background: #3a1515;
+}
+
+.apocalypse-mode .tab-button.active {
+  background: #4a1a1a;
+  border-bottom-color: #1a0a0a;
+}
+
+.apocalypse-mode .market-item {
+  background: #2a0a0a;
+  border: 3px solid #ff6666;
+}
+
+.apocalypse-mode .market-item:hover {
+  border-color: #ff8888;
+}
+
+.apocalypse-mode .box-item {
+  background: linear-gradient(135deg, #2a0a0a 0%, #1a0808 100%);
+  border: 3px solid #ff6666;
+}
+
+.apocalypse-mode .box-item:hover {
+  background: linear-gradient(135deg, #3a1111 0%, #2a0a0a 100%);
+  border-color: #ff8888;
+}
+
+.apocalypse-mode .box-contents {
+  background: rgba(255, 102, 102, 0.1);
+  border: 1px solid #ff6666;
+}
+
+.apocalypse-mode .drop-group {
+  background: rgba(42, 10, 10, 0.5);
+}
+
+.apocalypse-mode .group-label {
+  color: #ff8888;
+}
+
+.apocalypse-mode .group-quantity {
+  color: #ff6666;
+  background: rgba(255, 102, 102, 0.1);
+}
+
+.apocalypse-mode .item-name {
+  color: #ff6666;
+}
+
+.apocalypse-mode .item-description,
+.apocalypse-mode .description-text {
+  color: #cc3333;
+}
+
+.apocalypse-mode .item-stats,
+.apocalypse-mode .upgrade-effect,
+.apocalypse-mode .effect-text {
+  color: #ff8888;
+}
+
+.apocalypse-mode .level-text {
+  background: rgba(255, 102, 102, 0.2);
+  border: 1px solid #ff6666;
+  color: #ff6666;
+}
+
+.apocalypse-mode .expansion-item.purchased {
+  background: linear-gradient(135deg, #1a1515 0%, #2a1a1a 100%);
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .price {
+  color: #ff6666;
+}
+
+.apocalypse-mode .original-price {
+  color: #996666;
+}
+
+.apocalypse-mode .rarity-badge.commune {
+  background: #662222;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .rarity-badge.rare {
+  background: #883333;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .rarity-badge.épique {
+  background: #aa4444;
+  color: #ffffff;
+}
+
+.apocalypse-mode .rarity-badge.légendaire {
+  background: #cc5555;
+  color: #ffffff;
+}
+
 </style>
 
 <style>

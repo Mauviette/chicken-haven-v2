@@ -189,4 +189,18 @@ onMounted(fetchDisponibles)
   min-width: 440px !important;
   max-width: 600px !important;
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .poules-list::-webkit-scrollbar {
+  background: #2a1111;
+}
+
+.apocalypse-mode .poules-list::-webkit-scrollbar-thumb {
+  background: #ff6666;
+}
+
+.apocalypse-mode .poules-list::-webkit-scrollbar-thumb:hover {
+  background: #ff8888;
+}
+
 </style>

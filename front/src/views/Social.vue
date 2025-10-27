@@ -461,7 +461,7 @@ const getAnnouncementImageUrl = (imageName) => {
 <style scoped>
 .social-view {
   padding: 24px;
-  background: #f9f3e8;
+  background: var(--bg-primary);
   font-family: 'Fredoka', sans-serif;
   flex: 1;
   width: 100%;
@@ -479,14 +479,14 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .section-title {
   font-size: 24px;
-  color: #6d3c00;
+  color: var(--text-header);
   margin: 0;
 }
 
 .refresh-button .action-button {
-  background: #8B4513;
-  color: white;
-  border: 2px solid #ffc66e;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 2px solid var(--border-primary);
   border-radius: 8px;
   padding: 8px 16px;
   font-family: 'Fredoka', sans-serif;
@@ -496,7 +496,7 @@ const getAnnouncementImageUrl = (imageName) => {
 }
 
 .refresh-button .action-button:hover:not(:disabled) {
-  background: #A0522D;
+  background: var(--button-hover);
   transform: translateY(-1px);
 }
 
@@ -512,18 +512,18 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .loading-message {
   font-size: 18px;
-  color: #8B4513;
+  color: var(--text-achievement);
 }
 
 .error-message {
   font-size: 16px;
-  color: #d32f2f;
+  color: var(--error-text);
   margin-bottom: 16px;
 }
 
 .retry-button {
-  background: #d32f2f;
-  color: white;
+  background: var(--error-bg);
+  color: var(--error-text);
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
@@ -538,8 +538,8 @@ const getAnnouncementImageUrl = (imageName) => {
 }
 
 .unified-leaderboard-section {
-  background: #fffaf1;
-  border: 2px solid #ffc66e;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
   padding: 16px;
   display: grid;
@@ -552,7 +552,7 @@ const getAnnouncementImageUrl = (imageName) => {
 }
 
 .individual-leaderboard + .individual-leaderboard {
-  border-top: 1px dashed #ffd99a;
+  border-top: 1px dashed var(--border-tertiary);
   padding-top: 24px;
 }
 
@@ -563,7 +563,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .leaderboard-subtitle {
   font-size: 18px;
-  color: #6d3c00;
+  color: var(--text-header);
   margin: 0 0 8px 0;
 }
 
@@ -583,8 +583,8 @@ const getAnnouncementImageUrl = (imageName) => {
 }
 
 .coming-soon-section {
-  background: #fffaf1;
-  border: 2px solid #ffc66e;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
   padding: 20px;
   width: 100%;
@@ -596,8 +596,8 @@ const getAnnouncementImageUrl = (imageName) => {
 }
 
 .announcements-section {
-  background: #fffaf1;
-  border: 2px solid #ffc66e;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
   padding: 20px;
   width: 100%;
@@ -614,7 +614,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .section-title {
   font-size: 18px;
-  color: #6d3c00;
+  color: var(--text-header);
   margin: 0;
 }
 
@@ -642,7 +642,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .loading-text, .error-text, .no-announcements-text {
   font-size: 14px;
-  color: #8B4513;
+  color: var(--text-achievement);
 }
 
 .announcements-preview {
@@ -653,7 +653,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .announcement-preview-item {
   background: rgba(255, 255, 255, 0.8);
-  border: 1px solid #ffd99a;
+  border: 1px solid var(--border-tertiary);
   border-radius: 8px;
   padding: 12px;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
@@ -665,7 +665,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .announcement-preview-item:hover {
   background: rgba(255, 215, 0, 0.05);
-  border-color: #d4af37;
+  border-color: var(--reward-border);
   transform: translateY(-1px);
 }
 
@@ -690,7 +690,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .announcement-preview-title {
   font-size: 14px;
-  color: #4b2e06;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
   font-weight: bold;
   line-height: 1.3;
@@ -704,7 +704,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .announcement-preview-summary {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   margin: 0 0 6px 0;
   line-height: 1.4;
   overflow: hidden;
@@ -719,7 +719,7 @@ const getAnnouncementImageUrl = (imageName) => {
   display: flex;
   gap: 8px;
   font-size: 11px;
-  color: #8B4513;
+  color: var(--text-achievement);
 }
 
 .announcement-preview-date, .announcement-preview-version {
@@ -735,13 +735,13 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .leaderboard-title {
   font-size: 20px;
-  color: #6d3c00;
+  color: var(--text-header);
   margin: 0 0 8px 0;
 }
 
 .user-rank {
   font-size: 14px;
-  color: #8B4513;
+  color: var(--text-achievement);
   background: rgba(255, 215, 0, 0.1);
   padding: 8px 12px;
   border-radius: 8px;
@@ -750,7 +750,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .user-value {
   font-weight: normal;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .leaderboard-list {
@@ -764,14 +764,14 @@ const getAnnouncementImageUrl = (imageName) => {
   align-items: center;
   padding: 8px 10px;
   background: rgba(255, 255, 255, 0.7);
-  border: 1px dashed #ffd99a;
+  border: 1px dashed var(--border-tertiary);
   border-radius: 8px;
   transition: all 0.2s ease;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
 }
 
 .leaderboard-item + .leaderboard-item {
-  border-top: 1px dashed #ffd99a;
+  border-top: 1px dashed var(--border-tertiary);
 }
 
 .leaderboard-item:hover {
@@ -861,7 +861,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .default-avatar {
   font-size: 24px;
-  background: #e0e0e0;
+  background: var(--bg-secondary);
   width: 48px;
   height: 48px;
   border-radius: 8px;
@@ -879,7 +879,7 @@ const getAnnouncementImageUrl = (imageName) => {
 .player-name {
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -888,20 +888,20 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .player-username {
   font-size: 12px;
-  color: #888;
+  color: var(--text-secondary);
   font-family: monospace;
   margin-bottom: 2px;
 }
 
 .last-seen {
   font-size: 11px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
 .player-value {
   font-size: 16px;
   font-weight: bold;
-  color: #6d3c00;
+  color: var(--text-header);
   text-align: right;
   min-width: 80px;
 }
@@ -911,14 +911,14 @@ const getAnnouncementImageUrl = (imageName) => {
   text-align: center;
   padding: 12px;
   background: rgba(255, 255, 255, 0.3);
-  border: 1px dashed #ffd99a;
+  border: 1px dashed var(--border-tertiary);
   border-radius: 8px;
   margin-bottom: 30px;
 }
 
 .meta-info {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* Responsive Design */
@@ -1388,21 +1388,21 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .popup-title {
   font-size: 20px;
-  color: #fff9e5;
+  color: var(--button-text);
   margin: 0;
   text-align: center;
   font-weight: bold;
   position: sticky;
   top: 0;
-  background: #7a3e10;
+  background: var(--button-bg);
   padding: 16px 0;
-  border-bottom: 2px solid #ffc66e;
+  border-bottom: 2px solid var(--border-primary);
   z-index: 10;
 }
 
 .user-rank-popup {
   font-size: 14px;
-  color: #ffc66e;
+  color: var(--border-primary);
   background: rgba(255, 255, 255, 0.1);
   padding: 8px 12px;
   border-radius: 8px;
@@ -1416,7 +1416,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .user-value-popup {
   font-weight: normal;
-  color: #ddd;
+  color: var(--text-secondary);
 }
 
 .full-leaderboard-list {
@@ -1495,4 +1495,55 @@ const getAnnouncementImageUrl = (imageName) => {
     opacity: 0.9;
   }
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .rank-gold {
+  background: linear-gradient(135deg, #ff6666, #cc3333);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(255, 102, 102, 0.4);
+}
+
+.apocalypse-mode .rank-silver {
+  background: linear-gradient(135deg, #662222, #441111);
+  color: #ffaaaa;
+  box-shadow: 0 2px 8px rgba(102, 34, 34, 0.4);
+}
+
+.apocalypse-mode .rank-bronze {
+  background: linear-gradient(135deg, #883333, #662222);
+  color: #ffaaaa;
+  box-shadow: 0 2px 8px rgba(136, 51, 51, 0.4);
+}
+
+.apocalypse-mode .rank-top10 {
+  background: linear-gradient(135deg, #aa4444, #883333);
+  color: #ffffff;
+}
+
+.apocalypse-mode .rank-normal {
+  background: linear-gradient(135deg, #441111, #2a0a0a);
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .level-badge {
+  background: #ff4444;
+  border-color: #ffffff;
+}
+
+.apocalypse-mode .show-more-button {
+  background: linear-gradient(135deg, #662222, #441111);
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .show-more-button:hover {
+  background: linear-gradient(135deg, #883333, #662222);
+  box-shadow: 0 4px 12px rgba(136, 51, 51, 0.3);
+}
+
+.apocalypse-mode .footer-info {
+  background: rgba(42, 10, 10, 0.5);
+  border-color: #ff6666;
+}
+
 </style>

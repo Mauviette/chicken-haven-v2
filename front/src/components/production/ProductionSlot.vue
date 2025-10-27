@@ -272,4 +272,41 @@ function collecter() {
   font-family: 'Fredoka', sans-serif;
   letter-spacing: 1px;
 }
+
+/* Mode Apocalypse */
+.apocalypse-mode .production-slot {
+  background-color: #2a1111;
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .progress-bar {
+  background: #1a0a0a;
+}
+
+.apocalypse-mode .progress-fill-working {
+  background: linear-gradient(90deg, #ff6666 60%, #ff8888 100%);
+}
+
+.apocalypse-mode .progress-fill-ready {
+  background: linear-gradient(90deg, #cc3333 60%, #ff6666 100%);
+}
+
+.apocalypse-mode .slot-info {
+  background-color: #1a0808;
+}
+
+.apocalypse-mode .collect-btn {
+  background-color: #662222;
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .locked {
+  background: #331111;
+}
+
+.apocalypse-mode .slot-locked-title {
+  color: #996666;
+}
+
 </style>

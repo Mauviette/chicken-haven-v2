@@ -165,4 +165,21 @@ onBeforeUnmount(() => {
   animation: slideOut 0.3s ease forwards;
 }
 
+/* Mode Apocalypse */
+.apocalypse-mode .toast {
+  background-color: #662222;
+  border: 2px solid #ff6666;
+  background-image: none;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .toast .close-btn {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .toast .close-btn:hover {
+  color: #ffffff;
+}
+
+
 </style>

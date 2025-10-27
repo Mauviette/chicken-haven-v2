@@ -61,5 +61,27 @@
     cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
     opacity: 0.7;
   }
+
+/* Mode Apocalypse */
+.apocalypse-mode .action-button {
+  background-color: #662222;
+  border: 2px solid #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .action-button:hover:not(.disabled) {
+  background-color: #883333;
+}
+
+.apocalypse-mode .action-button.active {
+  background-color: #aa4444;
+  border-color: #ff8888;
+}
+
+.apocalypse-mode .action-button.disabled {
+  background-color: #441111;
+  color: #996666;
+}
+
   </style>
   

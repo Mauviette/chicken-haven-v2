@@ -70,10 +70,10 @@
   }
   
   .popup-content {
-    background-color: #7a3e10;
+    background-color: var(--button-bg);
     background-image: url('@/assets/bar/bg.png');
     background-repeat: repeat;
-    border: 2px solid #ffc66e;
+    border: 2px solid var(--border-primary);
     border-radius: 16px;
     padding: 24px;
     width: 360px;
@@ -81,7 +81,7 @@
     max-height: 90vh;
     overflow-y: auto;
     font-family: 'Fredoka', sans-serif;
-    color: #fff9e5;
+    color: var(--button-text);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     position: relative;
     animation: popupEnter 0.25s ease-out;
@@ -96,7 +96,7 @@
     background: none;
     border: none;
     font-size: 20px;
-    color: #fff9e5;
+    color: var(--button-text);
     
   }
   

@@ -479,4 +479,81 @@ async function onUpgrade() {
   text-align: center;
 }
 
+/* Mode Apocalypse */
+.apocalypse-mode .chicken-img {
+  background-color: #441111 !important;
+  border-color: #ff6666 !important;
+}
+
+.apocalypse-mode .name {
+  color: #ffaaaa !important;
+}
+
+.apocalypse-mode .rarete {
+  color: #ff8888 !important;
+}
+
+.apocalypse-mode .categorie {
+  color: #ff8888 !important;
+}
+
+.apocalypse-mode .rarete.commune {
+  color: #ff6666 !important;
+}
+.apocalypse-mode .rarete.rare {
+  color: #ff8888 !important;
+}
+.apocalypse-mode .rarete.epique {
+  color: #ff8888 !important;
+}
+.apocalypse-mode .rarete.legendaire {
+  color: #ffaa44 !important;
+}
+
+.apocalypse-mode .section {
+  background: rgba(42, 17, 17, 0.3) !important;
+  border: 1px solid #ff6666 !important;
+  color: #ffaaaa !important;
+}
+
+.apocalypse-mode .label {
+  color: #ffcccc !important;
+}
+
+.apocalypse-mode .stars {
+  color: #ff8888 !important;
+}
+
+.apocalypse-mode .stat-line {
+  color: #ffaaaa !important;
+}
+
+.apocalypse-mode .btn {
+  background: #2a1111 !important;
+  border-color: #ff6666 !important;
+  color: #ffaaaa !important;
+}
+
+.apocalypse-mode .btn.equip {
+  background: #1a1515 !important;
+  border-color: #ff8888 !important;
+}
+
+.apocalypse-mode .btn.unequip {
+  background: #331111 !important;
+  border-color: #ff6666 !important;
+}
+
+.apocalypse-mode .btn.upgrade {
+  background: #221a1a !important;
+  border-color: #cc8888 !important;
+}
+
+.apocalypse-mode .loading-content {
+  color: #ff6666 !important;
+}
+
+
+
+
 </style>
