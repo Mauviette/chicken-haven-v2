@@ -325,7 +325,7 @@ onMounted(async () => {
         }, 1000)
       })
       img.addEventListener('load', function() {
-        console.log('✅ Image chargée (social):', this.src)
+        //console.log('✅ Image chargée (social):', this.src)
       })
     })
   })

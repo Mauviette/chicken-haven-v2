@@ -71,7 +71,7 @@ onMounted(() => {
         }, 1000)
       })
       img.addEventListener('load', function() {
-        console.log('✅ Image chargée:', this.src)
+        //console.log('✅ Image chargée:', this.src)
       })
     })
   })
