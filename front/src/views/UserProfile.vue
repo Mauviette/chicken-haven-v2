@@ -15,6 +15,9 @@
               <Tooltip v-if="profile?.apocalypse" text="Cet utilisateur a choisi d'avoir la vie dure.">
                 <span class="apocalypse-badge">🔥</span>
               </Tooltip>
+              <Tooltip v-if="profile?.dev" text="Cet utilisateur est un développeur du jeu.">
+                <span class="dev-badge">👨‍💻</span>
+              </Tooltip>
               <button v-if="isOwnProfile" class="edit-name-btn" @click="startEditDisplayName" title="Modifier le nom d'affichage">
                 <span class="edit-icon">✏️</span>
                 Modifier
@@ -844,6 +847,30 @@ async function saveDisplayName() {
   }
   100% {
     transform: scale(1) rotate(-2deg);
+    opacity: 0.9;
+  }
+}
+
+/* Badge DÉVELOPPEUR */
+.dev-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 16px;
+  animation: code-glow 2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 4px rgba(0, 123, 255, 0.8));
+}
+
+@keyframes code-glow {
+  0% {
+    transform: scale(1) rotate(-1deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.05) rotate(1deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(-1deg);
     opacity: 0.9;
   }
 }

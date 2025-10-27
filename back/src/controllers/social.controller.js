@@ -6,8 +6,8 @@ import User from '../models/User.js'
 // GET /api/social/leaderboards - Récupère tous les leaderboards
 export async function getLeaderboards(req, res) {
   try {
-    // Récupérer les utilisateurs avec leurs stats
-    const users = await User.find({}, {
+    // Récupérer les utilisateurs avec leurs stats (exclure les comptes dev)
+    const users = await User.find({ dev: { $ne: true } }, {
       username: 1,
       displayName: 1,
       profileId: 1,

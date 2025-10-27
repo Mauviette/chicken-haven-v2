@@ -184,6 +184,7 @@ export async function getPublicProfile(req, res) {
       createdAt: user.createdAt,
       lastSeen: user.lastSeen,
       apocalypse: user.apocalypse || false,
+      dev: user.dev || false,
       experience: user.experience || { level: 1, points: 0, required_points: 2 },
       team: { maxSlots: rawTeam.maxSlots || 0, slots: enrichedSlots },
       resources: {

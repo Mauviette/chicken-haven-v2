@@ -91,6 +91,7 @@ const UserSchema = new mongoose.Schema({
 },
 
   apocalypse: { type: Boolean, default: false },
+  dev: { type: Boolean, default: false },
 
   // Version du jeu vue par l'utilisateur (pour les annonces de mise à jour)
   lastSeenVersion: { type: String, default: '0.0.0' },
