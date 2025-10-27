@@ -1316,7 +1316,7 @@ export const LAST_UPDATED = new Date().toISOString()
 // ========================
 export function getAllGameData() {
   return {
-    version: DATA_VERSION,
+    version: CURRENT_GAME_VERSION,
     lastUpdated: LAST_UPDATED,
     especies: especeData,
     talents: talentsData,

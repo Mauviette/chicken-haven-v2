@@ -495,7 +495,7 @@
 .eye-icon {
   position: absolute;
   right: 32px;
-  top: 10px;
+  top: 8px;
   width: 20px;
   height: 20px;
   stroke: #7a3e10 !important;
@@ -665,12 +665,12 @@
     height: 18px;
     font-size: 11px;
     right: 4px;
-    top: 4px;
+    bottom: 25px;
   }
   
   .eye-icon {
     right: 26px;
-    top: 4px;
+    top: 8px;
     width: 18px;
     height: 18px;
     stroke: #7a3e10 !important;

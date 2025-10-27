@@ -31,7 +31,7 @@
       </div>
     </div>
     <div class="version-link" @click="openAnnouncements">
-      Version 0.0.2
+      Version {{ dataVersion || '0.0.2' }}
     </div>
   </div>    <div ref="eggContainer" class="falling-eggs-container"></div>
   </template>
@@ -40,15 +40,17 @@
   
   <script setup>
   import { ref, onMounted, onBeforeUnmount } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { useAuth } from '@/composables/useAuth'
-  import { usePlayer } from '@/composables/usePlayer'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import { usePlayer } from '@/composables/usePlayer'
+import { useGameData } from '@/composables/useGameData'
   import RegisterForm from '@/components/auth/RegisterForm.vue'
   import LoginForm from '@/components/auth/LoginForm.vue'
   
   const router = useRouter()
   const { login } = useAuth()
   const { } = usePlayer()
+  const { dataVersion } = useGameData()
   const isLoginMode = ref(true)
   const eggContainer = ref(null)
   const titleClickCount = ref(0)
