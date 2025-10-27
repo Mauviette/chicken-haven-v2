@@ -18,7 +18,22 @@
         <div v-if="usernameError" class="field-error">{{ usernameError }}</div>
       </div>
       
-      <!-- Mot de passe -->
+  <div class="input-group">
+        <input 
+          id="email"
+          type="email"
+          v-model="email"
+          placeholder="Adresse email (optionnel)"
+          @input="validateEmail"
+        />
+        <Tooltip :text="tooltipInfo.email.html" position="right" :followMouse="false">
+          <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="m9 12 2 2 4-4"></path>
+          </svg>
+        </Tooltip>
+        <div v-if="emailError" class="field-error">{{ emailError }}</div>
+      </div>
       <div class="input-group">
         <input 
           v-model="password" 
@@ -136,21 +151,20 @@
   import Tooltip from '@/components/menu/Tooltip.vue'
   import { containsForbiddenWords } from '@/utils/forbiddenWords.js'
   
-  const username = ref('')
-  const password = ref('')
-  const confirmPassword = ref('')
-  const message = ref('')
-  
-  // Visibilité des mots de passe
+const username = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const email = ref('')
+const message = ref('')  // Visibilité des mots de passe
   const showPassword = ref(false)
   const showConfirmPassword = ref(false)
   
-  // Erreurs de validation
-  const usernameError = ref('')
-  const passwordError = ref('')
-  const confirmPasswordError = ref('')
-  
-  const emit = defineEmits(['registered', 'switch-to-login', 'auto-login'])
+// Erreurs de validation
+const usernameError = ref('')
+const passwordError = ref('')
+const confirmPasswordError = ref('')
+const emailError = ref('')
+const emit = defineEmits(['registered', 'switch-to-login', 'auto-login'])
   
   const props = defineProps({
     apocalypseMode: {
@@ -244,6 +258,23 @@
     confirmPasswordError.value = ''
   }
   
+  // Validation de l'email
+  function validateEmail() {
+    const value = email.value.trim()
+    if (!value) {
+      emailError.value = ''
+      return
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(value)) {
+      emailError.value = 'Adresse email invalide'
+      return
+    }
+    
+    emailError.value = ''
+  }
+  
   // Formulaire valide
   const isFormValid = computed(() => {
     return username.value.trim() && 
@@ -277,6 +308,15 @@
       html: `<strong>Confirmation du mot de passe</strong><br>
              Saisissez à nouveau votre mot de passe pour éviter les erreurs de frappe.<br><br>
              • Doit être identique au mot de passe<br>`
+    },
+    email: {
+      html: `<strong>Adresse email (optionnel)</strong><br>
+             Fournir une adresse email permet de sécuriser votre compte.<br><br>
+             <strong>Avantages :</strong><br>
+             • Récupération de mot de passe<br>
+             • Notifications importantes<br>
+             • Vérification de sécurité<br><br>
+             <strong>Note :</strong> Sans email, l'inscription est immédiate.`
     }
   }
   
@@ -285,6 +325,7 @@
     validateUsername()
     validatePassword()
     validateConfirmPassword()
+    validateEmail()
     
     if (!isFormValid.value) {
       message.value = 'Veuillez corriger les erreurs avant de continuer'
@@ -296,16 +337,28 @@
     registerBtn.textContent = "Inscription...";
 
     try {
-      const res = await apiPost('/api/auth/register', {
+      const registrationData = {
         username: username.value.trim(),
         displayName: username.value.trim(), // Utiliser username comme displayName par défaut
         password: password.value,
         apocalypse: props.apocalypseMode
-      })
+      }
       
-      // Si on reçoit un token, connecter automatiquement
+      // Ajouter l'email seulement s'il est fourni
+      if (email.value.trim()) {
+        registrationData.email = email.value.trim().toLowerCase()
+      }
+      
+      const res = await apiPost('/api/auth/register', registrationData)
+      
+      // Si on reçoit un token, connecter automatiquement (inscription sans email)
       if (res.token) {
         emit('auto-login', res.token)
+      } else if (res.requiresVerification) {
+        // Inscription avec email - montrer le message de vérification
+        message.value = `Un code de vérification a été envoyé à ${res.email}. Vérifiez vos emails et utilisez le code pour finaliser votre inscription.`
+        // Ici on pourrait émettre un événement pour passer à l'écran de vérification
+        emit('email-verification-required', res.email)
       } else {
         message.value = "Inscription réussie !"
         emit('registered')

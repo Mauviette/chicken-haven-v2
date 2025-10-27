@@ -122,6 +122,7 @@ export async function getMe(req, res) {
       avatar: user.avatar || '',
       lastSeen: user.lastSeen,
       apocalypse: user.apocalypse || false,
+      email: user.email || null,
       experience: {
         level: experience?.level ?? 1,
         points: experience?.points ?? 0,
@@ -408,6 +409,249 @@ export async function unequipArtifact(req, res) {
   }
 }
 
+// POST /api/user/initiate-delete-account - Initie la suppression de compte avec confirmation email
+export async function initiateDeleteAccount(req, res) {
+  try {
+    const user = await User.findById(req.userId)
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Utilisateur introuvable' })
+    }
+
+    // Vérifier si l'utilisateur a un email
+    if (!user.email) {
+      return res.status(400).json({ success: false, error: 'Un email est requis pour cette action' })
+    }
+
+    // Importer les dépendances nécessaires
+    const PendingRegistration = (await import('../models/PendingRegistration.js')).default
+    const { sendVerificationEmail, generateVerificationCode } = await import('../utils/emailService.js')
+
+    // Vérifier s'il y a déjà une demande de suppression en attente pour cet utilisateur
+    const existingPending = await PendingRegistration.findOne({ userId: req.userId, isDeleteRequest: true })
+    if (existingPending) {
+      await PendingRegistration.findByIdAndDelete(existingPending._id)
+    }
+
+    // Générer un code de vérification
+    const verificationCode = generateVerificationCode()
+
+    // Créer une demande de suppression en attente
+    const pendingDelete = new PendingRegistration({
+      username: user.username,
+      displayName: user.displayName,
+      password: user.password,
+      email: user.email,
+      verificationCode,
+      userId: req.userId,
+      isDeleteRequest: true, // Marquer comme demande de suppression
+      apocalypse: user.apocalypse
+    })
+
+    await pendingDelete.save()
+
+    // Envoyer l'email de confirmation de suppression
+    const emailSent = await sendVerificationEmail(
+      user.email, 
+      verificationCode, 
+      user.username,
+      'delete-account' // Type spécial pour la suppression
+    )
+
+    if (!emailSent) {
+      // Supprimer la demande en attente si l'email n'a pas pu être envoyé
+      await PendingRegistration.findByIdAndDelete(pendingDelete._id)
+      return res.status(500).json({ success: false, error: 'Erreur lors de l\'envoi de l\'email de confirmation' })
+    }
+
+    res.json({
+      success: true,
+      message: 'Un code de confirmation a été envoyé à votre adresse email',
+      requiresVerification: true
+    })
+  } catch (err) {
+    console.error('Initiate delete account error:', err)
+    res.status(500).json({ success: false, error: 'Erreur serveur lors de l\'initiation de la suppression' })
+  }
+}
+
+// POST /api/user/confirm-delete-account - Confirme la suppression de compte avec le code email
+export async function confirmDeleteAccount(req, res) {
+  try {
+    const { verificationCode } = req.body
+
+    if (!verificationCode) {
+      return res.status(400).json({ success: false, error: 'Code de vérification requis' })
+    }
+
+    // Importer les dépendances nécessaires
+    const PendingRegistration = (await import('../models/PendingRegistration.js')).default
+
+    // Trouver la demande de suppression en attente
+    const pendingDelete = await PendingRegistration.findOne({
+      userId: req.userId,
+      verificationCode: verificationCode,
+      isDeleteRequest: true
+    })
+
+    if (!pendingDelete) {
+      return res.status(400).json({ success: false, error: 'Code de vérification invalide ou expiré' })
+    }
+
+    // Supprimer complètement le compte
+    await User.findByIdAndDelete(req.userId)
+
+    // Supprimer la demande en attente
+    await PendingRegistration.findByIdAndDelete(pendingDelete._id)
+
+    console.log(`🗑️ Compte supprimé avec confirmation email: ${pendingDelete.username} (${req.userId})`)
+
+    res.json({ success: true, message: 'Compte supprimé avec succès' })
+  } catch (err) {
+    console.error('Confirm delete account error:', err)
+    res.status(500).json({ success: false, error: 'Erreur serveur lors de la confirmation de suppression' })
+  }
+}
+
+// POST /api/user/initiate-password-change - Initie le changement de mot de passe avec confirmation email
+export async function initiatePasswordChange(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Mot de passe actuel et nouveau mot de passe requis' })
+    }
+
+    // Validation du nouveau mot de passe
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 6 caractères' })
+    }
+
+    const user = await User.findById(req.userId)
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' })
+    }
+
+    // Vérifier si l'utilisateur a un email
+    if (!user.email) {
+      return res.status(400).json({ error: 'Un email est requis pour cette action' })
+    }
+
+    // Vérifier le mot de passe actuel
+    const bcrypt = (await import('bcrypt')).default
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password)
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ error: 'Mot de passe actuel incorrect' })
+    }
+
+    // Vérifier que le nouveau mot de passe est différent
+    const isSamePassword = await bcrypt.compare(newPassword, user.password)
+    if (isSamePassword) {
+      return res.status(400).json({ error: 'Le nouveau mot de passe doit être différent de l\'actuel' })
+    }
+
+    // Importer les dépendances nécessaires
+    const PendingRegistration = (await import('../models/PendingRegistration.js')).default
+    const { sendVerificationEmail, generateVerificationCode } = await import('../utils/emailService.js')
+
+    // Vérifier s'il y a déjà une demande de changement de mot de passe en attente pour cet utilisateur
+    const existingPending = await PendingRegistration.findOne({ userId: req.userId, isPasswordChange: true })
+    if (existingPending) {
+      await PendingRegistration.findByIdAndDelete(existingPending._id)
+    }
+
+    // Générer un code de vérification
+    const verificationCode = generateVerificationCode()
+
+    // Hasher le nouveau mot de passe
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10)
+
+    // Créer une demande de changement de mot de passe en attente
+    const pendingPasswordChange = new PendingRegistration({
+      username: user.username,
+      displayName: user.displayName,
+      password: user.password, // Garder l'ancien mot de passe
+      email: user.email,
+      verificationCode,
+      userId: req.userId,
+      isPasswordChange: true,
+      newPassword: hashedNewPassword, // Stocker le nouveau mot de passe hashé
+      apocalypse: user.apocalypse
+    })
+
+    await pendingPasswordChange.save()
+
+    // Envoyer l'email de confirmation de changement de mot de passe
+    const emailSent = await sendVerificationEmail(
+      user.email, 
+      verificationCode, 
+      user.username,
+      'password-change' // Type spécial pour le changement de mot de passe
+    )
+
+    if (!emailSent) {
+      // Supprimer la demande en attente si l'email n'a pas pu être envoyé
+      await PendingRegistration.findByIdAndDelete(pendingPasswordChange._id)
+      return res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email de confirmation' })
+    }
+
+    res.json({
+      success: true,
+      message: 'Un code de confirmation a été envoyé à votre adresse email'
+    })
+  } catch (err) {
+    console.error('Initiate password change error:', err)
+    res.status(500).json({ error: 'Erreur serveur lors de l\'initiation du changement de mot de passe' })
+  }
+}
+
+// POST /api/user/confirm-password-change - Confirme le changement de mot de passe avec le code email
+export async function confirmPasswordChange(req, res) {
+  try {
+    const { verificationCode } = req.body
+
+    if (!verificationCode) {
+      return res.status(400).json({ error: 'Code de vérification requis' })
+    }
+
+    // Importer les dépendances nécessaires
+    const PendingRegistration = (await import('../models/PendingRegistration.js')).default
+
+    // Trouver la demande de changement de mot de passe en attente
+    const pendingPasswordChange = await PendingRegistration.findOne({
+      userId: req.userId,
+      verificationCode: verificationCode,
+      isPasswordChange: true
+    })
+
+    if (!pendingPasswordChange) {
+      return res.status(400).json({ error: 'Code de vérification invalide ou expiré' })
+    }
+
+    // Mettre à jour le mot de passe de l'utilisateur
+    const user = await User.findById(req.userId)
+    if (!user) {
+      await PendingRegistration.findByIdAndDelete(pendingPasswordChange._id)
+      return res.status(404).json({ error: 'Utilisateur introuvable' })
+    }
+
+    user.password = pendingPasswordChange.newPassword
+    await user.save()
+
+    // Supprimer la demande en attente
+    await PendingRegistration.findByIdAndDelete(pendingPasswordChange._id)
+
+    console.log(`🔑 Mot de passe changé pour ${user.username}: (${req.userId})`)
+
+    res.json({
+      success: true,
+      message: 'Mot de passe changé avec succès'
+    })
+  } catch (err) {
+    console.error('Confirm password change error:', err)
+    res.status(500).json({ error: 'Erreur serveur lors de la confirmation du changement de mot de passe' })
+  }
+}
+
 // DELETE /api/user/delete-account - Supprime définitivement le compte utilisateur
 export async function deleteAccount(req, res) {
   try {
@@ -438,5 +682,267 @@ export async function deleteAccount(req, res) {
   } catch (err) {
     console.error('Erreur suppression compte:', err)
     res.status(500).json({ success: false, error: 'Erreur serveur lors de la suppression du compte' })
+  }
+}
+
+// POST /api/user/add-email - Ajouter/modifier l'email d'un utilisateur existant
+export async function addEmail(req, res) {
+  try {
+    const { email, password } = req.body
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email et mot de passe requis' })
+    }
+
+    const trimmedEmail = email.trim().toLowerCase()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(trimmedEmail)) {
+      return res.status(400).json({ error: 'Adresse email invalide' })
+    }
+
+    const user = await User.findById(req.userId)
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' })
+    }
+
+    // Vérifier le mot de passe
+    const bcrypt = (await import('bcrypt')).default
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (!isPasswordValid) {
+      return res.status(400).json({ error: 'Mot de passe incorrect' })
+    }
+
+    // Vérifier si l'email est déjà utilisé par un autre utilisateur
+    const existingEmail = await User.findOne({ email: trimmedEmail, _id: { $ne: req.userId } })
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Cette adresse email est déjà utilisée' })
+    }
+
+    // Importer les dépendances nécessaires
+    const PendingRegistration = (await import('../models/PendingRegistration.js')).default
+    const { sendVerificationEmail, generateVerificationCode } = await import('../utils/emailService.js')
+
+    // Vérifier s'il y a déjà une inscription en attente pour cet email
+    const existingPending = await PendingRegistration.findOne({ email: trimmedEmail })
+    if (existingPending) {
+      await PendingRegistration.findByIdAndDelete(existingPending._id)
+    }
+
+    // Générer un code de vérification
+    const verificationCode = generateVerificationCode()
+
+    // Créer une demande de changement d'email en attente
+    const pendingEmailChange = new PendingRegistration({
+      username: user.username, // Utiliser le username existant
+      displayName: user.displayName,
+      password: user.password, // Garder le même mot de passe hashé
+      email: trimmedEmail,
+      verificationCode,
+      userId: req.userId, // Ajouter l'ID de l'utilisateur pour différencier
+      apocalypse: user.apocalypse
+    })
+
+    await pendingEmailChange.save()
+
+    // Envoyer l'email de vérification
+    const emailSent = await sendVerificationEmail(trimmedEmail, verificationCode, user.username)
+
+    if (!emailSent) {
+      // Supprimer la demande en attente si l'email n'a pas pu être envoyé
+      await PendingRegistration.findByIdAndDelete(pendingEmailChange._id)
+      return res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email de vérification' })
+    }
+
+    res.json({
+      message: 'Un code de vérification a été envoyé à votre adresse email',
+      requiresVerification: true,
+      email: trimmedEmail
+    })
+  } catch (err) {
+    console.error('Add email error:', err)
+    res.status(500).json({ error: 'Erreur serveur lors de l\'ajout de l\'email' })
+  }
+}
+
+// POST /api/user/verify-email-change - Vérifier le code pour changer l'email
+export async function verifyEmailChange(req, res) {
+  try {
+    const { email, verificationCode } = req.body
+
+    if (!email || !verificationCode) {
+      return res.status(400).json({ error: 'Email et code de vérification requis' })
+    }
+
+    const trimmedEmail = email.trim().toLowerCase()
+
+    // Importer les dépendances nécessaires
+    const PendingRegistration = (await import('../models/PendingRegistration.js')).default
+
+    // Trouver la demande de changement d'email en attente
+    const pendingEmailChange = await PendingRegistration.findOne({
+      email: trimmedEmail,
+      verificationCode: verificationCode,
+      userId: req.userId // S'assurer que c'est pour cet utilisateur
+    })
+
+    if (!pendingEmailChange) {
+      return res.status(400).json({ error: 'Code de vérification invalide ou expiré' })
+    }
+
+    // Mettre à jour l'email de l'utilisateur
+    const user = await User.findById(req.userId)
+    if (!user) {
+      await PendingRegistration.findByIdAndDelete(pendingEmailChange._id)
+      return res.status(404).json({ error: 'Utilisateur introuvable' })
+    }
+
+    user.email = trimmedEmail
+    await user.save()
+
+    // Supprimer la demande en attente
+    await PendingRegistration.findByIdAndDelete(pendingEmailChange._id)
+
+    console.log(`📧 Email ajouté/modifié pour ${user.username}: ${user.email}`)
+
+    res.json({
+      success: true,
+      message: 'Email ajouté avec succès',
+      email: user.email
+    })
+  } catch (err) {
+    console.error('Email change verification error:', err)
+    res.status(500).json({ error: 'Erreur serveur lors de la vérification du changement d\'email' })
+  }
+}
+
+// POST /api/auth/forgot-password - Initie la réinitialisation de mot de passe
+export async function initiatePasswordReset(req, res) {
+  try {
+    const { email } = req.body
+
+    if (!email) {
+      return res.status(400).json({ error: 'Adresse email requise' })
+    }
+
+    const trimmedEmail = email.trim().toLowerCase()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(trimmedEmail)) {
+      return res.status(400).json({ error: 'Adresse email invalide' })
+    }
+
+    // Vérifier si un utilisateur avec cet email existe
+    const user = await User.findOne({ email: trimmedEmail })
+    if (!user) {
+      // Pour des raisons de sécurité, on ne révèle pas si l'email existe ou non
+      return res.json({ success: true, message: 'Si cette adresse email est associée à un compte, un code de réinitialisation a été envoyé' })
+    }
+
+    // Importer les dépendances nécessaires
+    const PendingRegistration = (await import('../models/PendingRegistration.js')).default
+    const { sendVerificationEmail, generateVerificationCode } = await import('../utils/emailService.js')
+
+    // Vérifier s'il y a déjà une demande de réinitialisation en attente pour cet email
+    const existingPending = await PendingRegistration.findOne({ email: trimmedEmail, isPasswordReset: true })
+    if (existingPending) {
+      await PendingRegistration.findByIdAndDelete(existingPending._id)
+    }
+
+    // Générer un code de vérification
+    const verificationCode = generateVerificationCode()
+
+    // Créer une demande de réinitialisation en attente
+    const pendingReset = new PendingRegistration({
+      username: user.username,
+      displayName: user.displayName,
+      password: user.password,
+      email: trimmedEmail,
+      verificationCode,
+      userId: user._id,
+      isPasswordReset: true,
+      apocalypse: user.apocalypse
+    })
+
+    await pendingReset.save()
+
+    // Envoyer l'email de réinitialisation
+    const emailSent = await sendVerificationEmail(
+      trimmedEmail,
+      verificationCode,
+      user.username,
+      'password-reset'
+    )
+
+    if (!emailSent) {
+      // Supprimer la demande en attente si l'email n'a pas pu être envoyé
+      await PendingRegistration.findByIdAndDelete(pendingReset._id)
+      return res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email de réinitialisation' })
+    }
+
+    res.json({
+      success: true,
+      message: 'Si cette adresse email est associée à un compte, un code de réinitialisation a été envoyé'
+    })
+  } catch (err) {
+    console.error('Initiate password reset error:', err)
+    res.status(500).json({ error: 'Erreur serveur lors de l\'initiation de la réinitialisation' })
+  }
+}
+
+// POST /api/auth/reset-password - Confirme la réinitialisation de mot de passe avec le code
+export async function confirmPasswordReset(req, res) {
+  try {
+    const { email, verificationCode, newPassword } = req.body
+
+    if (!email || !verificationCode || !newPassword) {
+      return res.status(400).json({ error: 'Email, code de vérification et nouveau mot de passe requis' })
+    }
+
+    // Validation du nouveau mot de passe
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 6 caractères' })
+    }
+
+    const trimmedEmail = email.trim().toLowerCase()
+
+    // Importer les dépendances nécessaires
+    const PendingRegistration = (await import('../models/PendingRegistration.js')).default
+
+    // Trouver la demande de réinitialisation en attente
+    const pendingReset = await PendingRegistration.findOne({
+      email: trimmedEmail,
+      verificationCode: verificationCode,
+      isPasswordReset: true
+    })
+
+    if (!pendingReset) {
+      return res.status(400).json({ error: 'Code de vérification invalide ou expiré' })
+    }
+
+    // Mettre à jour le mot de passe de l'utilisateur
+    const user = await User.findById(pendingReset.userId)
+    if (!user) {
+      await PendingRegistration.findByIdAndDelete(pendingReset._id)
+      return res.status(404).json({ error: 'Utilisateur introuvable' })
+    }
+
+    // Hasher le nouveau mot de passe
+    const bcrypt = (await import('bcrypt')).default
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10)
+
+    user.password = hashedNewPassword
+    await user.save()
+
+    // Supprimer la demande en attente
+    await PendingRegistration.findByIdAndDelete(pendingReset._id)
+
+    console.log(`🔑 Mot de passe réinitialisé pour ${user.username}: (${user._id})`)
+
+    res.json({
+      success: true,
+      message: 'Mot de passe réinitialisé avec succès'
+    })
+  } catch (err) {
+    console.error('Confirm password reset error:', err)
+    res.status(500).json({ error: 'Erreur serveur lors de la confirmation de la réinitialisation' })
   }
 }

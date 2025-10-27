@@ -103,7 +103,8 @@ export function usePlayer() {
             username: u?.username || null,
             avatar: u?.avatar || null,
             lastSeen: u?.lastSeen || null,
-            apocalypse: u?.apocalypse || false
+            apocalypse: u?.apocalypse || false,
+            email: u?.email || null
           }
           
           const prevLevel = level.value || 1

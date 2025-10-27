@@ -21,12 +21,26 @@
           v-if="isLoginMode" 
           @logged-in="handleLogin" 
           @switch-to-register="isLoginMode = false"
+          @switch-to-forgot-password="switchToForgotPassword"
         />
         <RegisterForm 
-          v-else 
+          v-else-if="!isEmailVerificationMode && !isForgotPasswordMode"
           @registered="handleRegistered" 
           @switch-to-login="isLoginMode = true"
           @auto-login="handleAutoLogin"
+          @email-verification-required="handleEmailVerificationRequired"
+        />
+        <ForgotPasswordForm
+          v-else-if="isForgotPasswordMode && !isEmailVerificationMode"
+          @back-to-login="backToLogin"
+        />
+        <EmailVerification
+          v-else
+          :email="verificationEmail"
+          :is-email-change="isEmailChangeMode"
+          @verified="handleEmailVerified"
+          @back-to-register="isEmailVerificationMode = false"
+          @switch-to-login="isLoginMode = true"
         />
       </div>
     </div>
@@ -44,14 +58,20 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
 import { useGameData } from '@/composables/useGameData'
-  import RegisterForm from '@/components/auth/RegisterForm.vue'
-  import LoginForm from '@/components/auth/LoginForm.vue'
-  
-  const router = useRouter()
+import RegisterForm from '@/components/auth/RegisterForm.vue'
+import LoginForm from '@/components/auth/LoginForm.vue'
+import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm.vue'
+import EmailVerification from '@/components/auth/EmailVerification.vue'
+
+const router = useRouter()
   const { login } = useAuth()
   const { } = usePlayer()
   const { dataVersion } = useGameData()
   const isLoginMode = ref(true)
+  const isEmailVerificationMode = ref(false)
+  const isForgotPasswordMode = ref(false)
+  const verificationEmail = ref('')
+  const isEmailChangeMode = ref(false)
   const eggContainer = ref(null)
   const titleClickCount = ref(0)
   // Apocalypse mode is now immutable after account creation
@@ -108,16 +128,70 @@ import { useGameData } from '@/composables/useGameData'
     window.$toast("Compte créé et connexion réussie !", 'success')
   }
   
+  function handleEmailVerificationRequired(email) {
+    verificationEmail.value = email
+    isEmailVerificationMode.value = true
+    isEmailChangeMode.value = false
+    window.$toast("Vérifiez vos emails pour le code de confirmation", 'info')
+  }
+  
+  function handleEmailChangeVerificationRequired(email) {
+    verificationEmail.value = email
+    isEmailVerificationMode.value = true
+    isEmailChangeMode.value = true
+    window.$toast("Vérifiez vos emails pour le code de confirmation", 'info')
+  }
+  
+  function handleEmailVerified(result) {
+    if (isEmailChangeMode.value) {
+      // Pour les changements d'email, result contient { email: string }
+      window.$toast("Email ajouté avec succès à votre compte !", 'success')
+      // Recharger les données du joueur pour mettre à jour l'email
+      const { refreshPlayer } = usePlayer()
+      refreshPlayer()
+    } else {
+      // Pour l'inscription, result est un token
+      login(result)
+      router.push('/production')
+      window.$toast("Email vérifié ! Compte créé avec succès.", 'success')
+    }
+    
+    // Reset state
+    isEmailVerificationMode.value = false
+    verificationEmail.value = ''
+    isEmailChangeMode.value = false
+  }
+  
   function handleLogin(token) {
     login(token)
     router.push('/production')
     window.$toast("Connexion réussie !", 'success')
   }
   
+  function switchToForgotPassword() {
+    isLoginMode.value = false
+    isForgotPasswordMode.value = true
+  }
+  
+  function backToLogin() {
+    isForgotPasswordMode.value = false
+    isLoginMode.value = true
+  }
+  
   function openAnnouncements() {
     window.open('/announcements', '_blank')
   }
   
+  onMounted(() => {
+    // Écouter les événements de vérification d'email depuis les paramètres du compte
+    window.addEventListener('email-verification-required', (event) => {
+      handleEmailChangeVerificationRequired(event.detail.email)
+    })
+  })
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('email-verification-required', handleEmailChangeVerificationRequired)
+  })
   </script>
 
   <style scoped>

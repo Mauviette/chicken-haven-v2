@@ -10,7 +10,11 @@ import {
   getArtifactSlots,
   equipArtifact,
   unequipArtifact,
-  deleteAccount
+  deleteAccount,
+  initiateDeleteAccount,
+  confirmDeleteAccount,
+  initiatePasswordChange,
+  confirmPasswordChange
 } from '../controllers/user.controller.js'
 
 const router = express.Router()
@@ -31,6 +35,12 @@ router.put('/artifact/equip/:artifactId', verifyToken, equipArtifact)
 router.put('/artifact/unequip/:artifactId', verifyToken, unequipArtifact)
 
 // Account deletion
-router.delete('/delete-account', verifyToken, deleteAccount)
+router.post('/delete-account', verifyToken, deleteAccount)
+router.post('/initiate-delete-account', verifyToken, initiateDeleteAccount)
+router.post('/confirm-delete-account', verifyToken, confirmDeleteAccount)
+
+// Password change
+router.post('/initiate-password-change', verifyToken, initiatePasswordChange)
+router.post('/confirm-password-change', verifyToken, confirmPasswordChange)
 
 export default router

@@ -50,6 +50,9 @@
       <p class="auth-link" @click="switchToRegister">
         Pas de compte? <span class="link-text">S'inscrire</span>
       </p>
+      <p class="auth-link" @click="switchToForgotPassword">
+        <span class="link-text">Mot de passe oublié ?</span>
+      </p>
       <p class="error-text" v-if="message">{{ message }}</p>
     </form>
   </template>  <script setup>
@@ -63,7 +66,7 @@
   // Visibilité du mot de passe
   const showPassword = ref(false)
   
-  const emit = defineEmits(['logged-in', 'switch-to-register'])
+  const emit = defineEmits(['logged-in', 'switch-to-register', 'switch-to-forgot-password'])
   
   async function submit() {
     const loginBtn = document.querySelector('.login-btn');
@@ -103,6 +106,10 @@
   
   function switchToRegister() {
     emit('switch-to-register')
+  }
+
+  function switchToForgotPassword() {
+    emit('switch-to-forgot-password')
   }
   </script>
   
