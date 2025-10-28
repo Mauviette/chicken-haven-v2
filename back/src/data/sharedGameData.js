@@ -1443,9 +1443,9 @@ export const artifactsData = {
     id: 'smith-glyph',
     name: 'Glyphe du Forgeron',
     icon: '🔧',
-    description: "+1 outil pendant une partie.",
+    description: "+2 outile pendant une partie.",
     rarete: 'commune',
-    effect: { type: 'increase_tool_count', amount: 1 }
+    effect: { type: 'increase_tool_count', amount: 2 }
   },
   'ancient-compass': {
     id: 'ancient-compass',
@@ -1475,17 +1475,17 @@ export const artifactsData = {
     id: 'reinforced-handle',
     name: 'Manche Renforcé',
     icon: '🪓',
-    description: "Les outils infligent +1 dégat à l'endroit cliqué.",
+    description: "Les outils infligent +2 dégats à l'endroit cliqué.",
     rarete: 'epique',
-    effect: { type: 'increase_tool_damage', amount: 1 }
+    effect: { type: 'increase_tool_damage', amount: 3 }
   },
   'mining-master': {
     id: 'mining-master',
     name: 'Maître mineur',
     icon: '⚒️',
-    description: "Les pelles deviennent des pioches.",
+    description: "Les pelles deviennent des marteaux.",
     rarete: 'rare',
-    effect: { type: 'tool_change', origin:'shovel', dest:'pickaxe' }
+    effect: { type: 'tool_change', origin:'shovel', dest:'hammer' }
   },
   'hole-ace': {
     id: 'hole-ace',

@@ -23,10 +23,10 @@
           v-if="!isEquipped"
           class="btn equip" 
           @click="onEquip"
-          :disabled="!canEquip || miningLocked"
-          :title="miningLocked ? 'Impossible d\'équiper pendant une partie de minage active' : (!canEquip ? 'Emplacements pleins' : '')"
+          :disabled="miningLocked && canEquip"
+          :title="miningLocked && canEquip ? 'Impossible d\'équiper pendant une partie de minage active' : ''"
         >
-          {{ miningLocked ? 'Minage en cours' : (canEquip ? '⛏️ Équiper' : 'Emplacements pleins') }}
+          {{ canEquip ? 'Équiper' : 'Remplacer' }}
         </button>
         <button 
           v-else
@@ -35,9 +35,18 @@
           :disabled="miningLocked"
           :title="miningLocked ? 'Impossible de déséquiper pendant une partie de minage active' : 'Déséquiper cet artefact'"
         >
-          {{ miningLocked ? 'Minage en cours' : '❌ Déséquiper' }}
+          {{ miningLocked ? 'Minage en cours' : 'Déséquiper' }}
         </button>
       </div>
+
+      <!-- Popup de remplacement -->
+      <ArtifactReplacementPopup
+        v-if="showReplacementPopup"
+        :currentArtifacts="currentEquippedArtifacts"
+        :newArtifactId="props.artifact?.artifactId"
+        @close="showReplacementPopup = false"
+        @replace="onReplaceArtifact"
+      />
     </div>
   </Popup>
 </template>
@@ -50,6 +59,7 @@ import { useSound } from '@/composables/useSound'
 import { apiGet } from '@/utils/api' // <-- nouveau
 
 import { ref, onMounted, onUnmounted } from 'vue'
+import ArtifactReplacementPopup from './ArtifactReplacementPopup.vue'
 
 const emit = defineEmits(['close', 'updated'])
 
@@ -75,8 +85,16 @@ const canEquip = computed(() => {
   return usedSlots < slotsCount
 })
 
+// Artefacts actuellement équipés pour le popup de remplacement
+const currentEquippedArtifacts = computed(() => {
+  return artifactSlots.value?.equipped || []
+})
+
 // NOUVEAU : état local pour savoir si le minage bloque l'équipement (vérifié côté serveur)
 const miningLocked = ref(!!(typeof window !== 'undefined' && window.__miningActive))
+
+// NOUVEAU : popup de remplacement
+const showReplacementPopup = ref(false)
 
 function onMiningActiveChanged(e) {
   // si on reçoit active=false => on libère immédiatement
@@ -147,14 +165,19 @@ function formatRareté(r) {
 }
 
 async function onEquip() {
-  // Re-vérifier côté serveur avant d'appeler l'API d'équipement
+  if (!canEquip.value) {
+    // Ouvrir le popup de remplacement (toujours permis, même pendant le minage)
+    showReplacementPopup.value = true
+    return
+  }
+
+  // Pour l'équipement initial, vérifier le minage
   await checkMiningLock()
   if (miningLocked.value) {
     try { window.$toast?.("Impossible d'équiper pendant une partie de minage active", 'error') } catch (_) {}
     return
   }
 
-  if (!canEquip.value) return
   try {
     click()
     await equipArtifact(props.artifact.artifactId)
@@ -177,21 +200,23 @@ async function onEquip() {
   }
 }
 
-async function onUnequip() {
-  await checkMiningLock()
-  if (miningLocked.value) {
-    try { window.$toast?.("Impossible de déséquiper pendant une partie de minage active", 'error') } catch (_) {}
-    return
-  }
+async function onReplaceArtifact(index) {
+  showReplacementPopup.value = false
 
   try {
     click()
-    await unequipArtifact(props.artifact.artifactId)
-    sndClose()
+    // D'abord déséquiper l'ancien artefact
+    const oldArtifactId = currentEquippedArtifacts.value[index]
+    if (oldArtifactId) {
+      await unequipArtifact(oldArtifactId)
+    }
+    // Puis équiper le nouveau
+    await equipArtifact(props.artifact.artifactId)
+    confirm()
     emit('updated')
   } catch (err) {
-    console.error('Erreur lors du déséquipement:', err)
-    window.$toast?.(err?.response?.data?.error || 'Erreur lors du déséquipement', 'error')
+    console.error('Erreur lors du remplacement:', err)
+    window.$toast?.(err?.response?.data?.error || 'Erreur lors du remplacement', 'error')
   }
 }
 </script>

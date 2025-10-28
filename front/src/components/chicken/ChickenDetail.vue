@@ -106,6 +106,7 @@ import { usePlayer } from '@/composables/usePlayer'
 import { computed, ref, onMounted } from 'vue'
 import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
+import { formatNumber } from '@/utils/format'
 
 const emit = defineEmits(['close', 'updated'])
 
@@ -238,8 +239,8 @@ const missingTooltip = computed(() => {
   const haveEggs = Number(eggs?.value ?? 0)
   const haveChickens = Number(p.quantite || 0)
   const missing = []
-  if (haveEggs < Number(cost.egg_cost || 0)) missing.push(`🥚 Il manque ${Number(cost.egg_cost) - haveEggs} œufs`)
-  if (haveChickens < needChickens) missing.push(`🐔 Il manque ${needChickens - haveChickens} poule(s) de cette espèce`)
+  if (haveEggs < Number(cost.egg_cost || 0)) missing.push(`🥚 Il manque ${formatNumber(Number(cost.egg_cost) - haveEggs)} œufs`)
+  if (haveChickens < needChickens) missing.push(`🐔 Il manque ${formatNumber(needChickens - haveChickens)} poule(s) de cette espèce`)
   return missing.length ? missing.join('<br/>') : ''
 })
 

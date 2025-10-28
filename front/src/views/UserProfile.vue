@@ -68,9 +68,9 @@
         <div class="left">
           <h3 class="section-title">📊 Statistiques</h3>
           <div class="stats-card">
-            <div class="stat-row"><span>🏆 Succès obtenus</span><b>{{ profile.stats?.achievementsCompleted ?? 0 }} / {{ totalAchievements }} ({{ Math.round(((profile.stats?.achievementsCompleted ?? 0) / Math.max(1, totalAchievements)) * 100) }}%)</b></div>
+            <div class="stat-row"><span>🏆 Succès obtenus</span><b>{{ formatNumber(profile.stats?.achievementsCompleted ?? 0) }} / {{ totalAchievements }} ({{ Math.round(((profile.stats?.achievementsCompleted ?? 0) / Math.max(1, totalAchievements)) * 100) }}%)</b></div>
             <div class="stat-row"><span>🥚 Oeufs récoltés</span><b>{{ formatEggsCollected(profile.stats?.totalEggsCollected ?? 0, profile?.apocalypse) }}</b></div>
-            <div class="stat-row"><span>🐣 Poules découvertes</span><b>{{ (profile.stats?.chickenFound ?? 0) }} / {{ totalEspeces }}</b></div>
+            <div class="stat-row"><span>🐣 Poules découvertes</span><b>{{ formatNumber(profile.stats?.chickenFound ?? 0) }} / {{ totalEspeces }}</b></div>
             <div class="stat-row"><span>📦 Boîtes ouvertes</span><b>{{ formatNumber(profile.stats?.totalBoxesOpened ?? 0) }}</b></div>
             <div class="stat-row"><span>🥚 Max en un clic</span><b>{{ formatMaxEggsInClick(profile.stats?.maxEggsInOneClick ?? 0, profile?.apocalypse) }}</b></div>
 
@@ -329,18 +329,18 @@ function teamTooltip(slot) {
 }
 
 function formatEggsCollected(totalEggs, isApocalypse) {
-  if (!isApocalypse) return totalEggs
+  if (!isApocalypse) return formatNumber(totalEggs)
   // En mode apocalypse, les gains sont réduits de 90%, donc les stats affichent 10% des vrais gains
   // Pour afficher la valeur "réelle", on multiplie par 10
   const realEggs = totalEggs * 10
-  return `${totalEggs} (${realEggs} en mode normal)`
+  return `${formatNumber(totalEggs)} (${formatNumber(realEggs)} en mode normal)`
 }
 
 function formatMaxEggsInClick(maxEggs, isApocalypse) {
-  if (!isApocalypse) return maxEggs
+  if (!isApocalypse) return formatNumber(maxEggs)
   // Même logique pour le max en un clic
   const realMax = maxEggs * 10
-  return `${maxEggs} (${realMax} en mode normal)`
+  return `${formatNumber(maxEggs)} (${formatNumber(realMax)} en mode normal)`
 }
 
 function talentLabel(slot) {
