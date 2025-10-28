@@ -27,13 +27,13 @@
     <!-- Bandeau des stats d'équipe -->
     <div class="team-stats-banner">
       <Tooltip :text="intelligenceTooltipHtml">
-        <span class="stat-chip" :class="{ buffed: teamStatMult.intelligence > 1 }">🧠 {{ formatNumber(Math.round(teamStats.intelligence)) }}</span>
+        <span class="stat-chip" :class="{ buffed: teamStatMult.intelligence > 1, debuffed: teamStats.intelligence < 0 }">🧠 {{ teamStats.intelligence < 0 ? '-' + formatNumber(Math.abs(teamStats.intelligence)) : formatNumber(teamStats.intelligence) }}</span>
       </Tooltip>
       <Tooltip :text="energieTooltipHtml">
-        <span class="stat-chip" :class="{ buffed: teamStatMult.energie > 1 }">⚡ {{ formatNumber(Math.round(teamStats.energie)) }}</span>
+        <span class="stat-chip" :class="{ buffed: teamStatMult.energie > 1, debuffed: teamStats.energie < 0 }">⚡ {{ teamStats.energie < 0 ? '-' + formatNumber(Math.abs(teamStats.energie)) : formatNumber(teamStats.energie) }}</span>
       </Tooltip>
       <Tooltip :text="charismeTooltipHtml">
-        <span class="stat-chip" :class="{ buffed: teamStatMult.charisme > 1 }">✨ {{ formatNumber(Math.round(teamStats.charisme)) }}</span>
+        <span class="stat-chip" :class="{ buffed: teamStatMult.charisme > 1, debuffed: teamStats.charisme < 0 }">✨ {{ teamStats.charisme < 0 ? '-' + formatNumber(Math.abs(teamStats.charisme)) : formatNumber(teamStats.charisme) }}</span>
       </Tooltip>
       
       <!-- (Mine accessible depuis la barre du bas) -->
@@ -227,12 +227,13 @@ const makeStatTooltip = (label, base, extraPerMember, members, mult) => {
   const extraTotal = extraPerMember * members
   const subtotal = base + extraTotal
   const total = subtotal * mult
+  const formatValue = (val) => `<strong style="color: ${val < 0 ? '#cc0000' : 'inherit'}">${val < 0 ? '' : (val > 0 ? '+' : '')}${Math.round(val)}</strong>`
   return `<div>
     <div style="font-weight:bold;margin-bottom:4px;">${label}</div>
-    <div>Base: <strong>${Math.round(base)}</strong></div>
-    <div>Buffs équipe: <strong>+${Math.round(extraTotal)}</strong></div>
+    <div>Base: ${formatValue(base)}</div>
+    <div>Buffs équipe: ${formatValue(extraTotal)}</div>
     ${mult > 1 ? `<div>Multiplicateur temporaire: <strong>x${mult.toFixed(2)}</strong></div>` : ''}
-    <div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">Total: <strong>${Math.round(total)}</strong></div>
+    <div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">Total: ${formatValue(total)}</div>
   </div>`
 }
 
@@ -878,6 +879,11 @@ watch(() => displayedIncome.value, (nv, ov) => {
 
 .team-stats-banner .stat-chip.buffed {
   color: #c99100;
+  font-weight: 700;
+}
+
+.team-stats-banner .stat-chip.debuffed {
+  color: #cc0000;
   font-weight: 700;
 }
 
