@@ -8,7 +8,7 @@ const loading = ref(false)
 
 export function useExpansions() {
   const { expansions: expansionsData } = useGameData()
-  const { refreshPlayerData } = usePlayer()
+  const { refreshPlayerData, apocalypse } = usePlayer()
 
   const fetchExpansionLevels = async () => {
     try {
@@ -69,7 +69,17 @@ export function useExpansions() {
 
     if (costIndex < 0 || costIndex >= expansion.costs.length) return null
 
-    return expansion.costs[costIndex]
+    const baseCost = expansion.costs[costIndex]
+    
+    // Mode Apocalypse : multiplier les prix par 2
+    if (apocalypse.value) {
+      return baseCost.map(cost => ({
+        ...cost,
+        count: Math.floor(cost.count * 2)
+      }))
+    }
+
+    return baseCost
   }
 
   const getExpansionReward = (expansionId) => {

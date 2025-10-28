@@ -398,7 +398,16 @@ export async function collectChickenGift(req, res) {
 
     // Générer la récompense basée sur le niveau du joueur
     const userLevel = user.experience?.level || 1
-    const reward = generateRandomReward(userLevel)
+    let reward = generateRandomReward(userLevel)
+
+    // Mode Apocalypse : 75% de chance de remplacer la récompense par une tomate pourrie
+    if (user.apocalypse && Math.random() < 0.75) {
+      reward = {
+        type: 'resource',
+        resource: 'rotten_tomato',
+        amount: 1
+      }
+    }
 
     let appliedReward = null
 
@@ -444,6 +453,17 @@ export async function collectChickenGift(req, res) {
           $inc: { 'resources.mining_token': amount }
         })
         appliedReward = { type: 'resource', resource: 'mining_token', amount: amount }
+
+      } else if (reward.resource === 'rotten_tomato') {
+        await User.findByIdAndUpdate(req.userId, {
+          $inc: { 'resources.rotten_tomato': amount }
+        })
+        appliedReward = { type: 'resource', resource: 'rotten_tomato', amount: amount }
+
+        // Incrémenter le compteur de tomates pourries reçues pour les succès
+        await updateAchievementProgress(req.userId, 'increment', {
+          rottenTomatoesReceived: amount
+        })
       }
     }
 

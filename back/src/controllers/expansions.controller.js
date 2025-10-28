@@ -17,8 +17,14 @@ function canAffordExpansion(user, expansion, level) {
   const costs = expansion.costs[costIndex]
 
   for (const cost of costs) {
+    let costCount = cost.count
+    // Mode Apocalypse : multiplier les prix par 2
+    if (user.apocalypse) {
+      costCount = Math.floor(costCount * 2)
+    }
+    
     const balance = Number(resources[cost.type] || 0)
-    if (balance < cost.count) {
+    if (balance < costCount) {
       return false
     }
   }
@@ -34,7 +40,13 @@ function deductExpansionCost(user, expansion, level) {
   const costs = expansion.costs[costIndex]
 
   for (const cost of costs) {
-    resources[cost.type] = Number(resources[cost.type] || 0) - cost.count
+    let costCount = cost.count
+    // Mode Apocalypse : multiplier les prix par 2
+    if (user.apocalypse) {
+      costCount = Math.floor(costCount * 2)
+    }
+    
+    resources[cost.type] = Number(resources[cost.type] || 0) - costCount
   }
 
   user.resources = resources

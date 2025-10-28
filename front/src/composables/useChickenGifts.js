@@ -140,6 +140,11 @@ const createChickenGiftRewardEffect = (reward, position = null) => {
         icon = '🪨'
         color = '#acacacff'
         break
+      case 'rotten_tomato':
+        text = `+${reward.amount}`
+        icon = '🍅'
+        color = '#8B4513'
+        break
       default:
         text = `+${reward.amount}`
         icon = '🎁'

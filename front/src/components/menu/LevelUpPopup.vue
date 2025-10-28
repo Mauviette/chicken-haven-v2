@@ -256,4 +256,106 @@ onBeforeUnmount(() => {
     font-size: 12px;
   }
 }
+
+/* Mode SOMBRE */
+.dark-mode .levelup-overlay {
+  background: rgba(10, 10, 10, 0.5);
+}
+
+.dark-mode .levelup-card {
+  background: #2a2a2a;
+  border-color: #666666;
+  color: #e0e0e0;
+}
+
+.dark-mode .close-btn {
+  color: #cccccc;
+}
+
+.dark-mode .avatar {
+  border-color: #666666;
+}
+
+.dark-mode .level-badge {
+  background: #555555;
+  color: #e0e0e0;
+  border-color: #cccccc;
+}
+
+.dark-mode .unlocks-title {
+  color: #cccccc;
+}
+
+.dark-mode .unlock-item {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .unlock-item .label {
+  color: #e0e0e0;
+}
+
+.dark-mode .rewards-title {
+  color: #cccccc;
+}
+
+.dark-mode .reward-item {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark-mode .reward-item .label {
+  color: #e0e0e0;
+}
+
+/* Mode APOCALYPSE */
+.apocalypse-mode .levelup-overlay {
+  background: rgba(10, 5, 5, 0.5);
+}
+
+.apocalypse-mode .levelup-card {
+  background: #3a1111;
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .close-btn {
+  color: #ff8888;
+}
+
+.apocalypse-mode .avatar {
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .level-badge {
+  background: #aa4444;
+  color: #ffcccc;
+  border-color: #ff8888;
+}
+
+.apocalypse-mode .unlocks-title {
+  color: #ff8888;
+}
+
+.apocalypse-mode .unlock-item {
+  background: rgba(255, 102, 102, 0.1);
+  border-color: rgba(255, 102, 102, 0.3);
+}
+
+.apocalypse-mode .unlock-item .label {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .rewards-title {
+  color: #ff8888;
+}
+
+.apocalypse-mode .reward-item {
+  background: rgba(255, 102, 102, 0.1);
+  border-color: rgba(255, 102, 102, 0.3);
+}
+
+.apocalypse-mode .reward-item .label {
+  color: #ffaaaa;
+}
 </style>

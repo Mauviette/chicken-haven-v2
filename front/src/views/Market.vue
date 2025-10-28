@@ -303,7 +303,7 @@ import Tooltip from '@/components/menu/Tooltip.vue'
 import BoxOpenAnimation from '@/components/menu/BoxOpenAnimation.vue'
 import { formatNumber } from '@/utils/format.js'
 
-const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, chestKeys, preciousStones, canAfford, spendTokens, refreshPlayerData, getLevel } = usePlayer()
+const { eggs: playerEggs, stockTokens, productionTokens, wildTokens, chestKeys, preciousStones, canAfford, spendTokens, refreshPlayerData, getLevel, apocalypse } = usePlayer()
 const { fetchEggStatus } = useEgg()
 const { poules, refreshPoules } = usePoules()
 const { loading: boxLoading, openBox: openBoxAPI, openBoxMultiple: openBoxMultipleAPI, getAvailableBoxes } = useBoxes()
@@ -613,7 +613,10 @@ function getCurrentCostForLevel(costs, level) {
   // Pour les améliorations infinies, utiliser le coût du niveau actuel (index level)
   // Si le niveau dépasse la longueur du tableau, utiliser le dernier coût
   if (level >= costs.length) return costs[costs.length - 1]
-  return costs[level]
+  const baseCost = costs[level]
+  
+  // Mode Apocalypse : multiplier les prix par 2
+  return apocalypse.value ? Math.floor(baseCost * 2) : baseCost
 }
 function getCurrentRewardForLevel(rewards, level) {
   if (!Array.isArray(rewards) || rewards.length === 0) return 0

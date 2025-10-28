@@ -842,9 +842,10 @@ function formatReward(reward, inCell = false) {
     eggs: '🥚',
     mining_token: '🪨',
     stock_token: '🧺',
-    production_token: '⚙️'
+    production_token: '⚙️',
+    rotten_tomato: '🍅'
   }
-  const icon = icons[type] || (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[type]?.icon) || '❓'
+  const icon = (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[type]?.icon) || icons[type] || '❓'
   const qty = amount ? parseInt(amount) : NaN
 
   if (inCell && !isNaN(qty) && qty === 1) return icon

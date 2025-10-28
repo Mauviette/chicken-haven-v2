@@ -9,8 +9,10 @@ function getCurrentCostForLevel(upgrade, currentLevel) {
   if (!upgrade) return Infinity
   const costs = Array.isArray(upgrade.costs) ? upgrade.costs : []
   if (costs.length === 0) return Infinity
-  // Pour les améliorations infinies, toujours utiliser le prix le plus élevé
-  return Math.max(...costs)
+  // Pour les améliorations infinies, utiliser le coût du niveau actuel (index currentLevel)
+  // Si le niveau dépasse la longueur du tableau, utiliser le dernier coût
+  if (currentLevel >= costs.length) return costs[costs.length - 1]
+  return costs[currentLevel]
 }
 
 export async function getUpgradeLevels(req, res) {

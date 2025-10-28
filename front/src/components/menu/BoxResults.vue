@@ -503,6 +503,136 @@ function getTalentEffect(result) {
     padding: 14px 20px 10px 20px;
   }
 }
+
+/* Mode SOMBRE */
+.dark-mode .popup-overlay {
+  background-color: rgba(10, 10, 10, 0.6);
+}
+
+.dark-mode .popup-content {
+  background: #1a1a1a;
+  border-color: #555555;
+  color: #e0e0e0;
+}
+
+.dark-mode .close-btn {
+  color: #cccccc;
+}
+
+.dark-mode .results-header h3 {
+  color: #cccccc;
+}
+
+.dark-mode .no-results {
+  color: #cccccc;
+}
+
+.dark-mode .result-item {
+  background: linear-gradient(135deg, rgba(42, 42, 42, 0.8) 0%, rgba(26, 26, 26, 0.9) 100%);
+  border-color: #666666;
+}
+
+.dark-mode .result-item.rarity-commune {
+  border-color: #666666;
+}
+
+.dark-mode .result-item.rarity-rare {
+  border-color: #777777;
+}
+
+.dark-mode .result-item.rarity-epique {
+  border-color: #888888;
+}
+
+.dark-mode .result-item.rarity-legendaire {
+  border-color: #999999;
+}
+
+.dark-mode .result-info h4 {
+  color: #e0e0e0;
+}
+
+.dark-mode .result-rarity {
+  color: #cccccc;
+}
+
+.dark-mode .result-group {
+  color: #aaaaaa;
+}
+
+.dark-mode .artifact-description {
+  color: #cccccc;
+}
+
+.dark-mode .results-footer {
+  background: linear-gradient(180deg, rgba(26, 26, 26, 0.95) 0%, #1a1a1a 100%);
+  border-color: #555555;
+}
+
+/* Mode APOCALYPSE */
+.apocalypse-mode .popup-overlay {
+  background-color: rgba(10, 5, 5, 0.6);
+}
+
+.apocalypse-mode .popup-content {
+  background: #2a0a0a;
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .close-btn {
+  color: #ff8888;
+}
+
+.apocalypse-mode .results-header h3 {
+  color: #ff8888;
+}
+
+.apocalypse-mode .no-results {
+  color: #ff8888;
+}
+
+.apocalypse-mode .result-item {
+  background: linear-gradient(135deg, rgba(42, 10, 10, 0.8) 0%, rgba(26, 8, 8, 0.9) 100%);
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .result-item.rarity-commune {
+  border-color: #aa4444;
+}
+
+.apocalypse-mode .result-item.rarity-rare {
+  border-color: #cc5555;
+}
+
+.apocalypse-mode .result-item.rarity-epique {
+  border-color: #ee6666;
+}
+
+.apocalypse-mode .result-item.rarity-legendaire {
+  border-color: #ff7777;
+}
+
+.apocalypse-mode .result-info h4 {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .result-rarity {
+  color: #ff8888;
+}
+
+.apocalypse-mode .result-group {
+  color: #ff6666;
+}
+
+.apocalypse-mode .artifact-description {
+  color: #ff8888;
+}
+
+.apocalypse-mode .results-footer {
+  background: linear-gradient(180deg, rgba(42, 10, 10, 0.95) 0%, #2a0a0a 100%);
+  border-color: #ff6666;
+}
 </style>
 
 <style>

@@ -159,7 +159,7 @@ const topAvatarSrc = computed(() => {
 
 const apocalypseTooltipHtml = computed(() => {
   if (!isApocalypseMode.value) return ''
-  return `<strong>Mode apocalypse</strong><br>- Chaque cadeau de poule a 50% de chance de donner une tomate pourrie à la place de la récompense de base.<br>- Chaque case de minage avec récompense a 25% que la récompense soit une tomate pourrie à la place.<br>- On ne peut pas remplacer une poule (avec capacité activable) dont le cooldown n'est pas prêt.<br>- Les production d'oeufs donnent 10% des oeufs.<br>- Les prix d'améliorations dans le marché sont multipliés par 2`
+  return `<strong>Mode apocalypse</strong><br>- Chaque cadeau de poule a 75% de chance de donner une tomate pourrie à la place de la récompense de base.<br>- Chaque case de minage avec récompense a 25% que la récompense soit une tomate pourrie à la place.<br>- On ne peut pas remplacer une poule (avec capacité activable) dont le cooldown n'est pas prêt.<br>- Les production d'oeufs donnent 10% des oeufs.<br>- Les prix d'améliorations et d'agrandissements dans le marché sont multipliés par 2`
 })
 
 const showTooltips = ref(true)

@@ -8,6 +8,7 @@ const wildTokens = ref(0)
 const chestKeys = ref(0)
 const miningTokens = ref(0)
 const preciousStones = ref(0)
+const rottenTomatoes = ref(0)
 const team = ref({ maxSlots: 3, slots: [] })
 const artifactSlots = ref({ slotsCount: 2, equipped: [] })
 const level = ref(1)
@@ -27,6 +28,7 @@ function clearPlayerData() {
   chestKeys.value = 0
   miningTokens.value = 0
   preciousStones.value = 0
+  rottenTomatoes.value = 0
   player.value = null
   level.value = 1
   xp.value = 0
@@ -54,6 +56,7 @@ export function usePlayer() {
           if (resources.chest_key !== undefined) chestKeys.value = resources.chest_key
           if (resources.mining_token !== undefined) miningTokens.value = resources.mining_token
           if (resources.precious_stone !== undefined) preciousStones.value = resources.precious_stone
+          if (resources.rotten_tomato !== undefined) rottenTomatoes.value = resources.rotten_tomato
         }
       }
       
@@ -136,6 +139,7 @@ export function usePlayer() {
             chestKeys.value = Number(u.resources.chest_key ?? chestKeys.value)
             miningTokens.value = Number(u.resources.mining_token ?? miningTokens.value)
             preciousStones.value = Number(u.resources.precious_stone ?? preciousStones.value)
+            rottenTomatoes.value = Number(u.resources.rotten_tomato ?? rottenTomatoes.value)
           }
           
           try {
@@ -277,6 +281,8 @@ export function usePlayer() {
       miningTokens.value += amount
     } else if (type === 'precious_stone') {
       preciousStones.value += amount
+    } else if (type === 'rotten_tomato') {
+      rottenTomatoes.value += amount
     }
   }
 
@@ -298,6 +304,9 @@ export function usePlayer() {
       return true
     } else if (type === 'precious_stone' && preciousStones.value >= amount) {
       preciousStones.value -= amount
+      return true
+    } else if (type === 'rotten_tomato' && rottenTomatoes.value >= amount) {
+      rottenTomatoes.value -= amount
       return true
     }
     return false
@@ -323,6 +332,8 @@ export function usePlayer() {
         return miningTokens.value >= price.count
       case 'precious_stone':
         return preciousStones.value >= price.count
+      case 'rotten_tomato':
+        return rottenTomatoes.value >= price.count
       default:
         return false
     }
@@ -396,6 +407,7 @@ export function usePlayer() {
     chestKeys,
     miningTokens,
     preciousStones,
+    rottenTomatoes,
     team,
     artifactSlots,
     level,

@@ -1216,6 +1216,13 @@ export const itemsData = {
     nom_singulier: 'pierre précisue',
     icon: '💎',
     description: 'Pierre rare obtenue en minant, permet de trouver de nouvelles poules et d\'améliorer son équipe.'
+  },
+  'rotten_tomato': {
+    id: 'rotten_tomato',
+    nom: 'tomates pourries',
+    nom_singulier: 'tomate pourrie',
+    icon: '🍅',
+    description: 'Tomates pourries obtenues en mode apocalypse. Elles n\'ont aucune utilité.'
   }
 }
 
@@ -1387,6 +1394,15 @@ export const miningData = {
       secondary_damage: 3,
       animation: 'explosion'
     }
+  },
+  rewardTypes: {
+    eggs: { name: 'Œufs', icon: '🥚', color: '#fff9e5' },
+    mining_token: { name: 'Jeton de minage', icon: '🪨', color: '#8b6914' },
+    stock_token: { name: 'Jeton de stock', icon: '📦', color: '#7a3e10' },
+    production_token: { name: 'Jeton de production', icon: '⚙️', color: '#ffc66e' },
+    chest_key: { name: 'Clé à coffre', icon: '🗝️', color: '#b8860b' },
+    precious_stone: { name: 'Pierre précieuse', icon: '💎', color: '#9370db' },
+    rotten_tomato: { name: 'Tomate pourrie', icon: '🍅', color: '#8b0000' }
   },
   rewardPool: [
     { type: 'eggs', amount: 25, weight: 29 },

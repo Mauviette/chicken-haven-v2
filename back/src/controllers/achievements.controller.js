@@ -84,7 +84,8 @@ export async function getAchievementsStatus(req, res) {
           miningFullGridBroken: false,
           miningBestCellsInGame: 0,
           chickenGiftsCollected: 0,
-          chickenAbilitiesUsed: 0
+          chickenAbilitiesUsed: 0,
+          rottenTomatoesReceived: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -140,7 +141,8 @@ export async function checkAchievements(req, res) {
           miningFullGridBroken: false,
           miningBestCellsInGame: 0,
           chickenGiftsCollected: 0,
-          chickenAbilitiesUsed: 0
+          chickenAbilitiesUsed: 0,
+          rottenTomatoesReceived: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -491,6 +493,9 @@ export async function updateAchievementProgress(userId, progressType, value) {
     if (!user.achievements.progress.hasOwnProperty('chickenAbilitiesUsed')) {
       user.achievements.progress.chickenAbilitiesUsed = 0
     }
+    if (!user.achievements.progress.hasOwnProperty('rottenTomatoesReceived')) {
+      user.achievements.progress.rottenTomatoesReceived = 0
+    }
 
     // Mettre à jour le progrès selon le type (inchangé)
     if (progressType === 'increment') {
@@ -579,7 +584,8 @@ export async function triggerAchievementCheck(userId) {
           miningFullGridBroken: false,
           miningBestCellsInGame: 0,
           chickenGiftsCollected: 0,
-          chickenAbilitiesUsed: 0
+          chickenAbilitiesUsed: 0,
+          rottenTomatoesReceived: 0
         },
         completed: [],
         lastChecked: new Date()

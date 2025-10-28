@@ -110,7 +110,11 @@ function computeArtifactModifiers(equipped = []) {
 }
 
 // Génère une récompense aléatoire basée sur le pool pondéré
-function generateReward(rewardAmountPercent = 0) {
+function generateReward(rewardAmountPercent = 0, isApocalypse = false) {
+  if (isApocalypse && Math.random() < 0.25) {
+    return 'rotten_tomato:1'
+  }
+  
   const total = MINING_CONFIG.rewardPool.reduce((sum, r) => sum + r.weight, 0)
   let rand = Math.random() * total
   
@@ -127,7 +131,7 @@ function generateReward(rewardAmountPercent = 0) {
 }
 
 // Génère une nouvelle grille de jeu
-function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0) {
+function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0, isApocalypse = false) {
   const cells = []
   
   for (let row = 0; row < size; row++) {
@@ -136,7 +140,7 @@ function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0) {
         row,
         col,
         hp: MINING_CONFIG.defaultHP,
-        reward: Math.random() < rewardChance ? generateReward(rewardAmountPercent) : null,
+        reward: Math.random() < rewardChance ? generateReward(rewardAmountPercent, isApocalypse) : null,
         hint: false // <- explicit default so front-side normalization / debug shows presence
       })
     }
@@ -263,7 +267,8 @@ export async function startMining(req, res) {
      const gridSize = MINING_CONFIG.gridSize
      const rewardChanceBase = 0.4
      const rewardChance = Math.max(0, rewardChanceBase + (mods.extraRewardChance || 0))
-     const cells = generateGrid(gridSize, rewardChance, mods.rewardAmountPercent)
+     const isApocalypse = !!user.apocalypse
+     const cells = generateGrid(gridSize, rewardChance, mods.rewardAmountPercent, isApocalypse)
 
     // DEBUG: combien de cellules ont une reward avant reveal
     try {
@@ -398,6 +403,8 @@ export async function digCell(req, res) {
       return res.status(400).json({ error: 'Aucune partie en cours' })
     }
 
+    console.log('[mining] digCell - user.apocalypse:', user.apocalypse)
+
     const { row, col } = req.body
     if (row === undefined || col === undefined) {
       return res.status(400).json({ error: 'Position invalide' })
@@ -461,23 +468,13 @@ export async function digCell(req, res) {
           
           // Si la case a une récompense
           if (cell.reward) {
-            let finalReward = cell.reward
-            // Mode Apocalypse : 25% de chance de perdre la récompense
-            if (user.apocalypse && Math.random() < 0.25) {
-              finalReward = null // Pas de récompense
-            } else {
-              // Si un multiplicateur de quantité a été appliqué, on peut reformater la récompense
-              const rewardPercent = artifactMods.rewardAmountPercent || 0
-              if (rewardPercent && typeof cell.reward === 'string') {
-                const [t, a] = cell.reward.split(':')
-                const baseAmt = parseInt(a) || 1
-                const finalAmt = Math.max(1, Math.round(baseAmt * (1 + rewardPercent / 100)))
-                finalReward = `${t}:${finalAmt}`
-              }
-            }
+            console.log('[mining] Cell has reward:', cell.reward)
+            const finalReward = cell.reward
             if (finalReward) {
               newRewards.push(finalReward)
               user.miningGame.rewards.push(finalReward)
+            } else {
+              console.log('[mining] finalReward is null/undefined for cell.reward:', cell.reward)
             }
           }
         }
@@ -508,11 +505,21 @@ export async function digCell(req, res) {
           user.resources.chest_key = (user.resources.chest_key || 0) + amt
         } else if (type === 'precious_stone') {
           user.resources.precious_stone = (user.resources.precious_stone || 0) + amt
+        } else if (type === 'rotten_tomato') {
+          user.resources.rotten_tomato = (user.resources.rotten_tomato || 0) + amt
         }
       }
 
       // Terminer la partie
       user.miningGame.active = false
+      
+      // Compter les tomates pourries obtenues pour les succès
+      const rottenTomatoesCount = user.miningGame.rewards.filter(reward => reward.startsWith('rotten_tomato:')).length
+      if (rottenTomatoesCount > 0) {
+        await updateAchievementProgress(req.userId, 'increment', {
+          rottenTomatoesReceived: rottenTomatoesCount
+        })
+      }
     }
 
     await user.save()
@@ -551,7 +558,8 @@ export async function digCell(req, res) {
         stock_token: user.resources.stock_token,
         production_token: user.resources.production_token,
         chest_key: user.resources.chest_key,
-        precious_stone: user.resources.precious_stone
+        precious_stone: user.resources.precious_stone,
+        rotten_tomato: user.resources.rotten_tomato
       } : undefined
     })
   } catch (err) {
@@ -594,11 +602,21 @@ export async function finishMining(req, res) {
         user.resources.chest_key = (user.resources.chest_key || 0) + amt
       } else if (type === 'precious_stone') {
         user.resources.precious_stone = (user.resources.precious_stone || 0) + amt
+      } else if (type === 'rotten_tomato') {
+        user.resources.rotten_tomato = (user.resources.rotten_tomato || 0) + amt
       }
     }
 
     // Marquer la partie terminée
     user.miningGame.active = false
+    
+    // Compter les tomates pourries obtenues pour les succès
+    const rottenTomatoesCount = (user.miningGame.rewards || []).filter(reward => (reward || '').startsWith('rotten_tomato:')).length
+    if (rottenTomatoesCount > 0) {
+      await updateAchievementProgress(req.userId, 'increment', {
+        rottenTomatoesReceived: rottenTomatoesCount
+      })
+    }
     await user.save()
 
     // Mettre à jour les progrès des succès pour la fin de partie
@@ -630,7 +648,8 @@ export async function finishMining(req, res) {
         stock_token: user.resources.stock_token,
         production_token: user.resources.production_token,
         chest_key: user.resources.chest_key,
-        precious_stone: user.resources.precious_stone
+        precious_stone: user.resources.precious_stone,
+        rotten_tomato: user.resources.rotten_tomato
       }
     })
   } catch (err) {

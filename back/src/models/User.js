@@ -89,7 +89,8 @@ const UserSchema = new mongoose.Schema({
     production_token : { type : Number, default: 0},
     mining_token : { type : Number, default: 0},
     chest_key : { type : Number, default: 0},
-    precious_stone : { type : Number, default: 0}
+    precious_stone : { type : Number, default: 0},
+    rotten_tomato : { type : Number, default: 0}
 },
 
   apocalypse: { type: Boolean, default: false },
