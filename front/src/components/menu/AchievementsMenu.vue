@@ -668,12 +668,7 @@ const getRewardDescription = (reward) => {
 }
 
 /* Dark Mode */
-.dark-mode .achievements-overlay {
-  opacity: 1;
-  visibility: visible;
-}
-
-.dark-mode .achievements-menu {
+.dark-mode .achievements-overlay.visible .achievements-menu {
   background: #1a1a1a;
   border-left: 4px solid #444444;
 }
@@ -762,12 +757,7 @@ const getRewardDescription = (reward) => {
 }
 
 /* Dark Mode + Apocalypse */
-.dark-mode.apocalypse-mode .achievements-overlay {
-  opacity: 1;
-  visibility: visible;
-}
-
-.dark-mode.apocalypse-mode .achievements-menu {
+.dark-mode.apocalypse-mode .achievements-overlay.visible .achievements-menu {
   background: #1a0f0f;
   border-left: 4px solid #8b0000;
 }
