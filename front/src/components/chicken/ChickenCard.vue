@@ -23,7 +23,7 @@
         </div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
         <div class="categorie">
-          {{ formatGroupe(espece.id) }}
+          {{ formatGroupe(espece.id) }} (niv. {{ currentTalentLevel }}/{{ maxTalentLevel }})
         </div>
         <div class="talent">{{ getTalentDisplayName(poule) }}</div>
       </div>
@@ -37,7 +37,7 @@
         <div class="name">???</div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
         <div class="categorie">
-          {{ formatGroupe(espece.id) }}
+          {{ formatGroupe(espece.id) }} (niv. 0/{{ maxTalentLevel }})
         </div>
       </div>
     </template>
@@ -68,11 +68,19 @@ const props = defineProps({
   hiddenImage: String,
 })
 
-const { getTalentDisplayNameSync, getTalentNextCost, upgradeTalent, poules } = usePoules()
+const { getTalentDisplayNameSync, getTalentNextCost, upgradeTalent, poules, getTalentLevel } = usePoules()
 const { isInTeam } = usePlayer()
-const { talents } = useGameData()
+const { talents, talentLevelUpgradeCost } = useGameData()
 const { getEspeceInfo } = useGameData()
 const inTeam = computed(() => isInTeam(props.poule?.especeId))
+
+// Niveau actuel et maximum du talent
+const currentTalentLevel = computed(() => getTalentLevel(props.poule))
+const maxTalentLevel = computed(() => {
+  const rarete = props.espece?.rarete || 'commune'
+  const table = talentLevelUpgradeCost.value?.[rarete]
+  return table?.limit || 1
+})
 
 // Badge amélioration disponible: si un nextCost existe et que le joueur a les ressources
 import { usePlayer as usePlayerComposable } from '@/composables/usePlayer'

@@ -42,10 +42,15 @@ export function formatNumber(num) {
     decimals = 2
   }
 
-  const formatted = formattedNum.toFixed(decimals)
-
-  // Retirer les zéros inutiles à la fin
-  const result = formatted.replace(/\.?0+$/, '')
+  // Formater avec le bon nombre de décimales
+  let result
+  if (decimals === 0) {
+    result = Math.round(formattedNum).toString()
+  } else {
+    const formatted = formattedNum.toFixed(decimals)
+    // Retirer les zéros inutiles à la fin
+    result = formatted.replace(/\.?0+$/, '')
+  }
 
   return (num < 0 ? '-' : '') + result + suffixes[suffixIndex]
 }
