@@ -19,15 +19,26 @@
       </div>
 
       <div class="actions">
-        <button 
-          v-if="!isEquipped"
-          class="btn equip" 
-          @click="onEquip"
-          :disabled="miningLocked && canEquip"
-          :title="miningLocked && canEquip ? 'Impossible d\'équiper pendant une partie de minage active' : ''"
-        >
-          {{ canEquip ? 'Équiper' : 'Remplacer' }}
-        </button>
+        <template v-if="!isEquipped">
+          <button 
+            v-if="canEquip"
+            class="btn equip" 
+            @click="onEquipDirect"
+            :disabled="miningLocked"
+            :title="miningLocked ? 'Impossible d\'équiper pendant une partie de minage active' : ''"
+          >
+            Équiper
+          </button>
+          <button 
+            v-if="!canEquip"
+            class="btn replace" 
+            @click="onEquip"
+            :disabled="false"
+            title="Remplacer un artefact équipé"
+          >
+            Remplacer
+          </button>
+        </template>
         <button 
           v-else
           class="btn unequip" 
@@ -164,14 +175,8 @@ function formatRareté(r) {
   return map[r] || r
 }
 
-async function onEquip() {
-  if (!canEquip.value) {
-    // Ouvrir le popup de remplacement (toujours permis, même pendant le minage)
-    showReplacementPopup.value = true
-    return
-  }
-
-  // Pour l'équipement initial, vérifier le minage
+async function onEquipDirect() {
+  // Équiper directement dans un slot vide
   await checkMiningLock()
   if (miningLocked.value) {
     try { window.$toast?.("Impossible d'équiper pendant une partie de minage active", 'error') } catch (_) {}
@@ -184,19 +189,25 @@ async function onEquip() {
     confirm()
     emit('updated')
   } catch (err) {
-    // Si le serveur refuse parce qu'une partie est active, afficher un message clair.
-    try {
-      const status = err?.response?.status
-      const data = err?.response?.data
-      if (status === 409 || (data && (data.error || '').toLowerCase().includes('minage'))) {
-        window.$toast?.("Impossible d'équiper pendant une partie de minage active", 'error')
-        // mettre à jour l'état local si le backend précise l'état (optionnel)
-        miningLocked.value = true
-        return
-      }
-    } catch (_) {}
     console.error('Erreur lors de l\'équipement:', err)
     window.$toast?.(err?.response?.data?.error || 'Erreur lors de l\'équipement', 'error')
+  }
+}
+
+async function onEquip() {
+  // Ouvrir le popup de remplacement
+  showReplacementPopup.value = true
+}
+
+async function onUnequip() {
+  try {
+    click()
+    await unequipArtifact(props.artifact.artifactId)
+    confirm()
+    emit('updated')
+  } catch (err) {
+    console.error('Erreur lors du déséquipement:', err)
+    window.$toast?.(err?.response?.data?.error || 'Erreur lors du déséquipement', 'error')
   }
 }
 
@@ -207,7 +218,7 @@ async function onReplaceArtifact(index) {
     click()
     // D'abord déséquiper l'ancien artefact
     const oldArtifactId = currentEquippedArtifacts.value[index]
-    if (oldArtifactId) {
+    if (oldArtifactId && oldArtifactId !== '') {
       await unequipArtifact(oldArtifactId)
     }
     // Puis équiper le nouveau
@@ -322,6 +333,12 @@ async function onReplaceArtifact(index) {
   border-color: #8ed68b; 
 }
 
+.btn.replace { 
+  background: #fff3cd; 
+  border-color: #ffc107; 
+  color: #856404;
+}
+
 .btn.unequip { 
   background: #fff1f1; 
   border-color: #ffb3b3; 
@@ -342,6 +359,12 @@ async function onReplaceArtifact(index) {
 .apocalypse-mode .btn.equip {
   background: #1a1515;
   border-color: #ff8888;
+}
+
+.apocalypse-mode .btn.replace {
+  background: #2a1a1a;
+  border-color: #ffaa44;
+  color: #ffcc88;
 }
 
 .apocalypse-mode .btn.unequip {
