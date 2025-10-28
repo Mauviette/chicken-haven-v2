@@ -8,7 +8,7 @@
       <div class="current-team">
         <!-- Wrap each member with Tooltip so hovering shows talent effect -->
         <Tooltip
-          v-for="(member, index) in currentTeam"
+          v-for="(member, index) in currentTeamWithStatus"
           :key="index"
           :text="getTalentTooltip(member?.especeId)"
           position="right"
@@ -16,17 +16,22 @@
         >
           <div
             class="team-member"
-            :class="{ selected: selectedIndex === index }"
-            @click="selectedIndex = index"
+            :class="{ 
+              selected: selectedIndex === index, 
+              disabled: member.disabled 
+            }"
+            @click="!member.disabled && (selectedIndex = index)"
           >
             <img 
               :src="getMemberImage(member?.especeId)" 
               :alt="getMemberName(member?.especeId)"
               class="member-image"
+              :class="{ disabled: member.disabled }"
             />
             <div class="member-info">
               <div class="member-name">{{ getMemberName(member?.especeId) }}</div>
               <div class="member-talent">{{ getMemberTalent(member?.especeId) }}</div>
+              <div v-if="member.disabled" class="disabled-text">{{ member.disabledReason }}</div>
             </div>
           </div>
         </Tooltip>
@@ -36,10 +41,10 @@
         <button class="btn cancel" @click="emit('close')">Annuler</button>
         <button 
           class="btn confirm" 
-          :disabled="selectedIndex === -1"
+          :disabled="selectedIndex === -1 || (selectedIndex !== -1 && currentTeamWithStatus[selectedIndex]?.disabled)"
           @click="confirmReplacement"
         >
-          Remplacer {{ selectedIndex !== -1 ? getMemberName(currentTeam[selectedIndex]?.especeId) : '' }}
+          Remplacer {{ selectedIndex !== -1 && !currentTeamWithStatus[selectedIndex]?.disabled ? getMemberName(currentTeamWithStatus[selectedIndex]?.especeId) : '' }}
         </button>
       </div>
     </div>
@@ -52,6 +57,7 @@ import Popup from '@/components/menu/Popup.vue'
 import Tooltip from '@/components/menu/Tooltip.vue' // <-- nouveau import
 import { useGameData } from '@/composables/useGameData'
 import { usePoules } from '@/composables/usePoules'
+import { usePlayer } from '@/composables/usePlayer'
 
 const emit = defineEmits(['close', 'replace'])
 
@@ -60,10 +66,48 @@ const props = defineProps({
   newChickenId: String
 })
 
-const { especies } = useGameData()
+const { especies, talents, getEspeceInfo, getTalentInfo } = useGameData()
 const { getTalentDisplayNameSync, getTalentEffectSync, getImage, poules } = usePoules()
+const { cooldowns, apocalypse } = usePlayer()
 
 const selectedIndex = ref(-1)
+
+// Talents activables avec cooldown
+const activableTalents = ['Maligne', 'Joyeuse', 'Rapide']
+
+// Vérifie si une poule a un talent activable en cooldown
+function hasActiveCooldown(especeId) {
+  if (!especeId) return false
+  const talentName = especies.value?.[especeId]?.talent
+  if (!talentName || !activableTalents.includes(talentName)) return false
+  
+  const cooldownKey = `talent_${talentName}`
+  const cooldownEnd = cooldowns.value?.[cooldownKey]
+  if (!cooldownEnd) return false
+  
+  const now = new Date()
+  const endTime = new Date(cooldownEnd)
+  return endTime > now
+}
+
+// Membres avec statut disabled (en mode apocalypse, marquer ceux avec cooldown actif)
+const currentTeamWithStatus = computed(() => {
+  const result = (props.currentTeam || []).map((member, index) => {
+    const disabled = apocalypse.value && hasActiveCooldown(member?.especeId)
+    return {
+      ...member,
+      disabled,
+      disabledReason: disabled ? 'Capacité en recharge (mode Apocalypse)' : null
+    }
+  })
+  
+  // Si l'élément sélectionné est maintenant disabled, le désélectionner
+  if (selectedIndex.value !== -1 && result[selectedIndex.value]?.disabled) {
+    selectedIndex.value = -1
+  }
+  
+  return result
+})
 
 const getMemberImage = (especeId) => {
   if (!especeId) return '/assets/chickens/hidden/basic.png'
@@ -205,9 +249,27 @@ p {
   transform: translateY(-1px);
 }
 
-.btn:disabled {
+.team-member.disabled {
   opacity: 0.5;
-  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+  cursor: not-allowed;
+  background: rgba(255, 249, 229, 0.05);
+  border-color: #666;
+}
+
+.team-member.disabled:hover {
+  background: rgba(255, 249, 229, 0.05);
+  transform: none;
+}
+
+.member-image.disabled {
+  filter: grayscale(100%);
+}
+
+.disabled-text {
+  font-size: 11px;
+  color: #ff6b6b;
+  font-style: italic;
+  margin-top: 2px;
 }
 
 /* Dark Mode */
@@ -237,6 +299,14 @@ p {
   background: rgba(255, 107, 107, 0.2) !important;
 }
 
+.dark-mode .team-member.disabled {
+  background: rgba(42, 42, 42, 0.3) !important;
+}
+
+.dark-mode .team-member.disabled:hover {
+  background: rgba(42, 42, 42, 0.3) !important;
+}
+
 .dark-mode .member-image {
   border: 2px solid #555 !important;
   background: #2a2a2a !important;
@@ -244,6 +314,10 @@ p {
 
 .dark-mode .member-talent {
   color: #cc9966 !important;
+}
+
+.dark-mode .disabled-text {
+  color: #ff9999 !important;
 }
 
 .dark-mode .btn.cancel {

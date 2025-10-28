@@ -137,6 +137,7 @@ export async function getMe(req, res) {
         mining_token: resources?.mining_token ?? 0,
         precious_stone: resources?.precious_stone ?? 0,
       },
+      cooldowns: user.cooldowns || {},
       upgrades: upgrades || {}
     })
   } catch (err) {

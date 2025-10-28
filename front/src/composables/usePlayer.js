@@ -1,5 +1,6 @@
 import { ref, onMounted, onBeforeUnmount, computed, getCurrentInstance } from 'vue'
-import { apiGet, apiPut } from '@/utils/api'
+import { apiGet, apiPut } from '@/utils/api.js'
+import { especeData } from '../data/sharedGameData.js'
 
 const eggs = ref(0)
 const stockTokens = ref(0)
@@ -15,6 +16,7 @@ const level = ref(1)
 const xp = ref(0)
 const xpRequired = ref(2)
 const player = ref(null)
+const cooldowns = ref({})
 
 // Propriété calculée pour apocalypse
 const apocalypse = computed(() => player.value?.apocalypse || false)
@@ -35,6 +37,7 @@ function clearPlayerData() {
   xpRequired.value = 2
   team.value = { maxSlots: 3, slots: [] }
   artifactSlots.value = { slotsCount: 2, equipped: [] }
+  cooldowns.value = {}
 }
 
 export function usePlayer() {
@@ -109,6 +112,9 @@ export function usePlayer() {
             apocalypse: u?.apocalypse || false,
             email: u?.email || null
           }
+          
+          // Récupérer les cooldowns
+          cooldowns.value = u?.cooldowns || {}
           
           const prevLevel = level.value || 1
           const currentProfileId = u?.profileId || u?.id || null
@@ -229,6 +235,25 @@ export function usePlayer() {
     await fetchTeam()
     const max = team.value.maxSlots || 3
     const slots = Array.isArray(team.value.slots) ? [...team.value.slots] : []
+    
+    // Vérification apocalypse: empêcher le retrait si cooldown actif
+    if (apocalypse.value) {
+      const talentName = especeData[especeId]?.talent
+      const activableTalents = ['Maligne', 'Joyeuse', 'Rapide']
+      if (talentName && activableTalents.includes(talentName)) {
+        const cooldownKey = `talent_${talentName}`
+        const cooldownEnd = player.value?.cooldowns?.[cooldownKey]
+        if (cooldownEnd) {
+          const now = new Date()
+          const endTime = new Date(cooldownEnd)
+          if (endTime > now) {
+            window.$toast?.('Impossible de retirer cette poule - capacité en recharge (mode Apocalypse)', 'error')
+            return false
+          }
+        }
+      }
+    }
+    
     for (let i = 0; i < Math.min(max, slots.length); i++) {
       if (slots[i]?.especeId === especeId) {
         slots[i] = { especeId: null }
@@ -242,6 +267,27 @@ export function usePlayer() {
     await fetchTeam()
     const max = team.value.maxSlots || 3
     const slots = Array.isArray(team.value.slots) ? [...team.value.slots] : []
+    
+    // Vérification apocalypse: empêcher le remplacement si cooldown actif sur la poule à remplacer
+    if (apocalypse.value && slotIndex >= 0 && slotIndex < max) {
+      const currentEspeceId = slots[slotIndex]?.especeId
+      if (currentEspeceId) {
+        const talentName = especeData[currentEspeceId]?.talent
+        const activableTalents = ['Maligne', 'Joyeuse', 'Rapide']
+        if (talentName && activableTalents.includes(talentName)) {
+          const cooldownKey = `talent_${talentName}`
+          const cooldownEnd = player.value?.cooldowns?.[cooldownKey]
+          if (cooldownEnd) {
+            const now = new Date()
+            const endTime = new Date(cooldownEnd)
+            if (endTime > now) {
+              window.$toast?.('Impossible de remplacer cette poule - capacité en recharge (mode Apocalypse)', 'error')
+              return { success: false }
+            }
+          }
+        }
+      }
+    }
     
     if (slotIndex >= 0 && slotIndex < max) {
       slots[slotIndex] = { especeId: newEspeceId }
@@ -414,6 +460,7 @@ export function usePlayer() {
     xp,
     xpRequired,
     player,
+    cooldowns,
     apocalypse,
     addEggs,
     spendEggs,
