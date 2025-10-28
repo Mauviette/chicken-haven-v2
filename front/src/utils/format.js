@@ -4,10 +4,10 @@
 /**
  * Formate un nombre pour un affichage plus lisible
  * @param {number} num - Le nombre à formater
- * @param {number} decimals - Nombre de décimales (défaut: 1 pour les petits nombres, 0 pour les grands)
+ * @param {boolean} forceInteger - Si true, force l'affichage sans décimales même pour les grands nombres
  * @returns {string} Le nombre formaté
  */
-export function formatNumber(num) {
+export function formatNumber(num, forceInteger = false) {
   if (num === null || num === undefined || isNaN(num)) return '0'
 
   const absNum = Math.abs(num)
@@ -33,13 +33,15 @@ export function formatNumber(num) {
   }
 
   // Arrondir intelligemment
-  let decimals = 1
-  if (formattedNum >= 100) {
-    decimals = 0
-  } else if (formattedNum >= 10) {
-    decimals = 1
-  } else {
-    decimals = 2
+  let decimals = forceInteger ? 0 : 1
+  if (!forceInteger) {
+    if (formattedNum >= 100) {
+      decimals = 0
+    } else if (formattedNum >= 10) {
+      decimals = 1
+    } else {
+      decimals = 2
+    }
   }
 
   // Formater avec le bon nombre de décimales
@@ -64,9 +66,9 @@ export function formatNumber(num) {
 export function formatEggs(eggs, isApocalypse = false) {
   if (isApocalypse) {
     // En mode apocalypse, afficher la valeur réelle (multipliée par 10)
-    return formatNumber(eggs * 10)
+    return formatNumber(eggs * 10, true)
   }
-  return formatNumber(eggs)
+  return formatNumber(eggs, true)
 }
 
 /**

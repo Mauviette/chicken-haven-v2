@@ -22,7 +22,7 @@
               <h4 class="leaderboard-subtitle">🥚 Total d'Œufs Récoltés</h4>
               <div class="user-rank" v-if="userRankings?.totalEggs?.rank">
                 Votre rang: <strong>#{{ userRankings.totalEggs.rank }}</strong> / {{ userRankings.totalEggs.total }}
-                <span class="user-value">({{ formatNumber(userRankings.totalEggs.value) }} œufs)</span>
+                <span class="user-value">({{ formatEggs(userRankings.totalEggs.value) }} œufs)</span>
               </div>
             </div>
             <div class="leaderboard-list">
@@ -53,7 +53,7 @@
                   <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
                 </div>
                 <div class="player-value">
-                  {{ formatNumber(leaderboardPlayer.value) }} 🥚
+                  {{ formatEggs(leaderboardPlayer.value) }} 🥚
                 </div>
               </div>
               <button 
@@ -72,7 +72,7 @@
               <h4 class="leaderboard-subtitle">⚡ Maximum en Un Clic</h4>
               <div class="user-rank" v-if="userRankings?.maxEggs?.rank">
                 Votre rang: <strong>#{{ userRankings.maxEggs.rank }}</strong> / {{ userRankings.maxEggs.total }}
-                <span class="user-value">({{ formatNumber(userRankings.maxEggs.value) }} œufs)</span>
+                <span class="user-value">({{ formatEggs(userRankings.maxEggs.value) }} œufs)</span>
               </div>
             </div>
             <div class="leaderboard-list">
@@ -236,7 +236,7 @@
         <h3 class="popup-title">{{ getLeaderboardTitle(showFullLeaderboard) }}</h3>
         <div class="user-rank-popup" v-if="userRankings && userRankings[showFullLeaderboard]?.rank">
           Votre rang: <strong>#{{ userRankings[showFullLeaderboard].rank }}</strong> / {{ userRankings[showFullLeaderboard].total }}
-          <span class="user-value-popup">({{ formatNumber(userRankings[showFullLeaderboard].value) }} {{ getLeaderboardIcon(showFullLeaderboard) }})</span>
+          <span class="user-value-popup">({{ formatEggs(userRankings[showFullLeaderboard].value) }} {{ getLeaderboardIcon(showFullLeaderboard) }})</span>
         </div>
         <div class="full-leaderboard-list">
           <div 
@@ -266,7 +266,7 @@
               <div class="last-seen">{{ formatLastSeen(leaderboardPlayer.lastSeen) }}</div>
             </div>
             <div class="player-value">
-              {{ showFullLeaderboard === 'chickens' ? leaderboardPlayer.value : formatNumber(leaderboardPlayer.value) }} {{ getLeaderboardIcon(showFullLeaderboard) }}
+              {{ showFullLeaderboard === 'chickens' ? leaderboardPlayer.value : formatEggs(leaderboardPlayer.value) }} {{ getLeaderboardIcon(showFullLeaderboard) }}
             </div>
           </div>
         </div>
@@ -286,7 +286,7 @@ import Popup from '@/components/menu/Popup.vue'
 import { useSound } from '@/composables/useSound'
 import { apiGet } from '@/utils/api'
 import { getApiBaseUrl } from '@/utils/api'
-import { formatNumber } from '@/utils/format.js'
+import { formatNumber, formatEggs } from '@/utils/format.js'
 
 const { 
   leaderboards, 
