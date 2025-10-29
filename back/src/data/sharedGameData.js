@@ -5,7 +5,7 @@
 // ========================
 // VERSION ACTUELLE DU JEU
 // ========================
-export const CURRENT_GAME_VERSION = '0.0.3'
+export const CURRENT_GAME_VERSION = '0.0.4'
 
 // ========================
 // DONNÉES DES ESPÈCES
@@ -1443,7 +1443,7 @@ export const artifactsData = {
     id: 'smith-glyph',
     name: 'Glyphe du Forgeron',
     icon: '🔧',
-    description: "+2 outile pendant une partie.",
+    description: "+2 outils pendant une partie.",
     rarete: 'commune',
     effect: { type: 'increase_tool_count', amount: 2 }
   },

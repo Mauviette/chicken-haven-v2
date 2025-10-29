@@ -452,63 +452,63 @@ function formatGroupe(especeId) {
 }
 
 /* Mode APOCALYPSE */
-.apocalypse-mode .poule-card {
+:deep(.apocalypse-mode) .poule-card {
   background: #2d1b1b !important;
   border-color: #ff4444 !important;
   color: #ffcccc !important;
 }
 
-.apocalypse-mode .poule-card .info {
+:deep(.apocalypse-mode) .poule-card .info {
   color: #ffaaaa !important;
 }
 
-.apocalypse-mode .poule-card.commune {
+:deep(.apocalypse-mode) .poule-card.commune {
   border-color: #ff4444 !important;
 }
-.apocalypse-mode .poule-card.rare {
+:deep(.apocalypse-mode) .poule-card.rare {
   border-color: #ff6b6b !important;
 }
-.apocalypse-mode .poule-card.epique {
-  border-color: #ff6b6b !important;
+:deep(.apocalypse-mode) .poule-card.epique {
+  border-color: #ff8888 !important;
 }
-.apocalypse-mode .poule-card.legendaire {
-  border-color: #ff6b6b !important;
+:deep(.apocalypse-mode) .poule-card.legendaire {
+  border-color: #ffaa44 !important;
 }
 
-.apocalypse-mode .poule-card.commune .badge-team { background: #ff4444 !important; border: 2px solid #ff4444 !important; }
-.apocalypse-mode .poule-card.rare .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; }
-.apocalypse-mode .poule-card.epique .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; }
-.apocalypse-mode .poule-card.legendaire .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; color: #ffcccc !important; }
+:deep(.apocalypse-mode) .poule-card.commune .badge-team { background: #ff4444 !important; border: 2px solid #ff4444 !important; }
+:deep(.apocalypse-mode) .poule-card.rare .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; }
+:deep(.apocalypse-mode) .poule-card.epique .badge-team { background: #ff8888 !important; border: 2px solid #ff8888 !important; }
+:deep(.apocalypse-mode) .poule-card.legendaire .badge-team { background: #ffaa44 !important; border: 2px solid #ffaa44 !important; color: #ffffff !important; }
 
-.apocalypse-mode .poule-card .quantite {
+:deep(.apocalypse-mode) .poule-card .quantite {
   color: #ffaaaa !important;
 }
 
-.apocalypse-mode .poule-card.commune .rarete {
-  background: rgba(255, 68, 68, 0.2) !important;
+:deep(.apocalypse-mode) .poule-card.commune .rarete {
+  background: rgba(255, 68, 68, 0.3) !important;
   color: #ffaaaa !important;
 }
-.apocalypse-mode .poule-card.rare .rarete {
-  background: rgba(255, 107, 107, 0.2) !important;
+:deep(.apocalypse-mode) .poule-card.rare .rarete {
+  background: rgba(255, 107, 107, 0.3) !important;
   color: #ffcccc !important;
 }
-.apocalypse-mode .poule-card.epique .rarete {
-  background: rgba(255, 107, 107, 0.2) !important;
-  color: #ffcccc !important;
+:deep(.apocalypse-mode) .poule-card.epique .rarete {
+  background: rgba(255, 136, 136, 0.3) !important;
+  color: #ffdddd !important;
 }
-.apocalypse-mode .poule-card.legendaire .rarete {
-  background: rgba(255, 107, 107, 0.2) !important;
-  color: #ffcccc !important;
+:deep(.apocalypse-mode) .poule-card.legendaire .rarete {
+  background: rgba(255, 170, 68, 0.3) !important;
+  color: #ffeedd !important;
 }
 
 /* Badge NOUVEAU en mode apocalypse */
-.apocalypse-mode .new-badge {
+:deep(.apocalypse-mode) .new-badge {
   background: #ff4444 !important;
   color: #ffffff !important;
 }
 
 /* Badge upgrade en mode apocalypse */
-.apocalypse-mode .badge-upgrade {
+:deep(.apocalypse-mode) .badge-upgrade {
   background: linear-gradient(135deg, #ff6666 0%, #cc3333 100%) !important;
   border: 2px solid #ff4444 !important;
 }

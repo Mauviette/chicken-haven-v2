@@ -507,4 +507,57 @@ watch(
   box-shadow: none !important;
 }
 
+/* Mode APOCALYPSE */
+.apocalypse-mode .tab-btn {
+  background: rgba(42, 10, 10, 0.8);
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .tab-btn:hover {
+  background: rgba(60, 15, 15, 0.9);
+  color: #ffffff;
+}
+
+.apocalypse-mode .tab-btn.active {
+  background: linear-gradient(135deg, #ff6666, #cc3333);
+  border-color: #ff6666;
+  color: #ffffff;
+}
+
+.apocalypse-mode .search-input {
+  background: rgba(42, 10, 10, 0.8);
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .search-input::placeholder {
+  color: #cc8888;
+}
+
+.apocalypse-mode .sort-select,
+.apocalypse-mode .sort-order {
+  background: rgba(42, 10, 10, 0.8);
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .sort-select option {
+  background: #2a0a0a;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .section-title {
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.apocalypse-mode .team-indicator {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .loading-message {
+  color: #ffaaaa;
+}
+
 </style>

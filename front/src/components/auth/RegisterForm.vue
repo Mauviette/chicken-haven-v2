@@ -137,6 +137,23 @@
         <div v-if="confirmPasswordError" class="field-error">{{ confirmPasswordError }}</div>
       </div>
       
+      <!-- Mode Apocalypse -->
+      <div class="apocalypse-toggle">
+        <label class="checkbox-container">
+          <input 
+            type="checkbox" 
+            v-model="apocalypseMode" 
+            class="checkbox-input"
+          />
+          <span class="checkmark"></span>
+          <span class="checkbox-label">Activer le mode APOCALYPSE</span>
+        </label>
+        <div class="apocalypse-warning" v-if="apocalypseMode">
+          ⚠️ <strong>ATTENTION :</strong> Le mode Apocalypse est un mode de jeu alternatif avec des règles plus difficiles. 
+          Une fois activé, ce choix est <strong>irréversible</strong> et ne peut pas être modifié après la création du compte.
+        </div>
+      </div>
+      
       <button type="submit" class="register-btn" :disabled="!isFormValid">S'inscrire</button>
       <p class="auth-link" @click="switchToLogin">
         Déjà un compte? <span class="link-text">Se connecter</span>
@@ -156,8 +173,9 @@ const password = ref('')
 const confirmPassword = ref('')
 const email = ref('')
 const message = ref('')  // Visibilité des mots de passe
-  const showPassword = ref(false)
-  const showConfirmPassword = ref(false)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+const apocalypseMode = ref(false)
   
 // Erreurs de validation
 const usernameError = ref('')
@@ -171,9 +189,7 @@ const emit = defineEmits(['registered', 'switch-to-login', 'auto-login'])
       type: Boolean,
       default: false
     }
-  })
-  
-  // Variable pour indiquer si la validation asynchrone est en cours
+  })  // Variable pour indiquer si la validation asynchrone est en cours
   const validatingForbiddenWords = ref(false)
   
   // Validation du nom d'utilisateur
@@ -341,7 +357,7 @@ const emit = defineEmits(['registered', 'switch-to-login', 'auto-login'])
         username: username.value.trim(),
         displayName: username.value.trim(), // Utiliser username comme displayName par défaut
         password: password.value,
-        apocalypse: props.apocalypseMode
+        apocalypse: apocalypseMode.value
       }
       
       // Ajouter l'email seulement s'il est fourni
@@ -753,6 +769,159 @@ const emit = defineEmits(['registered', 'switch-to-login', 'auto-login'])
   100% {
     color: #ffaaaa;
     text-shadow: 0 0 15px rgba(255, 170, 170, 1);
+  }
+}
+
+/* Mode Apocalypse Toggle */
+.apocalypse-toggle {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  user-select: none;
+  position: relative;
+}
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  height: 20px;
+  width: 20px;
+  background-color: #fff9e5;
+  border: 2px solid #ffc66e;
+  border-radius: 4px;
+  position: relative;
+  transition: all 0.2s ease;
+  margin-right: 12px;
+}
+
+.checkbox-container:hover .checkmark {
+  border-color: #ffaa00;
+  box-shadow: 0 0 5px rgba(255, 170, 0, 0.3);
+}
+
+.checkbox-container .checkbox-input:checked ~ .checkmark {
+  background-color: #7a3e10;
+  border-color: #ffc66e;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-container .checkbox-input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.checkbox-label {
+  font-size: 14px;
+  color: #ffeaa7;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.apocalypse-warning {
+  background-color: rgba(255, 102, 102, 0.1);
+  border: 1px solid rgba(255, 102, 102, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  color: #ffaaaa;
+  line-height: 1.4;
+  animation: warning-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes warning-pulse {
+  0% {
+    background-color: rgba(255, 102, 102, 0.1);
+    border-color: rgba(255, 102, 102, 0.3);
+  }
+  100% {
+    background-color: rgba(255, 102, 102, 0.15);
+    border-color: rgba(255, 102, 102, 0.4);
+  }
+}
+
+/* Styles apocalypse pour la case à cocher */
+.auth-form.apocalypse-active .checkbox-container:hover .checkmark {
+  border-color: #ff6666;
+  box-shadow: 0 0 8px rgba(255, 102, 102, 0.4);
+}
+
+.auth-form.apocalypse-active .checkbox-container .checkbox-input:checked ~ .checkmark {
+  background-color: #660000;
+  border-color: #ff4444;
+}
+
+.auth-form.apocalypse-active .checkbox-label {
+  color: #ff6666;
+  text-shadow: 0 0 5px rgba(255, 102, 102, 0.5);
+}
+
+.auth-form.apocalypse-active .apocalypse-warning {
+  background-color: rgba(255, 102, 102, 0.2);
+  border-color: rgba(255, 102, 102, 0.5);
+  color: #ffcccc;
+  animation: apocalypse-warning-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes apocalypse-warning-pulse {
+  0% {
+    background-color: rgba(255, 102, 102, 0.2);
+    border-color: rgba(255, 102, 102, 0.5);
+    box-shadow: 0 0 5px rgba(255, 102, 102, 0.3);
+  }
+  100% {
+    background-color: rgba(255, 102, 102, 0.25);
+    border-color: rgba(255, 102, 102, 0.6);
+    box-shadow: 0 0 10px rgba(255, 102, 102, 0.5);
+  }
+}
+
+@media (max-width: 480px) {
+  .apocalypse-toggle {
+    margin: 12px 0;
+  }
+  
+  .checkbox-container {
+    align-items: flex-start;
+  }
+  
+  .checkmark {
+    margin-top: 2px;
+    margin-right: 8px;
+  }
+  
+  .checkbox-label {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  
+  .apocalypse-warning {
+    padding: 10px;
+    font-size: 12px;
   }
 }
   </style>

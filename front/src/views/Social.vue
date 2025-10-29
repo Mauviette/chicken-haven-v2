@@ -14,15 +14,33 @@
         <div class="unified-leaderboard-section">
           <div class="leaderboard-header">
             <h3 class="leaderboard-title">🏆 Classements</h3>
+            
+            <!-- Onglets pour le mode de leaderboard -->
+            <div class="leaderboard-tabs">
+              <button 
+                class="tab-button"
+                :class="{ active: leaderboardMode === 'classic' }"
+                @click="setLeaderboardMode('classic')"
+              >
+                Classique
+              </button>
+              <button 
+                class="tab-button apocalypse-tab"
+                :class="{ active: leaderboardMode === 'apocalypse' }"
+                @click="setLeaderboardMode('apocalypse')"
+              >
+                🔥 Apocalypse
+              </button>
+            </div>
           </div>
           
           <!-- Classement Œufs Totaux -->
           <div class="individual-leaderboard">
             <div class="leaderboard-subheader">
               <h4 class="leaderboard-subtitle">🥚 Total d'Œufs Récoltés</h4>
-              <div class="user-rank" v-if="userRankings?.totalEggs?.rank">
-                Votre rang: <strong>#{{ userRankings.totalEggs.rank }}</strong> / {{ userRankings.totalEggs.total }}
-                <span class="user-value">({{ formatEggs(userRankings.totalEggs.value) }} œufs)</span>
+              <div class="user-rank" v-if="currentUserRanking?.totalEggs?.rank">
+                Votre rang: <strong>#{{ currentUserRanking.totalEggs.rank }}</strong> / {{ currentUserRanking.totalEggs.total }}
+                <span class="user-value">({{ formatEggs(currentUserRanking.totalEggs.value) }} œufs)</span>
               </div>
             </div>
             <div class="leaderboard-list">
@@ -57,7 +75,7 @@
                 </div>
               </div>
               <button 
-                v-if="leaderboards?.totalEggs && leaderboards.totalEggs.length > 10"
+                v-if="totalEggsLeaderboard && totalEggsLeaderboard.length > 10"
                 class="show-more-button"
                 @click="openFullLeaderboard('totalEggs')"
               >
@@ -70,9 +88,9 @@
           <div class="individual-leaderboard">
             <div class="leaderboard-subheader">
               <h4 class="leaderboard-subtitle">⚡ Maximum en Un Clic</h4>
-              <div class="user-rank" v-if="userRankings?.maxEggs?.rank">
-                Votre rang: <strong>#{{ userRankings.maxEggs.rank }}</strong> / {{ userRankings.maxEggs.total }}
-                <span class="user-value">({{ formatEggs(userRankings.maxEggs.value) }} œufs)</span>
+              <div class="user-rank" v-if="currentUserRanking?.maxEggs?.rank">
+                Votre rang: <strong>#{{ currentUserRanking.maxEggs.rank }}</strong> / {{ currentUserRanking.maxEggs.total }}
+                <span class="user-value">({{ formatEggs(currentUserRanking.maxEggs.value) }} œufs)</span>
               </div>
             </div>
             <div class="leaderboard-list">
@@ -107,7 +125,7 @@
                 </div>
               </div>
               <button 
-                v-if="leaderboards?.maxEggs && leaderboards.maxEggs.length > 10"
+                v-if="maxEggsLeaderboard && maxEggsLeaderboard.length > 10"
                 class="show-more-button"
                 @click="openFullLeaderboard('maxEggs')"
               >
@@ -120,9 +138,9 @@
           <div class="individual-leaderboard">
             <div class="leaderboard-subheader">
               <h4 class="leaderboard-subtitle">🏆 Succès Obtenus</h4>
-              <div class="user-rank" v-if="userRankings?.chickens?.rank">
-                Votre rang: <strong>#{{ userRankings.chickens.rank }}</strong> / {{ userRankings.chickens.total }}
-                <span class="user-value">({{ userRankings.chickens.value }} succès)</span>
+              <div class="user-rank" v-if="currentUserRanking?.chickens?.rank">
+                Votre rang: <strong>#{{ currentUserRanking.chickens.rank }}</strong> / {{ currentUserRanking.chickens.total }}
+                <span class="user-value">({{ currentUserRanking.chickens.value }} succès)</span>
               </div>
             </div>
             <div class="leaderboard-list">
@@ -157,7 +175,7 @@
                 </div>
               </div>
               <button 
-                v-if="leaderboards?.chickens && leaderboards.chickens.length > 10"
+                v-if="chickensLeaderboard && chickensLeaderboard.length > 10"
                 class="show-more-button"
                 @click="openFullLeaderboard('chickens')"
               >
@@ -234,13 +252,13 @@
     <Popup v-if="showFullLeaderboard" @close="closeFullLeaderboard">
       <div class="full-leaderboard-popup">
         <h3 class="popup-title">{{ getLeaderboardTitle(showFullLeaderboard) }}</h3>
-        <div class="user-rank-popup" v-if="userRankings && userRankings[showFullLeaderboard]?.rank">
-          Votre rang: <strong>#{{ userRankings[showFullLeaderboard].rank }}</strong> / {{ userRankings[showFullLeaderboard].total }}
-          <span class="user-value-popup">({{ formatEggs(userRankings[showFullLeaderboard].value) }} {{ getLeaderboardIcon(showFullLeaderboard) }})</span>
+        <div class="user-rank-popup" v-if="currentUserRanking && currentUserRanking[showFullLeaderboard]?.rank">
+          Votre rang: <strong>#{{ currentUserRanking[showFullLeaderboard].rank }}</strong> / {{ currentUserRanking[showFullLeaderboard].total }}
+          <span class="user-value-popup">({{ formatEggs(currentUserRanking[showFullLeaderboard].value) }} {{ getLeaderboardIcon(showFullLeaderboard) }})</span>
         </div>
         <div class="full-leaderboard-list">
           <div 
-            v-for="leaderboardPlayer in leaderboards[showFullLeaderboard]" 
+            v-for="leaderboardPlayer in fullLeaderboardData" 
             :key="`full-${showFullLeaderboard}-${leaderboardPlayer.profileId}`"
             class="leaderboard-item"
             :class="{ 'current-user': isCurrentUser(leaderboardPlayer) }"
@@ -294,7 +312,13 @@ const {
   meta, 
   loading, 
   error, 
-  fetchLeaderboards 
+  leaderboardMode,
+  totalEggsLeaderboard,
+  maxEggsLeaderboard,
+  chickensLeaderboard,
+  currentUserRanking,
+  fetchLeaderboards,
+  setLeaderboardMode
 } = useSocial()
 
 const { player } = usePlayer()
@@ -394,10 +418,22 @@ const closeFullLeaderboard = () => {
   showFullLeaderboard.value = null
 }
 
+// Computed pour la leaderboard complète
+const fullLeaderboardData = computed(() => {
+  if (!showFullLeaderboard.value) return []
+  
+  switch (showFullLeaderboard.value) {
+    case 'totalEggs': return totalEggsLeaderboard.value || []
+    case 'maxEggs': return maxEggsLeaderboard.value || []
+    case 'chickens': return chickensLeaderboard.value || []
+    default: return []
+  }
+})
+
 // Computed pour limiter les leaderboards à 10 éléments
-const limitedTotalEggs = computed(() => leaderboards.value?.totalEggs?.slice(0, 10) || [])
-const limitedMaxEggs = computed(() => leaderboards.value?.maxEggs?.slice(0, 10) || [])
-const limitedChickens = computed(() => leaderboards.value?.chickens?.slice(0, 10) || [])
+const limitedTotalEggs = computed(() => totalEggsLeaderboard.value?.slice(0, 10) || [])
+const limitedMaxEggs = computed(() => maxEggsLeaderboard.value?.slice(0, 10) || [])
+const limitedChickens = computed(() => chickensLeaderboard.value?.slice(0, 10) || [])
 
 // Fonctions pour obtenir le titre du popup
 const getLeaderboardTitle = (type) => {
@@ -739,6 +775,45 @@ const getAnnouncementImageUrl = (imageName) => {
   margin: 0 0 8px 0;
 }
 
+/* Styles pour les onglets */
+.leaderboard-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tab-button {
+  padding: 8px 16px;
+  border: 2px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  background: var(--button-hover);
+  transform: translateY(-1px);
+}
+
+.tab-button.active {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-color: var(--reward-border);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.tab-button.active.apocalypse-tab {
+  background: linear-gradient(135deg, #ff6666, #cc3333);
+  border-color: #ff6666;
+  color: #ffffff;
+}
+
 .user-rank {
   font-size: 14px;
   color: var(--text-achievement);
@@ -936,6 +1011,15 @@ const getAnnouncementImageUrl = (imageName) => {
   .leaderboard-title {
     font-size: 18px;
   }
+  
+  .leaderboard-tabs {
+    gap: 6px;
+  }
+  
+  .tab-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
 }
 
 /* Tablets */
@@ -1036,6 +1120,16 @@ const getAnnouncementImageUrl = (imageName) => {
     font-size: 16px;
   }
   
+  .leaderboard-tabs {
+    gap: 4px;
+    margin-top: 8px;
+  }
+  
+  .tab-button {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  
   .user-rank {
     font-size: 13px;
     padding: 6px 10px;
@@ -1134,6 +1228,16 @@ const getAnnouncementImageUrl = (imageName) => {
   
   .leaderboard-subtitle {
     font-size: 14px;
+  }
+  
+  .leaderboard-tabs {
+    gap: 3px;
+    margin-top: 6px;
+  }
+  
+  .tab-button {
+    padding: 4px 8px;
+    font-size: 11px;
   }
   
   .user-rank {
@@ -1326,6 +1430,16 @@ const getAnnouncementImageUrl = (imageName) => {
   
   .announcement-preview-meta {
     font-size: 8px;
+  }
+  
+  .leaderboard-tabs {
+    gap: 2px;
+    margin-top: 4px;
+  }
+  
+  .tab-button {
+    padding: 3px 6px;
+    font-size: 10px;
   }
 }
 
@@ -1537,6 +1651,26 @@ const getAnnouncementImageUrl = (imageName) => {
   color: #cccccc;
 }
 
+.dark-mode .tab-button {
+  background: rgba(26, 26, 26, 0.8);
+  border-color: #555555;
+  color: #cccccc;
+}
+
+.dark-mode .tab-button:hover {
+  background: rgba(42, 42, 42, 0.9);
+}
+
+.dark-mode .tab-button.active {
+  background: var(--button-bg);
+  color: var(--button-text);
+}
+
+.dark-mode .tab-button.active.apocalypse-tab {
+  background: linear-gradient(135deg, #ff6666, #cc3333);
+  color: #ffffff;
+}
+
 .dark-mode .announcement-preview-item {
   background: rgba(26, 26, 26, 0.8);
   border-color: #555555;
@@ -1633,6 +1767,142 @@ const getAnnouncementImageUrl = (imageName) => {
 .apocalypse-mode .footer-info {
   background: rgba(42, 10, 10, 0.5);
   border-color: #ff6666;
+}
+
+.apocalypse-mode .tab-button.active.apocalypse-tab {
+  background: linear-gradient(135deg, #ff6666, #cc3333);
+  border-color: #ff6666;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(255, 102, 102, 0.6);
+}
+
+/* Amélioration de la lisibilité en mode apocalypse */
+.apocalypse-mode .leaderboard-item {
+  background: rgba(42, 10, 10, 0.8);
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .leaderboard-item:hover {
+  background: rgba(60, 15, 15, 0.9);
+  border-color: #ff8888;
+}
+
+.apocalypse-mode .leaderboard-item.current-user {
+  background: rgba(100, 50, 50, 0.9);
+  border-color: #ff8888;
+  box-shadow: 0 2px 8px rgba(255, 136, 136, 0.3);
+}
+
+.apocalypse-mode .player-name {
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.apocalypse-mode .player-username {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .last-seen {
+  color: #cc8888;
+}
+
+.apocalypse-mode .player-value {
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.apocalypse-mode .user-rank {
+  background: rgba(255, 102, 102, 0.2);
+  color: #ffffff;
+  border: 1px solid #ff6666;
+}
+
+.apocalypse-mode .user-value {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .tab-button {
+  background: rgba(42, 10, 10, 0.8);
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .tab-button:hover {
+  background: rgba(60, 15, 15, 0.9);
+  color: #ffffff;
+}
+
+.apocalypse-mode .tab-button.active {
+  background: linear-gradient(135deg, #ff6666, #cc3333);
+  color: #ffffff;
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .announcement-preview-item {
+  background: rgba(42, 10, 10, 0.8);
+  border-color: #ff6666;
+}
+
+.apocalypse-mode .announcement-preview-item:hover {
+  background: rgba(60, 15, 15, 0.9);
+  border-color: #ff8888;
+}
+
+.apocalypse-mode .announcement-preview-title {
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.apocalypse-mode .announcement-preview-summary {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .announcement-preview-meta {
+  color: #cc8888;
+}
+
+.apocalypse-mode .announcement-preview-date,
+.apocalypse-mode .announcement-preview-version {
+  background: rgba(255, 102, 102, 0.2);
+  color: #ffffff;
+  border: 1px solid #ff6666;
+}
+
+.apocalypse-mode .show-more-button {
+  background: linear-gradient(135deg, #662222, #441111);
+  border-color: #ff6666;
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.apocalypse-mode .show-more-button:hover {
+  background: linear-gradient(135deg, #883333, #662222);
+  box-shadow: 0 4px 12px rgba(136, 51, 51, 0.3);
+}
+
+.apocalypse-mode .footer-info {
+  background: rgba(42, 10, 10, 0.5);
+  border-color: #ff6666;
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .meta-info {
+  color: #ffaaaa;
+}
+
+.apocalypse-mode .popup-title {
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.apocalypse-mode .user-rank-popup {
+  background: rgba(255, 102, 102, 0.2);
+  color: #ffffff;
+  border: 1px solid #ff6666;
+}
+
+.apocalypse-mode .user-value-popup {
+  color: #ffaaaa;
 }
 
 </style>
