@@ -1,6 +1,6 @@
 <template>
   <div
-    :class="['poule-card', espece?.rarete || 'commune', { grisee: !poule.owned }]"
+    :class="['poule-card', espece?.rarete || 'commune', { grisee: !poule.owned }, { 'apocalypse-mode': isApocalypseMode }]"
   >
     <template v-if="espece && poule.owned">
       <!-- Badges coins en bordure de carte -->
@@ -73,6 +73,10 @@ const { isInTeam } = usePlayer()
 const { talents, talentLevelUpgradeCost } = useGameData()
 const { getEspeceInfo } = useGameData()
 const inTeam = computed(() => isInTeam(props.poule?.especeId))
+
+// Détecter le mode apocalypse
+const { player } = usePlayer()
+const isApocalypseMode = computed(() => player.value?.apocalypse || false)
 
 // Niveau actuel et maximum du talent
 const currentTalentLevel = computed(() => getTalentLevel(props.poule))
@@ -452,63 +456,63 @@ function formatGroupe(especeId) {
 }
 
 /* Mode APOCALYPSE */
-:deep(.apocalypse-mode) .poule-card {
+.apocalypse-mode .poule-card {
   background: #2d1b1b !important;
   border-color: #ff4444 !important;
   color: #ffcccc !important;
 }
 
-:deep(.apocalypse-mode) .poule-card .info {
+.apocalypse-mode .poule-card .info {
   color: #ffaaaa !important;
 }
 
-:deep(.apocalypse-mode) .poule-card.commune {
+.apocalypse-mode .poule-card.commune {
   border-color: #ff4444 !important;
 }
-:deep(.apocalypse-mode) .poule-card.rare {
+.apocalypse-mode .poule-card.rare {
   border-color: #ff6b6b !important;
 }
-:deep(.apocalypse-mode) .poule-card.epique {
+.apocalypse-mode .poule-card.epique {
   border-color: #ff8888 !important;
 }
-:deep(.apocalypse-mode) .poule-card.legendaire {
+.apocalypse-mode .poule-card.legendaire {
   border-color: #ffaa44 !important;
 }
 
-:deep(.apocalypse-mode) .poule-card.commune .badge-team { background: #ff4444 !important; border: 2px solid #ff4444 !important; }
-:deep(.apocalypse-mode) .poule-card.rare .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; }
-:deep(.apocalypse-mode) .poule-card.epique .badge-team { background: #ff8888 !important; border: 2px solid #ff8888 !important; }
-:deep(.apocalypse-mode) .poule-card.legendaire .badge-team { background: #ffaa44 !important; border: 2px solid #ffaa44 !important; color: #ffffff !important; }
+.apocalypse-mode .poule-card.commune .badge-team { background: #ff4444 !important; border: 2px solid #ff4444 !important; }
+.apocalypse-mode .poule-card.rare .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; }
+.apocalypse-mode .poule-card.epique .badge-team { background: #ff8888 !important; border: 2px solid #ff8888 !important; }
+.apocalypse-mode .poule-card.legendaire .badge-team { background: #ffaa44 !important; border: 2px solid #ffaa44 !important; color: #ffffff !important; }
 
-:deep(.apocalypse-mode) .poule-card .quantite {
+.apocalypse-mode .poule-card .quantite {
   color: #ffaaaa !important;
 }
 
-:deep(.apocalypse-mode) .poule-card.commune .rarete {
+.apocalypse-mode .poule-card.commune .rarete {
   background: rgba(255, 68, 68, 0.3) !important;
   color: #ffaaaa !important;
 }
-:deep(.apocalypse-mode) .poule-card.rare .rarete {
+.apocalypse-mode .poule-card.rare .rarete {
   background: rgba(255, 107, 107, 0.3) !important;
   color: #ffcccc !important;
 }
-:deep(.apocalypse-mode) .poule-card.epique .rarete {
+.apocalypse-mode .poule-card.epique .rarete {
   background: rgba(255, 136, 136, 0.3) !important;
   color: #ffdddd !important;
 }
-:deep(.apocalypse-mode) .poule-card.legendaire .rarete {
+.apocalypse-mode .poule-card.legendaire .rarete {
   background: rgba(255, 170, 68, 0.3) !important;
   color: #ffeedd !important;
 }
 
 /* Badge NOUVEAU en mode apocalypse */
-:deep(.apocalypse-mode) .new-badge {
+.apocalypse-mode .new-badge {
   background: #ff4444 !important;
   color: #ffffff !important;
 }
 
 /* Badge upgrade en mode apocalypse */
-:deep(.apocalypse-mode) .badge-upgrade {
+.apocalypse-mode .badge-upgrade {
   background: linear-gradient(135deg, #ff6666 0%, #cc3333 100%) !important;
   border: 2px solid #ff4444 !important;
 }

@@ -49,10 +49,11 @@ async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
       const ownedArtifacts = box.category === 'artifacts' ? 
         (user.artifacts || []).map(a => a.artifactId) : []
       
-
+      // Vérifier si le joueur est en mode apocalypse
+      const isApocalypse = user.apocalypse || false
 
       // Simuler l'ouverture de boîte
-      const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts)
+      const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts, isApocalypse)
 
       // Décrémenter le coût d'abord
       const costUpdate = await User.findByIdAndUpdate(
@@ -489,11 +490,14 @@ export async function openBoxMultiple(req, res) {
     const ownedChickens = (user.poulesPossedees || []).map(poule => poule.especeId)
     const ownedArtifacts = box.category === 'artifacts' ? 
       (user.artifacts || []).map(a => a.artifactId) : []
+    
+    // Vérifier si le joueur est en mode apocalypse
+    const isApocalypse = user.apocalypse || false
 
     // Ouvrir toutes les boîtes et agréger les résultats
     const allResults = []
     for (let i = 0; i < count; i++) {
-      const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts)
+      const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts, isApocalypse)
       allResults.push(...results)
     }
 
@@ -561,7 +565,7 @@ export async function openBoxMultiple(req, res) {
 }
 
 // Fonction pour simuler l'ouverture d'une boîte avec probabilités
-function simulateBoxOpening(box, ownedChickens, ownedArtifacts = []) {
+function simulateBoxOpening(box, ownedChickens, ownedArtifacts = [], isApocalypse = false) {
   const groups = Array.isArray(box.dropGroups) ? box.dropGroups : []
   if (!groups.length) return []
 
@@ -674,6 +678,19 @@ function simulateBoxOpening(box, ownedChickens, ownedArtifacts = []) {
           groupName: selectedGroup.name,
           rarity: especeData[selectedChicken]?.rarete || 'commune'
         })
+      }
+    }
+  }
+
+  // Appliquer la malédiction de l'apocalypse : 20% de chance de remplacer chaque récompense par une tomate pourrie
+  if (isApocalypse) {
+    for (let i = 0; i < results.length; i++) {
+      if (Math.random() < 0.20) { // 20% de chance
+        results[i] = {
+          type: 'item',
+          itemId: 'rotten_tomato',
+          amount: 1
+        }
       }
     }
   }

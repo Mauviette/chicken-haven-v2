@@ -1,5 +1,5 @@
 <template>
-  <div v-if="showResults" class="popup-overlay" @click.self="closeResults">
+  <div v-if="showResults" :class="['popup-overlay', { 'apocalypse-mode': isApocalypseMode }]" @click.self="closeResults">
     <div class="popup-container">
       <div class="popup-content">
         <button class="close-btn" @click="closeResults">✕</button>
@@ -63,13 +63,14 @@
               <!-- Item/Ressource -->
               <template v-else-if="result.type === 'item'">
                 <div class="result-icon item-icon">
+                  <span v-if="result.amount > 1" class="count-badge">x{{ result.amount }}</span>
                   <div class="item-display">
                     {{ getItemIcon(result.itemId) }}
                   </div>
                 </div>
                 
                 <div class="result-info">
-                  <h4>{{ result.amount }} {{ getItemName(result.itemId).toLowerCase() }}</h4>
+                  <h4>{{ getItemDisplayName(result) }}</h4>
                 </div>
               </template>
             </div>
@@ -92,6 +93,7 @@ import ActionButton from './ActionButton.vue'
 import Tooltip from './Tooltip.vue'
 import { usePoules } from '@/composables/usePoules'
 import { useSound } from '@/composables/useSound'
+import { usePlayer } from '@/composables/usePlayer'
 
 const props = defineProps({
   showResults: {
@@ -111,6 +113,10 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 const { getImage, hiddenImage, poules, getTalentEffectSync } = usePoules()
 const { newItem } = useSound()
+const { player } = usePlayer()
+
+// Détecter le mode apocalypse
+const isApocalypseMode = computed(() => player.value?.apocalypse || false)
 
 // Jouer le son pour les nouveaux éléments quand le popup s'ouvre
 watch(() => props.showResults, (show) => {
@@ -150,7 +156,8 @@ function getItemIcon(itemId) {
     production_token: '⚙️',
     wild_token: '🃏',
     chest_key: '🗝️',
-    mining_token: '🪨'
+    mining_token: '🪨',
+    rotten_tomato: '🍅'
   }
   return icons[itemId] || '❓'
 }
@@ -162,9 +169,20 @@ function getItemName(itemId) {
     production_token: 'Jetons de production',
     wild_token: 'Jetons joker',
     chest_key: 'Clés à coffre',
-    mining_token: 'Jetons de minage'
+    mining_token: 'Jetons de minage',
+    rotten_tomato: 'Tomate pourrie'
   }
   return names[itemId] || 'Objet inconnu'
+}
+
+function getItemDisplayName(result) {
+  const name = getItemName(result.itemId)
+  if (result.itemId === 'rotten_tomato') {
+    // Pour les tomates pourries, gérer le pluriel
+    return result.amount > 1 ? 'Tomates pourries' : 'Tomate pourrie'
+  }
+  // Pour les autres items, afficher normalement (mais comme on utilise le badge count, amount sera toujours 1)
+  return result.amount > 1 ? `${result.amount} ${name.toLowerCase()}` : name
 }
 
 function onImageError(event) {
