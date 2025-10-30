@@ -745,6 +745,8 @@ function handleClose() {
             }
             // Déclencher la vérification automatique des succès
             window.dispatchEvent(new CustomEvent('mining-action'))
+            // Déclencher la vérification automatique des quêtes
+            window.dispatchEvent(new CustomEvent('quest-action'))
             // Mettre à jour le flag global mining
             if (typeof window !== 'undefined') {
               window.__miningActive = false

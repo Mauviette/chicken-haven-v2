@@ -30,6 +30,8 @@ export function useBoxes() {
 
     try {
       const result = await apiPost(`/api/boxes/${boxId}/open`)
+      // Déclencher la vérification automatique des quêtes après ouverture de boîte
+      window.dispatchEvent(new CustomEvent('quest-action'))
       return result
     } catch (err) {
       error.value = err.message
@@ -47,6 +49,8 @@ export function useBoxes() {
 
     try {
       const result = await apiPost(`/api/boxes/${boxId}/open-multiple`, { count })
+      // Déclencher la vérification automatique des quêtes après ouverture de boîtes
+      window.dispatchEvent(new CustomEvent('quest-action'))
       return result
     } catch (err) {
       error.value = err.message

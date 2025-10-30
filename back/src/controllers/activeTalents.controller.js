@@ -3,7 +3,8 @@
 
 import User from '../models/User.js'
 import { talentsData, especeData } from '../data/sharedGameData.js'
-import { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme } from './egg.controller.js'
+import { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme, runTalentStorage, runTalentIncome } from './egg.controller.js'
+import { updateQuestProgress } from './quests.controller.js'
 
 function nowMs() { return Date.now() }
 function msToDate(ms) { return new Date(ms) }
@@ -139,6 +140,9 @@ export async function activateTalent(req, res) {
         return res.status(400).json({ error: 'En recharge', readyInMs: rem })
       }
 
+      // Mettre à jour le progrès des quêtes
+      await updateQuestProgress(req.userId, 'chicken_abilities_used', 1)
+
       return res.json({ success: true, talent: talentName, applied: { type: 'stat_multiplier', stat: 'intelligence', multiplier, duration }, cooldownMs: cd })
     }
 
@@ -184,6 +188,9 @@ export async function activateTalent(req, res) {
         const rem = Math.max(0, until - now)
         return res.status(400).json({ error: 'En recharge', readyInMs: rem })
       }
+
+      // Mettre à jour le progrès des quêtes
+      await updateQuestProgress(req.userId, 'chicken_abilities_used', 1)
 
       return res.json({ success: true, talent: talentName, applied: { type: 'buff', income_multiplier: amount, duration }, cooldownMs: cd })
     }
@@ -231,7 +238,82 @@ export async function activateTalent(req, res) {
         return res.status(400).json({ error: 'En recharge', readyInMs: rem })
       }
 
+      // Mettre à jour le progrès des quêtes
+      await updateQuestProgress(req.userId, 'chicken_abilities_used', 1)
+
       return res.json({ success: true, talent: talentName, applied: { type: 'buff', storage_multiplier: amount, duration }, cooldownMs: cd })
+    }
+
+    if (talentName === 'Temporelle') {
+      const calc = talentsData?.[talentName]?.calculation
+      const baseCooldown = Number(calc?.cooldown_ms || 60000)
+      const cd = getCooldownWithRapide(user, baseCooldown)
+
+      const slots2 = user.team?.slots || []
+      const idTemporelle = slots2.find(s => especeData[s?.especeId]?.talent === 'Temporelle')?.especeId
+      const own = owned.find(p => p.especeId === idTemporelle)
+      const niveau = Math.max(1, Number(own?.niveauTalent) || 1)
+      const effect = Array.isArray(calc?.effects) ? calc.effects.find(e => e.type === 'time_stop_buff') : null
+      const duration = Number(effect?.duration || 5000)
+      const clickMultiplierBase = Number(evalExpr(effect?.click_multiplier_base, { niveau })) || 0.25
+      const clickPenaltyPerClick = Number(effect?.click_penalty_per_click || 0.001)
+
+      // Calculer effectiveIncome au moment de l'activation pour le figer pendant time_stop
+      const now = new Date()
+      const lastClick = user.clickableEgg?.lastClick || now
+      const baseIncome = user.clickableEgg?.income || 1
+      const maxIncome = user.clickableEgg?.maxIncome || 30
+      
+      const storageBonus = runTalentStorage(user)
+      const buffMultipliers = { income: 1, storage: 1, teamStat: { intelligence: 1, energie: 1, charisme: 1 } } // Pas de buffs actifs au moment de l'activation
+      
+      const baseMaxIncome = maxIncome + storageBonus.storageBonus
+      const effectiveMaxIncome = Math.max(0, baseMaxIncome * storageBonus.storageMultiplier * buffMultipliers.storage)
+      
+      const incomeBonus = runTalentIncome(user, effectiveMaxIncome)
+      const frozenEffectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
+
+      const buffObj = {
+        origin: 'Talent Temporelle',
+        buff_type: 'time_stop',
+        lasts_until: new Date(now.getTime() + duration),
+        hidden: true,
+        buff: { 
+          operation: 'time_stop', 
+          click_multiplier_base: clickMultiplierBase,
+          click_penalty_per_click: clickPenaltyPerClick,
+          click_count: 0,
+          frozen_effective_income: frozenEffectiveIncome
+        }
+      }
+
+      const updated = await User.findOneAndUpdate(
+        {
+          _id: user._id,
+          $or: [
+            { [`cooldowns.${key}`]: { $exists: false } },
+            { [`cooldowns.${key}`]: { $lte: new Date() } }
+          ]
+        },
+        {
+          $set: { [`cooldowns.${key}`]: msToDate(now.getTime() + cd) },
+          $push: { buffs: buffObj },
+          $inc: { 'achievements.progress.chickenAbilitiesUsed': 1 }
+        },
+        { new: true }
+      )
+
+      if (!updated) {
+        const fresh = await User.findById(user._id).lean()
+        const until = fresh?.cooldowns?.[key] ? new Date(fresh.cooldowns[key]).getTime() : 0
+        const rem = Math.max(0, until - now.getTime())
+        return res.status(400).json({ error: 'En recharge', readyInMs: rem })
+      }
+
+      // Mettre à jour le progrès des quêtes
+      await updateQuestProgress(req.userId, 'chicken_abilities_used', 1)
+
+      return res.json({ success: true, talent: talentName, applied: { type: 'time_stop', duration, click_multiplier_base: clickMultiplierBase, click_penalty_per_click: clickPenaltyPerClick }, cooldownMs: cd })
     }
 
     return res.status(400).json({ error: 'Talent non activable ou non implémenté' })

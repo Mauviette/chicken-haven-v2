@@ -1,5 +1,6 @@
 import User from '../models/User.js'
 import { updateAchievementProgress } from './achievements.controller.js'
+import { updateQuestProgress } from './quests.controller.js'
 import { especeData, talentsData } from '../data/sharedGameData.js'
 import { saveWithRetry } from '../utils/mongoUtils.js'
 
@@ -252,7 +253,7 @@ function computeActiveBuffMultipliers(user) {
 }
 
 // Calcule les bonus d'income par seconde de tous les talents actifs
-function runTalentIncome(user) {
+export function runTalentIncome(user, stockageMax) {
   const slots = user?.team?.slots || []
   const owned = user?.poulesPossedees || []
   
@@ -282,7 +283,8 @@ function runTalentIncome(user) {
       niveau: niveauTalent, 
       teamEnergy, 
       teamIntelligence,
-      teamCharisme
+      teamCharisme,
+      stockageMax
     }
 
     // Chercher tous les effets income_bonus_per_second sur eggs
@@ -483,14 +485,17 @@ export async function getEggStatus(req, res) {
     console.log('  maxIncome:', maxIncome)*/
 
     // Talents passifs
-    const incomeBonus = runTalentIncome(user)
     const storageBonus = runTalentStorage(user)
     
     // Appliquer les buffs temporaires
     const buffMultipliers = computeActiveBuffMultipliers(user)
     
+    const baseMaxIncome = maxIncome + storageBonus.storageBonus
+    const effectiveMaxIncome = Math.max(0, baseMaxIncome * storageBonus.storageMultiplier * buffMultipliers.storage)
+    
+    const incomeBonus = runTalentIncome(user, effectiveMaxIncome)
+    
     const effectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
-    const effectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier * buffMultipliers.storage)
     
     /*console.log(`  income talents: totalBonus=${incomeBonus.bonusPerSecond}`)
     console.log(`  storage talents: totalBonus=${storageBonus.storageBonus}`)
@@ -498,8 +503,19 @@ export async function getEggStatus(req, res) {
 
     // Calculer les gains actuels basés sur le temps écoulé
     const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
-    const currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)    /*console.log('  timeDiffSeconds:', timeDiffSeconds)
-    console.log('  currentStocked:', currentStocked)*/
+    let currentStocked = Math.min(timeDiffSeconds * effectiveIncome, effectiveMaxIncome)
+    
+    // Vérifier si un buff time_stop est actif
+    const activeBuffs = user.buffs || []
+    const timeStopBuff = activeBuffs.find(buff => 
+      buff.buff_type === 'time_stop' && 
+      new Date(buff.lasts_until) > now
+    )
+    
+    // Pendant time_stop, utiliser la valeur figée stockée dans le buff
+    if (timeStopBuff && timeStopBuff.buff?.frozen_current_stocked != null) {
+      currentStocked = timeStopBuff.buff.frozen_current_stocked
+    }
 
     res.json({
       income: effectiveIncome,
@@ -532,25 +548,123 @@ export async function clickEgg(req, res) {
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
     const now = new Date()
+    
+    // Vérifier si c'est un batch de clics time_stop
+    if (req.body.timeStopBatch) {
+      const { totalEggs, clickCount } = req.body.timeStopBatch
+      
+      // Vérifier si un buff time_stop est actif
+      const activeBuffs = user.buffs || []
+      const timeStopBuff = activeBuffs.find(buff => 
+        buff.buff_type === 'time_stop' && 
+        new Date(buff.lasts_until) > now
+      )
+      
+      if (!timeStopBuff) {
+        return res.status(400).json({ error: 'Buff time_stop non actif' })
+      }
+      
+      // Mettre à jour les ressources
+      const currentEggs = user.resources?.eggs || 0
+      user.resources = user.resources || {}
+      user.resources.eggs = currentEggs + totalEggs
+      
+      // Mettre à jour le compteur de clics dans le buff
+      timeStopBuff.buff.click_count = (timeStopBuff.buff.click_count || 0) + clickCount
+      
+      await saveWithRetry(user)
+      
+      // Mettre à jour le progrès des succès et quêtes
+      await updateAchievementProgress(req.userId, 'increment', {
+        totalEggsCollected: totalEggs
+      })
+      await updateQuestProgress(req.userId, 'eggs_collected', totalEggs)
+      
+      return res.json({
+        message: 'Batch time_stop réussi',
+        eggsGained: totalEggs,
+        totalEggs: user.resources.eggs,
+        timeStopBatch: true,
+        clickCount: timeStopBuff.buff.click_count
+      })
+    }
+    
     const lastClick = user.clickableEgg?.lastClick
     const baseIncome = user.clickableEgg?.income
     const maxIncome = user.clickableEgg?.maxIncome
 
     if (lastClick == null || baseIncome == null || maxIncome == null) return res.status(404).json({ error: 'Données incomplètes' })
     
-    // Calculer les gains actuels
+    // Vérifier si un buff time_stop est actif
+    const activeBuffs = user.buffs || []
+    const timeStopBuff = activeBuffs.find(buff => 
+      buff.buff_type === 'time_stop' && 
+      new Date(buff.lasts_until) > now
+    )
+
+    if (timeStopBuff) {
+      // Logique spéciale pour le buff time_stop
+      const clickMultiplierBase = timeStopBuff.buff?.click_multiplier_base || 0.25
+      const clickPenaltyPerClick = timeStopBuff.buff?.click_penalty_per_click || 0.001
+      const clickCount = timeStopBuff.buff?.click_count || 0
+      
+      // Calculer le multiplicateur actuel avec pénalité
+      const currentMultiplier = Math.max(0, clickMultiplierBase - (clickCount * clickPenaltyPerClick))
+      
+      // Calculer les œufs gagnés
+      const storageBonus = runTalentStorage(user)
+      const buffMultipliers = computeActiveBuffMultipliers(user)
+      const baseMaxIncome = maxIncome + storageBonus.storageBonus
+      const effectiveMaxIncome = Math.max(0, baseMaxIncome * storageBonus.storageMultiplier * buffMultipliers.storage)
+      
+      const incomeBonus = runTalentIncome(user, effectiveMaxIncome)
+      const baseEffectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond))
+      const effectiveIncomePerSecond = baseEffectiveIncome * buffMultipliers.income
+      
+      const eggsGained = Math.floor(effectiveIncomePerSecond * currentMultiplier)
+      
+      // Mettre à jour les ressources
+      const currentEggs = user.resources?.eggs || 0
+      user.resources = user.resources || {}
+      user.resources.eggs = currentEggs + eggsGained
+      
+      // Incrémenter le compteur de clics dans le buff
+      timeStopBuff.buff.click_count = clickCount + 1
+      
+      await saveWithRetry(user)
+
+      // Mettre à jour le progrès des succès et quêtes
+      await updateAchievementProgress(req.userId, 'increment', {
+        totalEggsCollected: eggsGained
+      })
+      await updateQuestProgress(req.userId, 'eggs_collected', eggsGained)
+
+      return res.json({
+        message: 'Clic time_stop réussi',
+        eggsGained,
+        totalEggs: user.resources.eggs,
+        timeStopClick: true,
+        clickMultiplier: currentMultiplier,
+        clickCount: clickCount + 1
+      })
+    }
+    
+    // Logique normale pour les clics sans time_stop
   const timeDiffSeconds = Math.floor((now - lastClick) / 1000)
     // Talents passifs
-    const incomeBonus = runTalentIncome(user)
-  const storageBonus = runTalentStorage(user)
+    const storageBonus = runTalentStorage(user)
     
     // Appliquer les buffs temporaires
     const buffMultipliers = computeActiveBuffMultipliers(user)
     
+    const baseMaxIncome = maxIncome + storageBonus.storageBonus
+    const baseEffectiveMaxIncome = Math.max(0, baseMaxIncome * storageBonus.storageMultiplier)
+    
+    const incomeBonus = runTalentIncome(user, baseEffectiveMaxIncome * buffMultipliers.storage)
+    
     // Calculer les taux effectifs SANS les buffs temporaires pour les gains accumulés
     // Les buffs temporaires n'affectent que les gains futurs, pas les gains passés
     const baseEffectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond))
-  const baseEffectiveMaxIncome = Math.max(0, (maxIncome + storageBonus.storageBonus) * storageBonus.storageMultiplier)
     
     // Calculer les taux affichés AVEC les buffs temporaires
     const displayedIncome = Math.max(0, baseEffectiveIncome * buffMultipliers.income)
@@ -571,8 +685,8 @@ export async function clickEgg(req, res) {
     //  return res.status(400).json({ error: 'Income insuffisant pour cliquer' })
     //}
 
-    // Vérifier s'il y a des gains à collecter
-    if (currentStocked < 1) {
+    // Vérifier s'il y a des gains à collecter (sauf pendant time_stop)
+    if (currentStocked < 1 && !timeStopBuff) {
       console.log('[Egg] clickEgg: Pas assez de gains à collecter (currentStocked < 1)')
       return res.status(400).json({ error: 'Pas assez de gains à collecter' })
     }
@@ -605,7 +719,7 @@ export async function clickEgg(req, res) {
         
         const outcome = runTalentWithConditions(user, 'Chanceuse', { 
           eggsGained: finalEggsGained, 
-          stockageMax: effectiveMaxIncome 
+          stockageMax: displayedMaxIncome 
         })
 
         chanceuse.procChance = outcome.procChance
@@ -670,6 +784,10 @@ export async function clickEgg(req, res) {
     await updateAchievementProgress(req.userId, 'max', {
       maxEggsInOneClick: eggsThisClickForMax
     })
+
+    // Mettre à jour le progrès des quêtes
+    await updateQuestProgress(req.userId, 'eggs_collected', finalEggsGained)
+    await updateQuestProgress(req.userId, 'max_eggs_in_click', eggsThisClickForMax)
 
     res.json({
       message: 'Œuf cliqué avec succès',

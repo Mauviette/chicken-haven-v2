@@ -172,6 +172,19 @@ const UserSchema = new mongoose.Schema({
     }
   },
 
+  quests: {
+    type: mongoose.Schema.Types.Mixed,
+    default: function() {
+      return {
+        activeQuest: null, // ID de la quête en cours ou null
+        completedQuests: [], // Liste des quêtes terminées
+        questProgress: {}, // Progrès par quête { questId: { stepId: { challengeType: currentValue } } }
+        initialValues: {}, // Valeurs initiales au moment de l'acceptation { questId: { challengeType: value } }
+        abandonedQuests: {} // Progrès sauvegardé des quêtes abandonnées { questId: { questProgress, initialValues, lastAbandoned } }
+      }
+    }
+  },
+
   team: {
     maxSlots: { type: Number, default: 1, required: true },
     slots: [

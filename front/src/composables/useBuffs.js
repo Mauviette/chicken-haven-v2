@@ -48,7 +48,7 @@ export function useBuffs() {
     return buffs.value.filter(buff => {
       if (!buff.lasts_until) return false
       const expiresAt = new Date(buff.lasts_until).getTime()
-      return expiresAt > (now + 100)
+      return expiresAt > (now + 100) && !buff.hidden
     })
   })
   // Formate l'effet court d'un buff pour affichage sous le badge
@@ -83,6 +83,8 @@ export function useBuffs() {
         emoji = '⚡'; break
       case 'team_stat_charisme':
         emoji = '✨'; break
+      case 'time_stop':
+        emoji = '⏰'; break
       default:
         emoji = getBuffIcon(buff)
     }
@@ -149,6 +151,8 @@ export function useBuffs() {
           return "Énergie d'équipe"
         case 'team_stat_charisme':
           return "Charisme d'équipe"
+        case 'time_stop':
+          return 'Arrêt du temps'
         default:
           return type
             .split('_')
@@ -189,6 +193,8 @@ export function useBuffs() {
         return '⚡'
       case 'team_stat_charisme':
         return '✨'
+      case 'time_stop':
+        return '⏰'
       default:
         return '✨'
     }
@@ -219,6 +225,8 @@ export function useBuffs() {
         return { bg: '#f2d7d9', border: '#d9a7aa' }
       case 'income_storage_multiplier':
         return { bg: '#c68c53', border: '#8a5a2b' }
+      case 'time_stop':
+        return { bg: '#9370db', border: '#663399' } // Violet pour le time_stop
       default:
         return { bg: '#9b59b6', border: '#8e44ad' }
     }

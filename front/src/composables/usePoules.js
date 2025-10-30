@@ -233,6 +233,9 @@ export function usePoules() {
       // Émettre un événement pour le système d'achievements
       window.dispatchEvent(new CustomEvent('chicken-upgraded', { detail: { especeId: poule.especeId } }))
       
+      // Déclencher la vérification automatique des quêtes
+      window.dispatchEvent(new CustomEvent('quest-action'))
+      
       // Toast avec nom de la poule et niveau
       const pouleName = getNom(poule.especeId)
       const newLevel = data.poule?.niveauTalent || (poule.niveauTalent + 1)

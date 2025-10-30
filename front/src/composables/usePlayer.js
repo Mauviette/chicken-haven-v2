@@ -42,9 +42,9 @@ function clearPlayerData() {
 
 export function usePlayer() {
   // Écouter les événements de déconnexion pour nettoyer les données
-  // Seulement si on est dans un contexte de composant (avec getCurrentInstance)
-  if (typeof getCurrentInstance === 'function' && getCurrentInstance()) {
-    onMounted(() => {
+  // Utiliser une approche sans onMounted pour éviter les problèmes de contexte
+  const setupEventListeners = () => {
+    if (typeof window !== 'undefined') {
       const handleLogout = () => {
         clearPlayerData()
       }
@@ -63,17 +63,20 @@ export function usePlayer() {
         }
       }
       
-      if (typeof window !== 'undefined') {
-        window.addEventListener('auth-logout', handleLogout)
-        window.addEventListener('mining-game-over', handleMiningGameOver)
-        
-        onBeforeUnmount(() => {
-          window.removeEventListener('auth-logout', handleLogout)
-          window.removeEventListener('mining-game-over', handleMiningGameOver)
-        })
+      window.addEventListener('auth-logout', handleLogout)
+      window.addEventListener('mining-game-over', handleMiningGameOver)
+      
+      // Retourner une fonction de nettoyage
+      return () => {
+        window.removeEventListener('auth-logout', handleLogout)
+        window.removeEventListener('mining-game-over', handleMiningGameOver)
       }
-    })
+    }
+    return () => {} // Fonction de nettoyage vide si pas de window
   }
+
+  // Appeler setupEventListeners et stocker la fonction de nettoyage
+  const cleanup = setupEventListeners()
 
   // Initialiser les données du joueur si pas déjà fait
   if (!player.value && typeof localStorage !== 'undefined' && localStorage.getItem('token')) {

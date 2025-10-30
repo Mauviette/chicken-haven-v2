@@ -422,18 +422,45 @@ const closeFullLeaderboard = () => {
 const fullLeaderboardData = computed(() => {
   if (!showFullLeaderboard.value) return []
   
+  let players = []
   switch (showFullLeaderboard.value) {
-    case 'totalEggs': return totalEggsLeaderboard.value || []
-    case 'maxEggs': return maxEggsLeaderboard.value || []
-    case 'chickens': return chickensLeaderboard.value || []
+    case 'totalEggs': players = totalEggsLeaderboard.value || []; break
+    case 'maxEggs': players = maxEggsLeaderboard.value || []; break
+    case 'chickens': players = chickensLeaderboard.value || []; break
     default: return []
   }
+  
+  // Recalculer les rangs pour tous les joueurs
+  return players.map((player, index) => ({
+    ...player,
+    rank: index + 1
+  }))
 })
 
-// Computed pour limiter les leaderboards à 10 éléments
-const limitedTotalEggs = computed(() => totalEggsLeaderboard.value?.slice(0, 10) || [])
-const limitedMaxEggs = computed(() => maxEggsLeaderboard.value?.slice(0, 10) || [])
-const limitedChickens = computed(() => chickensLeaderboard.value?.slice(0, 10) || [])
+// Computed pour limiter les leaderboards à 10 éléments avec rangs recalculés
+const limitedTotalEggs = computed(() => {
+  const players = totalEggsLeaderboard.value?.slice(0, 10) || []
+  return players.map((player, index) => ({
+    ...player,
+    rank: index + 1
+  }))
+})
+
+const limitedMaxEggs = computed(() => {
+  const players = maxEggsLeaderboard.value?.slice(0, 10) || []
+  return players.map((player, index) => ({
+    ...player,
+    rank: index + 1
+  }))
+})
+
+const limitedChickens = computed(() => {
+  const players = chickensLeaderboard.value?.slice(0, 10) || []
+  return players.map((player, index) => ({
+    ...player,
+    rank: index + 1
+  }))
+})
 
 // Fonctions pour obtenir le titre du popup
 const getLeaderboardTitle = (type) => {

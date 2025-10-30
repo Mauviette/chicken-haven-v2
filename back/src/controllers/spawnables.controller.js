@@ -491,11 +491,9 @@ export async function clickSpawnableObject(req, res) {
       }
     }
 
-    res.json({
-      success: true,
-      reward: appliedReward,
-      objectId,
-      spawnerId
+    // Incrémenter le compteur de spawnables cliqués pour les succès
+    await updateAchievementProgress(req.userId, 'increment', {
+      spawnablesClicked: 1
     })
 
   } catch (error) {

@@ -98,6 +98,9 @@ export function useEgg() {
         // Notifier le système de succès
         try { window.dispatchEvent(new CustomEvent('egg-clicked', { detail: { eggsGained: data.eggsGained } })) } catch (_) {}
 
+        // Déclencher la vérification automatique des quêtes
+        window.dispatchEvent(new CustomEvent('quest-action'))
+
         // Retourner la réponse complète (incl. chanceuse)
         return data
       }

@@ -160,6 +160,26 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'epique',
     stats: { intelligence: 2, energie: 2, charisme: 5 }
+  },
+  'oie': {
+    nom: 'Oie',
+    description: "Une oie majestueuse qui optimise la production en fonction du stockage disponible.",
+    image: 'chickens/goose/basic.png',
+    talent: 'Optimisatrice',
+    groupe: 'fondamental',
+    categorie: 'eclosion',
+    rarete: 'legendaire',
+    stats: { intelligence: 4, energie: 3, charisme: 3 }
+  },
+  'pouletaro': {
+    nom: 'Poule\'taro',
+    description: "Une poule mystérieuse capable de manipuler le temps pour maximiser la production. De mieux en mieux...",
+    image: 'chickens/pouletaro/basic.png',
+    talent: 'Temporelle',
+    groupe: 'discret',
+    categorie: 'eclosion',
+    rarete: 'legendaire',
+    stats: { intelligence: 5, energie: 2, charisme: 3 }
   }
 }
 
@@ -420,8 +440,7 @@ export const talentsData = {
         }
       ]
     }
-  }
-  ,
+  },
   'Spaciale': {
     description: "Augmente votre stockage maximum de façon multiplicative.",
     effet: "+{15 + niveau*10}% de stockage (multiplicatif, passif)",
@@ -479,6 +498,44 @@ export const talentsData = {
         }
       ]
     }
+  },
+  'Optimisatrice': {
+    description: "Augmente la production en fonction du stockage maximum.",
+    effet: "+{0.1 + niveau*0.025} de production par point de stockage maximum.",
+    icon: '🦆',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'income_bonus_per_second',
+          resource: 'eggs',
+          amount: {
+            op: 'mul',
+            args: [
+              { var: 'stockageMax' },
+              { op: 'add', args: [ 0.1, { op: 'mul', args: [ { var: 'niveau' }, 0.025 ] } ] }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  'Temporelle': {
+    description: "Arrête le temps pendant 5s, chaque clic sur l'oeuf produit un pourcentage de la production/s.",
+    effet: "Arrête le temps et la production pendant 5s. Pendant ce temps, chaque clic sur l'oeuf produit (25% + niv*2%)-(nb clics pendant cet arrêt du temps*0.1%) de la production/s en oeufs. Cooldown 1 min",
+    icon: '⏰',
+    calculation: {
+      triggers: [ { type: 'active' } ],
+      cooldown_ms: 600,
+      effects: [
+        {
+          type: 'time_stop_buff',
+          duration: 5000,
+          click_multiplier_base: { op: 'add', args: [ 0.25, { op: 'mul', args: [ { var: 'niveau' }, 0.02 ] } ] },
+          click_penalty_per_click: 0.001
+        }
+      ]
+    }
   }
 }
 
@@ -489,7 +546,7 @@ export const groupes = [
   { 
     name: 'fondamental', 
     description: 'Poule du groupe fondamental', 
-    rarityDropChance: [75, 25, 0, 0]
+    rarityDropChance: [75, 25, 0, 1]
   },
   { 
     name: 'brillant', 
@@ -499,7 +556,7 @@ export const groupes = [
   { 
     name: 'discret', 
     description: 'Poule du groupe discret', 
-    rarityDropChance: [65, 25, 10, 0]
+    rarityDropChance: [65, 25, 10, 1]
   },
   { 
     name: 'chic', 
@@ -1167,6 +1224,183 @@ export const achievementsData = {
   }
 }
 
+// ========================
+// DONNÉES DES QUÊTES
+// ========================
+export const questsData = {
+  'welcome_farmer': {
+    id: 'welcome_farmer',
+    nom: 'Bienvenue dans le Poulailler',
+    description: 'Découvrez les bases de votre nouvelle vie de fermier avicole. Chaque étape vous rapprochera de la maîtrise de votre exploitation.',
+    icon: '👋',
+    unlock_level: 3,
+    steps: [
+      {
+        id: 'first_eggs',
+        description: 'Récoltez vos premiers œufs pour commencer votre aventure.',
+        challenges: [
+          { type: 'eggs_collected', objectif: 25 }
+        ],
+        reward: {
+          type: 'eggs',
+          quantite: 50
+        }
+      },
+      {
+        id: 'first_chicken',
+        description: 'Obtenez votre première poule pour agrandir votre équipe.',
+        challenges: [
+          { type: 'spawnables_clicked', objectif: 5 },
+          { type: 'eggs_collected', objectif: 1 }
+        ],
+        reward: {
+          type: 'chicken',
+          especeId: 'poulette-rousse',
+          quantite: 1
+        }
+      },
+      {
+        id: 'first_box',
+        description: 'Ouvrez votre première boîte pour découvrir de nouvelles poules.',
+        challenges: [
+          { type: 'boxes_opened', objectif: 1 }
+        ],
+        reward: {
+          type: 'stock_token',
+          quantite: 1
+        }
+      }
+    ]
+  },
+  'growing_farm': {
+    id: 'growing_farm',
+    nom: 'L\'Expansion du Poulailler',
+    description: 'Votre ferme grandit et vos poules deviennent plus nombreuses. Il est temps d\'optimiser votre production.',
+    icon: '🌱',
+    unlock_level: 4,
+    steps: [
+      {
+        id: 'team_building',
+        description: 'Constituez une équipe solide avec différentes poules.',
+        challenges: [
+          { type: 'chicken_abilities_used', objectif: 10 }
+        ],
+        reward: {
+          type: 'production_token',
+          quantite: 1
+        }
+      },
+      {
+        id: 'talent_development',
+        description: 'Développez les talents de vos poules pour améliorer leurs capacités.',
+        challenges: [
+          { type: 'chicken_gifts_collected', objectif: 3 }
+        ],
+        reward: {
+          type: 'blueberry',
+          quantite: 3
+        }
+      },
+      {
+        id: 'production_boost',
+        description: 'Augmentez votre production d\'œufs grâce aux améliorations.',
+        challenges: [
+          { type: 'eggs_collected', objectif: 500 }
+        ],
+        reward: {
+          type: 'chicken',
+          especeId: 'poulette-rousse',
+          quantite: 1
+        }
+      }
+    ]
+  },
+  'mining_adventure': {
+    id: 'mining_adventure',
+    nom: 'L\'Aventure Minière',
+    description: 'Découvrez les secrets souterrains de votre ferme. Le minage vous réserve bien des surprises.',
+    icon: '⛏️',
+    unlock_level: 5,
+    steps: [
+      {
+        id: 'first_mining_game',
+        description: 'Jouez à votre première partie de minage.',
+        challenges: [
+          { type: 'mining_games_played', objectif: 1 }
+        ],
+        reward: {
+          type: 'chest_key',
+          quantite: 1
+        }
+      },
+      {
+        id: 'mining_explorer',
+        description: 'Brisez 50 cases pour explorer les profondeurs.',
+        challenges: [
+          { type: 'mining_cells_broken', objectif: 50 }
+        ],
+        reward: {
+          type: 'blueberry',
+          quantite: 2
+        }
+      },
+      {
+        id: 'artifact_hunter',
+        description: 'Trouvez votre premier artefact de minage.',
+        challenges: [
+          { type: 'spawnables_clicked', objectif: 25 }
+        ],
+        reward: {
+          type: 'precious_stone',
+          quantite: 1
+        }
+      }
+    ]
+  },
+  'legendary_farmer': {
+    id: 'legendary_farmer',
+    nom: 'Le Fermier Légendaire',
+    description: 'Vous êtes devenu une légende dans le monde avicole. Montrez votre maîtrise ultime.',
+    icon: '👑',
+    unlock_level: 8,
+    steps: [
+      {
+        id: 'ultimate_collection',
+        description: 'Rassemblez une collection impressionnante de poules.',
+        challenges: [
+          { type: 'chicken_gifts_collected', objectif: 25 }
+        ],
+        reward: {
+          type: 'blueberry',
+          quantite: 5
+        }
+      },
+      {
+        id: 'master_miner',
+        description: 'Devenez un maître du minage en brisant de nombreuses cases.',
+        challenges: [
+          { type: 'mining_cells_broken', objectif: 500 }
+        ],
+        reward: {
+          type: 'chest_key',
+          quantite: 3
+        }
+      },
+      {
+        id: 'legendary_harvest',
+        description: 'Réalisez une récolte légendaire en un seul clic.',
+        challenges: [
+          { type: 'max_eggs_in_click', objectif: 1000 }
+        ],
+        reward: {
+          type: 'precious_stone',
+          quantite: 5
+        }
+      }
+    ]
+  }
+}
+
 export const itemsData = {
   'eggs': {
     id: 'eggs',
@@ -1335,6 +1569,7 @@ export function getAllGameData() {
     levelUnlocks,
     levelRewards,
     achievements: achievementsData,
+    quests: questsData,
     items: itemsData,
     categories: achievementCategories,
     mining: miningData,
@@ -1494,6 +1729,30 @@ export const artifactsData = {
     description: "Chaque pelle se duplique au début de la partie.",
     rarete: 'commune',
     effect: { type: 'when_tool_add_another', detect:'shovel', add:'shovel' }
+  },
+  'chain-reaction': {
+    id: 'chain-reaction',
+    name: 'Réaction en Chaîne',
+    icon: '💥',
+    description: "Briser une case inflige 1 dégât aux 4 cases autour. Peut provoquer des réactions en chaîne.",
+    rarete: 'epique',
+    effect: { type: 'chain_damage', amount: 1 }
+  },
+  'crack-reveal': {
+    id: 'crack-reveal',
+    name: 'Révélation des Fissures',
+    icon: '🔍',
+    description: "Les cases avec récompenses ayant au moins 1 fissure sont révélées.",
+    rarete: 'rare',
+    effect: { type: 'reveal_cracked_rewards' }
+  },
+  'fragile-start': {
+    id: 'fragile-start',
+    name: 'Départ Fragile',
+    icon: '🪨',
+    description: "Les cases ont 50% de chance de commencer avec 1 fissure (-1 hp).",
+    rarete: 'commune',
+    effect: { type: 'fragile_grid', chance: 0.5, damage: 1 }
   }
 }
 

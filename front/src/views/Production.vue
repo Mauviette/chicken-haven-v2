@@ -1,5 +1,5 @@
 <template>
-  <div class="production-screen" :class="{ 'apocalypse-mode': isApocalypseMode }">
+  <div class="production-screen" :class="{ 'apocalypse-mode': isApocalypseMode, 'time-stop-active': isTimeStopActive }">
     <!-- Debug: isApocalypseMode = {{ isApocalypseMode }} -->
     <!-- Bandeau des buffs actifs -->
     <div class="buffs-container" v-if="activeBuffs.length > 0">
@@ -80,7 +80,7 @@
               <div class="gains-bar">
                 <div 
                   class="gains-progress" 
-                  :style="{ width: progressPercentage + '%' }"
+                  :style="{ width: effectiveProgressPercentage + '%' }"
                 ></div>
               </div>
               <div class="gains-text">
@@ -136,8 +136,8 @@ const {
 const { refreshPlayer, fetchTeam, team, setEggs, player, apocalypse } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
-const { eggClick, incomeUp } = useSound()
-const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor, formatBuffShort } = useBuffs()
+const { eggClick, incomeUp, timeStop } = useSound()
+const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor, formatBuffShort, buffs } = useBuffs()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -221,6 +221,12 @@ const teamStatMult = computed(() => {
     }
   }
   return mult
+})
+
+const isTimeStopActive = computed(() => {
+  const active = activeBuffs.value.some(b => b.buff_type === 'time_stop')
+  console.log('TimeStop: isTimeStopActive =', active, 'activeBuffs =', activeBuffs.value.map(b => ({ type: b.buff_type, hidden: b.hidden })))
+  return active
 })
 
 const makeStatTooltip = (label, base, extraPerMember, members, mult) => {
@@ -367,6 +373,22 @@ const displayedIncome = computed(() => {
   return result
 })
 
+// Progression figée pendant time_stop
+const frozenProgress = ref(null)
+const effectiveProgressPercentage = computed(() => {
+  if (isTimeStopActive.value) {
+    // Pendant time_stop, geler la progression
+    if (frozenProgress.value === null) {
+      frozenProgress.value = progressPercentage.value
+    }
+    return frozenProgress.value
+  } else {
+    // Réinitialiser la progression gelée quand time_stop se termine
+    frozenProgress.value = null
+    return progressPercentage.value
+  }
+})
+
 // Calcul générique des bonus de talents (remplace energeticDetails)
 const talentBonusDetails = computed(() => {
   try {
@@ -378,7 +400,8 @@ const talentBonusDetails = computed(() => {
     const teamStatsCtx = {
       teamEnergy: Number(currentTeamStats.energie || 0),
       teamIntelligence: Number(currentTeamStats.intelligence || 0),
-      teamCharisme: Number(currentTeamStats.charisme || 0)
+      teamCharisme: Number(currentTeamStats.charisme || 0),
+      stockageMax: Number(eggState.value.maxIncome || 0)
     }
 
     let totalIncome = 0
@@ -635,52 +658,306 @@ const createEggEffect = (eggsGained) => {
   }
 }
 
-const handleEggClick = async () => {
-  if (isClickable.value) {
-    // Son d'œuf cliqué
-    eggClick()
-    const eggsGained = Math.round(currentGains.value)
+// Fonction pour créer l'effet visuel de récompense à une position donnée (pour time_stop)
+const createRewardEffectAtPosition = (rect, amount) => {
+  // Rotation aléatoire pour le texte
+  const randomRotation = (Math.random() - 0.5) * 40 // Entre -20 et +20 degrés
+  
+  // Effet principal du nombre
+  const effectEl = document.createElement('div')
+  effectEl.textContent = `+${formatNumber(amount)}`
+  effectEl.className = 'reward-effect'
+  effectEl.style.cssText = `
+    position: fixed;
+    left: ${rect.left + rect.width / 2}px;
+    top: ${rect.top - 15}px;
+    font-size: 32px;
+    font-weight: 900;
+    color: #FFD700;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 0 0 20px rgba(255,215,0,0.8);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translateX(-50%) rotate(${randomRotation}deg);
+    font-family: 'Fredoka', sans-serif;
+    letter-spacing: 2px;
+    user-select: none;
+  `
+  
+  document.body.appendChild(effectEl)
+  
+  // Créer des cercles concentriques d'impact
+  for (let i = 0; i < 3; i++) {
+    const circle = document.createElement('div')
+    circle.style.cssText = `
+      position: fixed;
+      left: ${rect.left + rect.width / 2}px;
+      top: ${rect.top + rect.height / 2}px;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 215, 0, ${0.8 - i * 0.2});
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      animation: time-stop-impact ${0.3 + i * 0.1}s ease-out forwards;
+    `
+    document.body.appendChild(circle)
+    setTimeout(() => circle.remove(), 1000)
+  }
+  
+  // Créer des particules d'étoiles autour
+  for (let i = 0; i < 12; i++) {
+    const particle = document.createElement('div')
+    particle.textContent = '✨'
+    particle.style.cssText = `
+      position: fixed;
+      left: ${rect.left + rect.width / 2}px;
+      top: ${rect.top + rect.height / 2}px;
+      font-size: 24px;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translateX(-50%) translateY(-50%);
+      user-select: none;
+    `
     
-    // Afficher immédiatement un toast avec les gains
-    if (window.$toast && eggsGained > 0) {
-      //window.$toast(`+${eggsGained} œuf${eggsGained > 1 ? 's' : ''} 🥚`, 'success')
+    document.body.appendChild(particle)
+    
+    // Animation des particules dans différentes directions
+    const angle = (i * 30) * Math.PI / 180 // 30 degrés entre chaque particule
+    const distance = 100 + Math.random() * 80
+    const endX = Math.cos(angle) * distance
+    const endY = Math.sin(angle) * distance
+    
+    particle.animate([
+      { 
+        opacity: 0,
+        transform: 'translateX(-50%) translateY(-50%) scale(0) rotate(0deg)',
+      },
+      { 
+        opacity: 1,
+        transform: 'translateX(-50%) translateY(-50%) scale(1.5) rotate(180deg)',
+        offset: 0.3
+      },
+      { 
+        opacity: 0,
+        transform: `translateX(${endX - 50}%) translateY(${endY - 50}%) scale(0.5) rotate(360deg)`,
+      }
+    ], {
+      duration: 2000,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    })
+    
+    setTimeout(() => {
+      if (particle.parentNode) {
+        particle.remove()
+      }
+    }, 2000)
+  }
+  
+  // Animation du texte principal
+  effectEl.animate([
+    { 
+      opacity: 0, 
+      transform: `translateX(-50%) translateY(0) scale(0.5) rotate(${randomRotation}deg)`, 
+      filter: 'brightness(3)' 
+    },
+    { 
+      opacity: 1, 
+      transform: `translateX(-50%) translateY(-30px) scale(1.8) rotate(${randomRotation}deg)`, 
+      filter: 'brightness(2)',
+      offset: 0.3
+    },
+    { 
+      opacity: 1, 
+      transform: `translateX(-50%) translateY(-60px) scale(1.4) rotate(${randomRotation}deg)`, 
+      filter: 'brightness(1.5)',
+      offset: 0.7
+    },
+    { 
+      opacity: 0, 
+      transform: `translateX(-50%) translateY(-120px) scale(1) rotate(${randomRotation}deg)`, 
+      filter: 'brightness(1)' 
+    }
+  ], {
+    duration: 2500,
+    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+  })
+  
+  setTimeout(() => {
+    if (effectEl.parentNode) {
+      effectEl.remove()
+    }
+  }, 2500)
+}
+
+// Accumulateur pour les clics time_stop (calcul local)
+let timeStopClickAccumulator = 0
+let timeStopClickCount = 0
+
+// Fonction pour calculer les gains locaux pendant time_stop
+const calculateTimeStopGains = () => {
+  if (!isTimeStopActive.value) return 0
+  
+  // Récupérer les valeurs actuelles du buff time_stop (même s'il est caché)
+  const timeStopBuff = buffs.value.find(buff => buff.buff_type === 'time_stop' && buff.lasts_until && new Date(buff.lasts_until) > new Date())
+  if (!timeStopBuff) {
+    console.log('TimeStop: No buff found')
+    return 0
+  }
+  
+  // Utiliser le revenu par seconde figé stocké dans le buff
+  const frozenEffectiveIncome = timeStopBuff.buff?.frozen_effective_income || 0
+  console.log('TimeStop: frozenEffectiveIncome =', frozenEffectiveIncome)
+  
+  // Calculer le multiplicateur actuel avec pénalité progressive
+  const baseMultiplier = timeStopBuff.buff?.click_multiplier_base || 0.25
+  const penaltyPerClick = timeStopBuff.buff?.click_penalty_per_click || 0.001
+  const currentPenalty = timeStopClickCount * penaltyPerClick
+  const currentMultiplier = Math.max(0.01, baseMultiplier - currentPenalty) // Minimum 1%
+  
+  console.log('TimeStop: baseMultiplier =', baseMultiplier, 'penaltyPerClick =', penaltyPerClick, 'timeStopClickCount =', timeStopClickCount, 'currentMultiplier =', currentMultiplier)
+  
+  // Calculer les gains pour ce clic: revenu figé * multiplicateur
+  const gainsForThisClick = Math.round(frozenEffectiveIncome * currentMultiplier)
+  
+  console.log('TimeStop: gainsForThisClick =', gainsForThisClick)
+  
+  return Math.max(1, gainsForThisClick) // Minimum 1 œuf
+}
+
+// Fonction pour envoyer les clics accumulés au serveur
+const flushTimeStopClicks = async () => {
+  if (timeStopClickAccumulator <= 0) return
+  
+  try {
+    const response = await fetch('/api/egg/click', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({
+        timeStopBatch: {
+          totalEggs: timeStopClickAccumulator,
+          clickCount: timeStopClickCount
+        }
+      })
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      // Mettre à jour les œufs totaux depuis la réponse
+      if (result.totalEggs !== undefined) {
+        setEggs(Number(result.totalEggs))
+      }
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi des clics time_stop:', error)
+  }
+  
+  // Réinitialiser l'accumulateur
+  timeStopClickAccumulator = 0
+  timeStopClickCount = 0
+}
+
+const handleEggClick = async (event) => {
+  // Pendant time_stop, permettre TOUJOURS les clics (spam-clic)
+  if (!isTimeStopActive.value && !isClickable.value) {
+    return
+  }
+  
+  // Son d'œuf cliqué
+  eggClick()
+  
+  let eggsGained = 0
+  
+  if (isTimeStopActive.value) {
+    // Mode time_stop: calcul local pour éviter les appels API répétés
+    eggsGained = calculateTimeStopGains()
+    
+    // Accumuler les clics
+    timeStopClickAccumulator += eggsGained
+    timeStopClickCount++
+    
+    // Créer l'effet visuel spécial time_stop à la position du clic
+    if (event && eggsGained > 0) {
+      const clickRect = {
+        left: event.clientX,
+        top: event.clientY,
+        width: 1,
+        height: 1
+      }
+      createRewardEffectAtPosition(clickRect, eggsGained)
     }
     
+    // Mettre à jour l'affichage local des œufs (estimation)
+    setEggs(eggs.value + eggsGained)
+    
+    // Programmer l'envoi au serveur si pas déjà programmé
+    if (!window.timeStopFlushTimeout) {
+      window.timeStopFlushTimeout = setTimeout(async () => {
+        await flushTimeStopClicks()
+        window.timeStopFlushTimeout = null
+      }, 1000) // Envoi différé de 1 seconde
+    }
+    
+    return // Sortir tôt pour éviter l'appel API normal
+  }
+  
+  // Mode normal : appel API classique
   const result = await clickEgg()
-    
-    // Si l'API a échoué, pas besoin de restaurer car useEgg gère maintenant l'état
-    if (!result) {
-      return
-    }
-    
-    // Créer l'effet visuel
-    if (eggsGained > 0) {
+  
+  // Si l'API a échoué, pas besoin de restaurer car useEgg gère maintenant l'état
+  if (!result) {
+    return
+  }
+  
+  // Déterminer les œufs gagnés selon le mode
+  if (result.timeStop || result.timeStopClick) {
+    // Pendant time_stop, utiliser la valeur retournée par le serveur
+    eggsGained = result.eggsGained || 0
+  } else {
+    // Mode normal : utiliser les gains accumulés
+    eggsGained = Math.round(currentGains.value)
+  }
+  
+  // Créer l'effet visuel
+  if (eggsGained > 0) {
+    if (isTimeStopActive.value) {
+      // Effet spécial time_stop: "+X" avec étoiles
+      const eggElement = document.querySelector('.clickable-egg')
+      if (eggElement) {
+        const rect = eggElement.getBoundingClientRect()
+        createRewardEffectAtPosition(rect, eggsGained)
+      }
+    } else {
+      // Effet normal: œufs qui sautent
       createEggEffect(eggsGained)
     }
+  }
 
-    // Effet Chanceuse: pluie d'œufs + toast
-    try {
-      const ch = result?.chanceuse
-      if (ch?.proc) {
-        dropEggs(40)
-        if (window.$toast) {
-          const bonus = Math.floor(Number(ch.bonusEggs || 0))
-          window.$toast(`🍀 Chanceuse ! +${bonus} œufs bonus`, 'success')
-        }
+  // Effet Chanceuse: pluie d'œufs + toast
+  try {
+    const ch = result?.chanceuse
+    if (ch?.proc) {
+      dropEggs(40)
+      if (window.$toast) {
+        const bonus = Math.floor(Number(ch.bonusEggs || 0))
+        window.$toast(`🍀 Chanceuse ! +${bonus} œufs bonus`, 'success')
       }
-    } catch (_) {}
-    
-    // Actualiser l'affichage des œufs dans la TopBar
-    try {
-      // Si la réponse contient le totalEggs à jour, évitons un fetch supplémentaire
-      if (typeof result.totalEggs === 'number') {
-        setEggs(Number(result.totalEggs))
-      } else {
-        await refreshPlayer()
-      }
-    } catch (_) {
+    }
+  } catch (_) {}
+  
+  // Actualiser l'affichage des œufs dans la TopBar
+  try {
+    // Si la réponse contient le totalEggs à jour, évitons un fetch supplémentaire
+    if (typeof result.totalEggs === 'number') {
+      setEggs(Number(result.totalEggs))
+    } else {
       await refreshPlayer()
     }
+  } catch (_) {
+    await refreshPlayer()
   }
 }
 
@@ -732,6 +1009,11 @@ onUnmounted(() => {
     clearInterval(window.__cooldownsInterval)
     window.__cooldownsInterval = null
   }
+  // S'assurer que les clics time_stop accumulés sont envoyés avant de quitter
+  if (typeof window !== 'undefined' && window.timeStopFlushTimeout) {
+    clearTimeout(window.timeStopFlushTimeout)
+    flushTimeStopClicks()
+  }
 })
 
 // Son lorsque la barre de gains se remplit (augmentation de currentGains)
@@ -753,6 +1035,20 @@ watch(() => currentGains.value, (nv, ov) => {
 // Watcher pour déboguer displayedIncome
 watch(() => displayedIncome.value, (nv, ov) => {
   //console.log('displayedIncome changed from', ov, 'to', nv, 'formatIncome(nv):', formatIncome(nv))
+})
+
+// Watcher pour jouer le son time_stop à l'activation
+watch(() => isTimeStopActive.value, (nv, ov) => {
+  if (nv && !ov) {
+    timeStop()
+  } else if (!nv && ov) {
+    // Time_stop vient de se terminer, envoyer les clics accumulés immédiatement
+    if (window.timeStopFlushTimeout) {
+      clearTimeout(window.timeStopFlushTimeout)
+      window.timeStopFlushTimeout = null
+    }
+    flushTimeStopClicks()
+  }
 })
 
 
@@ -1319,6 +1615,70 @@ watch(() => displayedIncome.value, (nv, ov) => {
   }
   100% {
     opacity: 1;
+  }
+}
+
+/* Mode TIME_STOP */
+.production-screen.time-stop-active {
+  filter: sepia(0.3) saturate(1.2) brightness(1.1) contrast(1.1);
+}
+
+.production-screen.time-stop-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(1px);
+  z-index: 1;
+}
+
+.production-screen.time-stop-active .production-content {
+  position: relative;
+  z-index: 2;
+}
+
+.production-screen.time-stop-active .clickable-egg {
+  transform: scale(3);
+  filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.8));
+}
+
+.production-screen.time-stop-active .egg-sprite {
+  animation: time-stop-egg-glow 2s infinite alternate;
+}
+
+@keyframes time-stop-egg-glow {
+  0% { 
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.4));
+    transform: scale(1);
+  }
+  100% { 
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8));
+    transform: scale(1.05);
+  }
+}
+
+/* Animation pour les cercles d'impact pendant time_stop */
+@keyframes time-stop-impact {
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 1;
+    border-width: 3px;
+  }
+  50% {
+    width: 120px;
+    height: 120px;
+    opacity: 0.8;
+    border-width: 2px;
+  }
+  100% {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+    border-width: 1px;
   }
 }
 </style>

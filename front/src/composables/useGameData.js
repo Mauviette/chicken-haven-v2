@@ -149,6 +149,7 @@ export function useGameData() {
   const groupes = computed(() => gameData.value?.groupes || [])
   const levelRewards = computed(() => gameData.value?.levelRewards || {})
   const artifacts = computed(() => gameData.value?.artifacts || {})
+  const quests = computed(() => gameData.value?.quests || {})
 
   // Fonctions utilitaires
   function getEspeceInfo(especeId) {
@@ -247,6 +248,7 @@ export function useGameData() {
     levelUnlocks,
     levelRewards,
     artifacts,
+    quests,
     
     fetchGameData,
     checkDataVersion,

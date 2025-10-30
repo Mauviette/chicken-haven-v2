@@ -142,6 +142,7 @@ export async function checkAchievements(req, res) {
           miningBestCellsInGame: 0,
           chickenGiftsCollected: 0,
           chickenAbilitiesUsed: 0,
+          spawnablesClicked: 0,
           rottenTomatoesReceived: 0
         },
         completed: [],
@@ -216,6 +217,9 @@ export async function checkAchievements(req, res) {
     }
     if (!user.achievements.progress.hasOwnProperty('chickenAbilitiesUsed')) {
       user.achievements.progress.chickenAbilitiesUsed = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('spawnablesClicked')) {
+      user.achievements.progress.spawnablesClicked = 0
     }
 
     // Calculer et mettre à jour les stats d'équipe avec les fonctions dédiées
@@ -434,7 +438,8 @@ export async function updateAchievementProgress(userId, progressType, value) {
           miningFullGridBroken: false,
           miningBestCellsInGame: 0,
           chickenGiftsCollected: 0,
-          chickenAbilitiesUsed: 0
+          chickenAbilitiesUsed: 0,
+          spawnablesClicked: 0
         },
         completed: [],
         lastChecked: new Date()
@@ -492,6 +497,9 @@ export async function updateAchievementProgress(userId, progressType, value) {
     }
     if (!user.achievements.progress.hasOwnProperty('chickenAbilitiesUsed')) {
       user.achievements.progress.chickenAbilitiesUsed = 0
+    }
+    if (!user.achievements.progress.hasOwnProperty('spawnablesClicked')) {
+      user.achievements.progress.spawnablesClicked = 0
     }
     if (!user.achievements.progress.hasOwnProperty('rottenTomatoesReceived')) {
       user.achievements.progress.rottenTomatoesReceived = 0

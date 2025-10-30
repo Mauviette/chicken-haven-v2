@@ -44,7 +44,8 @@ const SOUND_MAP = {
   scratch_004: new URL('../assets/sounds/ui/scratch_004.ogg', import.meta.url).href,
   scratch_005: new URL('../assets/sounds/ui/scratch_005.ogg', import.meta.url).href,
   select_004: new URL('../assets/sounds/ui/select_004.ogg', import.meta.url).href,
-  pluck_002: new URL('../assets/sounds/ui/pluck_002.ogg', import.meta.url).href
+  pluck_002: new URL('../assets/sounds/ui/pluck_002.ogg', import.meta.url).href,
+  time_stop: new URL('../assets/sounds/ui/time_stop.mp3', import.meta.url).href
 }
 
 function getAudio(key) {
@@ -125,6 +126,7 @@ export function useSound() {
   }
   const miningExplosion = () => play('select_004', { volume: 0.15 })
   const miningContinue = () => play('pluck_002', { volume: 0.15 })
+  const timeStop = () => play('time_stop', { volume: 0.8 })
 
   return {
     play,
@@ -147,6 +149,7 @@ export function useSound() {
     giftCollect,
     miningBasic,
     miningExplosion,
-    miningContinue
+    miningContinue,
+    timeStop
   }
 }

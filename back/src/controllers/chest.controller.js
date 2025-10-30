@@ -4,6 +4,7 @@
 import User from '../models/User.js'
 import { artifactsData } from '../data/sharedGameData.js'
 import { updateAchievementProgress } from './achievements.controller.js'
+import { updateQuestProgress } from './quests.controller.js'
 
 // POST /api/chest/open - Ouvre un coffre avec une clé
 export async function openChest(req, res) {
@@ -68,6 +69,9 @@ export async function openChest(req, res) {
 
     // Mettre à jour la progression des achievements avec le nombre actuel d'artéfacts uniques
     await updateAchievementProgress(req.userId, 'max', { miningArtifactsFound: uniqueArtifactsCount })
+    
+    // Mettre à jour le progrès des quêtes
+    await updateQuestProgress(req.userId, 'mining_artifacts_found', uniqueArtifactsCount)
 
     await user.save()
 

@@ -82,71 +82,55 @@ export function useSocial() {
            leaderboards.value.chickens
   })
 
-  // Leaderboards filtrés selon le mode
+  // Leaderboards filtrés et triés selon le mode
   const totalEggsLeaderboard = computed(() => {
     const players = leaderboards.value?.totalEggs || []
-    return filterPlayersByMode(players)
+    const filtered = filterPlayersByMode(players)
+    return filtered.sort((a, b) => b.value - a.value)
   })
   
   const maxEggsLeaderboard = computed(() => {
     const players = leaderboards.value?.maxEggs || []
-    return filterPlayersByMode(players)
+    const filtered = filterPlayersByMode(players)
+    return filtered.sort((a, b) => b.value - a.value)
   })
   
   const chickensLeaderboard = computed(() => {
     const players = leaderboards.value?.chickens || []
-    return filterPlayersByMode(players)
+    const filtered = filterPlayersByMode(players)
+    return filtered.sort((a, b) => b.value - a.value)
   })
 
-  // Rankings utilisateur filtrés selon le mode
+  // Rankings utilisateur recalculés selon le mode
   const currentUserRanking = computed(() => {
-    if (!userRankings.value) return null
+    if (!userRankings.value || !leaderboards.value) return null
     
     const rankings = { ...userRankings.value }
+    const mode = leaderboardMode.value
     
-    // Recalculer les rangs en fonction du mode filtré
-    if (leaderboardMode.value === 'classic') {
-      // Pour le mode classique, on garde les rangs originaux mais on filtre les comptes apocalypse
-      // Les rangs sont recalculés côté serveur ou on les ajuste ici
-      if (rankings.totalEggs && rankings.totalEggs.rank) {
-        const classicPlayers = filterPlayersByMode(leaderboards.value?.totalEggs || [])
-        const userIndex = classicPlayers.findIndex(p => p.profileId === rankings.totalEggs.profileId)
-        rankings.totalEggs.rank = userIndex >= 0 ? userIndex + 1 : rankings.totalEggs.rank
-        rankings.totalEggs.total = classicPlayers.length
-      }
-      if (rankings.maxEggs && rankings.maxEggs.rank) {
-        const classicPlayers = filterPlayersByMode(leaderboards.value?.maxEggs || [])
-        const userIndex = classicPlayers.findIndex(p => p.profileId === rankings.maxEggs.profileId)
-        rankings.maxEggs.rank = userIndex >= 0 ? userIndex + 1 : rankings.maxEggs.rank
-        rankings.maxEggs.total = classicPlayers.length
-      }
-      if (rankings.chickens && rankings.chickens.rank) {
-        const classicPlayers = filterPlayersByMode(leaderboards.value?.chickens || [])
-        const userIndex = classicPlayers.findIndex(p => p.profileId === rankings.chickens.profileId)
-        rankings.chickens.rank = userIndex >= 0 ? userIndex + 1 : rankings.chickens.rank
-        rankings.chickens.total = classicPlayers.length
-      }
-    } else if (leaderboardMode.value === 'apocalypse') {
-      // Pour le mode apocalypse, même logique
-      if (rankings.totalEggs && rankings.totalEggs.rank) {
-        const apocalypsePlayers = filterPlayersByMode(leaderboards.value?.totalEggs || [])
-        const userIndex = apocalypsePlayers.findIndex(p => p.profileId === rankings.totalEggs.profileId)
-        rankings.totalEggs.rank = userIndex >= 0 ? userIndex + 1 : rankings.totalEggs.rank
-        rankings.totalEggs.total = apocalypsePlayers.length
-      }
-      if (rankings.maxEggs && rankings.maxEggs.rank) {
-        const apocalypsePlayers = filterPlayersByMode(leaderboards.value?.maxEggs || [])
-        const userIndex = apocalypsePlayers.findIndex(p => p.profileId === rankings.maxEggs.profileId)
-        rankings.maxEggs.rank = userIndex >= 0 ? userIndex + 1 : rankings.maxEggs.rank
-        rankings.maxEggs.total = apocalypsePlayers.length
-      }
-      if (rankings.chickens && rankings.chickens.rank) {
-        const apocalypsePlayers = filterPlayersByMode(leaderboards.value?.chickens || [])
-        const userIndex = apocalypsePlayers.findIndex(p => p.profileId === rankings.chickens.profileId)
-        rankings.chickens.rank = userIndex >= 0 ? userIndex + 1 : rankings.chickens.rank
-        rankings.chickens.total = apocalypsePlayers.length
+    // Fonction helper pour recalculer le rang d'un utilisateur dans une liste filtrée
+    const recalculateRank = (originalRankings, leaderboardType) => {
+      if (!rankings[leaderboardType] || !rankings[leaderboardType].profileId) return
+      
+      const allPlayers = leaderboards.value[leaderboardType] || []
+      const filteredPlayers = filterPlayersByMode(allPlayers)
+      
+      // Trier les joueurs filtrés par valeur décroissante (comme le backend)
+      const sortedFilteredPlayers = [...filteredPlayers].sort((a, b) => b.value - a.value)
+      
+      // Trouver la position de l'utilisateur dans la liste triée
+      const userIndex = sortedFilteredPlayers.findIndex(p => p.profileId === rankings[leaderboardType].profileId)
+      
+      if (userIndex >= 0) {
+        rankings[leaderboardType].rank = userIndex + 1
+        rankings[leaderboardType].total = sortedFilteredPlayers.length
       }
     }
+    
+    // Recalculer les rangs pour chaque type de leaderboard
+    recalculateRank(rankings, 'totalEggs')
+    recalculateRank(rankings, 'maxEggs')
+    recalculateRank(rankings, 'chickens')
     
     return rankings
   })

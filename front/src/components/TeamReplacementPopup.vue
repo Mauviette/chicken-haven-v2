@@ -251,7 +251,7 @@ p {
 
 .team-member.disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
   background: rgba(255, 249, 229, 0.05);
   border-color: #666;
 }

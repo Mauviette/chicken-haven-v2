@@ -40,6 +40,9 @@ export function useChest() {
 
         // Déclencher un événement pour rafraîchir les achievements
         window.dispatchEvent(new CustomEvent('chest-opened'))
+        
+        // Déclencher la vérification automatique des quêtes
+        window.dispatchEvent(new CustomEvent('quest-action'))
 
         return data
       }

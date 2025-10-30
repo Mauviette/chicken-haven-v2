@@ -85,6 +85,20 @@
     </div>
 
     <div class="side-buttons right-side">
+      <div class="quests-button badge-wrapper" style="margin-right:8px;">
+        <ActionButton
+          :onClick="() => emit('open-quests')"
+          :disabled="!isQuestsUnlocked"
+        >
+          <span class="desktop-text">📜</span>
+          <span class="mobile-text">📜</span>
+        </ActionButton>
+        <span
+          v-if="hasActiveQuest"
+          class="badge-dot badge-dot--blue"
+          title="Quête active en cours"
+        ></span>
+      </div>
       <div class="achievements-button badge-wrapper">
         <ActionButton
           :onClick="() => emit('open-achievements')"
@@ -106,6 +120,7 @@ import ActionButton from '@/components/menu/ActionButton.vue'
 import { useRoute } from 'vue-router'
 import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
 import { useAchievements } from '@/composables/useAchievements'
+import { useQuests } from '@/composables/useQuests'
 import { usePlayer } from '@/composables/usePlayer'
 import { useGameData } from '@/composables/useGameData'
 import { usePoules } from '@/composables/usePoules'
@@ -114,7 +129,7 @@ import Tooltip from '@/components/menu/Tooltip.vue'
 import { apiGet } from '@/utils/api.js'
 const route = useRoute()
 
-const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements', 'open-mining'])
+const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements', 'open-mining', 'open-quests'])
 
 // Succès non réclamés -> badge sur le bouton
 const {
@@ -129,10 +144,21 @@ const hasUnclaimedRewards = computed(() =>
   (achievements?.value || []).some(a => a.completed && !a.rewardClaimed)
 )
 
+// Quêtes actives -> badge sur le bouton
+const {
+  activeQuest,
+  fetchQuestsStatus,
+  startAutoCheck: startQuestsAutoCheck,
+  stopAutoCheck: stopQuestsAutoCheck
+} = useQuests()
+
+const hasActiveQuest = computed(() => !!activeQuest.value)
+
 onMounted(async () => {
   try {
     await fetchAchievements()
     await checkAchievements()
+    await fetchQuestsStatus()
     // Rafraîchir les données du joueur pour s'assurer que miningTokens est à jour
     await refreshPlayer()
     // Synchroniser l'état apocalypse avec les données du serveur
@@ -145,10 +171,12 @@ onMounted(async () => {
     }
   } catch (_) {}
   startAutoCheck?.()
+  startQuestsAutoCheck?.()
 })
 
 onUnmounted(() => {
   stopAutoCheck?.()
+  stopQuestsAutoCheck?.()
 })
 
 // Marché déverrouillé à partir du niveau défini dans les données centralisées
@@ -170,6 +198,12 @@ const isSocialUnlocked = computed(() => {
 const isMiningUnlocked = computed(() => {
   const l = level.value || 1
   if (l >= 5) return true;
+  return false
+})
+
+const isQuestsUnlocked = computed(() => {
+  const l = level.value || 1
+  if (l >= 3) return true;
   return false
 })
 
@@ -297,6 +331,12 @@ const avalaibleUpgrade = computed(() => marketUpgradeAvailable.value || !!hasAva
     background-color: #e59f35;
     box-shadow: 0 0 6px rgba(229, 197, 53, 0.8);
     border-color: #8b6b00;
+  }
+
+  .badge-dot--blue {
+    background-color: #2196f3;
+    box-shadow: 0 0 6px rgba(33, 150, 243, 0.8);
+    border-color: #0d47a1;
   }
 
   .bottom-bar button {

@@ -1,6 +1,7 @@
 import User from '../models/User.js'
 import { especeData, talentsData, talentLevelUpgradeCost } from '../data/sharedGameData.js'
 import { updateAchievementProgress, triggerAchievementCheck } from './achievements.controller.js'
+import { updateQuestProgress } from './quests.controller.js'
 
 function getTalentForEspece(especeId) {
   const e = especeData[especeId]
@@ -59,6 +60,9 @@ export async function upgradeTalent(req, res) {
     try {
       // Déclencher une vérification complète des succès (inclut talent_level)
       await triggerAchievementCheck(req.userId)
+      
+      // Mettre à jour le progrès des quêtes
+      await updateQuestProgress(req.userId, 'talent_level_reached', newLevel)
     } catch (achievementError) {
       console.warn('Erreur mise à jour succès talent:', achievementError)
     }

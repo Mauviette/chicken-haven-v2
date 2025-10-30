@@ -1,5 +1,5 @@
 <template>
-  <div id="app" :class="{ 'apocalypse-mode': isApocalypseMode, 'dark-mode': settingsLoaded && settings.darkMode, 'announcements-page': isAnnouncementsPage, 'auth-page': isAuthPage }">
+  <div id="app" :class="{ 'apocalypse-mode': isApocalypseMode, 'dark-mode': settingsLoaded && settings.darkMode, 'announcements-page': isAnnouncementsPage, 'auth-page': isAuthPage, 'time-stop-active': isTimeStopActive }">
     <TopBar
       v-if="!isAuthPage"
       @open-profile="toast('Bientôt disponible !')"
@@ -26,6 +26,7 @@
     <AppLoading />
     <Options :visible="showOptions" @close="showOptions = false" @logout="logout" />
   <AchievementsMenu v-if="!isAuthPage" :visible="showAchievements" @close="showAchievements = false" />
+  <QuestsMenu v-if="!isAuthPage" :visible="showQuests" @close="showQuests = false" />
     <BottomBar
       v-if="!isAuthPage"
       @open-production="goProduction"
@@ -36,6 +37,7 @@
       @open-options="openOptions"
       @open-achievements="toggleAchievementsWithSound"
       @open-mining="() => showMiningGame = true"
+      @open-quests="toggleQuestsWithSound"
     />
     <!-- Mining popup global accessible depuis la BottomBar -->
     <MiningGame v-if="showMiningGame && !isAuthPage" @close="showMiningGame = false" />
@@ -58,6 +60,7 @@ import TopBar from '@/components/menu/TopBar.vue'
 import TeamParade from '@/components/menu/TeamParade.vue'
 import SpawnableObjects from '@/components/SpawnableObjects.vue'
 import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
+import QuestsMenu from '@/components/menu/QuestsMenu.vue'
 import LevelUpPopup from '@/components/menu/LevelUpPopup.vue'
 import AppLoading from '@/components/menu/AppLoading.vue'
 import UpdatePopup from '@/components/menu/UpdatePopup.vue'
@@ -72,12 +75,14 @@ import { useAppLoading } from '@/composables/useAppLoading'
 import { useSettings } from '@/composables/useSettings'
 import { useChickenGifts } from '@/composables/useChickenGifts'
 import { provideApocalypse } from '@/composables/useApocalypse'
+import { useBuffs } from '@/composables/useBuffs'
 import { apiGet } from '@/utils/api'
 
 const router = useRouter()
 const toastManager = ref(null)
 const showOptions = ref(false)
 const showAchievements = ref(false)
+const showQuests = ref(false)
 const levelUpVisible = ref(false)
 const levelUpFrom = ref(1)
 const levelUpTo = ref(1)
@@ -110,6 +115,12 @@ const startPeriodicCheck = chickenGiftsComposable.startPeriodicCheck || (() => {
 
 // Fournir l'état apocalypse à tous les composants enfants
 const { isApocalypseMode } = provideApocalypse()
+
+// Gestion des buffs pour time_stop
+const { activeBuffs } = useBuffs()
+const isTimeStopActive = computed(() => {
+  return activeBuffs.value.some(b => b.buff_type === 'time_stop')
+})
 
 const route = useRoute()
 
@@ -330,6 +341,22 @@ function closeAchievements() {
   showAchievements.value = false
   sndClose()
 }
+function toggleQuestsWithSound() {
+  // Vérifier si les quêtes sont déverrouillées (niveau 3+)
+  const playerLevel = playerComposable?.level?.value || 1
+  if (playerLevel < 3) {
+    toast('Les quêtes sont débloquées au niveau 3.', 'info')
+    return
+  }
+  
+  const opening = !showQuests.value
+  showQuests.value = !showQuests.value
+  opening ? sndOpen() : sndClose()
+}
+function closeQuests() {
+  showQuests.value = false
+  sndClose()
+}
 </script>
 
 <style>
@@ -511,6 +538,10 @@ img,
   left: 0;
   right: 0;
   bottom: 0;
+}
+
+.time-stop-active {
+  filter: invert(1);
 }
 
 .main-content {

@@ -4,6 +4,7 @@ import { miningData, artifactsData } from '../data/sharedGameData.js'
 // Utiliser la source unique de vérité pour la configuration du mini-jeu
 const MINING_CONFIG = miningData
 import { updateAchievementProgress } from './achievements.controller.js'
+import { updateQuestProgress } from './quests.controller.js'
 
 // NOUVEAU : helpers pour vérifier si l'utilisateur a une partie de minage active
 export async function isUserMining(userId) {
@@ -62,7 +63,10 @@ function computeArtifactModifiers(equipped = []) {
     lastDynamite: false, // forcer le dernier outil à être une dynamite
     toolChanges: [], // list of { origin, dest } to map tool types
     duplicates: [], // list of { detect, add } pour dupliquer certains outils
-    revealRewardsChance: 0 // probabilité cumulée de révéler des cases avec récompense
+    revealRewardsChance: 0, // probabilité cumulée de révéler des cases avec récompense
+    chainDamage: 0, // dégâts supplémentaires aux cases adjacentes quand une case est brisée
+    revealCrackedRewards: false, // révéler les cases avec récompenses fissurées
+    fragileGrid: { chance: 0, damage: 0 } // chance et dégâts initiaux pour les cases
   }
 
   // Normaliser les entrées "equipped" : accepter string id ou objets { artifactId } / { id }
@@ -97,6 +101,13 @@ function computeArtifactModifiers(equipped = []) {
       if (e.detect && e.add) modifiers.duplicates.push({ detect: e.detect, add: e.add })
     } else if (e.type === 'reveal_rewards') {
       modifiers.revealRewardsChance += (e.chance || 0)
+    } else if (e.type === 'chain_damage') {
+      modifiers.chainDamage = Math.max(modifiers.chainDamage, e.amount || 0)
+    } else if (e.type === 'reveal_cracked_rewards') {
+      modifiers.revealCrackedRewards = true
+    } else if (e.type === 'fragile_grid') {
+      modifiers.fragileGrid.chance = Math.max(modifiers.fragileGrid.chance, e.chance || 0)
+      modifiers.fragileGrid.damage = Math.max(modifiers.fragileGrid.damage, e.damage || 0)
     }
     // autres types futurs possibles...
   }
@@ -131,15 +142,22 @@ function generateReward(rewardAmountPercent = 0, isApocalypse = false) {
 }
 
 // Génère une nouvelle grille de jeu
-function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0, isApocalypse = false) {
+function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0, isApocalypse = false, fragileGrid = { chance: 0, damage: 0 }) {
   const cells = []
   
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
+      let hp = MINING_CONFIG.defaultHP
+      
+      // Appliquer l'effet fragile_grid : réduire les HP initiaux
+      if (fragileGrid.chance > 0 && Math.random() < fragileGrid.chance) {
+        hp = Math.max(1, hp - fragileGrid.damage) // Ne pas descendre en dessous de 1
+      }
+      
       cells.push({
         row,
         col,
-        hp: MINING_CONFIG.defaultHP,
+        hp,
         reward: Math.random() < rewardChance ? generateReward(rewardAmountPercent, isApocalypse) : null,
         hint: false // <- explicit default so front-side normalization / debug shows presence
       })
@@ -268,7 +286,7 @@ export async function startMining(req, res) {
      const rewardChanceBase = 0.4
      const rewardChance = Math.max(0, rewardChanceBase + (mods.extraRewardChance || 0))
      const isApocalypse = !!user.apocalypse
-     const cells = generateGrid(gridSize, rewardChance, mods.rewardAmountPercent, isApocalypse)
+     const cells = generateGrid(gridSize, rewardChance, mods.rewardAmountPercent, isApocalypse, mods.fragileGrid)
 
     // DEBUG: combien de cellules ont une reward avant reveal
     try {
@@ -276,17 +294,17 @@ export async function startMining(req, res) {
       console.debug('[mining] startMining - generated gridSize=', gridSize, 'rewardCells=', rewardCellsCount, 'rewardChance=', rewardChance)
     } catch (_) {}
     
-    // Appliquer reveal_rewards : marquer certaines cases contenant une récompense
-    if (mods.revealRewardsChance && mods.revealRewardsChance > 0) {
-      let revealMarked = 0
+    // Appliquer reveal_cracked_rewards : marquer les cases avec récompenses fissurées
+    if (mods.revealCrackedRewards) {
+      let crackedRevealed = 0
       for (const cell of cells) {
-        if (cell.reward && Math.random() < mods.revealRewardsChance) {
-          cell.hint = true // front pourra afficher un indicateur visuel (sans révéler le type)
-          revealMarked++
+        if (cell.reward && cell.hp < MINING_CONFIG.defaultHP) {
+          cell.hint = true
+          crackedRevealed++
         }
       }
-      // DEBUG: log du nombre de cellules marquées
-      try { console.debug('[mining] startMining - reveal_rewardsChance=', mods.revealRewardsChance, 'markedHints=', revealMarked) } catch(_) {}
+      // DEBUG: log du nombre de cellules révélées
+      try { console.debug('[mining] startMining - reveal_cracked_rewards markedHints=', crackedRevealed) } catch(_) {}
     }
 
     // Générer outils (on conserve la liste des types) - les dégâts additionnels seront appliqués dynamiquement lors du dig
@@ -361,6 +379,9 @@ export async function startMining(req, res) {
 
     // Incrémenter le nombre de parties jouées
     await updateAchievementProgress(req.userId, 'increment', { miningGamesPlayed: 1 })
+    
+    // Mettre à jour le progrès des quêtes
+    await updateQuestProgress(req.userId, 'mining_games_played', 1)
 
     // Déclencher un événement pour notifier le frontend
     if (typeof window !== 'undefined') {
@@ -384,6 +405,44 @@ export async function startMining(req, res) {
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// Fonction helper pour appliquer les dégâts en chaîne
+function applyChainDamage(cells, row, col, chainDamage, newRewards, rewards, processedCells = new Set()) {
+  const cellKey = `${row}-${col}`
+  
+  // Éviter de retraiter la même case
+  if (processedCells.has(cellKey)) return
+  processedCells.add(cellKey)
+  
+  const directions = [
+    [-1, 0], [1, 0], [0, -1], [0, 1] // haut, bas, gauche, droite
+  ]
+  
+  for (const [dr, dc] of directions) {
+    const newRow = row + dr
+    const newCol = col + dc
+    
+    // Vérifier que la case est dans les limites de la grille
+    if (newRow >= 0 && newRow < 5 && newCol >= 0 && newCol < 5) {
+      const adjacentCell = cells.find(c => c.row === newRow && c.col === newCol)
+      
+      if (adjacentCell && adjacentCell.hp > 0) {
+        adjacentCell.hp = Math.max(0, adjacentCell.hp - chainDamage)
+        
+        // Si cette case adjacente est détruite par la réaction en chaîne
+        if (adjacentCell.hp === 0) {
+          if (adjacentCell.reward) {
+            newRewards.push(adjacentCell.reward)
+            rewards.push(adjacentCell.reward)
+          }
+          
+          // Propagation récursive de la réaction en chaîne
+          applyChainDamage(cells, newRow, newCol, chainDamage, newRewards, rewards, processedCells)
+        }
+      }
+    }
   }
 }
 
@@ -466,6 +525,11 @@ export async function digCell(req, res) {
         if (cell.hp === 0) {
           cellsBroken++
           
+          // Appliquer l'effet chain_damage si activé
+          if (artifactMods.chainDamage && artifactMods.chainDamage > 0) {
+            applyChainDamage(user.miningGame.cells, cell.row, cell.col, artifactMods.chainDamage, newRewards, user.miningGame.rewards)
+          }
+          
           // Si la case a une récompense
           if (cell.reward) {
             console.log('[mining] Cell has reward:', cell.reward)
@@ -538,6 +602,9 @@ export async function digCell(req, res) {
       await updateAchievementProgress(req.userId, 'max', { miningBestCellsInGame: totalCellsBroken })
     }
     await updateAchievementProgress(req.userId, 'increment', progressUpdates)
+    
+    // Mettre à jour le progrès des quêtes
+    await updateQuestProgress(req.userId, 'mining_cells_broken', cellsBroken)
 
     res.json({
       success: true,
@@ -629,6 +696,9 @@ export async function finishMining(req, res) {
     }
     // Mettre à jour le meilleur score de cellules cassées dans une partie
     await updateAchievementProgress(req.userId, 'max', { miningBestCellsInGame: totalCellsBroken })
+    
+    // Mettre à jour le progrès des quêtes
+    await updateQuestProgress(req.userId, 'mining_cells_broken', totalCellsBroken)
 
     res.json({
       success: true,

@@ -236,7 +236,7 @@ function emitOpenDetail() {
 
   if (!props.especeId) return
   const talent = especeDataFor(props.especeId)?.talent
-  if (talent === 'Maligne' || talent === 'Joyeuse' || talent === 'Rapide') {
+  if (talent === 'Maligne' || talent === 'Joyeuse' || talent === 'Rapide' || talent === 'Temporelle') {
     if (isTalentReady.value) {
       triggerActiveTalent(talent)
     } else {
@@ -344,6 +344,9 @@ const talentSubIcon = computed(() => {
     // Cas buff de stockage (ex: Rapide)
     const storage = effs.find(e => e?.type === 'apply_buff' && (e?.buff_type === 'storage' || e?.buff_type === 'storage_multiplier'))
     if (storage) return '🧺'
+    // Cas time_stop (ex: Temporelle)
+    const timeStop = effs.find(e => e?.type === 'time_stop_buff')
+    if (timeStop) return '⏰'
     return '✨'
   } catch (_) {
     return '✨'
@@ -368,18 +371,23 @@ async function triggerActiveTalent(talentName) {
       const inc = data?.applied?.income_multiplier
       const sto = data?.applied?.storage_multiplier
       const stat = data?.applied?.stat || data?.applied?.type === 'stat_multiplier'
+      const timeStop = data?.applied?.type === 'buff' && data?.applied?.time_stop
       if (inc && dur) {
         window.$toast?.(`${talentName} activé: revenu x${inc} pendant ${Math.round((dur||0)/1000)}s`, 'power')
       } else if (sto && dur) {
         window.$toast?.(`${talentName} activé: stockage x${sto} pendant ${Math.round((dur||0)/1000)}s`, 'power')
       } else if (stat && dur) {
         window.$toast?.(`${talentName} activé: bonus de stats pendant ${Math.round((dur||0)/1000)}s`, 'power')
+      } else if (timeStop && dur) {
+        window.$toast?.(`${talentName} activé: arrêt du temps pendant ${Math.round((dur||0)/1000)}s`, 'power')
       } else {
         window.$toast?.(`${talentName} activé`, 'power')
       }
       sndOk()
       // Incrémenter le compteur des utilisations de capacités
       incrementProgress('chickenAbilitiesUsed', 1)
+      // Déclencher la mise à jour des quêtes
+      window.dispatchEvent(new CustomEvent('quest-action'))
       // Rafraîchir immédiatement les cooldowns et la liste des buffs
       await Promise.allSettled([ fetchEggStatus(), fetchBuffs?.() ])
     } else {
@@ -406,7 +414,7 @@ async function triggerActiveTalent(talentName) {
 // État talent activable et cooldown
 const isActivableTalent = computed(() => {
   const t = especeDataFor(props.especeId)?.talent
-  return t === 'Maligne' || t === 'Joyeuse' || t === 'Rapide'
+  return t === 'Maligne' || t === 'Joyeuse' || t === 'Rapide' || t === 'Temporelle'
 })
 
 const cooldownKey = computed(() => {

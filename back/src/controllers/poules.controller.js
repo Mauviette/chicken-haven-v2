@@ -1,5 +1,6 @@
 import User from '../models/User.js'
 import { triggerAchievementCheck } from './achievements.controller.js'
+import { updateQuestProgress } from './quests.controller.js'
 
 // GET /api/poules — déjà existant
 export async function getPoulesPossedees(req, res) {
@@ -126,6 +127,10 @@ export async function addPoule(req, res) {
 
     user.poulesPossedees = poules
     await user.save()
+
+    // Mettre à jour le progrès des quêtes
+    const totalChickens = poules.reduce((sum, p) => sum + p.quantite, 0)
+    await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
 
     res.json({ 
       message: 'Poule ajoutée avec succès', 
