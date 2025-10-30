@@ -133,11 +133,11 @@ const {
   stopUpdates 
 } = useEgg()
 
-const { refreshPlayer, fetchTeam, team, setEggs, player, apocalypse } = usePlayer()
+const { refreshPlayer, fetchTeam, team, setEggs, player, eggs, apocalypse } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp, timeStop } = useSound()
-const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor, formatBuffShort, buffs } = useBuffs()
+const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor, formatBuffShort, buffs, allActiveBuffs } = useBuffs()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -210,7 +210,7 @@ const getStorageBuffMultiplier = () => {
 // Mult multiplicateurs temporaires pour stats d’équipe (via origin/type)
 const teamStatMult = computed(() => {
   const mult = { intelligence: 1, energie: 1, charisme: 1 }
-  for (const b of activeBuffs.value) {
+  for (const b of allActiveBuffs.value) {
     const op = b.buff?.operation || 'mult'
     const amt = parseFloat(b.buff?.amount || 1)
     if (op !== 'mult') continue
@@ -224,8 +224,8 @@ const teamStatMult = computed(() => {
 })
 
 const isTimeStopActive = computed(() => {
-  const active = activeBuffs.value.some(b => b.buff_type === 'time_stop')
-  console.log('TimeStop: isTimeStopActive =', active, 'activeBuffs =', activeBuffs.value.map(b => ({ type: b.buff_type, hidden: b.hidden })))
+  const active = allActiveBuffs.value.some(b => b.buff_type === 'time_stop')
+  console.log('TimeStop: isTimeStopActive =', active, 'allActiveBuffs =', allActiveBuffs.value.map(b => ({ type: b.buff_type, hidden: b.hidden })))
   return active
 })
 
@@ -799,7 +799,7 @@ const calculateTimeStopGains = () => {
   if (!isTimeStopActive.value) return 0
   
   // Récupérer les valeurs actuelles du buff time_stop (même s'il est caché)
-  const timeStopBuff = buffs.value.find(buff => buff.buff_type === 'time_stop' && buff.lasts_until && new Date(buff.lasts_until) > new Date())
+  const timeStopBuff = allActiveBuffs.value.find(buff => buff.buff_type === 'time_stop')
   if (!timeStopBuff) {
     console.log('TimeStop: No buff found')
     return 0

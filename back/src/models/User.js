@@ -70,6 +70,7 @@ const UserSchema = new mongoose.Schema({
       origin: { type: String, default: 'Inconnu' },
       buff_type: { type: String, default: 'income' },
       lasts_until: { type: Date, default: () => new Date() },
+      hidden: { type: Boolean, default: false },
       buff: {
         operation: { type: String, default: 'mult' },
         amount: { type: String, default: '1.5' },

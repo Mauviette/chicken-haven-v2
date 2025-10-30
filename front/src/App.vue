@@ -117,9 +117,9 @@ const startPeriodicCheck = chickenGiftsComposable.startPeriodicCheck || (() => {
 const { isApocalypseMode } = provideApocalypse()
 
 // Gestion des buffs pour time_stop
-const { activeBuffs } = useBuffs()
+const { allActiveBuffs } = useBuffs()
 const isTimeStopActive = computed(() => {
-  return activeBuffs.value.some(b => b.buff_type === 'time_stop')
+  return allActiveBuffs.value.some(b => b.buff_type === 'time_stop')
 })
 
 const route = useRoute()

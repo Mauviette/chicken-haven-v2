@@ -41,7 +41,7 @@ export function useBuffs() {
     }
   }
 
-  // Filtre les buffs actifs (non expirés)
+  // Filtre les buffs actifs (non expirés) - EXCLUT les buffs cachés pour l'affichage UI
   const activeBuffs = computed(() => {
     const now = nowTs.value
     // Ne pas appeler cleanExpiredBuffs ici pour éviter les boucles infinies
@@ -49,6 +49,16 @@ export function useBuffs() {
       if (!buff.lasts_until) return false
       const expiresAt = new Date(buff.lasts_until).getTime()
       return expiresAt > (now + 100) && !buff.hidden
+    })
+  })
+
+  // Retourne TOUS les buffs actifs (non expirés) - INCLUT les buffs cachés pour la logique métier
+  const allActiveBuffs = computed(() => {
+    const now = nowTs.value
+    return buffs.value.filter(buff => {
+      if (!buff.lasts_until) return false
+      const expiresAt = new Date(buff.lasts_until).getTime()
+      return expiresAt > (now + 100)
     })
   })
   // Formate l'effet court d'un buff pour affichage sous le badge
@@ -297,6 +307,7 @@ export function useBuffs() {
     buffs,
     nowTs,
     activeBuffs,
+    allActiveBuffs,
     fetchBuffs,
     getTimeRemaining,
     getBuffDuration,

@@ -264,14 +264,14 @@ export async function activateTalent(req, res) {
       const baseIncome = user.clickableEgg?.income || 1
       const maxIncome = user.clickableEgg?.maxIncome || 30
       
-      const storageBonus = runTalentStorage(user)
-      const buffMultipliers = { income: 1, storage: 1, teamStat: { intelligence: 1, energie: 1, charisme: 1 } } // Pas de buffs actifs au moment de l'activation
+      console.log('TimeStop backend - user.clickableEgg:', user.clickableEgg)
+      console.log('TimeStop backend - baseIncome:', baseIncome, 'maxIncome:', maxIncome)
       
-      const baseMaxIncome = maxIncome + storageBonus.storageBonus
-      const effectiveMaxIncome = Math.max(0, baseMaxIncome * storageBonus.storageMultiplier * buffMultipliers.storage)
+      // Pour time_stop, on utilise simplement le revenu de base pour éviter les calculs complexes
+      // TODO: Améliorer pour utiliser le revenu effectif réel
+      const frozenEffectiveIncome = Math.max(1, baseIncome) // Au minimum 1 œuf par seconde
       
-      const incomeBonus = runTalentIncome(user, effectiveMaxIncome)
-      const frozenEffectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
+      console.log('TimeStop backend - frozenEffectiveIncome (simplified):', frozenEffectiveIncome)
 
       const buffObj = {
         origin: 'Talent Temporelle',
