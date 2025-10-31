@@ -677,8 +677,9 @@ const createEggEffect = (eggsGained) => {
   }
 }
 
-// Fonction pour créer l'effet visuel de récompense à une position donnée (pour time_stop)
+// Fonction pour créer l'effet de récompense à une position donnée
 const createRewardEffectAtPosition = (rect, amount) => {
+  console.log('createRewardEffectAtPosition called with rect:', rect, 'amount:', amount)
   // Rotation aléatoire pour le texte
   const randomRotation = (Math.random() - 0.5) * 40 // Entre -20 et +20 degrés
   
@@ -704,25 +705,7 @@ const createRewardEffectAtPosition = (rect, amount) => {
   
   document.body.appendChild(effectEl)
   
-  // Créer des cercles concentriques d'impact
-  for (let i = 0; i < 3; i++) {
-    const circle = document.createElement('div')
-    circle.style.cssText = `
-      position: fixed;
-      left: ${rect.left + rect.width / 2}px;
-      top: ${rect.top + rect.height / 2}px;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255, 215, 0, ${0.8 - i * 0.2});
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9998;
-      transform: translate(-50%, -50%);
-      animation: time-stop-impact ${0.3 + i * 0.1}s ease-out forwards;
-    `
-    document.body.appendChild(circle)
-    setTimeout(() => circle.remove(), 1000)
-  }
+  // Cercles concentriques supprimés
   
   // Créer des particules d'étoiles autour
   for (let i = 0; i < 12; i++) {
@@ -809,6 +792,152 @@ const createRewardEffectAtPosition = (rect, amount) => {
   }, 2500)
 }
 
+// Fonction pour créer l'effet visuel de coup porté à l'œuf pendant time_stop
+const createTimeStopClickEffect = (clickX, clickY) => {
+  console.log('createTimeStopClickEffect called with clickX:', clickX, 'clickY:', clickY)
+  // Créer un effet d'impact à la position du clic
+  const impactElement = document.createElement('div')
+  impactElement.style.cssText = `
+    position: fixed;
+    left: ${clickX}px;
+    top: ${clickY}px;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,215,0,0.7) 50%, transparent 100%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9999;
+  `
+  
+  document.body.appendChild(impactElement)
+  
+  // Animation de l'impact
+  impactElement.animate([
+    { 
+      width: '10px', 
+      height: '10px', 
+      opacity: 1,
+      transform: 'translate(-50%, -50%) scale(1)'
+    },
+    { 
+      width: '60px', 
+      height: '60px', 
+      opacity: 0.8,
+      transform: 'translate(-50%, -50%) scale(1)',
+      offset: 0.3
+    },
+    { 
+      width: '100px', 
+      height: '100px', 
+      opacity: 0,
+      transform: 'translate(-50%, -50%) scale(1)'
+    }
+  ], {
+    duration: 400,
+    easing: 'ease-out'
+  })
+  
+  // Créer des lignes radiales pour simuler des fissures/cracks
+  for (let i = 0; i < 6; i++) {
+    const crackElement = document.createElement('div')
+    const angle = (i * 60) * Math.PI / 180 // 60 degrés entre chaque ligne
+    const length = 30 + Math.random() * 20
+    
+    crackElement.style.cssText = `
+      position: fixed;
+      left: ${clickX}px;
+      top: ${clickY}px;
+      width: ${length}px;
+      height: 2px;
+      background: linear-gradient(to right, rgba(255,255,255,0.8), transparent);
+      transform: translate(-50%, -50%) rotate(${i * 60}deg);
+      transform-origin: left center;
+      pointer-events: none;
+      z-index: 9998;
+    `
+    
+    document.body.appendChild(crackElement)
+    
+    crackElement.animate([
+      { 
+        width: '0px',
+        opacity: 1
+      },
+      { 
+        width: `${length}px`,
+        opacity: 0.6,
+        offset: 0.4
+      },
+      { 
+        width: `${length}px`,
+        opacity: 0
+      }
+    ], {
+      duration: 500,
+      easing: 'ease-out'
+    })
+    
+    setTimeout(() => {
+      if (crackElement.parentNode) {
+        crackElement.remove()
+      }
+    }, 500)
+  }
+  
+  // Créer des particules d'étoiles autour du point d'impact
+  for (let i = 0; i < 8; i++) {
+    const particleElement = document.createElement('div')
+    particleElement.textContent = '✨'
+    const angle = (i * 45) * Math.PI / 180 // 45 degrés entre chaque particule
+    const distance = 40 + Math.random() * 30
+    
+    particleElement.style.cssText = `
+      position: fixed;
+      left: ${clickX}px;
+      top: ${clickY}px;
+      font-size: 16px;
+      pointer-events: none;
+      z-index: 9997;
+      transform: translate(-50%, -50%);
+      user-select: none;
+    `
+    
+    document.body.appendChild(particleElement)
+    
+    particleElement.animate([
+      { 
+        opacity: 0,
+        transform: 'translate(-50%, -50%) scale(0) rotate(0deg)',
+      },
+      { 
+        opacity: 1,
+        transform: `translate(-50%, -50%) scale(1) rotate(180deg)`,
+        offset: 0.2
+      },
+      { 
+        opacity: 0,
+        transform: `translate(${Math.cos(angle) * distance - 50}%, ${Math.sin(angle) * distance - 50}%) scale(0.5) rotate(360deg)`,
+      }
+    ], {
+      duration: 800,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    })
+    
+    setTimeout(() => {
+      if (particleElement.parentNode) {
+        particleElement.remove()
+      }
+    }, 800)
+  }
+  
+  setTimeout(() => {
+    if (impactElement.parentNode) {
+      impactElement.remove()
+    }
+  }, 400)
+}
+
 // Accumulateur pour les clics time_stop (calcul local)
 let timeStopClickAccumulator = 0
 let timeStopClickCount = 0
@@ -874,6 +1003,7 @@ const flushTimeStopClicks = async () => {
 }
 
 const handleEggClick = async (event) => {
+  console.log('handleEggClick called, isTimeStopActive:', isTimeStopActive.value, 'event:', event)
   // Pendant time_stop, permettre TOUJOURS les clics (spam-clic)
   if (!isTimeStopActive.value && !isClickable.value) {
     return
@@ -887,6 +1017,7 @@ const handleEggClick = async (event) => {
   if (isTimeStopActive.value) {
     // Mode time_stop: calcul local pour éviter les appels API répétés
     eggsGained = calculateTimeStopGains()
+    console.log('Time stop click: eggsGained =', eggsGained, 'event =', event)
     
     // Accumuler les clics
     timeStopClickAccumulator += eggsGained
@@ -894,6 +1025,7 @@ const handleEggClick = async (event) => {
     
     // Créer l'effet visuel spécial time_stop à la position du clic
     if (event && eggsGained > 0) {
+      console.log('Creating time stop click effects')
       const clickRect = {
         left: event.clientX,
         top: event.clientY,
@@ -901,6 +1033,10 @@ const handleEggClick = async (event) => {
         height: 1
       }
       createRewardEffectAtPosition(clickRect, eggsGained)
+      // Effet d'impact supprimé
+      
+      // Ajouter l'effet d'impact au point de clic
+      createTimeStopClickEffect(event.clientX, event.clientY)
     }
     
     // Mettre à jour l'affichage local des œufs (estimation)

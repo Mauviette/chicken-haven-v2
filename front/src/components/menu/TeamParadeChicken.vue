@@ -248,6 +248,122 @@ function emitOpenDetail() {
   }
 }
 
+// Fonction pour créer les effets visuels d'activation du time_stop
+function createTimeStopActivationEffects() {
+  console.log('createTimeStopActivationEffects called')
+  if (!chickenRef.value) {
+    console.log('No chickenRef, returning')
+    return
+  }
+  
+  const chickenRect = chickenRef.value.getBoundingClientRect()
+  const stageRect = chickenRef.value.closest('.stage')?.getBoundingClientRect()
+  console.log('chickenRect:', chickenRect, 'stageRect:', stageRect)
+  if (!stageRect) {
+    console.log('No stageRect, returning')
+    return
+  }
+  
+  // Position relative à la scène
+  const relativeX = chickenRect.left - stageRect.left + chickenRect.width / 2
+  const relativeY = chickenRect.top - stageRect.top + chickenRect.height / 2
+  
+  // Calculer la position sur la poule (même position)
+  const offsetX = 0 // Même position X
+  const offsetY = -28 // Aligner le bas du fantôme avec le bas de la poule
+  
+  // 1. Silhouette fantomatique derrière la poule
+  const ghostElement = document.createElement('img')
+  ghostElement.src = '/src/assets/chickens/pouletaro/stand/basic.png'
+  console.log('Ghost src:', ghostElement.src)
+  ghostElement.style.cssText = `
+    position: absolute;
+    left: ${relativeX + offsetX}px;
+    top: ${relativeY + offsetY}px;
+    width: 56px;
+    height: 56px;
+    opacity: 0;
+    filter: grayscale(0.6) invert(1);
+    transform: scaleX(${direction.value}) scale(1);
+    transform-origin: bottom center;
+    pointer-events: none;
+    z-index: 25;
+    image-rendering: pixelated;
+  `
+  
+  const stageElement = chickenRef.value.closest('.stage')
+  if (stageElement) {
+    stageElement.appendChild(ghostElement)
+    
+    // Animation de la silhouette fantomatique RAPIDE
+    ghostElement.animate([
+      { opacity: 0, transform: `scaleX(${direction.value}) scale(1) translateX(0)` },
+      { opacity: 1, transform: `scaleX(${direction.value}) scale(1) translateX(-5px)`, offset: 0.4 },
+      { opacity: 0, transform: `scaleX(${direction.value}) scale(1) translateX(-10px)` }
+    ], {
+      duration: 600, // Plus rapide : 600ms au lieu de 1200ms
+      easing: 'ease-out'
+    })
+    
+    setTimeout(() => {
+      if (ghostElement.parentNode) {
+        ghostElement.remove()
+      }
+    }, 600)
+  }
+  
+  // 2. Cercle blanc qui sort de la poule RAPIDEMENT
+  const circleElement = document.createElement('div')
+  circleElement.style.cssText = `
+    position: absolute;
+    left: ${relativeX}px;
+    top: ${relativeY}px;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 24;
+  `
+  
+  if (stageElement) {
+    stageElement.appendChild(circleElement)
+    
+    // Animation du cercle RAPIDE
+    circleElement.animate([
+      { 
+        width: '20px', 
+        height: '20px', 
+        opacity: 1,
+        transform: 'translate(-50%, -50%) scale(1)'
+      },
+      { 
+        width: '150px', 
+        height: '150px', 
+        opacity: 0.7,
+        transform: 'translate(-50%, -50%) scale(1)',
+        offset: 0.6
+      },
+      { 
+        width: '200px', 
+        height: '200px', 
+        opacity: 0,
+        transform: 'translate(-50%, -50%) scale(1)'
+      }
+    ], {
+      duration: 400, // Plus rapide : 400ms au lieu de 800ms
+      easing: 'ease-out'
+    })
+    
+    setTimeout(() => {
+      if (circleElement.parentNode) {
+        circleElement.remove()
+      }
+    }, 400)
+  }
+}
+
 // Tooltip combinant nom en gras + effet du talent
 const { especies, poules, getTalentEffectSync, getTalentNextCost } = usePoules()
 const { talents } = useGameData()
@@ -371,17 +487,21 @@ async function triggerActiveTalent(talentName) {
       const inc = data?.applied?.income_multiplier
       const sto = data?.applied?.storage_multiplier
       const stat = data?.applied?.stat || data?.applied?.type === 'stat_multiplier'
-      const timeStop = data?.applied?.type === 'buff' && data?.applied?.time_stop
+      const timeStop = data?.applied?.type === 'time_stop'
       if (inc && dur) {
-        window.$toast?.(`${talentName} activé: revenu x${inc} pendant ${Math.round((dur||0)/1000)}s`, 'power')
+        //window.$toast?.(`${talentName} activé: revenu x${inc} pendant ${Math.round((dur||0)/1000)}s`, 'power')
       } else if (sto && dur) {
-        window.$toast?.(`${talentName} activé: stockage x${sto} pendant ${Math.round((dur||0)/1000)}s`, 'power')
+        //window.$toast?.(`${talentName} activé: stockage x${sto} pendant ${Math.round((dur||0)/1000)}s`, 'power')
       } else if (stat && dur) {
-        window.$toast?.(`${talentName} activé: bonus de stats pendant ${Math.round((dur||0)/1000)}s`, 'power')
+        //window.$toast?.(`${talentName} activé: bonus de stats pendant ${Math.round((dur||0)/1000)}s`, 'power')
       } else if (timeStop && dur) {
-        window.$toast?.(`${talentName} activé: arrêt du temps pendant ${Math.round((dur||0)/1000)}s`, 'power')
+        console.log('Time stop activated! Calling createTimeStopActivationEffects')
+        console.log('data.applied:', data?.applied)
+        //window.$toast?.(`${talentName} activé: arrêt du temps pendant ${Math.round((dur||0)/1000)}s`, 'power')
+        // Effets visuels d'activation du time_stop
+        createTimeStopActivationEffects()
       } else {
-        window.$toast?.(`${talentName} activé`, 'power')
+        //window.$toast?.(`${talentName} activé`, 'power')
       }
       sndOk()
       // Incrémenter le compteur des utilisations de capacités
@@ -395,17 +515,17 @@ async function triggerActiveTalent(talentName) {
       const errMsg = data?.error || `Activation impossible (${response.status})`
       if (readyInMs != null) {
         const s = Math.ceil(readyInMs / 1000)
-        window.$toast?.(`${talentName} en recharge (${s}s)`, 'error')
+        //window.$toast?.(`${talentName} en recharge (${s}s)`, 'error')
         // Synchroniser les cooldowns côté client
         await fetchEggStatus()
         // Ouvrir le détail comme demandé quand non disponible
         emit('open-detail', props.especeId)
       } else {
-        window.$toast?.(errMsg, 'error')
+        //window.$toast?.(errMsg, 'error')
       }
     }
   } catch (e) {
-    window.$toast?.('Erreur activation talent', 'error')
+    //window.$toast?.('Erreur activation talent', 'error')
   } finally {
     isActivating.value = false
   }
