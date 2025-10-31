@@ -343,7 +343,6 @@ onMounted(async () => {
     const images = document.querySelectorAll('.announcement-preview-image img')
     images.forEach(img => {
       img.addEventListener('error', function() {
-        console.log('❌ Erreur de chargement d\'image (social), retry:', this.src)
         // Retry avec un timestamp pour éviter le cache
         setTimeout(() => {
           this.src = this.src.split('?')[0] + '?t=' + Date.now()

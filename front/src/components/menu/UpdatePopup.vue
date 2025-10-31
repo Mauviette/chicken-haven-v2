@@ -51,7 +51,6 @@ onMounted(() => {
     const images = document.querySelectorAll('.update-image img')
     images.forEach(img => {
       img.addEventListener('error', function() {
-        console.log('❌ Erreur de chargement d\'image (popup), retry:', this.src)
         // Retry avec un timestamp pour éviter le cache
         setTimeout(() => {
           this.src = this.src.split('?')[0] + '?t=' + Date.now()

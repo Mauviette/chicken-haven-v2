@@ -677,7 +677,6 @@ const createEggEffect = (eggsGained) => {
 
 // Fonction pour créer l'effet de récompense à une position donnée
 const createRewardEffectAtPosition = (rect, amount) => {
-  console.log('createRewardEffectAtPosition called with rect:', rect, 'amount:', amount)
   // Rotation aléatoire pour le texte
   const randomRotation = (Math.random() - 0.5) * 40 // Entre -20 et +20 degrés
   
@@ -792,7 +791,6 @@ const createRewardEffectAtPosition = (rect, amount) => {
 
 // Fonction pour créer l'effet d'explosion de l'oeuf à la fin du time_stop
 const createTimeStopEndExplosion = () => {
-  console.log('createTimeStopEndExplosion called')
   
   // Obtenir la position de l'oeuf
   const eggElement = document.querySelector('.clickable-egg')
@@ -1126,7 +1124,6 @@ const createTimeStopEndExplosion = () => {
 
 // Fonction pour créer l'effet visuel de coup porté à l'œuf pendant time_stop
 const createTimeStopClickEffect = (clickX, clickY) => {
-  console.log('createTimeStopClickEffect called with clickX:', clickX, 'clickY:', clickY)
   // Créer un effet d'impact à la position du clic
   const impactElement = document.createElement('div')
   impactElement.style.cssText = `
@@ -1361,7 +1358,6 @@ const flushTimeStopClicks = async () => {
 }
 
 const handleEggClick = async (event) => {
-  console.log('handleEggClick called, isTimeStopActive:', isTimeStopActive.value, 'event:', event)
   // Pendant time_stop, permettre TOUJOURS les clics (spam-clic)
   if (!isTimeStopActive.value && !isClickable.value) {
     return
@@ -1375,7 +1371,6 @@ const handleEggClick = async (event) => {
   if (isTimeStopActive.value) {
     // Mode time_stop: calcul local pour éviter les appels API répétés
     eggsGained = calculateTimeStopGains()
-    console.log('Time stop click: eggsGained =', eggsGained, 'event =', event)
     
     // Accumuler les clics
     timeStopClickAccumulator += eggsGained
@@ -1386,7 +1381,6 @@ const handleEggClick = async (event) => {
     
     // Créer l'effet visuel spécial time_stop à la position du clic
     if (event && eggsGained > 0) {
-      console.log('Creating time stop click effects')
       // Effet d'impact supprimé
       
       // Ajouter l'effet d'impact au point de clic
@@ -1472,7 +1466,6 @@ onMounted(async () => {
   // Écouter les changements du mode apocalypse
   if (typeof window !== 'undefined') {
     window.addEventListener('apocalypse-mode-changed', () => {
-      console.log('Production.vue - apocalypse mode changed, refreshing player')
       refreshPlayer()
     })
   }
@@ -1496,7 +1489,6 @@ onUnmounted(() => {
   stopUpdates()
   if (typeof window !== 'undefined') {
     window.removeEventListener('apocalypse-mode-changed', () => {
-      console.log('Production.vue - apocalypse mode changed, refreshing player')
       refreshPlayer()
     })
   }

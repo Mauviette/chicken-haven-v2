@@ -250,17 +250,13 @@ function emitOpenDetail() {
 
 // Fonction pour créer les effets visuels d'activation du time_stop
 function createTimeStopActivationEffects() {
-  console.log('createTimeStopActivationEffects called')
   if (!chickenRef.value) {
-    console.log('No chickenRef, returning')
     return
   }
   
   const chickenRect = chickenRef.value.getBoundingClientRect()
   const stageRect = chickenRef.value.closest('.stage')?.getBoundingClientRect()
-  console.log('chickenRect:', chickenRect, 'stageRect:', stageRect)
   if (!stageRect) {
-    console.log('No stageRect, returning')
     return
   }
   
@@ -275,7 +271,6 @@ function createTimeStopActivationEffects() {
   // 1. Silhouette fantomatique derrière la poule
   const ghostElement = document.createElement('img')
   ghostElement.src = '/src/assets/chickens/pouletaro/stand/basic.png'
-  console.log('Ghost src:', ghostElement.src)
   ghostElement.style.cssText = `
     position: absolute;
     left: ${relativeX + offsetX}px;
@@ -495,8 +490,6 @@ async function triggerActiveTalent(talentName) {
       } else if (stat && dur) {
         //window.$toast?.(`${talentName} activé: bonus de stats pendant ${Math.round((dur||0)/1000)}s`, 'power')
       } else if (timeStop && dur) {
-        console.log('Time stop activated! Calling createTimeStopActivationEffects')
-        console.log('data.applied:', data?.applied)
         //window.$toast?.(`${talentName} activé: arrêt du temps pendant ${Math.round((dur||0)/1000)}s`, 'power')
         // Effets visuels d'activation du time_stop
         createTimeStopActivationEffects()

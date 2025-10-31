@@ -61,7 +61,6 @@ onMounted(() => {
     const images = document.querySelectorAll('.announcement-image img')
     images.forEach(img => {
       img.addEventListener('error', function() {
-        console.log('❌ Erreur de chargement d\'image (liste), retry:', this.src)
         // Retry avec un timestamp pour éviter le cache
         setTimeout(() => {
           this.src = this.src.split('?')[0] + '?t=' + Date.now()

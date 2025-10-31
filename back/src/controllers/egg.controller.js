@@ -681,9 +681,6 @@ export async function clickEgg(req, res) {
 
     // Log d'entrée côté serveur pour faciliter le debug
     try {
-      console.log(`[Egg] clickEgg called for user=${user.username || user._id} at ${now.toISOString()}`)
-      console.log(`       timeDiffSeconds=${timeDiffSeconds}, baseIncome=${baseIncome}, incomeBonus=${incomeBonus.bonusPerSecond}, storageBonus=${storageBonus.storageBonus}`)
-      console.log(`       baseEffectiveIncome=${baseEffectiveIncome}, baseEffectiveMaxIncome=${baseEffectiveMaxIncome}, currentStocked=${currentStocked}`)
     } catch (_) { /* no-op */ }
 
     // Vérifier si l'œuf est cliquable (income >= 1)
@@ -693,7 +690,6 @@ export async function clickEgg(req, res) {
 
     // Vérifier s'il y a des gains à collecter (sauf pendant time_stop)
     if (currentStocked < 1 && !timeStopBuff) {
-      console.log('[Egg] clickEgg: Pas assez de gains à collecter (currentStocked < 1)')
       return res.status(400).json({ error: 'Pas assez de gains à collecter' })
     }
 

@@ -64,7 +64,6 @@ onMounted(() => {
     const images = document.querySelectorAll('.markdown-image')
     images.forEach(img => {
       img.addEventListener('error', function() {
-        console.log('❌ Erreur de chargement d\'image, retry:', this.src)
         // Retry avec un timestamp pour éviter le cache
         setTimeout(() => {
           this.src = this.src.split('?')[0] + '?t=' + Date.now()
