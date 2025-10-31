@@ -930,8 +930,8 @@ const handleEggClick = async (event) => {
     // Pendant time_stop, utiliser la valeur retournée par le serveur
     eggsGained = result.eggsGained || 0
   } else {
-    // Mode normal : utiliser les gains accumulés
-    eggsGained = Math.round(currentGains.value)
+    // Mode normal : utiliser les gains retournés par l'API
+    eggsGained = result.eggsGained || Math.round(currentGains.value)
   }
   
   // Créer l'effet visuel
