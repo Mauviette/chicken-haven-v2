@@ -49,7 +49,7 @@ export function useEgg() {
 
   // Récupérer le statut de l'œuf depuis l'API
   const fetchEggStatus = async () => {
-    if (!token.value) return
+    if (!token.value) return null
 
     try {
       const data = await apiGet(`${API_BASE}/status`)
@@ -64,10 +64,13 @@ export function useEgg() {
           cooldowns: data.cooldowns || {}
         }
         // sync ok
+        return data // Retourner les données pour que le wrapper puisse accéder aux buffs
       }
+      return null
     } catch (error) {
       console.error('Erreur lors de la récupération du statut de l\'œuf:', error)
       //window.$toast("Erreur")
+      return null
     }
   }
 

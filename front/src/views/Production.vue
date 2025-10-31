@@ -127,17 +127,27 @@ const {
   currentGains, 
   isClickable, 
   progressPercentage,
-  fetchEggStatus, 
+  fetchEggStatus: originalFetchEggStatus, 
   clickEgg, 
   startUpdates, 
   stopUpdates 
 } = useEgg()
 
+// Wrapper pour fetchEggStatus qui met aussi à jour les buffs
+const fetchEggStatus = async () => {
+  const result = await originalFetchEggStatus()
+  // Si fetchEggStatus retourne des données avec buffs, les utiliser
+  if (result && result.buffs) {
+    updateBuffsFromEggStatus(result)
+  }
+  return result
+}
+
 const { refreshPlayer, fetchTeam, team, setEggs, player, eggs, apocalypse } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
 const { eggClick, incomeUp, timeStop } = useSound()
-const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor, formatBuffShort, buffs, allActiveBuffs } = useBuffs()
+const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor, formatBuffShort, buffs, allActiveBuffs, updateBuffsFromEggStatus } = useBuffs()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
 function evalExpr(expr, ctx) {
@@ -225,7 +235,15 @@ const teamStatMult = computed(() => {
 
 const isTimeStopActive = computed(() => {
   const active = allActiveBuffs.value.some(b => b.buff_type === 'time_stop')
-  console.log('TimeStop: isTimeStopActive =', active, 'allActiveBuffs =', allActiveBuffs.value.map(b => ({ type: b.buff_type, hidden: b.hidden })))
+  if (active && frozenIncome.value === null) {
+    // Figer le revenu au moment où time_stop devient actif
+    frozenIncome.value = eggState.value.income
+    console.log('TimeStop: Frozen income set to:', frozenIncome.value)
+  } else if (!active) {
+    // Réinitialiser quand time_stop se termine
+    frozenIncome.value = null
+  }
+  console.log('TimeStop: isTimeStopActive =', active, 'allActiveBuffs =', allActiveBuffs.value.map(b => ({ type: b.buff_type, hidden: b.hidden })), 'frozenIncome =', frozenIncome.value)
   return active
 })
 
@@ -375,6 +393,7 @@ const displayedIncome = computed(() => {
 
 // Progression figée pendant time_stop
 const frozenProgress = ref(null)
+const frozenIncome = ref(null)
 const effectiveProgressPercentage = computed(() => {
   if (isTimeStopActive.value) {
     // Pendant time_stop, geler la progression
@@ -796,29 +815,23 @@ let timeStopClickCount = 0
 
 // Fonction pour calculer les gains locaux pendant time_stop
 const calculateTimeStopGains = () => {
-  if (!isTimeStopActive.value) return 0
-  
-  // Récupérer les valeurs actuelles du buff time_stop (même s'il est caché)
-  const timeStopBuff = allActiveBuffs.value.find(buff => buff.buff_type === 'time_stop')
-  if (!timeStopBuff) {
-    console.log('TimeStop: No buff found')
+  console.log('calculateTimeStopGains: Called')
+  if (!isTimeStopActive.value) {
+    console.log('calculateTimeStopGains: Time stop not active')
     return 0
   }
   
-  // Utiliser le revenu par seconde figé stocké dans le buff
-  const frozenEffectiveIncome = timeStopBuff.buff?.frozen_effective_income || 0
+  // Utiliser le revenu figé stocké localement
+  const frozenEffectiveIncome = frozenIncome.value || 0
   console.log('TimeStop: frozenEffectiveIncome =', frozenEffectiveIncome)
   
-  // Calculer le multiplicateur actuel avec pénalité progressive
-  const baseMultiplier = timeStopBuff.buff?.click_multiplier_base || 0.25
-  const penaltyPerClick = timeStopBuff.buff?.click_penalty_per_click || 0.001
-  const currentPenalty = timeStopClickCount * penaltyPerClick
-  const currentMultiplier = Math.max(0.01, baseMultiplier - currentPenalty) // Minimum 1%
+  // Utiliser un multiplicateur fixe (pas de pénalité progressive)
+  const multiplier = 0.25 // 25% du revenu figé
   
-  console.log('TimeStop: baseMultiplier =', baseMultiplier, 'penaltyPerClick =', penaltyPerClick, 'timeStopClickCount =', timeStopClickCount, 'currentMultiplier =', currentMultiplier)
+  console.log('TimeStop: multiplier =', multiplier)
   
-  // Calculer les gains pour ce clic: revenu figé * multiplicateur
-  const gainsForThisClick = Math.round(frozenEffectiveIncome * currentMultiplier)
+  // Calculer les gains pour ce clic: revenu figé * multiplicateur fixe
+  const gainsForThisClick = Math.round(frozenEffectiveIncome * multiplier)
   
   console.log('TimeStop: gainsForThisClick =', gainsForThisClick)
   

@@ -201,7 +201,7 @@ function computeSelfStatBuff(user, especeId) {
 }
 
 // Calcule les multiplicateurs des buffs temporaires actifs
-function computeActiveBuffMultipliers(user) {
+export function computeActiveBuffMultipliers(user) {
   const buffs = user.buffs || []
   const now = Date.now()
   
@@ -512,6 +512,11 @@ export async function getEggStatus(req, res) {
       new Date(buff.lasts_until) > now
     )
     
+    console.log('getEggStatus - activeBuffs:', activeBuffs.length, 'timeStopBuff:', timeStopBuff ? 'found' : 'not found')
+    if (timeStopBuff) {
+      console.log('getEggStatus - timeStopBuff details:', JSON.stringify(timeStopBuff, null, 2))
+    }
+    
     // Pendant time_stop, utiliser la valeur figée stockée dans le buff
     if (timeStopBuff && timeStopBuff.buff?.frozen_current_stocked != null) {
       currentStocked = timeStopBuff.buff.frozen_current_stocked
@@ -533,6 +538,7 @@ export async function getEggStatus(req, res) {
       incomeBonus: { bonusPerSecond: incomeBonus.bonusPerSecond, breakdown: incomeBonus.breakdown },
       storageBonus: { storageBonus: storageBonus.storageBonus, storageMultiplier: storageBonus.storageMultiplier, breakdown: storageBonus.breakdown },
       buffMultipliers, // Ajouter les multiplicateurs pour l'affichage côté client
+      buffs: user.buffs || [], // Ajouter les buffs pour le frontend
       cooldowns: user.cooldowns || {}
     })
   } catch (err) {

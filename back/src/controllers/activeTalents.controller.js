@@ -3,7 +3,7 @@
 
 import User from '../models/User.js'
 import { talentsData, especeData } from '../data/sharedGameData.js'
-import { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme, runTalentStorage, runTalentIncome } from './egg.controller.js'
+import { computeTeamEnergy, computeTeamIntelligence, computeTeamCharisme, runTalentStorage, runTalentIncome, computeActiveBuffMultipliers } from './egg.controller.js'
 import { updateQuestProgress } from './quests.controller.js'
 
 function nowMs() { return Date.now() }
@@ -245,6 +245,7 @@ export async function activateTalent(req, res) {
     }
 
     if (talentName === 'Temporelle') {
+      console.log('TimeStop backend - activating Temporelle talent')
       const calc = talentsData?.[talentName]?.calculation
       const baseCooldown = Number(calc?.cooldown_ms || 60000)
       const cd = getCooldownWithRapide(user, baseCooldown)
@@ -259,33 +260,47 @@ export async function activateTalent(req, res) {
       const clickPenaltyPerClick = Number(effect?.click_penalty_per_click || 0.001)
 
       // Calculer effectiveIncome au moment de l'activation pour le figer pendant time_stop
-      const now = new Date()
-      const lastClick = user.clickableEgg?.lastClick || now
+      // Utiliser la même logique que getEggStatus
       const baseIncome = user.clickableEgg?.income || 1
       const maxIncome = user.clickableEgg?.maxIncome || 30
       
-      console.log('TimeStop backend - user.clickableEgg:', user.clickableEgg)
       console.log('TimeStop backend - baseIncome:', baseIncome, 'maxIncome:', maxIncome)
       
-      // Pour time_stop, on utilise simplement le revenu de base pour éviter les calculs complexes
-      // TODO: Améliorer pour utiliser le revenu effectif réel
-      const frozenEffectiveIncome = Math.max(1, baseIncome) // Au minimum 1 œuf par seconde
+      const storageBonus = runTalentStorage(user)
+      const buffMultipliers = computeActiveBuffMultipliers(user) // Utiliser les buffs actifs (sans time_stop qui vient d'être activé)
       
-      console.log('TimeStop backend - frozenEffectiveIncome (simplified):', frozenEffectiveIncome)
+      console.log('TimeStop backend - storageBonus:', storageBonus)
+      console.log('TimeStop backend - buffMultipliers:', buffMultipliers)
+      
+      const baseMaxIncome = maxIncome + storageBonus.storageBonus
+      const effectiveMaxIncome = Math.max(0, baseMaxIncome * storageBonus.storageMultiplier * buffMultipliers.storage)
+      
+      console.log('TimeStop backend - baseMaxIncome:', baseMaxIncome, 'effectiveMaxIncome:', effectiveMaxIncome)
+      
+      const incomeBonus = runTalentIncome(user, effectiveMaxIncome)
+      console.log('TimeStop backend - incomeBonus:', incomeBonus)
+      
+      const frozenEffectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
+      
+      console.log('TimeStop backend - final calculation: baseIncome + incomeBonus.bonusPerSecond =', baseIncome, '+', incomeBonus.bonusPerSecond, '=', baseIncome + incomeBonus.bonusPerSecond)
+      console.log('TimeStop backend - buffMultipliers.income:', buffMultipliers.income)
+      console.log('TimeStop backend - frozenEffectiveIncome:', frozenEffectiveIncome)
 
       const buffObj = {
         origin: 'Talent Temporelle',
         buff_type: 'time_stop',
-        lasts_until: new Date(now.getTime() + duration),
+        lasts_until: new Date(now + duration),
         hidden: true,
         buff: { 
           operation: 'time_stop', 
-          click_multiplier_base: clickMultiplierBase,
-          click_penalty_per_click: clickPenaltyPerClick,
+          click_multiplier_base: String(clickMultiplierBase),
+          click_penalty_per_click: String(clickPenaltyPerClick),
           click_count: 0,
-          frozen_effective_income: frozenEffectiveIncome
+          frozenEffectiveIncome: String(frozenEffectiveIncome)
         }
       }
+
+      console.log('TimeStop backend - buffObj to be saved:', JSON.stringify(buffObj, null, 2))
 
       const updated = await User.findOneAndUpdate(
         {
@@ -296,17 +311,22 @@ export async function activateTalent(req, res) {
           ]
         },
         {
-          $set: { [`cooldowns.${key}`]: msToDate(now.getTime() + cd) },
+          $set: { [`cooldowns.${key}`]: msToDate(now + cd) },
           $push: { buffs: buffObj },
           $inc: { 'achievements.progress.chickenAbilitiesUsed': 1 }
         },
         { new: true }
       )
 
+      console.log('TimeStop backend - update result:', updated ? 'success' : 'failed')
+      if (updated) {
+        console.log('TimeStop backend - buff created:', buffObj)
+      }
+
       if (!updated) {
         const fresh = await User.findById(user._id).lean()
         const until = fresh?.cooldowns?.[key] ? new Date(fresh.cooldowns[key]).getTime() : 0
-        const rem = Math.max(0, until - now.getTime())
+        const rem = Math.max(0, until - now)
         return res.status(400).json({ error: 'En recharge', readyInMs: rem })
       }
 
