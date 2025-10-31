@@ -29,9 +29,7 @@ export function useBuffs() {
   // Récupère les buffs actifs de l'utilisateur
   async function fetchBuffs() {
     try {
-      console.log('fetchBuffs: Starting fetch...')
       const response = await apiGet('/api/user/buffs')
-      console.log('fetchBuffs: Response received:', response)
 
       const newBuffs = response?.buffs || []
       
@@ -41,7 +39,6 @@ export function useBuffs() {
       )
       
       if (hasTimeStopWithFrozenIncome) {
-        console.log('fetchBuffs: Preserving existing buffs with time_stop frozen income')
         // Mettre à jour seulement les buffs qui ne sont pas time_stop, ou fusionner
         const mergedBuffs = [...buffs.value]
         for (const newBuff of newBuffs) {
@@ -61,9 +58,7 @@ export function useBuffs() {
         buffs.value = newBuffs
       }
       
-      console.log('fetchBuffs: Buffs set to:', buffs.value)
       cleanExpiredBuffs()
-      console.log('fetchBuffs: After cleaning:', buffs.value)
       return buffs.value
     } catch (error) {
       console.error('Erreur lors de la récupération des buffs:', error)

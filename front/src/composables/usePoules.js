@@ -293,8 +293,8 @@ export function usePoules() {
               // Évaluer l'expression mathématique simple (seulement +, -, *, /, parenthèses et nombres)
               if (/^[\d+\-*/.() ]+$/.test(cleanExpr)) {
                 const result = Function('"use strict"; return (' + cleanExpr + ')')()
-                // Formatter le résultat (garder 1 décimale si nécessaire)
-                return Number.isInteger(result) ? result.toString() : result.toFixed(1)
+              // Formatter le résultat (garder 2 décimales si nécessaire pour plus de précision)
+              return Number.isInteger(result) ? result.toString() : result.toFixed(2)
               }
               return match // Garder l'expression originale si elle ne peut pas être évaluée
             } catch (e) {

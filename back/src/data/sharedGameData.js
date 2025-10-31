@@ -522,7 +522,7 @@ export const talentsData = {
   },
   'Temporelle': {
     description: "Arrête le temps pendant 5s, chaque clic sur l'oeuf produit un pourcentage de la production/s.",
-    effet: "Arrête le temps et la production pendant 5s. Pendant ce temps, chaque clic sur l'oeuf produit (25% + niv*2%)-(nb clics pendant cet arrêt du temps*0.1%) de la production/s en oeufs. Cooldown 1 min",
+    effet: "Arrête le temps et la production pendant 5s. Pendant ce temps, chaque clic sur l'oeuf produit {20 + niveau*2.5}% de la production/s en oeufs. Cooldown 1 min",
     icon: '⏰',
     calculation: {
       triggers: [ { type: 'active' } ],
@@ -531,7 +531,7 @@ export const talentsData = {
         {
           type: 'time_stop_buff',
           duration: 5000,
-          click_multiplier_base: { op: 'add', args: [ 0.25, { op: 'mul', args: [ { var: 'niveau' }, 0.02 ] } ] },
+          click_multiplier_base: { op: 'add', args: [ 0.20, { op: 'mul', args: [ { var: 'niveau' }, 0.025 ] } ] },
           click_penalty_per_click: 0.001
         }
       ]

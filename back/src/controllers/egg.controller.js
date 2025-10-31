@@ -512,9 +512,9 @@ export async function getEggStatus(req, res) {
       new Date(buff.lasts_until) > now
     )
     
-    console.log('getEggStatus - activeBuffs:', activeBuffs.length, 'timeStopBuff:', timeStopBuff ? 'found' : 'not found')
+    //console.log('getEggStatus - activeBuffs:', activeBuffs.length, 'timeStopBuff:', timeStopBuff ? 'found' : 'not found')
     if (timeStopBuff) {
-      console.log('getEggStatus - timeStopBuff details:', JSON.stringify(timeStopBuff, null, 2))
+      //console.log('getEggStatus - timeStopBuff details:', JSON.stringify(timeStopBuff, null, 2))
     }
     
     // Pendant time_stop, utiliser la valeur figée stockée dans le buff

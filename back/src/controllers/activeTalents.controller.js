@@ -245,7 +245,7 @@ export async function activateTalent(req, res) {
     }
 
     if (talentName === 'Temporelle') {
-      console.log('TimeStop backend - activating Temporelle talent')
+      //console.log('TimeStop backend - activating Temporelle talent')
       const calc = talentsData?.[talentName]?.calculation
       const baseCooldown = Number(calc?.cooldown_ms || 60000)
       const cd = getCooldownWithRapide(user, baseCooldown)
@@ -264,27 +264,27 @@ export async function activateTalent(req, res) {
       const baseIncome = user.clickableEgg?.income || 1
       const maxIncome = user.clickableEgg?.maxIncome || 30
       
-      console.log('TimeStop backend - baseIncome:', baseIncome, 'maxIncome:', maxIncome)
+      //console.log('TimeStop backend - baseIncome:', baseIncome, 'maxIncome:', maxIncome)
       
       const storageBonus = runTalentStorage(user)
       const buffMultipliers = computeActiveBuffMultipliers(user) // Utiliser les buffs actifs (sans time_stop qui vient d'être activé)
       
-      console.log('TimeStop backend - storageBonus:', storageBonus)
-      console.log('TimeStop backend - buffMultipliers:', buffMultipliers)
+      //console.log('TimeStop backend - storageBonus:', storageBonus)
+      //console.log('TimeStop backend - buffMultipliers:', buffMultipliers)
       
       const baseMaxIncome = maxIncome + storageBonus.storageBonus
       const effectiveMaxIncome = Math.max(0, baseMaxIncome * storageBonus.storageMultiplier * buffMultipliers.storage)
       
-      console.log('TimeStop backend - baseMaxIncome:', baseMaxIncome, 'effectiveMaxIncome:', effectiveMaxIncome)
+      //console.log('TimeStop backend - baseMaxIncome:', baseMaxIncome, 'effectiveMaxIncome:', effectiveMaxIncome)
       
       const incomeBonus = runTalentIncome(user, effectiveMaxIncome)
-      console.log('TimeStop backend - incomeBonus:', incomeBonus)
+      //console.log('TimeStop backend - incomeBonus:', incomeBonus)
       
       const frozenEffectiveIncome = Math.max(0, (baseIncome + incomeBonus.bonusPerSecond) * buffMultipliers.income)
       
-      console.log('TimeStop backend - final calculation: baseIncome + incomeBonus.bonusPerSecond =', baseIncome, '+', incomeBonus.bonusPerSecond, '=', baseIncome + incomeBonus.bonusPerSecond)
-      console.log('TimeStop backend - buffMultipliers.income:', buffMultipliers.income)
-      console.log('TimeStop backend - frozenEffectiveIncome:', frozenEffectiveIncome)
+      //console.log('TimeStop backend - final calculation: baseIncome + incomeBonus.bonusPerSecond =', baseIncome, '+', incomeBonus.bonusPerSecond, '=', baseIncome + incomeBonus.bonusPerSecond)
+      //console.log('TimeStop backend - buffMultipliers.income:', buffMultipliers.income)
+      //console.log('TimeStop backend - frozenEffectiveIncome:', frozenEffectiveIncome)
 
       const buffObj = {
         origin: 'Talent Temporelle',
@@ -300,7 +300,7 @@ export async function activateTalent(req, res) {
         }
       }
 
-      console.log('TimeStop backend - buffObj to be saved:', JSON.stringify(buffObj, null, 2))
+      //console.log('TimeStop backend - buffObj to be saved:', JSON.stringify(buffObj, null, 2))
 
       const updated = await User.findOneAndUpdate(
         {
@@ -318,9 +318,9 @@ export async function activateTalent(req, res) {
         { new: true }
       )
 
-      console.log('TimeStop backend - update result:', updated ? 'success' : 'failed')
+      //console.log('TimeStop backend - update result:', updated ? 'success' : 'failed')
       if (updated) {
-        console.log('TimeStop backend - buff created:', buffObj)
+        //console.log('TimeStop backend - buff created:', buffObj)
       }
 
       if (!updated) {

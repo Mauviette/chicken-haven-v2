@@ -238,12 +238,10 @@ const isTimeStopActive = computed(() => {
   if (active && frozenIncome.value === null) {
     // Figer le revenu au moment où time_stop devient actif
     frozenIncome.value = eggState.value.income
-    console.log('TimeStop: Frozen income set to:', frozenIncome.value)
   } else if (!active) {
     // Réinitialiser quand time_stop se termine
     frozenIncome.value = null
   }
-  console.log('TimeStop: isTimeStopActive =', active, 'allActiveBuffs =', allActiveBuffs.value.map(b => ({ type: b.buff_type, hidden: b.hidden })), 'frozenIncome =', frozenIncome.value)
   return active
 })
 
@@ -792,6 +790,340 @@ const createRewardEffectAtPosition = (rect, amount) => {
   }, 2500)
 }
 
+// Fonction pour créer l'effet d'explosion de l'oeuf à la fin du time_stop
+const createTimeStopEndExplosion = () => {
+  console.log('createTimeStopEndExplosion called')
+  
+  // Obtenir la position de l'oeuf
+  const eggElement = document.querySelector('.clickable-egg')
+  if (!eggElement) return
+  
+  const eggRect = eggElement.getBoundingClientRect()
+  const centerX = eggRect.left + eggRect.width / 2
+  const centerY = eggRect.top + eggRect.height / 2
+  
+  // Afficher le total des gains accumulés
+  const totalGains = timeStopGainsAccumulator.value
+  if (totalGains > 0) {
+    const totalGainsElement = document.createElement('div')
+    totalGainsElement.textContent = `+${formatNumber(totalGains)}`
+    totalGainsElement.className = 'time-stop-total-gains'
+    totalGainsElement.style.cssText = `
+      position: fixed;
+      left: ${centerX}px;
+      top: ${centerY - 50}px;
+      font-size: 48px;
+      font-weight: 900;
+      color: #FFD700;
+      text-shadow: 4px 4px 8px rgba(0,0,0,0.9), 0 0 30px rgba(255,215,0,0.8);
+      pointer-events: none;
+      z-index: 9999;
+      transform: translateX(-50%) translateY(-50%);
+      font-family: 'Fredoka', sans-serif;
+      letter-spacing: 3px;
+      user-select: none;
+    `
+    
+    document.body.appendChild(totalGainsElement)
+    
+    // Animation JavaScript pour le fade away progressif
+    totalGainsElement.animate([
+      { 
+        opacity: 0, 
+        transform: 'translateX(-50%) translateY(-50%) scale(0.5)', 
+        filter: 'brightness(3)' 
+      },
+      { 
+        opacity: 1, 
+        transform: 'translateX(-50%) translateY(-50%) scale(1.5)', 
+        filter: 'brightness(2)',
+        offset: 0.08
+      },
+      { 
+        opacity: 1, 
+        transform: 'translateX(-50%) translateY(-100px) scale(1.2)', 
+        filter: 'brightness(1.5)',
+        offset: 0.25
+      },
+      { 
+        opacity: 1, 
+        transform: 'translateX(-50%) translateY(-150px) scale(1)', 
+        filter: 'brightness(1)',
+        offset: 0.45
+      },
+      { 
+        opacity: 0.95, 
+        transform: 'translateX(-50%) translateY(-165px) scale(0.97)', 
+        filter: 'brightness(0.97)',
+        offset: 0.65
+      },
+      { 
+        opacity: 0.85, 
+        transform: 'translateX(-50%) translateY(-175px) scale(0.94)', 
+        filter: 'brightness(0.94)',
+        offset: 0.75
+      },
+      { 
+        opacity: 0.6, 
+        transform: 'translateX(-50%) translateY(-185px) scale(0.91)', 
+        filter: 'brightness(0.91)',
+        offset: 0.85
+      },
+      { 
+        opacity: 0.3, 
+        transform: 'translateX(-50%) translateY(-192px) scale(0.87)', 
+        filter: 'brightness(0.87)',
+        offset: 0.92
+      },
+      { 
+        opacity: 0.1, 
+        transform: 'translateX(-50%) translateY(-197px) scale(0.83)', 
+        filter: 'brightness(0.83)',
+        offset: 0.98
+      },
+      { 
+        opacity: 0, 
+        transform: 'translateX(-50%) translateY(-200px) scale(0.8)', 
+        filter: 'brightness(0.8)' 
+      }
+    ], {
+      duration: 4500,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      fill: 'forwards'
+    })
+    
+    setTimeout(() => {
+      if (totalGainsElement.parentNode) {
+        totalGainsElement.remove()
+      }
+    }, 4500)
+  }
+  
+  // Réinitialiser l'accumulateur
+  timeStopGainsAccumulator.value = 0
+  
+  // 1. Flash lumineux initial
+  const flashElement = document.createElement('div')
+  flashElement.style.cssText = `
+    position: fixed;
+    left: ${centerX}px;
+    top: ${centerY}px;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,215,0,0.8) 50%, transparent 100%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9999;
+  `
+  
+  document.body.appendChild(flashElement)
+  
+  flashElement.animate([
+    { 
+      width: '10px', 
+      height: '10px', 
+      opacity: 1,
+      transform: 'translate(-50%, -50%) scale(1)'
+    },
+    { 
+      width: '300px', 
+      height: '300px', 
+      opacity: 0.8,
+      transform: 'translate(-50%, -50%) scale(1)',
+      offset: 0.3
+    },
+    { 
+      width: '500px', 
+      height: '500px', 
+      opacity: 0,
+      transform: 'translate(-50%, -50%) scale(1)'
+    }
+  ], {
+    duration: 600,
+    easing: 'ease-out'
+  })
+  
+  setTimeout(() => {
+    if (flashElement.parentNode) {
+      flashElement.remove()
+    }
+  }, 600)
+  
+  // 2. Explosion de particules d'or et d'étoiles
+  for (let i = 0; i < 20; i++) {
+    const particle = document.createElement('div')
+    const isStar = Math.random() < 0.5
+    particle.textContent = isStar ? '⭐' : '✨'
+    particle.style.cssText = `
+      position: fixed;
+      left: ${centerX}px;
+      top: ${centerY}px;
+      font-size: ${20 + Math.random() * 20}px;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      user-select: none;
+    `
+    
+    document.body.appendChild(particle)
+    
+    // Animation des particules dans toutes les directions
+    const angle = (i * 18) * Math.PI / 180 // 18 degrés entre chaque particule
+    const distance = 150 + Math.random() * 200
+    const endX = Math.cos(angle) * distance
+    const endY = Math.sin(angle) * distance
+    
+    particle.animate([
+      { 
+        opacity: 0,
+        transform: 'translate(-50%, -50%) scale(0) rotate(0deg)',
+      },
+      { 
+        opacity: 1,
+        transform: 'translate(-50%, -50%) scale(1.5) rotate(180deg)',
+        offset: 0.2
+      },
+      { 
+        opacity: 1,
+        transform: `translate(${endX - 50}%, ${endY - 50}%) scale(1) rotate(360deg)`,
+        offset: 0.6
+      },
+      { 
+        opacity: 0,
+        transform: `translate(${endX - 50}%, ${endY - 50}%) scale(0.5) rotate(540deg)`,
+      }
+    ], {
+      duration: 2000,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      delay: Math.random() * 200
+    })
+    
+    setTimeout(() => {
+      if (particle.parentNode) {
+        particle.remove()
+      }
+    }, 2200)
+  }
+  
+  // 3. Cercle d'énergie expansif
+  const energyRing = document.createElement('div')
+  energyRing.style.cssText = `
+    position: fixed;
+    left: ${centerX}px;
+    top: ${centerY}px;
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 215, 0, 0.8);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9997;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  `
+  
+  document.body.appendChild(energyRing)
+  
+  energyRing.animate([
+    { 
+      width: '50px', 
+      height: '50px', 
+      opacity: 1,
+      borderWidth: '4px',
+      transform: 'translate(-50%, -50%) scale(1)'
+    },
+    { 
+      width: '200px', 
+      height: '200px', 
+      opacity: 0.6,
+      borderWidth: '2px',
+      transform: 'translate(-50%, -50%) scale(1)',
+      offset: 0.5
+    },
+    { 
+      width: '400px', 
+      height: '400px', 
+      opacity: 0,
+      borderWidth: '1px',
+      transform: 'translate(-50%, -50%) scale(1)'
+    }
+  ], {
+    duration: 1000,
+    easing: 'ease-out'
+  })
+  
+  setTimeout(() => {
+    if (energyRing.parentNode) {
+      energyRing.remove()
+    }
+  }, 1000)
+  
+  // 4. Fragments d'oeuf qui s'envolent
+  for (let i = 0; i < 8; i++) {
+    const fragment = document.createElement('div')
+    fragment.textContent = '🥚'
+    fragment.style.cssText = `
+      position: fixed;
+      left: ${centerX}px;
+      top: ${centerY}px;
+      font-size: 16px;
+      pointer-events: none;
+      z-index: 9996;
+      transform: translate(-50%, -50%);
+      user-select: none;
+    `
+    
+    document.body.appendChild(fragment)
+    
+    const angle = (i * 45) * Math.PI / 180 // 45 degrés entre chaque fragment
+    const distance = 100 + Math.random() * 150
+    const endX = Math.cos(angle) * distance
+    const endY = Math.sin(angle) * distance
+    
+    fragment.animate([
+      { 
+        opacity: 1,
+        transform: 'translate(-50%, -50%) scale(1) rotate(0deg)',
+      },
+      { 
+        opacity: 0.8,
+        transform: `translate(${endX - 50}%, ${endY - 50}%) scale(0.8) rotate(${Math.random() * 360}deg)`,
+        offset: 0.7
+      },
+      { 
+        opacity: 0,
+        transform: `translate(${endX - 50}%, ${endY - 50}%) scale(0.3) rotate(${Math.random() * 720}deg)`,
+      }
+    ], {
+      duration: 1500,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      delay: 100 + Math.random() * 300
+    })
+    
+    setTimeout(() => {
+      if (fragment.parentNode) {
+        fragment.remove()
+      }
+    }, 1800)
+  }
+  
+  // 5. Secousse de l'écran (effet subtil)
+  const productionScreen = document.querySelector('.production-screen')
+  if (productionScreen) {
+    productionScreen.animate([
+      { transform: 'translateX(0)' },
+      { transform: 'translateX(-5px)', offset: 0.1 },
+      { transform: 'translateX(5px)', offset: 0.2 },
+      { transform: 'translateX(-3px)', offset: 0.3 },
+      { transform: 'translateX(3px)', offset: 0.4 },
+      { transform: 'translateX(0)', offset: 0.5 }
+    ], {
+      duration: 300,
+      easing: 'ease-out'
+    })
+  }
+}
+
 // Fonction pour créer l'effet visuel de coup porté à l'œuf pendant time_stop
 const createTimeStopClickEffect = (clickX, clickY) => {
   console.log('createTimeStopClickEffect called with clickX:', clickX, 'clickY:', clickY)
@@ -942,27 +1274,53 @@ const createTimeStopClickEffect = (clickX, clickY) => {
 let timeStopClickAccumulator = 0
 let timeStopClickCount = 0
 
+// Variable pour accumuler les gains affichés pendant time_stop
+const timeStopGainsAccumulator = ref(0)
+
 // Fonction pour calculer les gains locaux pendant time_stop
 const calculateTimeStopGains = () => {
-  console.log('calculateTimeStopGains: Called')
   if (!isTimeStopActive.value) {
-    console.log('calculateTimeStopGains: Time stop not active')
     return 0
   }
   
   // Utiliser le revenu figé stocké localement
   const frozenEffectiveIncome = frozenIncome.value || 0
-  console.log('TimeStop: frozenEffectiveIncome =', frozenEffectiveIncome)
   
-  // Utiliser un multiplicateur fixe (pas de pénalité progressive)
-  const multiplier = 0.25 // 25% du revenu figé
+  // Calculer le multiplicateur basé sur le talent Temporelle
+  let multiplier = 0.25 // Valeur par défaut si pas trouvé
+  try {
+    const slots = team.value?.slots || []
+    for (const s of slots) {
+      const id = s?.especeId
+      if (!id) continue
+      const sp = especies.value?.[id]
+      const talentName = sp?.talent
+      if (talentName === 'Temporelle') {
+        const calc = talents.value?.[talentName]?.calculation
+        if (calc && Array.isArray(calc.effects)) {
+          const p = poules.value?.find(pp => pp.especeId === id)
+          const niveau = Math.max(1, Number(p?.niveauTalent) || 1)
+          const ctx = { niveau }
+          for (const eff of calc.effects) {
+            if (!eff || eff.type !== 'time_stop_buff') continue
+            const clickMultBase = eff.click_multiplier_base
+            if (clickMultBase != null) {
+              multiplier = Number(evalExpr(clickMultBase, ctx)) || 0.25
+              break
+            }
+          }
+        }
+        break // On prend la première poule Temporelle trouvée
+      }
+    }
+  } catch (e) {
+    console.error('Error calculating time_stop multiplier:', e)
+  }
   
-  console.log('TimeStop: multiplier =', multiplier)
   
-  // Calculer les gains pour ce clic: revenu figé * multiplicateur fixe
+  // Calculer les gains pour ce clic: revenu figé * multiplicateur
   const gainsForThisClick = Math.round(frozenEffectiveIncome * multiplier)
   
-  console.log('TimeStop: gainsForThisClick =', gainsForThisClick)
   
   return Math.max(1, gainsForThisClick) // Minimum 1 œuf
 }
@@ -1023,16 +1381,12 @@ const handleEggClick = async (event) => {
     timeStopClickAccumulator += eggsGained
     timeStopClickCount++
     
+    // Accumuler les gains pour l'affichage final
+    timeStopGainsAccumulator.value += eggsGained
+    
     // Créer l'effet visuel spécial time_stop à la position du clic
     if (event && eggsGained > 0) {
       console.log('Creating time stop click effects')
-      const clickRect = {
-        left: event.clientX,
-        top: event.clientY,
-        width: 1,
-        height: 1
-      }
-      createRewardEffectAtPosition(clickRect, eggsGained)
       // Effet d'impact supprimé
       
       // Ajouter l'effet d'impact au point de clic
@@ -1073,12 +1427,8 @@ const handleEggClick = async (event) => {
   // Créer l'effet visuel
   if (eggsGained > 0) {
     if (isTimeStopActive.value) {
-      // Effet spécial time_stop: "+X" avec étoiles
-      const eggElement = document.querySelector('.clickable-egg')
-      if (eggElement) {
-        const rect = eggElement.getBoundingClientRect()
-        createRewardEffectAtPosition(rect, eggsGained)
-      }
+      // Pendant time_stop, les effets sont accumulés pour la fin
+      // Ne rien afficher ici
     } else {
       // Effet normal: œufs qui sautent
       createEggEffect(eggsGained)
@@ -1190,6 +1540,8 @@ watch(() => displayedIncome.value, (nv, ov) => {
 watch(() => isTimeStopActive.value, (nv, ov) => {
   if (nv && !ov) {
     timeStop()
+    // Réinitialiser l'accumulateur des gains affichés au début du time_stop
+    timeStopGainsAccumulator.value = 0
   } else if (!nv && ov) {
     // Time_stop vient de se terminer, envoyer les clics accumulés immédiatement
     if (window.timeStopFlushTimeout) {
@@ -1197,6 +1549,8 @@ watch(() => isTimeStopActive.value, (nv, ov) => {
       window.timeStopFlushTimeout = null
     }
     flushTimeStopClicks()
+    // Ajouter l'effet d'explosion de l'oeuf à la fin du time_stop
+    createTimeStopEndExplosion()
   }
 })
 
