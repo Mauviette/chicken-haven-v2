@@ -356,11 +356,34 @@ const teamStatsBreakdown = computed(() => {
 const teamStats = computed(() => {
   const br = teamStatsBreakdown.value
   const mult = teamStatMult.value
-  return {
+  let stats = {
     intelligence: (br.base.intelligence + (br.buffsPerMember.intelligence || 0) * br.memberCount) * mult.intelligence,
     energie: (br.base.energie + (br.buffsPerMember.energie || 0) * br.memberCount) * mult.energie,
     charisme: (br.base.charisme + (br.buffsPerMember.charisme || 0) * br.memberCount) * mult.charisme,
   }
+
+  // Appliquer les effets de transfert de stats (comme le Barbare)
+  const slots = team.value?.slots || []
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const sp = especies.value?.[id]
+    const talentName = sp?.talent
+    if (!talentName) continue
+    const calc = talents.value?.[talentName]?.calculation
+    if (!calc || !Array.isArray(calc.effects)) continue
+    
+    for (const eff of calc.effects) {
+      if (!eff || eff.type !== 'stat_transfer') continue
+      if (eff.operation === 'transfer_all' && eff.from_stat === 'intelligence' && eff.to_stat === 'charisme') {
+        // Transférer toute l'intelligence vers le charisme et mettre intelligence à 0
+        stats.charisme += stats.intelligence
+        stats.intelligence = 0
+      }
+    }
+  }
+
+  return stats
 })
 
 // Valeurs affichées en mode apocalypse (divisées par 10)

@@ -187,6 +187,9 @@ p {
 .artifact-rarete.legendaire {
   color: gold;
 }
+.artifact-rarete.unique {
+  color: #ff0000;
+}
 
 .actions {
   display: flex;

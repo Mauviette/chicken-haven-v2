@@ -170,7 +170,8 @@ function formatRareté(r) {
     commune: 'Commun',
     rare: 'Rare',
     epique: 'Épique',
-    legendaire: 'Légendaire'
+    legendaire: 'Légendaire',
+    unique: 'Unique'
   }
   return map[r] || r
 }
@@ -288,6 +289,9 @@ async function onReplaceArtifact(index) {
 }
 .rarete.legendaire {
   color: gold;
+}
+.rarete.unique {
+  color: #ff0000;
 }
 
 .section {

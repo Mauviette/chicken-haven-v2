@@ -348,8 +348,9 @@ function talentLabel(slot) {
     const id = slot?.especeId
     if (!id) return ''
     const tName = especies.value?.[id]?.talent || ''
+    const rarete = especies.value?.[id]?.rarete
     const lvl = Number(slot?.niveauTalent || 0)
-    const roman = lvl ? toRoman(lvl) : ''
+    const roman = (lvl && rarete !== 'unique') ? toRoman(lvl) : ''
     return roman ? `${tName} ${roman}` : tName
   } catch (_) { return '' }
 }

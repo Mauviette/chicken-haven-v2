@@ -22,7 +22,7 @@
           <span class="quantite">x{{ poule.quantite }}</span>
         </div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
-        <div class="categorie">
+        <div class="categorie" v-if="espece.rarete !== 'unique'">
           {{ formatGroupe(espece.id) }} (niv. {{ currentTalentLevel }}/{{ maxTalentLevel }})
         </div>
         <div class="talent">{{ getTalentDisplayName(poule) }}</div>
@@ -36,7 +36,7 @@
       <div class="info">
         <div class="name">???</div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
-        <div class="categorie">
+        <div class="categorie" v-if="espece.rarete !== 'unique'">
           {{ formatGroupe(espece.id) }} (niv. 0/{{ maxTalentLevel }})
         </div>
       </div>
@@ -139,6 +139,7 @@ function formatRareté(r) {
     rare: '🌟 Rare',
     epique: '💎 Épique',
     legendaire: '🔥 Légendaire',
+    unique: '🔴 Unique',
   }
   return map[r] || r
 }
@@ -272,12 +273,16 @@ function formatGroupe(especeId) {
 .poule-card.legendaire {
   border-color: gold;
 }
+.poule-card.unique {
+  border-color: #ff0000;
+}
 
 /* Harmonise le badge équipe avec la bordure de la carte selon la rareté */
 .poule-card.commune .badge-team { background: #c2c2c2; border: 2px solid #c2c2c2; }
 .poule-card.rare .badge-team { background: #7bc0ff; border: 2px solid #7bc0ff; }
 .poule-card.epique .badge-team { background: #c98bff; border: 2px solid #c98bff; }
 .poule-card.legendaire .badge-team { background: gold; border: 2px solid gold; color: #5c2c08; }
+.poule-card.unique .badge-team { background: #ff0000; border: 2px solid #ff0000; }
 
 .quantite {
   font-size: 12px;
@@ -309,6 +314,10 @@ function formatGroupe(especeId) {
 .poule-card.legendaire .rarete {
   background: #fffbe6;
   color: #b8860b;
+}
+.poule-card.unique .rarete {
+  background: #ffe6e6;
+  color: #cc0000;
 }
 
 .loading-card {
@@ -416,11 +425,15 @@ function formatGroupe(especeId) {
 .dark-mode .poule-card.legendaire {
   border-color: #999999 !important;
 }
+.dark-mode .poule-card.unique {
+  border-color: #ff6666 !important;
+}
 
 .dark-mode .poule-card.commune .badge-team { background: #666666 !important; border: 2px solid #666666 !important; }
 .dark-mode .poule-card.rare .badge-team { background: #777777 !important; border: 2px solid #777777 !important; }
 .dark-mode .poule-card.epique .badge-team { background: #888888 !important; border: 2px solid #888888 !important; }
 .dark-mode .poule-card.legendaire .badge-team { background: #999999 !important; border: 2px solid #999999 !important; color: #1a1a1a !important; }
+.dark-mode .poule-card.unique .badge-team { background: #ff6666 !important; border: 2px solid #ff6666 !important; }
 
 .dark-mode .poule-card .quantite {
   color: #aaaaaa !important;
@@ -441,6 +454,10 @@ function formatGroupe(especeId) {
 .dark-mode .poule-card.legendaire .rarete {
   background: rgba(153, 153, 153, 0.2) !important;
   color: #e0e0e0 !important;
+}
+.dark-mode .poule-card.unique .rarete {
+  background: rgba(255, 102, 102, 0.2) !important;
+  color: #ff6666 !important;
 }
 
 /* Badge NOUVEAU en mode sombre */
@@ -478,11 +495,15 @@ function formatGroupe(especeId) {
 .apocalypse-mode .poule-card.legendaire {
   border-color: #ffaa44 !important;
 }
+.apocalypse-mode .poule-card.unique {
+  border-color: #ff4444 !important;
+}
 
 .apocalypse-mode .poule-card.commune .badge-team { background: #ff4444 !important; border: 2px solid #ff4444 !important; }
 .apocalypse-mode .poule-card.rare .badge-team { background: #ff6b6b !important; border: 2px solid #ff6b6b !important; }
 .apocalypse-mode .poule-card.epique .badge-team { background: #ff8888 !important; border: 2px solid #ff8888 !important; }
 .apocalypse-mode .poule-card.legendaire .badge-team { background: #ffaa44 !important; border: 2px solid #ffaa44 !important; color: #ffffff !important; }
+.apocalypse-mode .poule-card.unique .badge-team { background: #ff4444 !important; border: 2px solid #ff4444 !important; }
 
 .apocalypse-mode .poule-card .quantite {
   color: #ffaaaa !important;
@@ -503,6 +524,10 @@ function formatGroupe(especeId) {
 .apocalypse-mode .poule-card.legendaire .rarete {
   background: rgba(255, 170, 68, 0.3) !important;
   color: #ffeedd !important;
+}
+.apocalypse-mode .poule-card.unique .rarete {
+  background: rgba(255, 68, 68, 0.3) !important;
+  color: #ffaaaa !important;
 }
 
 /* Badge NOUVEAU en mode apocalypse */

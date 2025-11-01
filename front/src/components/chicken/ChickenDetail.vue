@@ -15,7 +15,7 @@
             </div>
 
           <div class="rarete" :class="espece.rarete">{{ formatRareté(espece.rarete) }}</div>
-          <div class="categorie">{{ formatGroupe(espece.id) }} (niv. {{ currentPoule?.niveauTalent || 1 }}/{{ maxTalentLevel }})</div>
+          <div class="categorie" v-if="espece.rarete !== 'unique'">{{ formatGroupe(espece.id) }} (niv. ${currentPoule?.niveauTalent || 1}/${maxTalentLevel})</div>
           <div class="quantite"></div>
         </div>
       </div>
@@ -155,6 +155,7 @@ function formatRareté(r) {
     rare: '🌟 Rare',
     epique: '💎 Épique',
     legendaire: '🔥 Légendaire',
+    unique: '🔴 Unique',
   }
   return map[r] || r
 }
@@ -395,6 +396,9 @@ async function onUpgrade() {
 .rarete.legendaire {
     color: gold;
 }
+.rarete.unique {
+    color: #ff0000;
+}
 .section {
   display: flex;
   justify-content: space-between;
@@ -510,6 +514,9 @@ async function onUpgrade() {
 .dark-mode .rarete.legendaire {
   color: #bbbbbb !important;
 }
+.dark-mode .rarete.unique {
+  color: #ff6666 !important;
+}
 
 .dark-mode .section {
   background: rgba(42, 42, 42, 0.3) !important;
@@ -583,6 +590,9 @@ async function onUpgrade() {
 }
 .apocalypse-mode .rarete.legendaire {
   color: #ffaa44 !important;
+}
+.apocalypse-mode .rarete.unique {
+  color: #ff4444 !important;
 }
 
 .apocalypse-mode .section {

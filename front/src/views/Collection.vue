@@ -147,6 +147,7 @@ const rareteOrder = {
   rare: 2,
   epique: 3,
   legendaire: 4,
+  unique: 5,
 }
 
 onMounted(async () => {
@@ -223,13 +224,13 @@ const sortedArtifacts = computed(() => {
   
   // Trier les possédés par rareté (descendant)
   owned.sort((a, b) => {
-    const rarityOrder = { legendaire: 4, epique: 3, rare: 2, commune: 1 }
+    const rarityOrder = { unique: 5, legendaire: 4, epique: 3, rare: 2, commune: 1 }
     return (rarityOrder[b.rarete] || 0) - (rarityOrder[a.rarete] || 0)
   })
   
   // Trier les non possédés par rareté (ascendant)
   locked.sort((a, b) => {
-    const rarityOrder = { legendaire: 4, epique: 3, rare: 2, commune: 1 }
+    const rarityOrder = { unique: 5, legendaire: 4, epique: 3, rare: 2, commune: 1 }
     return (rarityOrder[a.rarete] || 0) - (rarityOrder[b.rarete] || 0)
   })
   

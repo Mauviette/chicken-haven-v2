@@ -180,6 +180,16 @@ export const especeData = {
     categorie: 'eclosion',
     rarete: 'legendaire',
     stats: { intelligence: 5, energie: 2, charisme: 3 }
+  },
+  'barbarian': {
+    nom: 'Poule barbare',
+    description: "Une poule guerrière qui sacrifie l'intelligence de l'équipe pour renforcer son charisme.",
+    image: 'chickens/barbarian/basic.png',
+    talent: 'Barbare',
+    groupe: null,
+    categorie: 'eclosion',
+    rarete: 'unique',
+    stats: { intelligence: 0, energie: 5, charisme: 2 }
   }
 }
 
@@ -526,13 +536,29 @@ export const talentsData = {
     icon: '⏰',
     calculation: {
       triggers: [ { type: 'active' } ],
-      cooldown_ms: 600,
+      cooldown_ms: 60000,
       effects: [
         {
           type: 'time_stop_buff',
           duration: 5000,
           click_multiplier_base: { op: 'add', args: [ 0.20, { op: 'mul', args: [ { var: 'niveau' }, 0.025 ] } ] },
           click_penalty_per_click: 0.001
+        }
+      ]
+    }
+  },
+  'Barbare': {
+    description: "Sacrifie l'intelligence de l'équipe pour renforcer son charisme.",
+    effet: "Charisme de l'équipe += intelligence de l'équipe, puis intelligence de l'équipe = 0",
+    icon: '⚔️',
+    calculation: {
+      triggers: [ { type: 'passive' } ],
+      effects: [
+        {
+          type: 'stat_transfer',
+          from_stat: 'intelligence',
+          to_stat: 'charisme',
+          operation: 'transfer_all'
         }
       ]
     }
@@ -795,6 +821,11 @@ export const talentLevelUpgradeCost = {
     limit: 6,
     egg_cost: [10000, 25000, 50000, 100000, 5000000],
     chicken_cost: [2, 4, 8, 16, 32]
+  },
+  unique: {
+    limit: 1,
+    egg_cost: [],
+    chicken_cost: []
   }
 }
 
@@ -1416,8 +1447,9 @@ export const questsData = {
           { type: 'max_eggs_in_click', objectif: 1000 }
         ],
         reward: {
-          type: 'precious_stone',
-          quantite: 5
+          type: 'chicken',
+          especeId: 'barbarian',
+          quantite: 1
         }
       }
     ]
