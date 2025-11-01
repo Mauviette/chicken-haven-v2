@@ -266,7 +266,7 @@ const { items, especies } = useGameData()
 const { eggs, addEggs, addTokens, refreshPlayer, apocalypse } = usePlayer()
 const { confirm: sndConfirm } = useSound()
 const route = useRoute()
-const { getImage } = usePoules()
+const { getImage, poules, hiddenImage } = usePoules()
 
 // Données des items depuis le backend
 const itemsData = computed(() => items.value)
@@ -405,6 +405,10 @@ const formatReward = (reward) => {
   if (!reward) return ''
   
   if (reward.type === 'chicken') {
+    // Pour les récompenses secrètes, afficher un texte mystère
+    if (reward.secret) {
+      return 'Poule ???'
+    }
     // Pour les récompenses de poules, on affiche le nom de l'espèce
     const especiesData = especies.value?.[reward.especeId]
     const chickenName = especiesData?.nom || reward.especeId
@@ -420,6 +424,10 @@ const getRewardIcon = (reward) => {
   if (!reward) return '❓'
 
   if (reward.type === 'chicken') {
+    // Pour les récompenses secrètes, utiliser l'image cachée
+    if (reward.secret) {
+      return hiddenImage
+    }
     return getImage(reward.especeId)
   }
 
@@ -431,6 +439,10 @@ const getRewardDescription = (reward) => {
   if (!reward) return 'Aucune récompense'
 
   if (reward.type === 'chicken') {
+    // Pour les récompenses secrètes, afficher une description mystère
+    if (reward.secret) {
+      return `<strong>Poule ???</strong><br>Une poule mystérieuse que vous n'avez pas encore découverte.`
+    }
     const especiesData = especies.value?.[reward.especeId]
     const chickenName = especiesData?.nom || reward.especeId
     const description = especiesData?.description || 'Une nouvelle poule à ajouter à votre équipe.'
@@ -455,7 +467,14 @@ const getStepProgressText = (step) => {
 const getFinalReward = (quest) => {
   if (!quest || !quest.steps || quest.steps.length === 0) return null
   // Retourner la récompense de la dernière étape
-  return quest.steps[quest.steps.length - 1]?.reward || null
+  const finalReward = quest.steps[quest.steps.length - 1]?.reward || null
+
+  // Appliquer la logique de récompense secrète comme dans le backend
+  if (finalReward && finalReward.type === 'chicken' && !poules.value?.some(p => p.especeId === finalReward.especeId && p.owned)) {
+    return { ...finalReward, secret: true }
+  }
+
+  return finalReward
 }
 </script>
 

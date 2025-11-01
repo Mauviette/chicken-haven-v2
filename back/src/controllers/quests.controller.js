@@ -20,26 +20,27 @@ export async function getQuestsStatus(req, res) {
     // Filtrer les quêtes disponibles selon le niveau du joueur
     const availableQuests = Object.values(questsData).filter(quest =>
       user.experience?.level >= quest.unlock_level
-    )
+    ).map(quest => ({
+      id: quest.id,
+      nom: quest.nom,
+      description: quest.description,
+      icon: quest.icon,
+      unlock_level: quest.unlock_level,
+      steps: quest.steps.map(step => ({
+        id: step.id,
+        description: step.description,
+        challenges: step.challenges,
+        reward: step.reward.type === 'chicken' && !user.poulesPossedees?.some(p => p.especeId === step.reward.especeId)
+          ? { ...step.reward, secret: true }
+          : step.reward
+      }))
+    }))
 
     res.json({
+      availableQuests,
       activeQuest: user.quests.activeQuest,
       completedQuests: user.quests.completedQuests || [],
-      questProgress: user.quests.questProgress || {},
-      abandonedQuests: user.quests.abandonedQuests || {},
-      availableQuests: availableQuests.map(quest => ({
-        id: quest.id,
-        nom: quest.nom,
-        description: quest.description,
-        icon: quest.icon,
-        unlock_level: quest.unlock_level,
-        steps: quest.steps.map(step => ({
-          id: step.id,
-          description: step.description,
-          challenges: step.challenges,
-          reward: step.reward
-        }))
-      }))
+      questProgress: user.quests.activeQuest ? user.quests.questProgress?.[user.quests.activeQuest] : null
     })
   } catch (error) {
     console.error('Erreur getQuestsStatus:', error)

@@ -1270,101 +1270,46 @@ export const questsData = {
         id: 'first_eggs',
         description: 'Récoltez des oeufs pour prouver votre talent d\'avicole.',
         challenges: [
-          { type: 'eggs_collected', objectif: 2500 },
-          { type: 'chicken_rarity_found', rarity: 'rare', objectif: 1 }
+          { type: 'eggs_collected', objectif: 1000 }
         ],
         reward: {
           type: 'production_token',
-          quantite: 2
-        }
-      },
-      {
-        id: 'first_chicken',
-        description: 'Obtenez votre première poule pour agrandir votre équipe.',
-        challenges: [
-          { type: 'spawnables_clicked', objectif: 5 },
-          { type: 'eggs_collected', objectif: 1 }
-        ],
-        reward: {
-          type: 'chicken',
-          especeId: 'poulette-rousse',
-          quantite: 1
-        }
-      },
-      {
-        id: 'first_box',
-        description: 'Ouvrez votre première boîte pour découvrir de nouvelles poules.',
-        challenges: [
-          { type: 'boxes_opened', objectif: 1 }
-        ],
-        reward: {
-          type: 'stock_token',
-          quantite: 1
-        }
-      },
-      {
-        id: 'find_rare_chicken',
-        description: 'Trouvez une poule rare dans une boîte.',
-        challenges: [
-          { type: 'chicken_rarity_found', rarity: 'rare', objectif: 1 }
-        ],
-        reward: {
-          type: 'production_token',
-          quantite: 1
-        }
-      }
-    ]
-  },
-  'growing_farm': {
-    id: 'growing_farm',
-    nom: 'L\'Expansion du Poulailler',
-    description: 'Votre ferme grandit et vos poules deviennent plus nombreuses. Il est temps d\'optimiser votre production.',
-    icon: '🌱',
-    unlock_level: 4,
-    steps: [
-      {
-        id: 'team_building',
-        description: 'Constituez une équipe solide avec différentes poules.',
-        challenges: [
-          { type: 'chicken_abilities_used', objectif: 10 }
-        ],
-        reward: {
-          type: 'production_token',
-          quantite: 1
-        }
-      },
-      {
-        id: 'talent_development',
-        description: 'Développez les talents de vos poules pour améliorer leurs capacités.',
-        challenges: [
-          { type: 'chicken_gifts_collected', objectif: 3 }
-        ],
-        reward: {
-          type: 'blueberry',
           quantite: 3
         }
       },
       {
-        id: 'production_boost',
-        description: 'Augmentez votre production d\'œufs grâce aux améliorations.',
+        id: 'second_eggs',
+        description: 'Récoltez plus d\'oeufs et trouvez des poules rares.',
         challenges: [
-          { type: 'eggs_collected', objectif: 500 }
+          { type: 'eggs_collected', objectif: 2000 },
+          { type: 'chicken_rarity_found', rarity: 'rare', objectif: 3 }
         ],
         reward: {
-          type: 'chicken',
-          especeId: 'poulette-rousse',
-          quantite: 1
+          type: 'stock_token',
+          quantite: 2
         }
       },
       {
-        id: 'find_epic_chicken',
-        description: 'Trouvez une poule épique dans une boîte.',
+        id: 'epic_chickens',
+        description: 'Trouvez des poules épiques et récoltez des cadeaux de poule.',
         challenges: [
-          { type: 'chicken_rarity_found', rarity: 'epique', objectif: 1 }
+          { type: 'chicken_gifts_collected', objectif: 10 },
+          { type: 'chicken_rarity_found', rarity: 'epique', objectif: 3 }
         ],
         reward: {
-          type: 'blueberry',
-          quantite: 2
+          type: 'production_token',
+          quantite: 3
+        }
+      },
+      {
+        id: 'find_legendary_chicken',
+        description: 'Trouvez une poule légendaire.',
+        challenges: [
+          { type: 'chicken_rarity_found', rarity: 'legendaire', objectif: 1 }
+        ],
+        reward: {
+          type: 'stock_token',
+          quantite: 4
         }
       }
     ]
@@ -1396,17 +1341,6 @@ export const questsData = {
         reward: {
           type: 'blueberry',
           quantite: 2
-        }
-      },
-      {
-        id: 'artifact_hunter',
-        description: 'Trouvez votre premier artefact de minage.',
-        challenges: [
-          { type: 'spawnables_clicked', objectif: 25 }
-        ],
-        reward: {
-          type: 'precious_stone',
-          quantite: 1
         }
       }
     ]
