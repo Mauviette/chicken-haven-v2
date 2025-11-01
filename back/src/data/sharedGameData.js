@@ -1293,8 +1293,8 @@ export const questsData = {
         id: 'epic_chickens',
         description: 'Trouvez des poules épiques et récoltez des cadeaux de poule.',
         challenges: [
+          { type: 'chicken_rarity_found', rarity: 'epique', objectif: 3 },
           { type: 'chicken_gifts_collected', objectif: 10 },
-          { type: 'chicken_rarity_found', rarity: 'epique', objectif: 3 }
         ],
         reward: {
           type: 'production_token',
@@ -1317,15 +1317,15 @@ export const questsData = {
   'mining_adventure': {
     id: 'mining_adventure',
     nom: 'L\'Aventure Minière',
-    description: 'Découvrez les secrets souterrains de votre ferme. Le minage vous réserve bien des surprises.',
+    description: 'Découvrez les secrets caillouteux. Le minage vous réserve bien des surprises.',
     icon: '⛏️',
     unlock_level: 5,
     steps: [
       {
         id: 'first_mining_game',
-        description: 'Jouez à votre première partie de minage.',
+        description: 'Jouez à des parties de minage.',
         challenges: [
-          { type: 'mining_games_played', objectif: 1 }
+          { type: 'mining_games_played', objectif: 3 }
         ],
         reward: {
           type: 'chest_key',
@@ -1334,12 +1334,23 @@ export const questsData = {
       },
       {
         id: 'mining_explorer',
-        description: 'Brisez 50 cases pour explorer les profondeurs.',
+        description: 'Brisez 100 cases.',
         challenges: [
-          { type: 'mining_cells_broken', objectif: 50 }
+          { type: 'mining_cells_broken', objectif: 100 }
         ],
         reward: {
-          type: 'blueberry',
+          type: 'mining_token',
+          quantite: 2
+        }
+      },
+      {
+        id: 'mining_explorer',
+        description: 'Brisez 500 cases.',
+        challenges: [
+          { type: 'mining_cells_broken', objectif: 100 }
+        ],
+        reward: {
+          type: 'mining_token',
           quantite: 2
         }
       }

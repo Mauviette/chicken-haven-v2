@@ -70,10 +70,10 @@ export function useBuffs() {
   // Met à jour les buffs depuis getEggStatus (qui inclut maintenant les buffs)
   function updateBuffsFromEggStatus(eggStatusData) {
     if (eggStatusData?.buffs) {
-      console.log('updateBuffsFromEggStatus: Updating buffs from egg status:', eggStatusData.buffs)
+      //console.log('updateBuffsFromEggStatus: Updating buffs from egg status:', eggStatusData.buffs)
       buffs.value = eggStatusData.buffs
       cleanExpiredBuffs()
-      console.log('updateBuffsFromEggStatus: Buffs updated to:', buffs.value)
+      //console.log('updateBuffsFromEggStatus: Buffs updated to:', buffs.value)
     }
   }
 
