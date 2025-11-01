@@ -246,7 +246,9 @@ export async function checkAvailableSpawnables(req, res) {
               type: objectType,
               icon: spawnEffect.icon,
               style: spawnEffect.style || {},
-              nivel: niveau
+              nivel: niveau,
+              timestamp: now, // Envoyer le timestamp de création du backend
+              lifetime: SPAWNABLE_LIFETIME // Envoyer la durée de vie
             }
             
             availableSpawnables.push(newSpawnable)
@@ -291,8 +293,6 @@ export async function clickSpawnableObject(req, res) {
       return res.status(400).json({ error: 'Données manquantes' })
     }
 
-    const userId = req.userId.toString()
-
     // Utiliser findOneAndUpdate avec des conditions atomiques pour éviter la duplication
     const updateResult = await User.findOneAndUpdate(
       {
@@ -306,7 +306,7 @@ export async function clickSpawnableObject(req, res) {
         }
       },
       { 
-        new: false, // Retourner le document avant modification
+        new: false,
         lean: false
       }
     )
@@ -494,6 +494,11 @@ export async function clickSpawnableObject(req, res) {
     // Incrémenter le compteur de spawnables cliqués pour les succès
     await updateAchievementProgress(req.userId, 'increment', {
       spawnablesClicked: 1
+    })
+
+    res.json({
+      success: true,
+      reward: appliedReward
     })
 
   } catch (error) {

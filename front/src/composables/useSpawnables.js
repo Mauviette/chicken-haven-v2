@@ -37,8 +37,9 @@ export function useSpawnables() {
               x: Math.random() * 80 + 10,
               y: Math.random() * 60 + 20,
               rotation: Math.random() * 360,
-              timestamp: Date.now(),
-              lifetime: SPAWNABLE_LIFETIME
+              // Utiliser le timestamp et lifetime du backend au lieu de les redéfinir
+              timestamp: spawnable.timestamp || Date.now(),
+              lifetime: spawnable.lifetime || SPAWNABLE_LIFETIME
             }
             
             spawnedObjects.value.push(newSpawnable)
@@ -55,12 +56,19 @@ export function useSpawnables() {
 
   const clickObject = async (spawnable) => {
     try {
-      const response = await apiPost('/api/spawnables/click', {
+      // Ajouter un timeout de 5 secondes
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('API timeout')), 5000)
+      })
+      
+      const apiPromise = apiPost('/api/spawnables/click', {
         spawnerId: spawnable.spawnerId,
         objectId: spawnable.id,
         talentName: spawnable.talentName,
         especeId: spawnable.especeId
       })
+      
+      const response = await Promise.race([apiPromise, timeoutPromise])
 
       if (response.success) {
         const index = spawnedObjects.value.findIndex(obj => obj.spawnerId === spawnable.spawnerId)
@@ -83,18 +91,17 @@ export function useSpawnables() {
     } catch (error) {
       console.error('Erreur lors du clic sur spawnable:', error)
       
+      // En cas d'erreur, vérifier si c'est parce que l'objet a déjà été collecté
       if (error.message && error.message.includes('400')) {
         if (error.message.includes('expiré') || error.message.includes('collecté') || error.message.includes('existe pas')) {
-          showToast('Cet objet a déjà disparu !', 'warning', 3000)
+          console.log('Object was already collected/expired, removing from frontend')
           const index = spawnedObjects.value.findIndex(obj => obj.spawnerId === spawnable.spawnerId)
           if (index !== -1) {
             spawnedObjects.value.splice(index, 1)
           }
-        } else {
-          showToast("Erreur lors de la récupération de l'objet", 'error')
+          // Puisque l'objet a été collecté côté backend, créer les effets visuels par défaut
+          return { type: 'resource', resource: 'eggs', amount: 50 } // Valeur par défaut
         }
-      } else {
-        showToast("Une erreur inattendue s'est produite", 'error')
       }
     }
     return null

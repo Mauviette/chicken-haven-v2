@@ -89,7 +89,11 @@ export function useQuests() {
         const steps = quest.steps?.map(step => {
           const stepProgress = progress[step.id] || {}
           const isStepCompleted = step.challenges?.every(challenge => {
-            const currentValue = stepProgress[challenge.type] || 0
+            let progressKey = challenge.type
+            if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+              progressKey = `chicken_rarity_found_${challenge.rarity}`
+            }
+            const currentValue = stepProgress[progressKey] || 0
             return currentValue >= challenge.objectif
           }) || false
 
@@ -164,6 +168,24 @@ export function useQuests() {
     }
   })
 
+  const upcomingQuests = computed(() => {
+    try {
+      const playerData = usePlayer()
+      const level = playerData?.level?.value || 1
+      return quests.value?.filter(q => !q.completed && q.unlock_level > level).map(quest => {
+        // Ajouter la récompense finale (dernière étape) pour les quêtes à venir
+        const finalReward = quest.steps?.[quest.steps.length - 1]?.reward
+        return {
+          ...quest,
+          finalReward
+        }
+      }) || []
+    } catch (error) {
+      console.error('Error in upcomingQuests:', error)
+      return []
+    }
+  })
+
   const completedCount = computed(() => {
     try {
       if (!userQuests || !userQuests.value) return 0
@@ -184,11 +206,9 @@ export function useQuests() {
 
   const totalCount = computed(() => {
     try {
-      const playerData = usePlayer()
-      const level = playerData?.level?.value || 1
       const allQuests = quests.value || []
-      // Compter toutes les quêtes qui sont soit disponibles, soit déjà complétées
-      return allQuests.filter(q => q.unlock_level <= level).length
+      // Compter toutes les quêtes disponibles (accessibles ou non au niveau actuel)
+      return allQuests.length
     } catch (error) {
       console.error('Error in totalCount:', error)
       return 0
@@ -221,7 +241,11 @@ export function useQuests() {
       let completedChallenges = 0
 
       step.challenges.forEach(challenge => {
-        const currentValue = stepProgress[challenge.type] || 0
+        let progressKey = challenge.type
+        if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+          progressKey = `chicken_rarity_found_${challenge.rarity}`
+        }
+        const currentValue = stepProgress[progressKey] || 0
         if (currentValue >= challenge.objectif) {
           completedChallenges++
         }
@@ -244,7 +268,11 @@ export function useQuests() {
 
       // Vérifier que l'étape est complétée
       const isCompleted = step.challenges?.every(challenge => {
-        const currentValue = stepProgress[challenge.type] || 0
+        let progressKey = challenge.type
+        if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+          progressKey = `chicken_rarity_found_${challenge.rarity}`
+        }
+        const currentValue = stepProgress[progressKey] || 0
         return currentValue >= challenge.objectif
       }) || false
 
@@ -280,7 +308,17 @@ export function useQuests() {
       const questProgress = userQuests.value.questProgress?.[activeQuest.value.id] || {}
       const stepProgress = questProgress[step.id] || {}
 
-      return stepProgress[challengeType] || 0
+      // Pour les challenges de rareté, utiliser la clé spécifique
+      let progressKey = challengeType
+      if (challengeType === 'chicken_rarity_found') {
+        // Trouver le challenge correspondant dans l'étape pour obtenir la rareté
+        const challenge = step.challenges?.find(c => c.type === challengeType)
+        if (challenge && challenge.rarity) {
+          progressKey = `chicken_rarity_found_${challenge.rarity}`
+        }
+      }
+
+      return stepProgress[progressKey] || 0
     } catch (error) {
       console.error('Error in getChallengeProgress:', error)
       return 0
@@ -325,6 +363,15 @@ export function useQuests() {
           return `Briser ${objectif} case${objectif > 1 ? 's' : ''} en minage (${progress}/${objectif})`
         case 'max_eggs_in_click':
           return `Récolter ${objectif} œufs en un clic (${progress}/${objectif})`
+        case 'chicken_rarity_found':
+          const rarityLabels = {
+            'commune': 'commune',
+            'rare': 'rare',
+            'epique': 'épique',
+            'legendaire': 'légendaire'
+          }
+          const rarityLabel = rarityLabels[challenge.rarity] || challenge.rarity
+          return `Trouver ${objectif} poule${objectif > 1 ? 's' : ''} ${rarityLabel}${objectif > 1 ? 's' : ''} (${progress}/${objectif})`
         default:
           return `${challenge.type}: ${progress}/${objectif}`
       }
@@ -528,6 +575,7 @@ export function useQuests() {
     availableQuests,
     completedQuests,
     incompleteQuests,
+    upcomingQuests,
     completedCount,
     totalCount,
     progressPercentage,

@@ -1,5 +1,5 @@
 import User from '../models/User.js'
-import { questsData } from '../data/sharedGameData.js'
+import { questsData, especeData } from '../data/sharedGameData.js'
 
 // GET /api/quests/status - Récupère le statut des quêtes du joueur
 export async function getQuestsStatus(req, res) {
@@ -126,6 +126,18 @@ export async function acceptQuest(req, res) {
               case 'chicken_gifts_collected':
                 initialValues[challenge.type] = user.achievements?.progress?.chickenGiftsCollected || 0
                 break
+              case 'chicken_rarity_found':
+                // Pour les challenges de rareté, calculer le nombre initial de poules de cette rareté
+                const targetRarity = challenge.rarity
+                const initialRarityKey = `chicken_rarity_found_${targetRarity}`
+                const initialChickensFound = (user.poulesPossedees || [])
+                  .filter(poule => {
+                    const chickenData = especeData[poule.especeId]
+                    return chickenData && chickenData.rarete === targetRarity
+                  })
+                  .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
+                initialValues[initialRarityKey] = initialChickensFound
+                break
               default:
                 initialValues[challenge.type] = 0
             }
@@ -223,6 +235,18 @@ export async function acceptQuest(req, res) {
               break
             case 'chicken_gifts_collected':
               initialValues[challenge.type] = user.achievements?.progress?.chickenGiftsCollected || 0
+              break
+            case 'chicken_rarity_found':
+              // Pour les challenges de rareté, calculer le nombre initial de poules de cette rareté
+              const targetRarity = challenge.rarity
+              const initialRarityKey = `chicken_rarity_found_${targetRarity}`
+              const initialChickensFound = (user.poulesPossedees || [])
+                .filter(poule => {
+                  const chickenData = especeData[poule.especeId]
+                  return chickenData && chickenData.rarete === targetRarity
+                })
+                .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
+              initialValues[initialRarityKey] = initialChickensFound
               break
             default:
               initialValues[challenge.type] = 0
@@ -532,16 +556,39 @@ export async function checkQuestProgress(req, res) {
           case 'chicken_gifts_collected':
             currentTotalValue = user.achievements?.progress?.chickenGiftsCollected || 0
             break
+          case 'chicken_rarity_found':
+            // Pour les challenges de rareté, on utilise une clé unique par rareté
+            const targetRarity = challenge.rarity
+            const rarityKey = `chicken_rarity_found_${targetRarity}`
+            const chickensFound = (user.poulesPossedees || [])
+              .filter(poule => {
+                const chickenData = especeData[poule.especeId]
+                return chickenData && chickenData.rarete === targetRarity
+              })
+              .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
+            currentTotalValue = chickensFound
+            // Calculer le progrès depuis l'acceptation de la quête
+            const initialValue = initialValues[rarityKey] || 0
+            const progressValue = Math.max(0, currentTotalValue - initialValue)
+            // Mettre à jour si la valeur a changé
+            if (stepProgress[rarityKey] !== progressValue) {
+              stepProgress[rarityKey] = progressValue
+              progressUpdated = true
+            }
+            break
         }
 
-        // Calculer le progrès depuis l'acceptation de la quête
-        const initialValue = initialValues[challenge.type] || 0
-        const progressValue = Math.max(0, currentTotalValue - initialValue)
+        // Pour les challenges qui n'ont pas de logique spécifique, appliquer la logique générale
+        if (challenge.type !== 'chicken_rarity_found') {
+          // Calculer le progrès depuis l'acceptation de la quête
+          const initialValue = initialValues[challenge.type] || 0
+          const progressValue = Math.max(0, currentTotalValue - initialValue)
 
-        // Mettre à jour si la valeur a changé
-        if (stepProgress[challenge.type] !== progressValue) {
-          stepProgress[challenge.type] = progressValue
-          progressUpdated = true
+          // Mettre à jour si la valeur a changé
+          if (stepProgress[challenge.type] !== progressValue) {
+            stepProgress[challenge.type] = progressValue
+            progressUpdated = true
+          }
         }
       })
 
@@ -609,12 +656,21 @@ export async function updateQuestProgress(userId, progressType, value) {
       const stepProgress = questProgress[step.id] || {}
 
       step.challenges.forEach(challenge => {
-        if (challenge.type === progressType) {
-          const currentValue = stepProgress[challenge.type] || 0
+        let matches = false
+        let storageKey = challenge.type
+        
+        // Les challenges 'chicken_rarity_found' sont gérés uniquement par checkQuestProgress
+        // qui recalcule le progrès en temps réel basé sur les poules possédées
+        if (challenge.type === progressType && challenge.type !== 'chicken_rarity_found') {
+          matches = true
+        }
+        
+        if (matches) {
+          const currentValue = stepProgress[storageKey] || 0
           const newValue = typeof value === 'number' ? Math.max(currentValue, value) : currentValue + 1
 
           if (newValue !== currentValue) {
-            stepProgress[challenge.type] = newValue
+            stepProgress[storageKey] = newValue
             updated = true
           }
         }
@@ -631,5 +687,141 @@ export async function updateQuestProgress(userId, progressType, value) {
     }
   } catch (error) {
     console.error('Erreur updateQuestProgress:', error)
+  }
+}
+
+// Utilitaire pour mettre à jour automatiquement tous les progrès de quête
+export async function updateAllQuestProgress(userId) {
+  try {
+    const user = await User.findById(userId)
+    if (!user || !user.quests?.activeQuest) return
+
+    const questId = user.quests.activeQuest
+    const quest = questsData[questId]
+    if (!quest) return
+
+    let progressUpdated = false
+    const questProgress = user.quests.questProgress?.[questId] || {}
+    const initialValues = user.quests.initialValues?.[questId] || {}
+
+    // Mettre à jour le progrès pour chaque étape
+    quest.steps.forEach(step => {
+      const stepProgress = questProgress[step.id] || {}
+
+      step.challenges.forEach(challenge => {
+        let currentTotalValue = 0
+
+        // Obtenir la valeur totale actuelle selon le type de défi
+        switch (challenge.type) {
+          case 'eggs_collected':
+            currentTotalValue = user.resources?.eggs || 0
+            break
+          case 'chickens_owned':
+            const totalChickens = user.poulesPossedees?.reduce((sum, p) => sum + (p.quantite || 0), 0) || 0
+            currentTotalValue = totalChickens
+            break
+          case 'boxes_opened':
+            currentTotalValue = user.achievements?.progress?.totalBoxesOpened || 0
+            break
+          case 'talent_level_reached':
+            const maxTalentLevel = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
+            currentTotalValue = maxTalentLevel
+            break
+          case 'mining_games_played':
+            currentTotalValue = user.achievements?.progress?.miningGamesPlayed || 0
+            break
+          case 'mining_cells_broken':
+            currentTotalValue = user.achievements?.progress?.miningCellsBroken || 0
+            break
+          case 'mining_artifacts_found':
+            currentTotalValue = user.achievements?.progress?.miningArtifactsFound || 0
+            break
+          case 'max_eggs_in_click':
+            currentTotalValue = user.achievements?.progress?.maxEggsInOneClick || 0
+            break
+          case 'spawnables_clicked':
+            currentTotalValue = user.achievements?.progress?.spawnablesClicked || 0
+            break
+          case 'chicken_abilities_used':
+            currentTotalValue = user.achievements?.progress?.chickenAbilitiesUsed || 0
+            break
+          case 'chicken_gifts_collected':
+            currentTotalValue = user.achievements?.progress?.chickenGiftsCollected || 0
+            break
+          case 'chicken_rarity_found':
+            // Pour les challenges de rareté, on utilise une clé unique par rareté
+            const targetRarity = challenge.rarity
+            const rarityKey = `chicken_rarity_found_${targetRarity}`
+            const chickensFound = (user.poulesPossedees || [])
+              .filter(poule => {
+                const chickenData = especeData[poule.especeId]
+                return chickenData && chickenData.rarete === targetRarity
+              })
+              .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
+            currentTotalValue = chickensFound
+            // Calculer le progrès depuis l'acceptation de la quête
+            const initialValue = initialValues[rarityKey] || 0
+            const progressValue = Math.max(0, currentTotalValue - initialValue)
+            // Mettre à jour si la valeur a changé
+            if (stepProgress[rarityKey] !== progressValue) {
+              stepProgress[rarityKey] = progressValue
+              progressUpdated = true
+            }
+            break
+        }
+
+        // Pour les challenges qui n'ont pas de logique spécifique, appliquer la logique générale
+        if (challenge.type !== 'chicken_rarity_found') {
+          // Calculer le progrès depuis l'acceptation de la quête
+          const initialValue = initialValues[challenge.type] || 0
+          const progressValue = Math.max(0, currentTotalValue - initialValue)
+
+          // Mettre à jour si la valeur a changé
+          if (stepProgress[challenge.type] !== progressValue) {
+            stepProgress[challenge.type] = progressValue
+            progressUpdated = true
+          }
+        }
+      })
+
+      questProgress[step.id] = stepProgress
+    })
+
+    // Vérifier si la quête est terminée
+    let questCompleted = false
+    const allStepsClaimed = quest.steps.every(step => {
+      const stepProgress = questProgress[step.id]
+      return stepProgress?.rewardClaimed === true
+    })
+
+    if (allStepsClaimed) {
+      questCompleted = true
+      user.quests.completedQuests = user.quests.completedQuests || []
+      if (!user.quests.completedQuests.includes(questId)) {
+        user.quests.completedQuests.push(questId)
+      }
+      user.quests.activeQuest = null
+
+      // Nettoyer le progrès
+      if (user.quests.questProgress && user.quests.questProgress[questId]) {
+        delete user.quests.questProgress[questId]
+      }
+
+      // Nettoyer les valeurs initiales
+      if (user.quests.initialValues && user.quests.initialValues[questId]) {
+        delete user.quests.initialValues[questId]
+      }
+    }
+
+    if (progressUpdated || questCompleted) {
+      user.quests.questProgress = user.quests.questProgress || {}
+      user.quests.questProgress[questId] = questProgress
+      user.markModified('quests')
+      await user.save()
+    }
+
+    return { updated: progressUpdated || questCompleted, questCompleted }
+  } catch (error) {
+    console.error('Erreur updateAllQuestProgress:', error)
   }
 }

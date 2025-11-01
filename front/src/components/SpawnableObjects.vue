@@ -38,10 +38,10 @@ const { play } = useSound()
 
 const handleClick = async (obj, event) => {
   try {
-    // Vérifier si l'objet n'est pas expiré côté frontend avant de continuer
-    const now = Date.now()
-    const age = now - obj.timestamp
-        if (age >= obj.lifetime) return
+    // La vérification d'expiration est gérée côté backend
+    // const now = Date.now()
+    // const age = now - obj.timestamp
+    // if (age >= obj.lifetime) return
     
     // Jouer un son
     play('select_004', { volume: 0.25 })

@@ -172,6 +172,27 @@
           </div>
         </div>
 
+        <!-- Quêtes à venir -->
+        <div class="upcoming-quests-section" v-if="upcomingQuests && upcomingQuests.length > 0">
+          <h3>Quêtes à Venir</h3>
+          <div class="upcoming-quests-list">
+            <div
+              v-for="quest in upcomingQuests || []"
+              :key="quest.id"
+              class="upcoming-quest-item"
+            >
+              <div class="quest-icon">{{ quest.icon || '📜' }}</div>
+              <div class="quest-details">
+                <div class="quest-name">{{ quest.nom || 'Chargement...' }}</div>
+                <div class="quest-description">{{ quest.description || '' }}</div>
+                <div class="quest-unlock">
+                  Débloquée au niveau {{ quest.unlock_level }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Quêtes terminées -->
         <div class="completed-quests-section" v-if="completedQuests && completedQuests.length > 0">
           <h3>Quêtes Terminées</h3>
@@ -237,7 +258,8 @@ const emit = defineEmits(['close'])
     getChallengeProgress,
     formatChallenge,
     fetchGameData,
-    completedQuests
+    completedQuests,
+    upcomingQuests
   } = useQuests()
 
 const { items, especies } = useGameData()
@@ -589,291 +611,28 @@ const getFinalReward = (quest) => {
   margin-top: 4px;
 }
 
-.active-quest-section,
-.available-quests-section {
+.available-quests-section,
+.upcoming-quests-section {
   padding: 15px;
 }
 
-.active-quest-section h3,
-.available-quests-section h3 {
+.available-quests-section h3,
+.upcoming-quests-section h3 {
   margin: 0 0 10px 0;
   color: #8B4513;
   font-size: 16px;
   font-weight: bold;
 }
 
-.active-quest-card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid #8B4513;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(139, 69, 19, 0.1);
-}
-
-.quest-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 15px;
-}
-
-.quest-icon {
-  font-size: 24px;
-  min-width: 30px;
-  text-align: center;
-}
-
-.quest-info {
-  flex: 1;
-}
-
-.quest-name {
-  font-size: 16px;
-  font-weight: bold;
-  color: #8B4513;
-  margin-bottom: 4px;
-}
-
-.quest-description {
-  font-size: 12px;
-  color: #666;
-  line-height: 1.4;
-}
-
-.abandon-btn {
-  background: #dc3545;
-  border: 2px solid #b02a37;
-  color: white;
-  border-radius: 4px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
-  transition: all 0.2s ease;
-}
-
-.abandon-btn:hover {
-  background: #c82333;
-  transform: scale(1.1);
-}
-
-.quest-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.step-indicator {
-  position: absolute;
-  top: -8px;
-  left: 12px;
-  background: #8B4513;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: bold;
-  z-index: 1;
-}
-
-.quest-completed-message {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 30px 20px;
-  background: rgba(40, 167, 69, 0.1);
-  border: 2px solid #28a745;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.completed-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-}
-
-.completed-text {
-  font-size: 14px;
-  font-weight: bold;
-  color: #28a745;
-  margin-bottom: 4px;
-}
-
-.completed-subtext {
-  font-size: 11px;
-  color: #666;
-  line-height: 1.3;
-}
-
-.quest-step {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 2px solid #ddd;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.quest-step.completed {
-  border-color: #28a745;
-  background: rgba(40, 167, 69, 0.1);
-}
-
-.quest-step.waiting {
-  border-color: #ffc107;
-  background: rgba(255, 193, 7, 0.1);
-}
-
-.quest-step:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.step-content {
-  flex: 1;
-}
-
-.step-description {
-  font-size: 13px;
-  color: #8B4513;
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-.step-challenges {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.challenge-item {
-  padding: 4px 0;
-}
-
-.challenge-item.completed {
-  opacity: 0.8;
-}
-
-.challenge-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2px;
-}
-
-.challenge-text {
-  font-size: 11px;
-  color: #666;
-  font-weight: 500;
-}
-
-.challenge-item.completed .challenge-text {
-  color: #28a745;
-  font-weight: bold;
-}
-
-.challenge-progress {
-  width: 100%;
-}
-
-.challenge-progress .progress-bar {
-  height: 4px;
-  background: #e0e0e0;
-  border-radius: 2px;
-  overflow: hidden;
-  border: 1px solid #ccc;
-}
-
-.challenge-progress .progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #28a745, #20c997);
-  transition: width 0.3s ease;
-}
-
-.step-reward {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 4px;
-  background: rgba(255, 215, 0, 0.2);
-  border: 2px solid #FFD700;
-  border-radius: 3px;
-}
-
-.claim-reward-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(145deg, #FFD700, #FFA500);
-  border: 2px solid #8B4513;
-  border-radius: 3px;
-  padding: 6px 8px;
-  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  min-width: 70px;
-  box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
-}
-
-.claim-reward-btn:hover {
-  background: linear-gradient(145deg, #FFA500, #FF8C00);
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.reward-preview {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 70px;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.3);
-  border: 2px solid #ddd;
-  border-radius: 3px;
-  opacity: 0.6;
-}
-
-.reward-amount {
-  font-size: 10px;
-  color: #8B4513;
-  font-weight: bold;
-  text-align: center;
-}
-
-.reward-icon {
-  font-size: 16px;
-  min-width: 18px;
-  text-align: center;
-}
-
-.reward-chicken-image {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  border-radius: 2px;
-}
-
-.reward-chicken-image-small {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-  border-radius: 2px;
-}
-
-.available-quests-list {
+.available-quests-list,
+.upcoming-quests-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.available-quest-item {
+.available-quest-item,
+.upcoming-quest-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -889,23 +648,39 @@ const getFinalReward = (quest) => {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.available-quest-item .quest-icon {
+.upcoming-quest-item {
+  opacity: 0.7;
+  background: rgba(255, 255, 255, 0.6);
+  border-color: #ccc;
+}
+
+.upcoming-quest-item:hover {
+  transform: none;
+  box-shadow: none;
+  cursor: default;
+}
+
+.available-quest-item .quest-icon,
+.upcoming-quest-item .quest-icon {
   font-size: 20px;
   min-width: 25px;
 }
 
-.available-quest-item .quest-details {
+.available-quest-item .quest-details,
+.upcoming-quest-item .quest-details {
   flex: 1;
 }
 
-.available-quest-item .quest-name {
+.available-quest-item .quest-name,
+.upcoming-quest-item .quest-name {
   font-size: 14px;
   font-weight: bold;
   color: #8B4513;
   margin-bottom: 2px;
 }
 
-.available-quest-item .quest-description {
+.available-quest-item .quest-description,
+.upcoming-quest-item .quest-description {
   font-size: 11px;
   color: #666;
   margin-bottom: 4px;
@@ -1038,6 +813,264 @@ const getFinalReward = (quest) => {
   border: 1px solid #28a745;
 }
 
+/* Section Quête Active */
+.active-quest-section {
+  padding: 15px;
+}
+
+.active-quest-section h3 {
+  margin: 0 0 10px 0;
+  color: #8B4513;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.active-quest-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.quest-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.quest-icon {
+  font-size: 24px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.quest-info {
+  flex: 1;
+}
+
+.quest-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #8B4513;
+  margin-bottom: 4px;
+}
+
+.quest-description {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.abandon-btn {
+  background: #dc3545;
+  border: 2px solid #b02a37;
+  color: white;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  transition: all 0.2s ease;
+}
+
+.abandon-btn:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.quest-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.quest-step {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quest-step.completed {
+  border-color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+}
+
+.step-indicator {
+  background: #8B4513;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  align-self: flex-start;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step-description {
+  color: #8B4513;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
+.step-challenges {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.challenge-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.challenge-item.completed .challenge-text {
+  color: #28a745;
+}
+
+.challenge-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.challenge-text {
+  color: #666;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.challenge-progress {
+  width: 100%;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  transition: width 0.3s ease;
+}
+
+.step-reward {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 10px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid #ffd700;
+  border-radius: 6px;
+  margin-top: 8px;
+  max-width: fit-content;
+  align-self: center;
+}
+
+.reward-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+}
+
+.reward-preview .reward-icon {
+  font-size: 16px;
+}
+
+.reward-preview .reward-amount {
+  font-size: 12px;
+  color: #8B4513;
+  font-weight: bold;
+}
+
+.claim-reward-btn {
+  background: linear-gradient(145deg, #ffd700, #FFA500);
+  border: 2px solid #444444;
+  color: #8B4513;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.claim-reward-btn:hover {
+  background: linear-gradient(145deg, #FFA500, #FF8C00);
+  transform: scale(1.05);
+}
+
+.claim-reward-btn .reward-icon {
+  font-size: 16px;
+}
+
+.claim-reward-btn .reward-amount {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.reward-chicken-image {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
+.reward-chicken-image-small {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
+.quest-completed-message {
+  background: rgba(40, 167, 69, 0.1);
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+}
+
+.completed-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.completed-text {
+  color: #28a745;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.completed-subtext {
+  color: #666;
+  font-size: 12px;
+}
+
 /* Mode Apocalypse */
 .quests-overlay.apocalypse-mode .quests-menu {
   background: #2d1b1b;
@@ -1073,17 +1106,21 @@ const getFinalReward = (quest) => {
   color: #ff6b6b;
 }
 
-.quests-overlay.apocalypse-mode .active-quest-card {
-  background: rgba(45, 27, 27, 0.9);
-  border-color: #ff4444;
+.quests-overlay.apocalypse-mode .quest-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
 }
 
-.quests-overlay.apocalypse-mode .quest-name {
-  color: #ffcccc;
+.quests-overlay.apocalypse-mode .quest-icon {
+  font-size: 24px;
+  min-width: 30px;
+  text-align: center;
 }
 
-.quests-overlay.apocalypse-mode .quest-description {
-  color: #ffaaaa;
+.quests-overlay.apocalypse-mode .quest-info {
+  flex: 1;
 }
 
 .quests-overlay.apocalypse-mode .quest-step {
@@ -1157,17 +1194,19 @@ const getFinalReward = (quest) => {
   color: #ffcccc;
 }
 
-.quests-overlay.apocalypse-mode .available-quest-item {
-  background: rgba(45, 27, 27, 0.9);
-  border-color: #ff4444;
+.quests-overlay.apocalypse-mode .active-quest-section,
+.quests-overlay.apocalypse-mode .available-quests-section,
+.quests-overlay.apocalypse-mode .upcoming-quests-section {
+  padding: 15px;
 }
 
-.quests-overlay.apocalypse-mode .available-quest-item .quest-name {
+.quests-overlay.apocalypse-mode .active-quest-section h3,
+.quests-overlay.apocalypse-mode .available-quests-section h3,
+.quests-overlay.apocalypse-mode .upcoming-quests-section h3 {
+  margin: 0 0 10px 0;
   color: #ffcccc;
-}
-
-.quests-overlay.apocalypse-mode .available-quest-item .quest-description {
-  color: #ffaaaa;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .quests-overlay.apocalypse-mode .quest-unlock {
@@ -1271,17 +1310,21 @@ const getFinalReward = (quest) => {
   color: #cccccc;
 }
 
-.dark-mode .active-quest-card {
-  background: rgba(26, 26, 26, 0.9);
-  border-color: #666666;
+.dark-mode .quest-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
 }
 
-.dark-mode .quest-name {
-  color: #e0e0e0;
+.dark-mode .quest-icon {
+  font-size: 24px;
+  min-width: 30px;
+  text-align: center;
 }
 
-.dark-mode .quest-description {
-  color: #cccccc;
+.dark-mode .quest-info {
+  flex: 1;
 }
 
 .dark-mode .quest-step {
@@ -1355,17 +1398,19 @@ const getFinalReward = (quest) => {
   color: #e0e0e0;
 }
 
-.dark-mode .available-quest-item {
-  background: rgba(26, 26, 26, 0.9);
-  border-color: #666666;
+.dark-mode .active-quest-section,
+.dark-mode .available-quests-section,
+.dark-mode .upcoming-quests-section {
+  padding: 15px;
 }
 
-.dark-mode .available-quest-item .quest-name {
+.dark-mode .active-quest-section h3,
+.dark-mode .available-quests-section h3,
+.dark-mode .upcoming-quests-section h3 {
+  margin: 0 0 10px 0;
   color: #e0e0e0;
-}
-
-.dark-mode .available-quest-item .quest-description {
-  color: #cccccc;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .dark-mode .quest-unlock {
@@ -1444,17 +1489,21 @@ const getFinalReward = (quest) => {
   color: #ff6b6b;
 }
 
-.dark-mode.apocalypse-mode .active-quest-card {
-  background: rgba(26, 15, 15, 0.9);
-  border-color: #ff4444;
+.dark-mode.apocalypse-mode .quest-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
 }
 
-.dark-mode.apocalypse-mode .quest-name {
-  color: #ffaaaa;
+.dark-mode.apocalypse-mode .quest-icon {
+  font-size: 24px;
+  min-width: 30px;
+  text-align: center;
 }
 
-.dark-mode.apocalypse-mode .quest-description {
-  color: #ff8888;
+.dark-mode.apocalypse-mode .quest-info {
+  flex: 1;
 }
 
 .dark-mode.apocalypse-mode .quest-step {
@@ -1528,17 +1577,19 @@ const getFinalReward = (quest) => {
   color: #ffaaaa;
 }
 
-.dark-mode.apocalypse-mode .available-quest-item {
-  background: rgba(26, 15, 15, 0.9);
-  border-color: #ff4444;
+.dark-mode.apocalypse-mode .active-quest-section,
+.dark-mode.apocalypse-mode .available-quests-section,
+.dark-mode.apocalypse-mode .upcoming-quests-section {
+  padding: 15px;
 }
 
-.dark-mode.apocalypse-mode .available-quest-item .quest-name {
+.dark-mode.apocalypse-mode .active-quest-section h3,
+.dark-mode.apocalypse-mode .available-quests-section h3,
+.dark-mode.apocalypse-mode .upcoming-quests-section h3 {
+  margin: 0 0 10px 0;
   color: #ffaaaa;
-}
-
-.dark-mode.apocalypse-mode .available-quest-item .quest-description {
-  color: #ff8888;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .dark-mode.apocalypse-mode .quest-unlock {

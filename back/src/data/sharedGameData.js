@@ -709,7 +709,7 @@ export const expansionsData = [
     category: 'team',
     costs: [
       [{ type: 'eggs', count: 50 }],
-      [{ type: 'eggs', count: 500 }],
+      [{ type: 'eggs', count: 200 }],
       [{ type: 'eggs', count: 1000000 }, { type: 'precious_stone', count: 10 }]
     ],
     rewards: [2, 3, 4],
@@ -1237,13 +1237,14 @@ export const questsData = {
     steps: [
       {
         id: 'first_eggs',
-        description: 'Récoltez vos premiers œufs pour commencer votre aventure.',
+        description: 'Récoltez des oeufs pour prouver votre talent d\'avicole.',
         challenges: [
-          { type: 'eggs_collected', objectif: 25 }
+          { type: 'eggs_collected', objectif: 2500 },
+          { type: 'chicken_rarity_found', rarity: 'rare', objectif: 1 }
         ],
         reward: {
-          type: 'eggs',
-          quantite: 50
+          type: 'production_token',
+          quantite: 2
         }
       },
       {
@@ -1267,6 +1268,17 @@ export const questsData = {
         ],
         reward: {
           type: 'stock_token',
+          quantite: 1
+        }
+      },
+      {
+        id: 'find_rare_chicken',
+        description: 'Trouvez une poule rare dans une boîte.',
+        challenges: [
+          { type: 'chicken_rarity_found', rarity: 'rare', objectif: 1 }
+        ],
+        reward: {
+          type: 'production_token',
           quantite: 1
         }
       }
@@ -1311,6 +1323,17 @@ export const questsData = {
           type: 'chicken',
           especeId: 'poulette-rousse',
           quantite: 1
+        }
+      },
+      {
+        id: 'find_epic_chicken',
+        description: 'Trouvez une poule épique dans une boîte.',
+        challenges: [
+          { type: 'chicken_rarity_found', rarity: 'epique', objectif: 1 }
+        ],
+        reward: {
+          type: 'blueberry',
+          quantite: 2
         }
       }
     ]

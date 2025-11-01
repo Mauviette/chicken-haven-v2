@@ -2,7 +2,7 @@
 import User from '../models/User.js'
 import { especeData, groupes, boxesData, artifactsData } from '../data/sharedGameData.js'
 import { updateAchievementProgress } from './achievements.controller.js'
-import { updateQuestProgress } from './quests.controller.js'
+import { updateQuestProgress, updateAllQuestProgress } from './quests.controller.js'
 import { executeWithRetry } from '../utils/mongoUtils.js'
 
 // Fonction utilitaire pour effectuer une opération atomique avec retry
@@ -400,30 +400,31 @@ export async function openBox(req, res) {
     // Exécuter l'opération atomique avec retry automatique
     const result = await executeAtomicBoxOperation(req.userId, boxId)
 
-    // Mettre à jour le progrès des succès (en dehors de l'opération atomique)
-    try {
-      await updateAchievementProgress(req.userId, 'increment', {
-        totalBoxesOpened: 1
-      })
-      
-      await updateQuestProgress(req.userId, 'boxes_opened', 1)
-      
-      const userForAchievements = await User.findById(req.userId)
-      if (userForAchievements) {
-        await updateAchievementProgress(req.userId, 'max', {
-          totalChickensOwned: userForAchievements.poulesPossedees.length
+      // Mettre à jour le progrès des succès (en dehors de l'opération atomique)
+      try {
+        await updateAchievementProgress(req.userId, 'increment', {
+          totalBoxesOpened: 1
         })
         
-        // Mettre à jour le progrès des quêtes pour les poules possédées
-        const totalChickens = userForAchievements.poulesPossedees.reduce((sum, p) => sum + p.quantite, 0)
-        await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
-      }
-    } catch (achievementError) {
-      // Les erreurs de succès ne doivent pas faire échouer l'ouverture de boîte
-      console.warn('Erreur lors de la mise à jour des succès:', achievementError)
-    }
-
-    res.json({
+        await updateQuestProgress(req.userId, 'boxes_opened', 1)
+        
+        const userForAchievements = await User.findById(req.userId)
+        if (userForAchievements) {
+          await updateAchievementProgress(req.userId, 'max', {
+            totalChickensOwned: userForAchievements.poulesPossedees.length
+          })
+          
+          // Mettre à jour le progrès des quêtes pour les poules possédées
+          const totalChickens = userForAchievements.poulesPossedees.reduce((sum, p) => sum + p.quantite, 0)
+          await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
+          
+          // Mettre à jour automatiquement tous les progrès de quête
+          await updateAllQuestProgress(req.userId)
+        }
+      } catch (achievementError) {
+        // Les erreurs de succès ne doivent pas faire échouer l'ouverture de boîte
+        console.warn('Erreur lors de la mise à jour des succès:', achievementError)
+      }    res.json({
       success: true,
       ...result
     })
@@ -532,26 +533,27 @@ export async function openBoxMultiple(req, res) {
     const updatedUser = await User.findById(req.userId)
     const newBalance = updatedUser.resources[resourceType]
 
-    // Mettre à jour les succès
-    try {
-      await updateAchievementProgress(req.userId, 'increment', {
-        totalBoxesOpened: count
-      })
-      
-      await updateQuestProgress(req.userId, 'boxes_opened', count)
-      
-      await updateAchievementProgress(req.userId, 'max', {
-        totalChickensOwned: updatedUser.poulesPossedees.length
-      })
-      
-      // Mettre à jour le progrès des quêtes pour les poules possédées
-      const totalChickens = updatedUser.poulesPossedees.reduce((sum, p) => sum + p.quantite, 0)
-      await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
-    } catch (achievementError) {
-      console.warn('Erreur lors de la mise à jour des succès:', achievementError)
-    }
-
-    res.json({
+      // Mettre à jour les succès
+      try {
+        await updateAchievementProgress(req.userId, 'increment', {
+          totalBoxesOpened: count
+        })
+        
+        await updateQuestProgress(req.userId, 'boxes_opened', count)
+        
+        await updateAchievementProgress(req.userId, 'max', {
+          totalChickensOwned: updatedUser.poulesPossedees.length
+        })
+        
+        // Mettre à jour le progrès des quêtes pour les poules possédées
+        const totalChickens = updatedUser.poulesPossedees.reduce((sum, p) => sum + p.quantite, 0)
+        await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
+        
+        // Mettre à jour automatiquement tous les progrès de quête
+        await updateAllQuestProgress(req.userId)
+      } catch (achievementError) {
+        console.warn('Erreur lors de la mise à jour des succès:', achievementError)
+      }    res.json({
       success: true,
       box: { id: box.id, name: box.name, cost: box.price },
       count: count,
