@@ -44,9 +44,11 @@
                 <div class="quest-name">{{ activeQuest?.nom || 'Chargement...' }}</div>
                 <div class="quest-description">{{ activeQuest?.description || '' }}</div>
               </div>
-              <button class="abandon-btn" @click="handleAbandonQuest" title="Abandonner la quête">
-                🗑️
-              </button>
+              <Tooltip text="<strong>Abandonner la quête</strong><br>L'étape sera sauvegardée mais pas l'avancée">
+                <button class="abandon-btn" @click="handleAbandonQuest">
+                  🗑️
+                </button>
+              </Tooltip>
             </div>
 
             <div class="quest-steps">

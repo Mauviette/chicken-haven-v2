@@ -195,76 +195,29 @@ export async function acceptQuest(req, res) {
     user.quests.initialValues = user.quests.initialValues || {}
     user.quests.questProgress[questId] = {}
 
-    // Calculer et stocker les valeurs initiales pour tous les types de défis de cette quête
+    // Calculer les valeurs initiales pour la première étape seulement
+    const firstStep = quest.steps[0]
     const initialValues = {}
-    quest.steps.forEach(step => {
-      step.challenges.forEach(challenge => {
-        if (!initialValues[challenge.type]) {
-          // Calculer la valeur initiale selon le type de défi
-          switch (challenge.type) {
-            case 'eggs_collected':
-              initialValues[challenge.type] = user.resources?.eggs || 0
-              break
-            case 'chickens_owned':
-              const totalChickens = user.poulesPossedees?.reduce((sum, p) => sum + (p.quantite || 0), 0) || 0
-              initialValues[challenge.type] = totalChickens
-              break
-            case 'boxes_opened':
-              initialValues[challenge.type] = user.achievements?.progress?.totalBoxesOpened || 0
-              break
-            case 'talent_level_reached':
-              const maxTalentLevel = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
-              initialValues[challenge.type] = maxTalentLevel
-              break
-            case 'mining_games_played':
-              initialValues[challenge.type] = user.achievements?.progress?.miningGamesPlayed || 0
-              break
-            case 'mining_cells_broken':
-              initialValues[challenge.type] = user.achievements?.progress?.miningCellsBroken || 0
-              break
-            case 'mining_artifacts_found':
-              initialValues[challenge.type] = user.achievements?.progress?.miningArtifactsFound || 0
-              break
-            case 'max_eggs_in_click':
-              initialValues[challenge.type] = user.achievements?.progress?.maxEggsInOneClick || 0
-              break
-            case 'spawnables_clicked':
-              initialValues[challenge.type] = user.achievements?.progress?.spawnablesClicked || 0
-              break
-            case 'chicken_abilities_used':
-              initialValues[challenge.type] = user.achievements?.progress?.chickenAbilitiesUsed || 0
-              break
-            case 'chicken_gifts_collected':
-              initialValues[challenge.type] = user.achievements?.progress?.chickenGiftsCollected || 0
-              break
-            case 'chicken_rarity_found':
-              // Pour les challenges de rareté, calculer le nombre initial de poules de cette rareté
-              const targetRarity = challenge.rarity
-              const initialRarityKey = `chicken_rarity_found_${targetRarity}`
-              const initialChickensFound = (user.poulesPossedees || [])
-                .filter(poule => {
-                  const chickenData = especeData[poule.especeId]
-                  return chickenData && chickenData.rarete === targetRarity
-                })
-                .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
-              initialValues[initialRarityKey] = initialChickensFound
-              break
-            default:
-              initialValues[challenge.type] = 0
-          }
+    firstStep.challenges.forEach(challenge => {
+      if (!initialValues[challenge.type]) {
+        // Les valeurs initiales sont toujours 0 pour commencer à compter depuis l'acceptation
+        switch (challenge.type) {
+          case 'chicken_rarity_found':
+            // Pour les challenges de rareté, utiliser une clé unique
+            const targetRarity = challenge.rarity
+            const initialRarityKey = `chicken_rarity_found_${targetRarity}`
+            initialValues[initialRarityKey] = 0
+            break
+          default:
+            initialValues[challenge.type] = 0
         }
-      })
+      }
     })
 
-    user.quests.initialValues[questId] = initialValues
-
-    // Initialiser le progrès pour chaque étape
-    quest.steps.forEach(step => {
-      user.quests.questProgress[questId][step.id] = {}
-      step.challenges.forEach(challenge => {
-        user.quests.questProgress[questId][step.id][challenge.type] = 0
-      })
-    })
+    if (!user.quests.initialValues[questId]) {
+      user.quests.initialValues[questId] = {}
+    }
+    user.quests.initialValues[questId][firstStep.id] = initialValues
 
     user.markModified('quests')
     await user.save()
@@ -316,6 +269,66 @@ export async function abandonQuest(req, res) {
       lastAbandoned: new Date()
     }
 
+    // Remettre à zéro tous les compteurs d'achievements utilisés dans la quête
+    quest.steps.forEach(step => {
+      step.challenges.forEach(challenge => {
+        switch (challenge.type) {
+          case 'eggs_collected':
+            // Les œufs ne sont pas remis à zéro car c'est une ressource du joueur
+            break
+          case 'chickens_owned':
+            // Les poules possédées ne sont pas remises à zéro
+            break
+          case 'boxes_opened':
+            if (user.achievements?.progress) {
+              user.achievements.progress.totalBoxesOpened = 0
+            }
+            break
+          case 'talent_level_reached':
+            // Le niveau de talent max ne peut pas être remis à zéro
+            break
+          case 'mining_games_played':
+            if (user.achievements?.progress) {
+              user.achievements.progress.miningGamesPlayed = 0
+            }
+            break
+          case 'mining_cells_broken':
+            if (user.achievements?.progress) {
+              user.achievements.progress.miningCellsBroken = 0
+            }
+            break
+          case 'mining_artifacts_found':
+            if (user.achievements?.progress) {
+              user.achievements.progress.miningArtifactsFound = 0
+            }
+            break
+          case 'max_eggs_in_click':
+            if (user.achievements?.progress) {
+              user.achievements.progress.maxEggsInOneClick = 0
+            }
+            break
+          case 'spawnables_clicked':
+            if (user.achievements?.progress) {
+              user.achievements.progress.spawnablesClicked = 0
+            }
+            break
+          case 'chicken_abilities_used':
+            if (user.achievements?.progress) {
+              user.achievements.progress.chickenAbilitiesUsed = 0
+            }
+            break
+          case 'chicken_gifts_collected':
+            if (user.achievements?.progress) {
+              user.achievements.progress.chickenGiftsCollected = 0
+            }
+            break
+          case 'chicken_rarity_found':
+            // Pour les raretés, on ne remet pas à zéro car c'est le nombre de poules possédées
+            break
+        }
+      })
+    })
+
     // Supprimer complètement le progrès actif
     if (user.quests.questProgress && user.quests.questProgress[questId]) {
       delete user.quests.questProgress[questId]
@@ -328,6 +341,7 @@ export async function abandonQuest(req, res) {
 
     user.quests.activeQuest = null
     user.markModified('quests')
+    user.markModified('achievements')
     await user.save()
 
     res.json({
@@ -373,7 +387,11 @@ export async function claimStepReward(req, res) {
     }
 
     const isCompleted = step.challenges.every(challenge => {
-      const currentValue = stepProgress[challenge.type] || 0
+      let progressKey = challenge.type
+      if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+        progressKey = `chicken_rarity_found_${challenge.rarity}`
+      }
+      const currentValue = stepProgress[progressKey] || 0
       return currentValue >= challenge.objectif
     })
 
@@ -458,6 +476,67 @@ export async function claimStepReward(req, res) {
     let questCompleted = false
     if (allStepsClaimed) {
       questCompleted = true
+
+      // Remettre à zéro tous les compteurs d'achievements utilisés dans la quête
+      quest.steps.forEach(step => {
+        step.challenges.forEach(challenge => {
+          switch (challenge.type) {
+            case 'eggs_collected':
+              // Les œufs ne sont pas remis à zéro car c'est une ressource du joueur
+              break
+            case 'chickens_owned':
+              // Les poules possédées ne sont pas remises à zéro
+              break
+            case 'boxes_opened':
+              if (user.achievements?.progress) {
+                user.achievements.progress.totalBoxesOpened = 0
+              }
+              break
+            case 'talent_level_reached':
+              // Le niveau de talent max ne peut pas être remis à zéro
+              break
+            case 'mining_games_played':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningGamesPlayed = 0
+              }
+              break
+            case 'mining_cells_broken':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningCellsBroken = 0
+              }
+              break
+            case 'mining_artifacts_found':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningArtifactsFound = 0
+              }
+              break
+            case 'max_eggs_in_click':
+              if (user.achievements?.progress) {
+                user.achievements.progress.maxEggsInOneClick = 0
+              }
+              break
+            case 'spawnables_clicked':
+              if (user.achievements?.progress) {
+                user.achievements.progress.spawnablesClicked = 0
+              }
+              break
+            case 'chicken_abilities_used':
+              if (user.achievements?.progress) {
+                user.achievements.progress.chickenAbilitiesUsed = 0
+              }
+              break
+            case 'chicken_gifts_collected':
+              if (user.achievements?.progress) {
+                user.achievements.progress.chickenGiftsCollected = 0
+              }
+              break
+            case 'chicken_rarity_found':
+              // Pour les raretés, on ne remet pas à zéro car c'est le nombre de poules possédées
+              break
+          }
+        })
+      })
+
       user.quests.completedQuests = user.quests.completedQuests || []
       if (!user.quests.completedQuests.includes(questId)) {
         user.quests.completedQuests.push(questId)
@@ -469,13 +548,48 @@ export async function claimStepReward(req, res) {
         delete user.quests.questProgress[questId]
       }
 
-      // Nettoyer les valeurs initiales
-      if (user.quests.initialValues && user.quests.initialValues[questId]) {
-        delete user.quests.initialValues[questId]
-      }
-
       user.markModified('quests')
+      user.markModified('achievements')
       await user.save()
+    } else {
+      // Calculer les valeurs initiales pour l'étape suivante
+      const currentStepIndex = quest.steps.findIndex(s => s.id === stepId)
+      const nextStepIndex = currentStepIndex + 1
+      if (nextStepIndex < quest.steps.length) {
+        const nextStep = quest.steps[nextStepIndex]
+        const nextStepInitialValues = {}
+
+        nextStep.challenges.forEach(challenge => {
+          if (!nextStepInitialValues[challenge.type]) {
+            // Les valeurs initiales sont toujours 0 pour commencer à compter depuis le début de l'étape
+            switch (challenge.type) {
+              case 'chicken_rarity_found':
+                // Pour les challenges de rareté, utiliser une clé unique
+                const targetRarity = challenge.rarity
+                const initialRarityKey = `chicken_rarity_found_${targetRarity}`
+                nextStepInitialValues[initialRarityKey] = 0
+                break
+              default:
+                nextStepInitialValues[challenge.type] = 0
+            }
+          }
+        })
+
+        if (!user.quests.initialValues[questId]) {
+          user.quests.initialValues[questId] = {}
+        }
+        user.quests.initialValues[questId][nextStep.id] = nextStepInitialValues
+
+        // Initialiser le progrès pour l'étape suivante
+        if (!user.quests.questProgress[questId][nextStep.id]) {
+          user.quests.questProgress[questId][nextStep.id] = {}
+          nextStep.challenges.forEach(challenge => {
+            user.quests.questProgress[questId][nextStep.id][challenge.type] = 0
+          })
+        }
+        user.markModified('quests')
+        await user.save()
+      }
     }
 
     res.json({
@@ -512,13 +626,14 @@ export async function checkQuestProgress(req, res) {
     console.log('checkQuestProgress called for quest:', questId)
     let progressUpdated = false
     const questProgress = user.quests.questProgress?.[questId] || {}
-    const initialValues = user.quests.initialValues?.[questId] || {}
+    const questInitialValues = user.quests.initialValues?.[questId] || {}
     console.log('initial questProgress:', questProgress)
-    console.log('initialValues:', initialValues)
+    console.log('questInitialValues:', questInitialValues)
 
     // Mettre à jour le progrès pour chaque étape
     quest.steps.forEach(step => {
       const stepProgress = questProgress[step.id] || {}
+      const initialValues = questInitialValues[step.id] || {}
 
       step.challenges.forEach(challenge => {
         let currentTotalValue = 0
@@ -561,9 +676,8 @@ export async function checkQuestProgress(req, res) {
             currentTotalValue = user.achievements?.progress?.chickenGiftsCollected || 0
             break
           case 'chicken_rarity_found':
-            // Pour les challenges de rareté, on utilise une clé unique par rareté
+            // Pour les challenges de rareté, compter toutes les poules possédées
             const targetRarity = challenge.rarity
-            const rarityKey = `chicken_rarity_found_${targetRarity}`
             const chickensFound = (user.poulesPossedees || [])
               .filter(poule => {
                 const chickenData = especeData[poule.especeId]
@@ -571,28 +685,17 @@ export async function checkQuestProgress(req, res) {
               })
               .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
             currentTotalValue = chickensFound
-            // Calculer le progrès depuis l'acceptation de la quête
-            const initialValue = initialValues[rarityKey] || 0
-            const progressValue = Math.max(0, currentTotalValue - initialValue)
-            // Mettre à jour si la valeur a changé
-            if (stepProgress[rarityKey] !== progressValue) {
-              stepProgress[rarityKey] = progressValue
-              progressUpdated = true
-            }
             break
         }
 
-        // Pour les challenges qui n'ont pas de logique spécifique, appliquer la logique générale
-        if (challenge.type !== 'chicken_rarity_found') {
-          // Calculer le progrès depuis l'acceptation de la quête
-          const initialValue = initialValues[challenge.type] || 0
-          const progressValue = Math.max(0, currentTotalValue - initialValue)
+        // Calculer le progrès depuis l'acceptation de l'étape
+        const initialValue = initialValues[challenge.type] || 0
+        const progressValue = Math.max(0, currentTotalValue - initialValue)
 
-          // Mettre à jour si la valeur a changé
-          if (stepProgress[challenge.type] !== progressValue) {
-            stepProgress[challenge.type] = progressValue
-            progressUpdated = true
-          }
+        // Mettre à jour si la valeur a changé
+        if (stepProgress[challenge.type] !== progressValue) {
+          stepProgress[challenge.type] = progressValue
+          progressUpdated = true
         }
       })
 
@@ -608,6 +711,67 @@ export async function checkQuestProgress(req, res) {
 
     if (allStepsClaimed) {
       questCompleted = true
+
+      // Remettre à zéro tous les compteurs d'achievements utilisés dans la quête
+      quest.steps.forEach(step => {
+        step.challenges.forEach(challenge => {
+          switch (challenge.type) {
+            case 'eggs_collected':
+              // Les œufs ne sont pas remis à zéro car c'est une ressource du joueur
+              break
+            case 'chickens_owned':
+              // Les poules possédées ne sont pas remises à zéro
+              break
+            case 'boxes_opened':
+              if (user.achievements?.progress) {
+                user.achievements.progress.totalBoxesOpened = 0
+              }
+              break
+            case 'talent_level_reached':
+              // Le niveau de talent max ne peut pas être remis à zéro
+              break
+            case 'mining_games_played':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningGamesPlayed = 0
+              }
+              break
+            case 'mining_cells_broken':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningCellsBroken = 0
+              }
+              break
+            case 'mining_artifacts_found':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningArtifactsFound = 0
+              }
+              break
+            case 'max_eggs_in_click':
+              if (user.achievements?.progress) {
+                user.achievements.progress.maxEggsInOneClick = 0
+              }
+              break
+            case 'spawnables_clicked':
+              if (user.achievements?.progress) {
+                user.achievements.progress.spawnablesClicked = 0
+              }
+              break
+            case 'chicken_abilities_used':
+              if (user.achievements?.progress) {
+                user.achievements.progress.chickenAbilitiesUsed = 0
+              }
+              break
+            case 'chicken_gifts_collected':
+              if (user.achievements?.progress) {
+                user.achievements.progress.chickenGiftsCollected = 0
+              }
+              break
+            case 'chicken_rarity_found':
+              // Pour les raretés, on ne remet pas à zéro car c'est le nombre de poules possédées
+              break
+          }
+        })
+      })
+
       user.quests.completedQuests = user.quests.completedQuests || []
       if (!user.quests.completedQuests.includes(questId)) {
         user.quests.completedQuests.push(questId)
@@ -659,11 +823,12 @@ export async function updateQuestProgress(userId, progressType, value) {
 
     let progressUpdated = false
     const questProgress = user.quests.questProgress?.[questId] || {}
-    const initialValues = user.quests.initialValues?.[questId] || {}
+    const questInitialValues = user.quests.initialValues?.[questId] || {}
 
     // Mettre à jour le progrès pour chaque étape
     quest.steps.forEach(step => {
       const stepProgress = questProgress[step.id] || {}
+      const initialValues = questInitialValues[step.id] || {}
 
       step.challenges.forEach(challenge => {
         let currentTotalValue = 0
@@ -753,6 +918,67 @@ export async function updateQuestProgress(userId, progressType, value) {
 
     if (allStepsClaimed) {
       questCompleted = true
+
+      // Remettre à zéro tous les compteurs d'achievements utilisés dans la quête
+      quest.steps.forEach(step => {
+        step.challenges.forEach(challenge => {
+          switch (challenge.type) {
+            case 'eggs_collected':
+              // Les œufs ne sont pas remis à zéro car c'est une ressource du joueur
+              break
+            case 'chickens_owned':
+              // Les poules possédées ne sont pas remises à zéro
+              break
+            case 'boxes_opened':
+              if (user.achievements?.progress) {
+                user.achievements.progress.totalBoxesOpened = 0
+              }
+              break
+            case 'talent_level_reached':
+              // Le niveau de talent max ne peut pas être remis à zéro
+              break
+            case 'mining_games_played':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningGamesPlayed = 0
+              }
+              break
+            case 'mining_cells_broken':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningCellsBroken = 0
+              }
+              break
+            case 'mining_artifacts_found':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningArtifactsFound = 0
+              }
+              break
+            case 'max_eggs_in_click':
+              if (user.achievements?.progress) {
+                user.achievements.progress.maxEggsInOneClick = 0
+              }
+              break
+            case 'spawnables_clicked':
+              if (user.achievements?.progress) {
+                user.achievements.progress.spawnablesClicked = 0
+              }
+              break
+            case 'chicken_abilities_used':
+              if (user.achievements?.progress) {
+                user.achievements.progress.chickenAbilitiesUsed = 0
+              }
+              break
+            case 'chicken_gifts_collected':
+              if (user.achievements?.progress) {
+                user.achievements.progress.chickenGiftsCollected = 0
+              }
+              break
+            case 'chicken_rarity_found':
+              // Pour les raretés, on ne remet pas à zéro car c'est le nombre de poules possédées
+              break
+          }
+        })
+      })
+
       user.quests.completedQuests = user.quests.completedQuests || []
       if (!user.quests.completedQuests.includes(questId)) {
         user.quests.completedQuests.push(questId)
@@ -774,6 +1000,7 @@ export async function updateQuestProgress(userId, progressType, value) {
       user.quests.questProgress = user.quests.questProgress || {}
       user.quests.questProgress[questId] = questProgress
       user.markModified('quests')
+      user.markModified('achievements')
       await user.save()
     }
   } catch (error) {
@@ -793,11 +1020,12 @@ export async function updateAllQuestProgress(userId) {
 
     let progressUpdated = false
     const questProgress = user.quests.questProgress?.[questId] || {}
-    const initialValues = user.quests.initialValues?.[questId] || {}
+    const questInitialValues = user.quests.initialValues?.[questId] || {}
 
     // Mettre à jour le progrès pour chaque étape
     quest.steps.forEach(step => {
       const stepProgress = questProgress[step.id] || {}
+      const initialValues = questInitialValues[step.id] || {}
 
       step.challenges.forEach(challenge => {
         let currentTotalValue = 0
@@ -887,6 +1115,67 @@ export async function updateAllQuestProgress(userId) {
 
     if (allStepsClaimed) {
       questCompleted = true
+
+      // Remettre à zéro tous les compteurs d'achievements utilisés dans la quête
+      quest.steps.forEach(step => {
+        step.challenges.forEach(challenge => {
+          switch (challenge.type) {
+            case 'eggs_collected':
+              // Les œufs ne sont pas remis à zéro car c'est une ressource du joueur
+              break
+            case 'chickens_owned':
+              // Les poules possédées ne sont pas remises à zéro
+              break
+            case 'boxes_opened':
+              if (user.achievements?.progress) {
+                user.achievements.progress.totalBoxesOpened = 0
+              }
+              break
+            case 'talent_level_reached':
+              // Le niveau de talent max ne peut pas être remis à zéro
+              break
+            case 'mining_games_played':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningGamesPlayed = 0
+              }
+              break
+            case 'mining_cells_broken':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningCellsBroken = 0
+              }
+              break
+            case 'mining_artifacts_found':
+              if (user.achievements?.progress) {
+                user.achievements.progress.miningArtifactsFound = 0
+              }
+              break
+            case 'max_eggs_in_click':
+              if (user.achievements?.progress) {
+                user.achievements.progress.maxEggsInOneClick = 0
+              }
+              break
+            case 'spawnables_clicked':
+              if (user.achievements?.progress) {
+                user.achievements.progress.spawnablesClicked = 0
+              }
+              break
+            case 'chicken_abilities_used':
+              if (user.achievements?.progress) {
+                user.achievements.progress.chickenAbilitiesUsed = 0
+              }
+              break
+            case 'chicken_gifts_collected':
+              if (user.achievements?.progress) {
+                user.achievements.progress.chickenGiftsCollected = 0
+              }
+              break
+            case 'chicken_rarity_found':
+              // Pour les raretés, on ne remet pas à zéro car c'est le nombre de poules possédées
+              break
+          }
+        })
+      })
+
       user.quests.completedQuests = user.quests.completedQuests || []
       if (!user.quests.completedQuests.includes(questId)) {
         user.quests.completedQuests.push(questId)
@@ -908,6 +1197,7 @@ export async function updateAllQuestProgress(userId) {
       user.quests.questProgress = user.quests.questProgress || {}
       user.quests.questProgress[questId] = questProgress
       user.markModified('quests')
+      user.markModified('achievements')
       await user.save()
     }
 
