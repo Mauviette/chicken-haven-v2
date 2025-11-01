@@ -146,7 +146,7 @@ const fetchEggStatus = async () => {
 const { refreshPlayer, fetchTeam, team, setEggs, player, eggs, apocalypse } = usePlayer()
 const { especies, poules } = usePoules()
 const { talents } = useGameData()
-const { eggClick, incomeUp, timeStop } = useSound()
+const { eggClick, incomeUp, timeStop, minimize } = useSound()
 const { activeBuffs, fetchBuffs, getTimeRemaining, getBuffDuration, formatBuffEffect, getBuffIcon, getBuffColor, formatBuffShort, buffs, allActiveBuffs, updateBuffsFromEggStatus } = useBuffs()
 
 // Mini évaluateur d'expressions (miroir minimal du serveur)
@@ -791,6 +791,8 @@ const createRewardEffectAtPosition = (rect, amount) => {
 
 // Fonction pour créer l'effet d'explosion de l'oeuf à la fin du time_stop
 const createTimeStopEndExplosion = () => {
+  // Jouer le son d'explosion
+  minimize()
   
   // Obtenir la position de l'oeuf
   const eggElement = document.querySelector('.clickable-egg')
