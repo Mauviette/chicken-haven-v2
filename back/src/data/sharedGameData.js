@@ -5,7 +5,7 @@
 // ========================
 // VERSION ACTUELLE DU JEU
 // ========================
-export const CURRENT_GAME_VERSION = '0.0.4'
+export const CURRENT_GAME_VERSION = '0.0.5'
 
 // ========================
 // DONNÉES DES ESPÈCES
@@ -548,8 +548,8 @@ export const talentsData = {
     }
   },
   'Barbare': {
-    description: "Sacrifie l'intelligence de l'équipe pour renforcer son charisme.",
-    effet: "Charisme de l'équipe += intelligence de l'équipe, puis intelligence de l'équipe = 0",
+    description: "Sacrifie l'intelligence et le charisme de l'équipe pour renforcer son énergie.",
+    effet: "Met le charisme et l'intelligence de l'équipe à zéro, puis ajoute leur somme à l'énergie de l'équipe.",
     icon: '⚔️',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -557,7 +557,13 @@ export const talentsData = {
         {
           type: 'stat_transfer',
           from_stat: 'intelligence',
-          to_stat: 'charisme',
+          to_stat: 'energie',
+          operation: 'transfer_all'
+        },
+        {
+          type: 'stat_transfer',
+          from_stat: 'charisme',
+          to_stat: 'energie',
           operation: 'transfer_all'
         }
       ]
@@ -1356,40 +1362,43 @@ export const questsData = {
       }
     ]
   },
-  'legendary_farmer': {
-    id: 'legendary_farmer',
-    nom: 'Le Fermier Légendaire',
-    description: 'Vous êtes devenu une légende dans le monde avicole. Montrez votre maîtrise ultime.',
-    icon: '👑',
-    unlock_level: 8,
+  'no_brained_chicken': {
+    id: 'no_brained_chicken',
+    nom: 'La poule sans cervelle',
+    description: 'Une poule a été aperçue en train de crier autour du poulailler.',
+    icon: '🚩',
+    unlock_level: 10,
     steps: [
       {
-        id: 'ultimate_collection',
-        description: 'Rassemblez une collection impressionnante de poules.',
+        id: 'no_charisma',
+        description: 'Récoltez quelques oeufs et ayez un charisme négatif, ça pourrait peut-être l\'attirer...',
         challenges: [
-          { type: 'chicken_gifts_collected', objectif: 25 }
+          { type: 'eggs_collected', objectif: 1000000 },
+          { type: 'team_stat_req', req: 'below', stat: 'charisme', num: 0, objectif: 1 }
         ],
         reward: {
-          type: 'blueberry',
-          quantite: 5
-        }
-      },
-      {
-        id: 'master_miner',
-        description: 'Devenez un maître du minage en brisant de nombreuses cases.',
-        challenges: [
-          { type: 'mining_cells_broken', objectif: 500 }
-        ],
-        reward: {
-          type: 'chest_key',
+          type: 'mining_token',
           quantite: 3
         }
       },
       {
-        id: 'legendary_harvest',
-        description: 'Réalisez une récolte légendaire en un seul clic.',
+        id: 'prod_and_leg',
+        description: 'Trouver 10 poules légendaires et avoir au minimum 300 de production pourrait nous aider à la débusquer.',
         challenges: [
-          { type: 'max_eggs_in_click', objectif: 1000 }
+          { type: 'chicken_rarity_found', rarity: 'legendaire', objectif: 10 },
+          { type: 'production_req', req: 'above', num: 300, objectif: 1 }
+        ],
+        reward: {
+          type: 'stock_token',
+          quantite: 10
+        }
+      },
+      {
+        id: 'last_scream',
+        description: 'Vous entendez des cris de rage pouléenne venant d\'un buisson, récoltez encore quelques oeufs et ayez assez d\'énergie pour la faire venir!',
+        challenges: [
+          { type: 'eggs_collected', objectif: 2000000 },
+          { type: 'team_stat_req', req: 'above', stat: 'charisme', num: 50, objectif: 1 }
         ],
         reward: {
           type: 'chicken',

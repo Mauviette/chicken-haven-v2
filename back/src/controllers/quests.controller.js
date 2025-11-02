@@ -325,6 +325,12 @@ export async function abandonQuest(req, res) {
           case 'chicken_rarity_found':
             // Pour les raretés, on ne remet pas à zéro car c'est le nombre de poules possédées
             break
+          case 'team_stat_req':
+            // Les challenges de condition n'ont pas de compteurs à remettre à zéro
+            break
+          case 'production_req':
+            // Les challenges de condition n'ont pas de compteurs à remettre à zéro
+            break
         }
       })
     })
@@ -620,7 +626,18 @@ export async function checkQuestProgress(req, res) {
     const quest = questsData[questId]
 
     if (!quest) {
-      return res.status(400).json({ error: 'Quête invalide' })
+      // Nettoyer la quête invalide au lieu de retourner une erreur
+      console.log(`Quête invalide détectée: ${questId}. Nettoyage automatique.`)
+      user.quests.activeQuest = null
+      if (user.quests.questProgress && user.quests.questProgress[questId]) {
+        delete user.quests.questProgress[questId]
+      }
+      if (user.quests.initialValues && user.quests.initialValues[questId]) {
+        delete user.quests.initialValues[questId]
+      }
+      user.markModified('quests')
+      await user.save()
+      return res.json({ updated: false, message: 'Quête invalide nettoyée' })
     }
 
     console.log('checkQuestProgress called for quest:', questId)
@@ -629,6 +646,9 @@ export async function checkQuestProgress(req, res) {
     const questInitialValues = user.quests.initialValues?.[questId] || {}
     console.log('initial questProgress:', questProgress)
     console.log('questInitialValues:', questInitialValues)
+
+    // Importer les fonctions nécessaires une seule fois
+    const { computeTeamCharisme, runTalentIncome } = await import('./egg.controller.js')
 
     // Mettre à jour le progrès pour chaque étape
     quest.steps.forEach(step => {
@@ -686,11 +706,40 @@ export async function checkQuestProgress(req, res) {
               .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
             currentTotalValue = chickensFound
             break
+          case 'team_stat_req':
+            // Vérifier une statistique d'équipe selon les critères
+            const statValue = computeTeamCharisme(user)
+            const { req, stat, num } = challenge
+            let conditionMet = false
+            if (req === 'below') {
+              conditionMet = statValue < num
+            } else if (req === 'above') {
+              conditionMet = statValue > num
+            } else if (req === 'equals') {
+              conditionMet = statValue === num
+            }
+            currentTotalValue = conditionMet ? 1 : 0
+            break
+          case 'production_req':
+            // Vérifier la production par seconde selon les critères
+            const incomeResult = runTalentIncome(user, user.resources?.stockageMax || 1000)
+            const { req: prodReq, num: prodNum } = challenge
+            let prodConditionMet = false
+            if (prodReq === 'below') {
+              prodConditionMet = incomeResult.bonusPerSecond < prodNum
+            } else if (prodReq === 'above') {
+              prodConditionMet = incomeResult.bonusPerSecond > prodNum
+            } else if (prodReq === 'equals') {
+              prodConditionMet = incomeResult.bonusPerSecond === prodNum
+            }
+            currentTotalValue = prodConditionMet ? 1 : 0
+            break
         }
 
         // Calculer le progrès depuis l'acceptation de l'étape
-        const initialValue = initialValues[challenge.type] || 0
-        const progressValue = Math.max(0, currentTotalValue - initialValue)
+        // Pour les challenges de condition (0/1), utiliser directement la valeur actuelle
+        const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
+        const progressValue = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[challenge.type] || 0))
 
         // Mettre à jour si la valeur a changé
         if (stepProgress[challenge.type] !== progressValue) {
@@ -819,11 +868,27 @@ export async function updateQuestProgress(userId, progressType, value) {
 
     const questId = user.quests.activeQuest
     const quest = questsData[questId]
-    if (!quest) return
+    if (!quest) {
+      // Nettoyer la quête invalide au lieu de retourner une erreur
+      console.log(`Quête invalide détectée dans updateQuestProgress: ${questId}. Nettoyage automatique.`)
+      user.quests.activeQuest = null
+      if (user.quests.questProgress && user.quests.questProgress[questId]) {
+        delete user.quests.questProgress[questId]
+      }
+      if (user.quests.initialValues && user.quests.initialValues[questId]) {
+        delete user.quests.initialValues[questId]
+      }
+      user.markModified('quests')
+      await user.save()
+      return
+    }
 
     let progressUpdated = false
     const questProgress = user.quests.questProgress?.[questId] || {}
     const questInitialValues = user.quests.initialValues?.[questId] || {}
+
+    // Importer les fonctions nécessaires une seule fois
+    const { computeTeamCharisme, runTalentIncome } = await import('./egg.controller.js')
 
     // Mettre à jour le progrès pour chaque étape
     quest.steps.forEach(step => {
@@ -870,6 +935,34 @@ export async function updateQuestProgress(userId, progressType, value) {
           case 'chicken_gifts_collected':
             currentTotalValue = user.achievements?.progress?.chickenGiftsCollected || 0
             break
+          case 'team_stat_req':
+            // Vérifier une statistique d'équipe selon les critères
+            const statValueUQ = computeTeamCharisme(user)
+            const { req: reqUQ, stat: statUQ, num: numUQ } = challenge
+            let conditionMetUQ = false
+            if (reqUQ === 'below') {
+              conditionMetUQ = statValueUQ < numUQ
+            } else if (reqUQ === 'above') {
+              conditionMetUQ = statValueUQ > numUQ
+            } else if (reqUQ === 'equals') {
+              conditionMetUQ = statValueUQ === numUQ
+            }
+            currentTotalValue = conditionMetUQ ? 1 : 0
+            break
+          case 'production_req':
+            // Vérifier la production par seconde selon les critères
+            const incomeResultUQ = runTalentIncome(user, user.resources?.stockageMax || 1000)
+            const { req: prodReqUQ, num: prodNumUQ } = challenge
+            let prodConditionMetUQ = false
+            if (prodReqUQ === 'below') {
+              prodConditionMetUQ = incomeResultUQ.bonusPerSecond < prodNumUQ
+            } else if (prodReqUQ === 'above') {
+              prodConditionMetUQ = incomeResultUQ.bonusPerSecond > prodNumUQ
+            } else if (prodReqUQ === 'equals') {
+              prodConditionMetUQ = incomeResultUQ.bonusPerSecond === prodNumUQ
+            }
+            currentTotalValue = prodConditionMetUQ ? 1 : 0
+            break
           case 'chicken_rarity_found':
             // Pour les challenges de rareté, on utilise une clé unique par rareté
             const targetRarity = challenge.rarity
@@ -895,8 +988,9 @@ export async function updateQuestProgress(userId, progressType, value) {
         // Pour les challenges qui n'ont pas de logique spécifique, appliquer la logique générale
         if (challenge.type !== 'chicken_rarity_found') {
           // Calculer le progrès depuis l'acceptation de la quête
-          const initialValue = initialValues[challenge.type] || 0
-          const progressValue = Math.max(0, currentTotalValue - initialValue)
+          // Pour les challenges de condition (0/1), utiliser directement la valeur actuelle
+          const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
+          const progressValue = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[challenge.type] || 0))
 
           // Mettre à jour si la valeur a changé
           if (stepProgress[challenge.type] !== progressValue) {
@@ -1016,11 +1110,27 @@ export async function updateAllQuestProgress(userId) {
 
     const questId = user.quests.activeQuest
     const quest = questsData[questId]
-    if (!quest) return
+    if (!quest) {
+      // Nettoyer la quête invalide au lieu de retourner une erreur
+      console.log(`Quête invalide détectée dans updateAllQuestProgress: ${questId}. Nettoyage automatique.`)
+      user.quests.activeQuest = null
+      if (user.quests.questProgress && user.quests.questProgress[questId]) {
+        delete user.quests.questProgress[questId]
+      }
+      if (user.quests.initialValues && user.quests.initialValues[questId]) {
+        delete user.quests.initialValues[questId]
+      }
+      user.markModified('quests')
+      await user.save()
+      return
+    }
 
     let progressUpdated = false
     const questProgress = user.quests.questProgress?.[questId] || {}
     const questInitialValues = user.quests.initialValues?.[questId] || {}
+
+    // Importer les fonctions nécessaires une seule fois
+    const { computeTeamCharisme, runTalentIncome } = await import('./egg.controller.js')
 
     // Mettre à jour le progrès pour chaque étape
     quest.steps.forEach(step => {
@@ -1067,6 +1177,34 @@ export async function updateAllQuestProgress(userId) {
           case 'chicken_gifts_collected':
             currentTotalValue = user.achievements?.progress?.chickenGiftsCollected || 0
             break
+          case 'team_stat_req':
+            // Vérifier une statistique d'équipe selon les critères
+            const statValueUAQ = computeTeamCharisme(user)
+            const { req: reqUAQ, stat: statUAQ, num: numUAQ } = challenge
+            let conditionMetUAQ = false
+            if (reqUAQ === 'below') {
+              conditionMetUAQ = statValueUAQ < numUAQ
+            } else if (reqUAQ === 'above') {
+              conditionMetUAQ = statValueUAQ > numUAQ
+            } else if (reqUAQ === 'equals') {
+              conditionMetUAQ = statValueUAQ === numUAQ
+            }
+            currentTotalValue = conditionMetUAQ ? 1 : 0
+            break
+          case 'production_req':
+            // Vérifier la production par seconde selon les critères
+            const incomeResultUAQ = runTalentIncome(user, user.resources?.stockageMax || 1000)
+            const { req: prodReqUAQ, num: prodNumUAQ } = challenge
+            let prodConditionMetUAQ = false
+            if (prodReqUAQ === 'below') {
+              prodConditionMetUAQ = incomeResultUAQ.bonusPerSecond < prodNumUAQ
+            } else if (prodReqUAQ === 'above') {
+              prodConditionMetUAQ = incomeResultUAQ.bonusPerSecond > prodNumUAQ
+            } else if (prodReqUAQ === 'equals') {
+              prodConditionMetUAQ = incomeResultUAQ.bonusPerSecond === prodNumUAQ
+            }
+            currentTotalValue = prodConditionMetUAQ ? 1 : 0
+            break
           case 'chicken_rarity_found':
             // Pour les challenges de rareté, on utilise une clé unique par rareté
             const targetRarity = challenge.rarity
@@ -1092,8 +1230,9 @@ export async function updateAllQuestProgress(userId) {
         // Pour les challenges qui n'ont pas de logique spécifique, appliquer la logique générale
         if (challenge.type !== 'chicken_rarity_found') {
           // Calculer le progrès depuis l'acceptation de la quête
-          const initialValue = initialValues[challenge.type] || 0
-          const progressValue = Math.max(0, currentTotalValue - initialValue)
+          // Pour les challenges de condition (0/1), utiliser directement la valeur actuelle
+          const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
+          const progressValue = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[challenge.type] || 0))
 
           // Mettre à jour si la valeur a changé
           if (stepProgress[challenge.type] !== progressValue) {

@@ -372,6 +372,28 @@ export function useQuests() {
           }
           const rarityLabel = rarityLabels[challenge.rarity] || challenge.rarity
           return `Trouver ${objectif} poule${objectif > 1 ? 's' : ''} ${rarityLabel}${objectif > 1 ? 's' : ''} (${progress}/${objectif})`
+        case 'team_stat_req':
+          const statLabels = {
+            'charisme': 'charisme',
+            'energie': 'énergie',
+            'intelligence': 'intelligence'
+          }
+          const statLabel = statLabels[challenge.stat] || challenge.stat
+          const reqLabels = {
+            'above': 'supérieur à',
+            'below': 'inférieur à',
+            'equals': 'égal à'
+          }
+          const reqLabel = reqLabels[challenge.req] || challenge.req
+          return `Avoir un ${statLabel} d'équipe ${reqLabel} ${challenge.num}`
+        case 'production_req':
+          const prodReqLabels = {
+            'above': 'supérieure à',
+            'below': 'inférieure à',
+            'equals': 'égale à'
+          }
+          const prodReqLabel = prodReqLabels[challenge.req] || challenge.req
+          return `Avoir une production ${prodReqLabel} ${challenge.num} œufs/seconde`
         default:
           return `${challenge.type}: ${progress}/${objectif}`
       }
@@ -597,7 +619,6 @@ export function useQuests() {
     getChallengeProgress,
     formatChallenge,
     formatReward,
-    formatChallenge,
 
     // Rechargement des données de jeu
     fetchGameData

@@ -64,7 +64,17 @@ export function computeTeamEnergy(user) {
   const extraPerMember = Number(buffs?.energie || 0)
   const extraTotal = extraPerMember * members.length
   const tempMult = computeActiveBuffMultipliers(user).teamStat.energie || 1
-  return (totalBase + extraTotal) * tempMult
+  
+  let finalStats = {
+    intelligence: 0,
+    energie: (totalBase + extraTotal) * tempMult,
+    charisme: 0
+  }
+  
+  // Appliquer les effets de transfert de stats (comme le Barbare)
+  applyStatTransfers(user, finalStats)
+  
+  return finalStats.energie
 }
 
 // Calcule l'intelligence totale de l'équipe (somme des stats intelligence des poules équipées)
@@ -87,7 +97,17 @@ export function computeTeamIntelligence(user) {
   const extraPerMember = Number(buffs?.intelligence || 0)
   const extraTotal = extraPerMember * members.length
   const tempMult = computeActiveBuffMultipliers(user).teamStat.intelligence || 1
-  return (totalBase + extraTotal) * tempMult
+  
+  let finalStats = {
+    intelligence: (totalBase + extraTotal) * tempMult,
+    energie: 0,
+    charisme: 0
+  }
+  
+  // Appliquer les effets de transfert de stats (comme le Barbare)
+  applyStatTransfers(user, finalStats)
+  
+  return finalStats.intelligence
 }
 
 // Calcule le charisme total de l'équipe (somme des stats charisme des poules équipées)
@@ -111,7 +131,17 @@ export function computeTeamCharisme(user) {
   const extraPerMember = Number(buffs?.charisme || 0)
   const extraTotal = extraPerMember * members.length
   const tempMult = computeActiveBuffMultipliers(user).teamStat.charisme || 1
-  return (totalBase + extraTotal) * tempMult
+  
+  let finalStats = {
+    intelligence: 0,
+    energie: 0,
+    charisme: (totalBase + extraTotal) * tempMult
+  }
+  
+  // Appliquer les effets de transfert de stats (comme le Barbare)
+  applyStatTransfers(user, finalStats)
+  
+  return finalStats.charisme
 }
 
 // Renvoie les entrées de talents actifs correspondants au nom demandé sur l'équipe
@@ -167,6 +197,31 @@ function aggregateTeamStatBuffs(user) {
   }
 
   return result
+}
+
+// Applique les effets de transfert de stats (comme le Barbare) aux stats finales
+function applyStatTransfers(user, stats) {
+  const slots = user?.team?.slots || []
+  
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const talentName = especeData[id]?.talent
+    if (!talentName) continue
+    const calc = talentsData?.[talentName]?.calculation
+    if (!calc || !Array.isArray(calc.effects)) continue
+
+    for (const eff of calc.effects) {
+      if (!eff || eff.type !== 'stat_transfer') continue
+      if (eff.operation === 'transfer_all') {
+        const fromStat = eff.from_stat
+        const toStat = eff.to_stat
+        const amount = stats[fromStat] || 0
+        stats[fromStat] = 0
+        stats[toStat] = (stats[toStat] || 0) + amount
+      }
+    }
+  }
 }
 
 // Calcule les buffs personnels (target: 'me') d'une poule équipée donnée
