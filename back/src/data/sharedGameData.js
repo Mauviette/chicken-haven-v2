@@ -479,7 +479,7 @@ export const talentsData = {
             op: 'mul',
             args: [
               { op: 'add', args: [ { var: 'teamEnergy' }, { var: 'teamIntelligence' }, { var: 'teamCharisme' } ] },
-              { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] } ] },
+              { op: 'mul', args: [ { var: 'niveau' }, 1 ] }
               
             ]
           }
