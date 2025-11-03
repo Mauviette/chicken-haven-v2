@@ -200,7 +200,7 @@ export const especeData = {
 export const talentsData = {
   'Chanceuse': {
     description: "Des œufs blancs apparaissent sur l'écran.",
-    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*0.5} œufs.",
+    effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*0.25} œufs.",
     icon: '🍀',
     calculation: {
       combine: 'not_linear',
@@ -216,7 +216,7 @@ export const talentsData = {
           reward: {
             type: 'resource',
             resource: 'eggs',
-            amount: { op: 'mul', args: [ { var: 'stockageMax' }, { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] } ] }
+            amount: { op: 'mul', args: [ { var: 'stockageMax' }, { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.25 ] } ] } ] }
           }
         }
       ]
@@ -263,7 +263,7 @@ export const talentsData = {
   },
   'Vive': {
     description: "Augmente les revenus en fonction de l'intelligence ou de l'énergie de l'équipe.",
-    effet: "{niveau*0.1} de revenu par seconde pour chaque point d'énergie ou d'intelligence dans l'équipe.",
+    effet: "{niveau*0.1} de revenu par seconde pour chaque point d'énergie et/ou d'intelligence dans l'équipe.",
     icon: '🏃',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -275,7 +275,7 @@ export const talentsData = {
             op: 'mul',
             args: [
               { op: 'add', args: [ { var: 'teamEnergy' }, { var: 'teamIntelligence' } ] },
-              { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] }
+              { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] } ] },
             ]
           }
         }
@@ -325,7 +325,7 @@ export const talentsData = {
   },
   'Gourmande': {
     description: "Des chocolats apparaissent sur l'écran qui augmentent la production et le stockage lorsque cliqués.",
-    effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {25+niveau*15}% pendant 15s.",
+    effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {25+niveau*05}% pendant 15s.",
     icon: '🍫',
     calculation: {
       combine: 'not_linear',
@@ -342,8 +342,8 @@ export const talentsData = {
             type: 'buff',
             buff_type: 'income_storage_multiplier',
             duration: 15000,
-            income_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] },
-            storage_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.15 ] } ] }
+            income_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.05 ] } ] },
+            storage_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.05 ] } ] }
           }
         }
       ]
@@ -402,16 +402,16 @@ export const talentsData = {
   },
   'Majestueuse': {
     description: "Augmente le charisme.",
-    effet: "+{niveau*10} charisme",
+    effet: "+{niveau*5} charisme à toute l'équipe",
     icon: '👑',
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
         {
           type: 'stat_buff',
-          target: 'me',
+          target: 'team',
           stats: {
-            charisme: { op: 'mul', args: [ { var: 'niveau' }, 10 ] }
+            charisme: { op: 'mul', args: [ { var: 'niveau' }, 5 ] }
           }
         }
       ]
@@ -467,7 +467,7 @@ export const talentsData = {
   },
   'Canard': {
     description: "Augmente le revenu par seconde en fonction de TOUTES les stats d'équipe.",
-    effet: "+{0.1*niveau} /s par point de stat (Intelligence + Énergie + Charisme)",
+    effet: "+{0.1+0.1*niveau} de revenu par seconde par point de stat (Intelligence + Énergie + Charisme)",
     icon: '🦆',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -479,7 +479,8 @@ export const talentsData = {
             op: 'mul',
             args: [
               { op: 'add', args: [ { var: 'teamEnergy' }, { var: 'teamIntelligence' }, { var: 'teamCharisme' } ] },
-              { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] }
+              { op: 'add', args: [ 1, { op: 'mul', args: [ { var: 'niveau' }, 0.1 ] } ] },
+              
             ]
           }
         }

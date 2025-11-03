@@ -15,7 +15,7 @@
             </div>
 
           <div class="rarete" :class="espece.rarete">{{ formatRareté(espece.rarete) }}</div>
-          <div class="categorie" v-if="espece.rarete !== 'unique'">{{ formatGroupe(espece.id) }} (niv. ${currentPoule?.niveauTalent || 1}/${maxTalentLevel})</div>
+          <div class="categorie" v-if="espece.rarete !== 'unique'">{{ formatGroupe(espece.id) }} (niv. {{currentPoule?.niveauTalent || 1}}/{{maxTalentLevel}}</div>
           <div class="quantite"></div>
         </div>
       </div>
