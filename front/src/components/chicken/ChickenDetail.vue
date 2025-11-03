@@ -9,13 +9,13 @@
             <h2 class="name" style="margin: 0;">
               {{ espece.nom }}
             </h2>
-            <div style="font-size:16px; color:#ffd58f; margin-left:8px; margin-top: 1px;">
+            <div v-if="espece.rarete !== 'unique'" style="font-size:16px; color:#ffd58f; margin-left:8px; margin-top: 1px;">
               ×{{ currentPoule?.quantite ?? poule?.quantite }}
             </div>
             </div>
 
           <div class="rarete" :class="espece.rarete">{{ formatRareté(espece.rarete) }}</div>
-          <div class="categorie" v-if="espece.rarete !== 'unique'">{{ formatGroupe(espece.id) }} (niv. {{currentPoule?.niveauTalent || 1}}/{{maxTalentLevel}}</div>
+          <div class="categorie" v-if="espece.rarete !== 'unique'">{{ formatGroupe(espece.id) }} (niv. {{currentPoule?.niveauTalent || 1}}/{{maxTalentLevel}})</div>
           <div class="quantite"></div>
         </div>
       </div>

@@ -79,7 +79,7 @@
                     >
                       <div class="challenge-header">
                         <span class="challenge-text">
-                          {{ formatChallenge(challenge, getChallengeProgress(currentStep, challenge.type)) }}
+                          {{ formatChallengeDisplay(challenge) }}
                         </span>
                       </div>
                       <div class="challenge-progress">
@@ -230,6 +230,7 @@ import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
 import { useRoute } from 'vue-router'
 import { usePoules } from '@/composables/usePoules'
+import { formatNumber } from '@/utils/format.js'
 
 const props = defineProps({
   visible: {
@@ -477,6 +478,38 @@ const getFinalReward = (quest) => {
   }
 
   return finalReward
+}
+
+// Formatage des textes de défis avec formatNumber pour objectifs et valeurs courantes
+const formatChallengeDisplay = (challenge) => {
+  const progress = getChallengeProgress(currentStep.value, challenge.type) || 0
+  // Challenges de condition (0/1) — on laisse formatChallenge gérer le texte
+  const isCondition = ['team_stat_req', 'production_req'].includes(challenge.type)
+
+  if (challenge.type === 'eggs_collected') {
+    // Exemple : "Récolter 1M œufs (972K/1M)"
+    const target = formatNumber(challenge.objectif || 0, true)
+    const current = formatNumber(progress || 0, true)
+    return `Récolter ${target} œufs (${progress}/${challenge.objectif})`
+  }
+
+  // Pour les challenges de rareté, afficher rareté + counts si objectif numérique
+  if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+    const target = formatNumber(challenge.objectif || 0, true)
+    const current = formatNumber(progress || 0, true)
+    return `Trouver ${target} poule(s) de rareté ${challenge.rarity} (${current}/${target})`
+  }
+
+  // Pour les autres défis numériques, utiliser formatChallenge mais ajouter fraction formatée
+  if (!isCondition && typeof challenge.objectif === 'number') {
+    const base = formatChallenge(challenge, progress)
+    const current = formatNumber(progress || 0, true)
+    const target = formatNumber(challenge.objectif || 0, true)
+    return `${base} (${progress}/${challenge.objectif})`
+  }
+
+  // Par défaut, déléguer à formatChallenge (ex: conditions binaires)
+  return formatChallenge(challenge, progress)
 }
 </script>
 

@@ -19,7 +19,7 @@
       <div class="info">
         <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
           <span class="name">{{ espece.nom }}</span>
-          <span class="quantite">x{{ poule.quantite }}</span>
+          <span v-if="espece.rarete !== 'unique'" class="quantite">x{{ poule.quantite }}</span>
         </div>
         <div class="rarete">{{ formatRareté(espece.rarete) }}</div>
         <div class="categorie" v-if="espece.rarete !== 'unique'">

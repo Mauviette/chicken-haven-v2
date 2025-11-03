@@ -80,88 +80,123 @@ export async function acceptQuest(req, res) {
     if (user.quests?.abandonedQuests?.[questId]) {
       const abandonedData = user.quests.abandonedQuests[questId]
       
-      // Restaurer seulement l'étape actuelle, pas la progression des objectifs
+      // Restaurer seulement l'étape actuelle, en recréant initialValues par step
       user.quests.questProgress = user.quests.questProgress || {}
       user.quests.initialValues = user.quests.initialValues || {}
       user.quests.questProgress[questId] = {}
       
-      // Recalculer les valeurs initiales pour la reprise
-      const initialValues = {}
+      // Importer utilitaires pour conditions/production (comme ailleurs)
+      const { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = await import('./egg.controller.js')
+      
+      // Construire initialValues par step id et initialiser questProgress par clés normalisées
+      const initialValuesPerStep = {}
       quest.steps.forEach(step => {
+        const stepInit = {}
         step.challenges.forEach(challenge => {
-          if (!initialValues[challenge.type]) {
-            // Calculer la valeur initiale selon le type de défi
+          if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+            const rarityKey = `chicken_rarity_found_${challenge.rarity}`
+            const chickensFound = (user.poulesPossedees || [])
+              .filter(p => {
+                const chickenData = especeData[p.especeId]
+                return chickenData && chickenData.rarete === challenge.rarity
+              })
+              .reduce((s, p) => s + (p.quantite || 0), 0)
+            stepInit[rarityKey] = chickensFound
+          } else {
+            // mêmes sources que dans check/update pour cohérence
             switch (challenge.type) {
               case 'eggs_collected':
-                initialValues[challenge.type] = user.resources?.eggs || 0
+                // Utiliser le compteur d'achievements si disponible (mis à jour atomiquement),
+                // sinon tomber en retour sur resources.eggs.
+                stepInit[challenge.type] = (user.achievements?.progress?.totalEggsCollected != null)
+                  ? user.achievements.progress.totalEggsCollected
+                  : (user.resources?.eggs || 0)
                 break
               case 'chickens_owned':
-                const totalChickens = user.poulesPossedees?.reduce((sum, p) => sum + (p.quantite || 0), 0) || 0
-                initialValues[challenge.type] = totalChickens
+                stepInit[challenge.type] = (user.poulesPossedees || []).reduce((s, p) => s + (p.quantite || 0), 0)
                 break
               case 'boxes_opened':
-                initialValues[challenge.type] = user.achievements?.progress?.totalBoxesOpened || 0
+                stepInit[challenge.type] = user.achievements?.progress?.totalBoxesOpened || 0
                 break
               case 'talent_level_reached':
-                const maxTalentLevel = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
-                initialValues[challenge.type] = maxTalentLevel
+                stepInit[challenge.type] = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
                 break
               case 'mining_games_played':
-                initialValues[challenge.type] = user.achievements?.progress?.miningGamesPlayed || 0
+                stepInit[challenge.type] = user.achievements?.progress?.miningGamesPlayed || 0
                 break
               case 'mining_cells_broken':
-                initialValues[challenge.type] = user.achievements?.progress?.miningCellsBroken || 0
+                stepInit[challenge.type] = user.achievements?.progress?.miningCellsBroken || 0
                 break
               case 'mining_artifacts_found':
-                initialValues[challenge.type] = user.achievements?.progress?.miningArtifactsFound || 0
+                stepInit[challenge.type] = user.achievements?.progress?.miningArtifactsFound || 0
                 break
               case 'max_eggs_in_click':
-                initialValues[challenge.type] = user.achievements?.progress?.maxEggsInOneClick || 0
+                stepInit[challenge.type] = user.achievements?.progress?.maxEggsInOneClick || 0
                 break
               case 'spawnables_clicked':
-                initialValues[challenge.type] = user.achievements?.progress?.spawnablesClicked || 0
+                stepInit[challenge.type] = user.achievements?.progress?.spawnablesClicked || 0
                 break
               case 'chicken_abilities_used':
-                initialValues[challenge.type] = user.achievements?.progress?.chickenAbilitiesUsed || 0
+                stepInit[challenge.type] = user.achievements?.progress?.chickenAbilitiesUsed || 0
                 break
               case 'chicken_gifts_collected':
-                initialValues[challenge.type] = user.achievements?.progress?.chickenGiftsCollected || 0
+                stepInit[challenge.type] = user.achievements?.progress?.chickenGiftsCollected || 0
                 break
-              case 'chicken_rarity_found':
-                // Pour les challenges de rareté, calculer le nombre initial de poules de cette rareté
-                const targetRarity = challenge.rarity
-                const initialRarityKey = `chicken_rarity_found_${targetRarity}`
-                const initialChickensFound = (user.poulesPossedees || [])
-                  .filter(poule => {
-                    const chickenData = especeData[poule.especeId]
-                    return chickenData && chickenData.rarete === targetRarity
-                  })
-                  .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
-                initialValues[initialRarityKey] = initialChickensFound
+              case 'team_stat_req':
+                {
+                  const statVal = computeTeamCharisme(user)
+                  const { req, num } = challenge
+                  let cond = false
+                  if (req === 'below') cond = statVal < num
+                  else if (req === 'above') cond = statVal > num
+                  else if (req === 'equals') cond = statVal === num
+                  stepInit[challenge.type] = cond ? 1 : 0
+                }
+                break
+              case 'production_req':
+                {
+                  // Calcule la production exactement comme dans egg.controller :
+                  // effectiveMaxIncome = (clickableEgg.maxIncome + storageBonus) * storageMultiplier * buff.storage
+                  const storageBonus = runTalentStorage(user)
+                  const buffMultipliers = computeActiveBuffMultipliers(user)
+                  const baseMaxIncome = Number(user.clickableEgg?.maxIncome || 0) + Number(storageBonus.storageBonus || 0)
+                  const effectiveMaxIncome = Math.max(0, baseMaxIncome * (storageBonus.storageMultiplier || 1) * (buffMultipliers.storage || 1))
+                  const incomeResult = runTalentIncome(user, effectiveMaxIncome)
+                  const baseIncome = Number(user.clickableEgg?.income || 0)
+                  const effectiveProduction = (baseIncome + Number(incomeResult.bonusPerSecond || 0)) * (buffMultipliers.income || 1)
+                  const { req, num } = challenge
+                  let cond = false
+                  if (req === 'below') cond = effectiveProduction < num
+                  else if (req === 'above') cond = effectiveProduction > num
+                  else if (req === 'equals') cond = effectiveProduction === num
+                  stepInit[challenge.type] = cond ? 1 : 0
+                }
                 break
               default:
-                initialValues[challenge.type] = 0
+                stepInit[challenge.type] = 0
             }
           }
         })
+        initialValuesPerStep[step.id] = stepInit
       })
       
-      user.quests.initialValues[questId] = initialValues
+      user.quests.initialValues[questId] = initialValuesPerStep
       
-      // Initialiser le progrès pour chaque étape, en marquant comme réclamées les étapes précédentes
+      // Initialiser le progrès pour chaque étape avec les mêmes clés (et marquer rewardClaimed pour étapes précédentes)
       const startStepIndex = abandonedData.currentStepIndex || 0
       quest.steps.forEach((step, index) => {
         user.quests.questProgress[questId][step.id] = {}
         step.challenges.forEach(challenge => {
-          user.quests.questProgress[questId][step.id][challenge.type] = 0
+          const key = (challenge.type === 'chicken_rarity_found' && challenge.rarity) ? `chicken_rarity_found_${challenge.rarity}` : challenge.type
+          user.quests.questProgress[questId][step.id][key] = 0
         })
-        
-        // Marquer les étapes précédentes comme réclamées
         if (index < startStepIndex) {
           user.quests.questProgress[questId][step.id].rewardClaimed = true
+        } else {
+          user.quests.questProgress[questId][step.id].rewardClaimed = false
         }
       })
-      
+       
       // Supprimer de la liste des quêtes abandonnées
       delete user.quests.abandonedQuests[questId]
       
@@ -198,16 +233,85 @@ export async function acceptQuest(req, res) {
     // Calculer les valeurs initiales pour la première étape seulement
     const firstStep = quest.steps[0]
     const initialValues = {}
+    // Importer une seule fois les utilitaires requis pour évaluer certaines conditions
+    const { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = await import('./egg.controller.js')
+    // Construire des valeurs initiales basées sur l'état actuel du joueur afin que
+    // le progrès affiché au démarrage de l'étape soit 0 (current - initial = 0).
     firstStep.challenges.forEach(challenge => {
-      if (!initialValues[challenge.type]) {
-        // Les valeurs initiales sont toujours 0 pour commencer à compter depuis l'acceptation
+      if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+        const key = `chicken_rarity_found_${challenge.rarity}`
+        const count = (user.poulesPossedees || [])
+          .filter(p => {
+            const cd = especeData[p.especeId]
+            return cd && cd.rarete === challenge.rarity
+          })
+          .reduce((s, p) => s + (p.quantite || 0), 0)
+        initialValues[key] = count
+      } else {
         switch (challenge.type) {
-          case 'chicken_rarity_found':
-            // Pour les challenges de rareté, utiliser une clé unique
-            const targetRarity = challenge.rarity
-            const initialRarityKey = `chicken_rarity_found_${targetRarity}`
-            initialValues[initialRarityKey] = 0
+          case 'eggs_collected':
+            initialValues[challenge.type] = (user.achievements?.progress?.totalEggsCollected != null)
+              ? user.achievements.progress.totalEggsCollected
+              : (user.resources?.eggs || 0)
             break
+          case 'chickens_owned':
+            initialValues[challenge.type] = (user.poulesPossedees || []).reduce((s, p) => s + (p.quantite || 0), 0)
+            break
+          case 'boxes_opened':
+            initialValues[challenge.type] = user.achievements?.progress?.totalBoxesOpened || 0
+            break
+          case 'talent_level_reached':
+            initialValues[challenge.type] = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
+            break
+          case 'mining_games_played':
+            initialValues[challenge.type] = user.achievements?.progress?.miningGamesPlayed || 0
+            break
+          case 'mining_cells_broken':
+            initialValues[challenge.type] = user.achievements?.progress?.miningCellsBroken || 0
+            break
+          case 'mining_artifacts_found':
+            initialValues[challenge.type] = user.achievements?.progress?.miningArtifactsFound || 0
+            break
+          case 'max_eggs_in_click':
+            initialValues[challenge.type] = user.achievements?.progress?.maxEggsInOneClick || 0
+            break
+          case 'spawnables_clicked':
+            initialValues[challenge.type] = user.achievements?.progress?.spawnablesClicked || 0
+            break
+          case 'chicken_abilities_used':
+            initialValues[challenge.type] = user.achievements?.progress?.chickenAbilitiesUsed || 0
+            break
+          case 'chicken_gifts_collected':
+            initialValues[challenge.type] = user.achievements?.progress?.chickenGiftsCollected || 0
+            break
+          case 'team_stat_req': {
+            const statVal = computeTeamCharisme(user)
+            const { req, num } = challenge
+            let cond = false
+            if (req === 'below') cond = statVal < num
+            else if (req === 'above') cond = statVal > num
+            else if (req === 'equals') cond = statVal === num
+            initialValues[challenge.type] = cond ? 1 : 0
+            break
+          }
+          case 'production_req': {
+            // Calcule la production exactement comme dans egg.controller :
+            // effectiveMaxIncome = (clickableEgg.maxIncome + storageBonus) * storageMultiplier * buff.storage
+            const storageBonus = runTalentStorage(user)
+            const buffMultipliers = computeActiveBuffMultipliers(user)
+            const baseMaxIncome = Number(user.clickableEgg?.maxIncome || 0) + Number(storageBonus.storageBonus || 0)
+            const effectiveMaxIncome = Math.max(0, baseMaxIncome * (storageBonus.storageMultiplier || 1) * (buffMultipliers.storage || 1))
+            const incomeResult = runTalentIncome(user, effectiveMaxIncome)
+            const baseIncome = Number(user.clickableEgg?.income || 0)
+            const effectiveProduction = (baseIncome + Number(incomeResult.bonusPerSecond || 0)) * (buffMultipliers.income || 1)
+            const { req, num } = challenge
+            let cond = false
+            if (req === 'below') cond = effectiveProduction < num
+            else if (req === 'above') cond = effectiveProduction > num
+            else if (req === 'equals') cond = effectiveProduction === num
+            initialValues[challenge.type] = cond ? 1 : 0
+            break
+          }
           default:
             initialValues[challenge.type] = 0
         }
@@ -335,19 +439,119 @@ export async function abandonQuest(req, res) {
       })
     })
 
-    // Supprimer complètement le progrès actif
-    if (user.quests.questProgress && user.quests.questProgress[questId]) {
-      delete user.quests.questProgress[questId]
-    }
+    // --- NOUVELLE LOGIQUE : réinitialiser les avancées des étapes pour cette quête ---
+    // Créer un objet de progrès propre pour la quête, remettant tous les compteurs à 0.
+    user.quests.questProgress = user.quests.questProgress || {}
+    const newQuestProgress = {}
+    quest.steps.forEach((step, index) => {
+      const stepProgress = {}
+      step.challenges.forEach(challenge => {
+        // Utiliser une clé unique pour les raretés comme partout ailleurs
+        if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+          const rarityKey = `chicken_rarity_found_${challenge.rarity}`
+          stepProgress[rarityKey] = 0
+        } else {
+          stepProgress[challenge.type] = 0
+        }
+      })
+      // Marquer les étapes précédentes comme réclamées pour préserver l'état des récompenses précédentes
+      if (index < currentStepIndex) {
+        stepProgress.rewardClaimed = true
+      } else {
+        stepProgress.rewardClaimed = false
+      }
+      newQuestProgress[step.id] = stepProgress
+    })
+    user.quests.questProgress[questId] = newQuestProgress
 
-    // Supprimer les valeurs initiales actives
-    if (user.quests.initialValues && user.quests.initialValues[questId]) {
-      delete user.quests.initialValues[questId]
-    }
+    // Calculer et sauvegarder les valeurs initiales actuelles pour cette quête
+    // afin que le progrès futur soit calculé depuis zéro après l'abandon.
+    user.quests.initialValues = user.quests.initialValues || {}
+    const initialValuesPerStep = {}
+
+    // Importer les utilitaires nécessaires pour calculer conditions/production
+    const { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = await import('./egg.controller.js')
+
+    quest.steps.forEach(step => {
+      const stepInit = {}
+      step.challenges.forEach(challenge => {
+        switch (challenge.type) {
+          case 'eggs_collected':
+            // Utiliser le compteur d'achievements si disponible (mis à jour atomiquement),
+            // sinon tomber en retour sur resources.eggs.
+            stepInit[challenge.type] = (user.achievements?.progress?.totalEggsCollected != null)
+              ? user.achievements.progress.totalEggsCollected
+              : (user.resources?.eggs || 0)
+            break
+          case 'chickens_owned':
+            stepInit[challenge.type] = (user.poulesPossedees || []).reduce((s, p) => s + (p.quantite || 0), 0)
+            break
+          case 'boxes_opened':
+            stepInit[challenge.type] = user.achievements?.progress?.totalBoxesOpened || 0
+            break
+          case 'talent_level_reached':
+            stepInit[challenge.type] = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
+            break
+          case 'mining_games_played':
+            stepInit[challenge.type] = user.achievements?.progress?.miningGamesPlayed || 0
+            break
+          case 'mining_cells_broken':
+            stepInit[challenge.type] = user.achievements?.progress?.miningCellsBroken || 0
+            break
+          case 'mining_artifacts_found':
+            stepInit[challenge.type] = user.achievements?.progress?.miningArtifactsFound || 0
+            break
+          case 'max_eggs_in_click':
+            stepInit[challenge.type] = user.achievements?.progress?.maxEggsInOneClick || 0
+            break
+          case 'spawnables_clicked':
+            stepInit[challenge.type] = user.achievements?.progress?.spawnablesClicked || 0
+            break
+          case 'chicken_abilities_used':
+            stepInit[challenge.type] = user.achievements?.progress?.chickenAbilitiesUsed || 0
+            break
+          case 'chicken_gifts_collected':
+            stepInit[challenge.type] = user.achievements?.progress?.chickenGiftsCollected || 0
+            break
+          case 'team_stat_req': {
+            const statVal = computeTeamCharisme(user)
+            const { req, num } = challenge
+            let cond = false
+            if (req === 'below') cond = statVal < num
+            else if (req === 'above') cond = statVal > num
+            else if (req === 'equals') cond = statVal === num
+            stepInit[challenge.type] = cond ? 1 : 0
+            break
+          }
+          case 'production_req': {
+            // Calcule la production exactement comme dans egg.controller :
+            // effectiveMaxIncome = (clickableEgg.maxIncome + storageBonus) * storageMultiplier * buff.storage
+            const storageBonus = runTalentStorage(user)
+            const buffMultipliers = computeActiveBuffMultipliers(user)
+            const baseMaxIncome = Number(user.clickableEgg?.maxIncome || 0) + Number(storageBonus.storageBonus || 0)
+            const effectiveMaxIncome = Math.max(0, baseMaxIncome * (storageBonus.storageMultiplier || 1) * (buffMultipliers.storage || 1))
+            const incomeResult = runTalentIncome(user, effectiveMaxIncome)
+            const baseIncome = Number(user.clickableEgg?.income || 0)
+            const effectiveProduction = (baseIncome + Number(incomeResult.bonusPerSecond || 0)) * (buffMultipliers.income || 1)
+            const { req, num } = challenge
+            let cond = false
+            if (req === 'below') cond = effectiveProduction < num
+            else if (req === 'above') cond = effectiveProduction > num
+            else if (req === 'equals') cond = effectiveProduction === num
+            stepInit[challenge.type] = cond ? 1 : 0
+            break
+          }
+          default:
+            stepInit[challenge.type] = 0
+        }
+      })
+      initialValuesPerStep[step.id] = stepInit
+    })
+
+    user.quests.initialValues[questId] = initialValuesPerStep
 
     user.quests.activeQuest = null
     user.markModified('quests')
-    user.markModified('achievements')
     await user.save()
 
     res.json({
@@ -564,16 +768,53 @@ export async function claimStepReward(req, res) {
       if (nextStepIndex < quest.steps.length) {
         const nextStep = quest.steps[nextStepIndex]
         const nextStepInitialValues = {}
-
+        // Construire initialValues courantes pour l'étape suivante afin d'afficher 0 au départ
         nextStep.challenges.forEach(challenge => {
-          if (!nextStepInitialValues[challenge.type]) {
-            // Les valeurs initiales sont toujours 0 pour commencer à compter depuis le début de l'étape
+          if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
+            const rk = `chicken_rarity_found_${challenge.rarity}`
+            const cnt = (user.poulesPossedees || [])
+              .filter(p => {
+                const cd = especeData[p.especeId]
+                return cd && cd.rarete === challenge.rarity
+              })
+              .reduce((s, p) => s + (p.quantite || 0), 0)
+            nextStepInitialValues[rk] = cnt
+          } else {
             switch (challenge.type) {
-              case 'chicken_rarity_found':
-                // Pour les challenges de rareté, utiliser une clé unique
-                const targetRarity = challenge.rarity
-                const initialRarityKey = `chicken_rarity_found_${targetRarity}`
-                nextStepInitialValues[initialRarityKey] = 0
+              case 'eggs_collected':
+                nextStepInitialValues[challenge.type] = (user.achievements?.progress?.totalEggsCollected != null)
+                  ? user.achievements.progress.totalEggsCollected
+                  : (user.resources?.eggs || 0)
+                break
+              case 'chickens_owned':
+                nextStepInitialValues[challenge.type] = (user.poulesPossedees || []).reduce((s, p) => s + (p.quantite || 0), 0)
+                break
+              case 'boxes_opened':
+                nextStepInitialValues[challenge.type] = user.achievements?.progress?.totalBoxesOpened || 0
+                break
+              case 'talent_level_reached':
+                nextStepInitialValues[challenge.type] = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
+                break
+              case 'mining_games_played':
+                nextStepInitialValues[challenge.type] = user.achievements?.progress?.miningGamesPlayed || 0
+                break
+              case 'mining_cells_broken':
+                nextStepInitialValues[challenge.type] = user.achievements?.progress?.miningCellsBroken || 0
+                break
+              case 'mining_artifacts_found':
+                nextStepInitialValues[challenge.type] = user.achievements?.progress?.miningArtifactsFound || 0
+                break
+              case 'max_eggs_in_click':
+                nextStepInitialValues[challenge.type] = user.achievements?.progress?.maxEggsInOneClick || 0
+                break
+              case 'spawnables_clicked':
+                nextStepInitialValues[challenge.type] = user.achievements?.progress?.spawnablesClicked || 0
+                break
+              case 'chicken_abilities_used':
+                nextStepInitialValues[challenge.type] = user.achievements?.progress?.chickenAbilitiesUsed || 0
+                break
+              case 'chicken_gifts_collected':
+                nextStepInitialValues[challenge.type] = user.achievements?.progress?.chickenGiftsCollected || 0
                 break
               default:
                 nextStepInitialValues[challenge.type] = 0
@@ -648,31 +889,37 @@ export async function checkQuestProgress(req, res) {
     console.log('questInitialValues:', questInitialValues)
 
     // Importer les fonctions nécessaires une seule fois
-    const { computeTeamCharisme, runTalentIncome } = await import('./egg.controller.js')
+    const { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = await import('./egg.controller.js')
 
-    // Mettre à jour le progrès pour chaque étape
-    quest.steps.forEach(step => {
+    // Mettre à jour uniquement l'étape active : la première étape dont rewardClaimed !== true
+    const activeStep = quest.steps.find(s => {
+      const sp = questProgress[s.id] || {}
+      return sp.rewardClaimed !== true
+    })
+    if (activeStep) {
+      const step = activeStep
       const stepProgress = questProgress[step.id] || {}
       const initialValues = questInitialValues[step.id] || {}
 
+      // traiter uniquement les challenges de cette étape
       step.challenges.forEach(challenge => {
+        const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
         let currentTotalValue = 0
-
-        // Obtenir la valeur totale actuelle selon le type de défi
+        // (les mêmes sources que précédemment)
         switch (challenge.type) {
           case 'eggs_collected':
-            currentTotalValue = user.resources?.eggs || 0
+            currentTotalValue = (user.achievements?.progress?.totalEggsCollected != null)
+              ? user.achievements.progress.totalEggsCollected
+              : (user.resources?.eggs || 0)
             break
           case 'chickens_owned':
-            const totalChickens = user.poulesPossedees?.reduce((sum, p) => sum + (p.quantite || 0), 0) || 0
-            currentTotalValue = totalChickens
+            currentTotalValue = (user.poulesPossedees || []).reduce((sum, p) => sum + (p.quantite || 0), 0)
             break
           case 'boxes_opened':
             currentTotalValue = user.achievements?.progress?.totalBoxesOpened || 0
             break
           case 'talent_level_reached':
-            const maxTalentLevel = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
-            currentTotalValue = maxTalentLevel
+            currentTotalValue = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
             break
           case 'mining_games_played':
             currentTotalValue = user.achievements?.progress?.miningGamesPlayed || 0
@@ -695,61 +942,73 @@ export async function checkQuestProgress(req, res) {
           case 'chicken_gifts_collected':
             currentTotalValue = user.achievements?.progress?.chickenGiftsCollected || 0
             break
-          case 'chicken_rarity_found':
-            // Pour les challenges de rareté, compter toutes les poules possédées
+          case 'chicken_rarity_found': {
             const targetRarity = challenge.rarity
             const chickensFound = (user.poulesPossedees || [])
-              .filter(poule => {
-                const chickenData = especeData[poule.especeId]
+              .filter(p => {
+                const chickenData = especeData[p.especeId]
                 return chickenData && chickenData.rarete === targetRarity
               })
-              .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
+              .reduce((s, p) => s + (p.quantite || 0), 0)
             currentTotalValue = chickensFound
             break
-          case 'team_stat_req':
-            // Vérifier une statistique d'équipe selon les critères
+          }
+          case 'team_stat_req': {
             const statValue = computeTeamCharisme(user)
-            const { req, stat, num } = challenge
+            const { req, num } = challenge
             let conditionMet = false
-            if (req === 'below') {
-              conditionMet = statValue < num
-            } else if (req === 'above') {
-              conditionMet = statValue > num
-            } else if (req === 'equals') {
-              conditionMet = statValue === num
-            }
+            if (req === 'below') conditionMet = statValue < num
+            else if (req === 'above') conditionMet = statValue > num
+            else if (req === 'equals') conditionMet = statValue === num
             currentTotalValue = conditionMet ? 1 : 0
             break
-          case 'production_req':
-            // Vérifier la production par seconde selon les critères
-            const incomeResult = runTalentIncome(user, user.resources?.stockageMax || 1000)
+          }
+          case 'production_req': {
+            const storageBonus = runTalentStorage(user)
+            const buffMultipliers = computeActiveBuffMultipliers(user)
+            const baseMaxIncome = Number(user.clickableEgg?.maxIncome || 0) + Number(storageBonus.storageBonus || 0)
+            const effectiveMaxIncome = Math.max(0, baseMaxIncome * (storageBonus.storageMultiplier || 1) * (buffMultipliers.storage || 1))
+            const incomeResult = runTalentIncome(user, effectiveMaxIncome)
+            const baseIncome = Number(user.clickableEgg?.income || 0)
+            const effectiveProduction = (baseIncome + Number(incomeResult.bonusPerSecond || 0)) * (buffMultipliers.income || 1)
             const { req: prodReq, num: prodNum } = challenge
             let prodConditionMet = false
-            if (prodReq === 'below') {
-              prodConditionMet = incomeResult.bonusPerSecond < prodNum
-            } else if (prodReq === 'above') {
-              prodConditionMet = incomeResult.bonusPerSecond > prodNum
-            } else if (prodReq === 'equals') {
-              prodConditionMet = incomeResult.bonusPerSecond === prodNum
-            }
+            if (prodReq === 'below') prodConditionMet = effectiveProduction < prodNum
+            else if (prodReq === 'above') prodConditionMet = effectiveProduction > prodNum
+            else if (prodReq === 'equals') prodConditionMet = effectiveProduction === prodNum
             currentTotalValue = prodConditionMet ? 1 : 0
             break
+          }
+          default:
+            currentTotalValue = 0
         }
 
         // Calculer le progrès depuis l'acceptation de l'étape
         // Pour les challenges de condition (0/1), utiliser directement la valeur actuelle
-        const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
-        const progressValue = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[challenge.type] || 0))
-
-        // Mettre à jour si la valeur a changé
-        if (stepProgress[challenge.type] !== progressValue) {
-          stepProgress[challenge.type] = progressValue
-          progressUpdated = true
+        if (challenge.type === 'chicken_rarity_found') {
+          // reconstruire la clé unique pour la rareté et l'utiliser pour lire/écrire
+          const rarityKey = `chicken_rarity_found_${challenge.rarity}`
+          const initVal = initialValues[rarityKey] || 0
+          const computed = Math.max(0, currentTotalValue - initVal)
+          const prev = stepProgress[rarityKey] || 0
+          const newVal = Math.max(prev, computed)
+          if (newVal !== prev) {
+            stepProgress[rarityKey] = newVal
+            progressUpdated = true
+          }
+        } else {
+          const computed = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[challenge.type] || 0))
+          const prev = stepProgress[challenge.type] || 0
+          const newVal = Math.max(prev, computed)
+          if (newVal !== prev) {
+            stepProgress[challenge.type] = newVal
+            progressUpdated = true
+          }
         }
       })
 
       questProgress[step.id] = stepProgress
-    })
+    }
 
     // Vérifier si la quête est terminée
     let questCompleted = false
@@ -861,7 +1120,7 @@ export async function checkQuestProgress(req, res) {
 }
 
 // Utilitaire pour mettre à jour le progrès des quêtes depuis d'autres contrôleurs
-export async function updateQuestProgress(userId, progressType, value) {
+async function updateQuestProgress(userId, progressType, value) {
   try {
     const user = await User.findById(userId)
     if (!user || !user.quests?.activeQuest) return
@@ -869,7 +1128,7 @@ export async function updateQuestProgress(userId, progressType, value) {
     const questId = user.quests.activeQuest
     const quest = questsData[questId]
     if (!quest) {
-      // Nettoyer la quête invalide au lieu de retourner une erreur
+      // Nettoyage si quête invalide
       console.log(`Quête invalide détectée dans updateQuestProgress: ${questId}. Nettoyage automatique.`)
       user.quests.activeQuest = null
       if (user.quests.questProgress && user.quests.questProgress[questId]) {
@@ -888,31 +1147,36 @@ export async function updateQuestProgress(userId, progressType, value) {
     const questInitialValues = user.quests.initialValues?.[questId] || {}
 
     // Importer les fonctions nécessaires une seule fois
-    const { computeTeamCharisme, runTalentIncome } = await import('./egg.controller.js')
+    const { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = await import('./egg.controller.js')
 
-    // Mettre à jour le progrès pour chaque étape
-    quest.steps.forEach(step => {
+    // Mettre à jour UNIQUEMENT l'étape active (première étape non rewardClaimed)
+    const activeStep = quest.steps.find(s => {
+      const sp = questProgress[s.id] || {}
+      return sp.rewardClaimed !== true
+    })
+    if (activeStep) {
+      const step = activeStep
       const stepProgress = questProgress[step.id] || {}
       const initialValues = questInitialValues[step.id] || {}
 
       step.challenges.forEach(challenge => {
+        const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
         let currentTotalValue = 0
 
-        // Obtenir la valeur totale actuelle selon le type de défi
         switch (challenge.type) {
           case 'eggs_collected':
-            currentTotalValue = user.resources?.eggs || 0
+            currentTotalValue = (user.achievements?.progress?.totalEggsCollected != null)
+              ? user.achievements.progress.totalEggsCollected
+              : (user.resources?.eggs || 0)
             break
           case 'chickens_owned':
-            const totalChickens = user.poulesPossedees?.reduce((sum, p) => sum + (p.quantite || 0), 0) || 0
-            currentTotalValue = totalChickens
+            currentTotalValue = (user.poulesPossedees || []).reduce((sum, p) => sum + (p.quantite || 0), 0)
             break
           case 'boxes_opened':
             currentTotalValue = user.achievements?.progress?.totalBoxesOpened || 0
             break
           case 'talent_level_reached':
-            const maxTalentLevel = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
-            currentTotalValue = maxTalentLevel
+            currentTotalValue = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
             break
           case 'mining_games_played':
             currentTotalValue = user.achievements?.progress?.miningGamesPlayed || 0
@@ -935,73 +1199,71 @@ export async function updateQuestProgress(userId, progressType, value) {
           case 'chicken_gifts_collected':
             currentTotalValue = user.achievements?.progress?.chickenGiftsCollected || 0
             break
-          case 'team_stat_req':
-            // Vérifier une statistique d'équipe selon les critères
-            const statValueUQ = computeTeamCharisme(user)
-            const { req: reqUQ, stat: statUQ, num: numUQ } = challenge
-            let conditionMetUQ = false
-            if (reqUQ === 'below') {
-              conditionMetUQ = statValueUQ < numUQ
-            } else if (reqUQ === 'above') {
-              conditionMetUQ = statValueUQ > numUQ
-            } else if (reqUQ === 'equals') {
-              conditionMetUQ = statValueUQ === numUQ
-            }
-            currentTotalValue = conditionMetUQ ? 1 : 0
-            break
-          case 'production_req':
-            // Vérifier la production par seconde selon les critères
-            const incomeResultUQ = runTalentIncome(user, user.resources?.stockageMax || 1000)
-            const { req: prodReqUQ, num: prodNumUQ } = challenge
-            let prodConditionMetUQ = false
-            if (prodReqUQ === 'below') {
-              prodConditionMetUQ = incomeResultUQ.bonusPerSecond < prodNumUQ
-            } else if (prodReqUQ === 'above') {
-              prodConditionMetUQ = incomeResultUQ.bonusPerSecond > prodNumUQ
-            } else if (prodReqUQ === 'equals') {
-              prodConditionMetUQ = incomeResultUQ.bonusPerSecond === prodNumUQ
-            }
-            currentTotalValue = prodConditionMetUQ ? 1 : 0
-            break
-          case 'chicken_rarity_found':
-            // Pour les challenges de rareté, on utilise une clé unique par rareté
+          case 'chicken_rarity_found': {
             const targetRarity = challenge.rarity
-            const rarityKey = `chicken_rarity_found_${targetRarity}`
             const chickensFound = (user.poulesPossedees || [])
-              .filter(poule => {
-                const chickenData = especeData[poule.especeId]
+              .filter(p => {
+                const chickenData = especeData[p.especeId]
                 return chickenData && chickenData.rarete === targetRarity
               })
-              .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
+              .reduce((s, p) => s + (p.quantite || 0), 0)
             currentTotalValue = chickensFound
-            // Calculer le progrès depuis l'acceptation de la quête
-            const initialValue = initialValues[rarityKey] || 0
-            const progressValue = Math.max(0, currentTotalValue - initialValue)
-            // Mettre à jour si la valeur a changé
-            if (stepProgress[rarityKey] !== progressValue) {
-              stepProgress[rarityKey] = progressValue
-              progressUpdated = true
-            }
             break
+          }
+          case 'team_stat_req': {
+            const statValue = computeTeamCharisme(user)
+            const { req, num } = challenge
+            let conditionMet = false
+            if (req === 'below') conditionMet = statValue < num
+            else if (req === 'above') conditionMet = statValue > num
+            else if (req === 'equals') conditionMet = statValue === num
+            currentTotalValue = conditionMet ? 1 : 0
+            break
+          }
+          case 'production_req': {
+            const storageBonus = runTalentStorage(user)
+            const buffMultipliers = computeActiveBuffMultipliers(user)
+            const baseMaxIncome = Number(user.clickableEgg?.maxIncome || 0) + Number(storageBonus.storageBonus || 0)
+            const effectiveMaxIncome = Math.max(0, baseMaxIncome * (storageBonus.storageMultiplier || 1) * (buffMultipliers.storage || 1))
+            const incomeResult = runTalentIncome(user, effectiveMaxIncome)
+            const baseIncome = Number(user.clickableEgg?.income || 0)
+            const effectiveProduction = (baseIncome + Number(incomeResult.bonusPerSecond || 0)) * (buffMultipliers.income || 1)
+            const { req: prodReq, num: prodNum } = challenge
+            let prodConditionMet = false
+            if (prodReq === 'below') prodConditionMet = effectiveProduction < prodNum
+            else if (prodReq === 'above') prodConditionMet = effectiveProduction > prodNum
+            else if (prodReq === 'equals') prodConditionMet = effectiveProduction === prodNum
+            currentTotalValue = prodConditionMet ? 1 : 0
+            break
+          }
+          default:
+            currentTotalValue = 0
         }
 
-        // Pour les challenges qui n'ont pas de logique spécifique, appliquer la logique générale
-        if (challenge.type !== 'chicken_rarity_found') {
-          // Calculer le progrès depuis l'acceptation de la quête
-          // Pour les challenges de condition (0/1), utiliser directement la valeur actuelle
-          const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
-          const progressValue = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[challenge.type] || 0))
-
-          // Mettre à jour si la valeur a changé
-          if (stepProgress[challenge.type] !== progressValue) {
-            stepProgress[challenge.type] = progressValue
+        if (challenge.type === 'chicken_rarity_found') {
+          const rarityKey = `chicken_rarity_found_${challenge.rarity}`
+          const initVal = initialValues[rarityKey] || 0
+          const computed = Math.max(0, currentTotalValue - initVal)
+          const prev = stepProgress[rarityKey] || 0
+          const newVal = Math.max(prev, computed)
+          if (newVal !== prev) {
+            stepProgress[rarityKey] = newVal
+            progressUpdated = true
+          }
+        } else {
+          const key = challenge.type
+          const computed = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[key] || 0))
+          const prev = stepProgress[key] || 0
+          const newVal = Math.max(prev, computed)
+          if (newVal !== prev) {
+            stepProgress[key] = newVal
             progressUpdated = true
           }
         }
       })
 
       questProgress[step.id] = stepProgress
-    })
+    }
 
     // Vérifier si la quête est terminée
     let questCompleted = false
@@ -1024,70 +1286,41 @@ export async function updateQuestProgress(userId, progressType, value) {
               // Les poules possédées ne sont pas remises à zéro
               break
             case 'boxes_opened':
-              if (user.achievements?.progress) {
-                user.achievements.progress.totalBoxesOpened = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.totalBoxesOpened = 0
               break
-            case 'talent_level_reached':
-              // Le niveau de talent max ne peut pas être remis à zéro
-              break
+            case 'talent_level_reached': break
             case 'mining_games_played':
-              if (user.achievements?.progress) {
-                user.achievements.progress.miningGamesPlayed = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.miningGamesPlayed = 0
               break
             case 'mining_cells_broken':
-              if (user.achievements?.progress) {
-                user.achievements.progress.miningCellsBroken = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.miningCellsBroken = 0
               break
             case 'mining_artifacts_found':
-              if (user.achievements?.progress) {
-                user.achievements.progress.miningArtifactsFound = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.miningArtifactsFound = 0
               break
             case 'max_eggs_in_click':
-              if (user.achievements?.progress) {
-                user.achievements.progress.maxEggsInOneClick = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.maxEggsInOneClick = 0
               break
             case 'spawnables_clicked':
-              if (user.achievements?.progress) {
-                user.achievements.progress.spawnablesClicked = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.spawnablesClicked = 0
               break
             case 'chicken_abilities_used':
-              if (user.achievements?.progress) {
-                user.achievements.progress.chickenAbilitiesUsed = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.chickenAbilitiesUsed = 0
               break
             case 'chicken_gifts_collected':
-              if (user.achievements?.progress) {
-                user.achievements.progress.chickenGiftsCollected = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.chickenGiftsCollected = 0
               break
-            case 'chicken_rarity_found':
-              // Pour les raretés, on ne remet pas à zéro car c'est le nombre de poules possédées
-              break
+            case 'chicken_rarity_found': break
           }
         })
       })
 
       user.quests.completedQuests = user.quests.completedQuests || []
-      if (!user.quests.completedQuests.includes(questId)) {
-        user.quests.completedQuests.push(questId)
-      }
+      if (!user.quests.completedQuests.includes(questId)) user.quests.completedQuests.push(questId)
       user.quests.activeQuest = null
 
-      // Nettoyer le progrès
-      if (user.quests.questProgress && user.quests.questProgress[questId]) {
-        delete user.quests.questProgress[questId]
-      }
-
-      // Nettoyer les valeurs initiales
-      if (user.quests.initialValues && user.quests.initialValues[questId]) {
-        delete user.quests.initialValues[questId]
-      }
+      if (user.quests.questProgress && user.quests.questProgress[questId]) delete user.quests.questProgress[questId]
+      if (user.quests.initialValues && user.quests.initialValues[questId]) delete user.quests.initialValues[questId]
     }
 
     if (progressUpdated || questCompleted) {
@@ -1103,7 +1336,7 @@ export async function updateQuestProgress(userId, progressType, value) {
 }
 
 // Utilitaire pour mettre à jour automatiquement tous les progrès de quête
-export async function updateAllQuestProgress(userId) {
+async function updateAllQuestProgress(userId) {
   try {
     const user = await User.findById(userId)
     if (!user || !user.quests?.activeQuest) return
@@ -1111,7 +1344,7 @@ export async function updateAllQuestProgress(userId) {
     const questId = user.quests.activeQuest
     const quest = questsData[questId]
     if (!quest) {
-      // Nettoyer la quête invalide au lieu de retourner une erreur
+      // Nettoyage si quête invalide
       console.log(`Quête invalide détectée dans updateAllQuestProgress: ${questId}. Nettoyage automatique.`)
       user.quests.activeQuest = null
       if (user.quests.questProgress && user.quests.questProgress[questId]) {
@@ -1130,31 +1363,35 @@ export async function updateAllQuestProgress(userId) {
     const questInitialValues = user.quests.initialValues?.[questId] || {}
 
     // Importer les fonctions nécessaires une seule fois
-    const { computeTeamCharisme, runTalentIncome } = await import('./egg.controller.js')
+    const { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = await import('./egg.controller.js')
 
-    // Mettre à jour le progrès pour chaque étape
-    quest.steps.forEach(step => {
+    // Mettre à jour uniquement l'étape active
+    const activeStep = quest.steps.find(s => {
+      const sp = questProgress[s.id] || {}
+      return sp.rewardClaimed !== true
+    })
+    if (activeStep) {
+      const step = activeStep
       const stepProgress = questProgress[step.id] || {}
       const initialValues = questInitialValues[step.id] || {}
 
       step.challenges.forEach(challenge => {
+        const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
         let currentTotalValue = 0
-
-        // Obtenir la valeur totale actuelle selon le type de défi
         switch (challenge.type) {
           case 'eggs_collected':
-            currentTotalValue = user.resources?.eggs || 0
+            currentTotalValue = (user.achievements?.progress?.totalEggsCollected != null)
+              ? user.achievements.progress.totalEggsCollected
+              : (user.resources?.eggs || 0)
             break
           case 'chickens_owned':
-            const totalChickens = user.poulesPossedees?.reduce((sum, p) => sum + (p.quantite || 0), 0) || 0
-            currentTotalValue = totalChickens
+            currentTotalValue = (user.poulesPossedees || []).reduce((sum, p) => sum + (p.quantite || 0), 0)
             break
           case 'boxes_opened':
             currentTotalValue = user.achievements?.progress?.totalBoxesOpened || 0
             break
           case 'talent_level_reached':
-            const maxTalentLevel = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
-            currentTotalValue = maxTalentLevel
+            currentTotalValue = Math.max(...(user.poulesPossedees?.map(p => p.niveauTalent || 1) || [1]))
             break
           case 'mining_games_played':
             currentTotalValue = user.achievements?.progress?.miningGamesPlayed || 0
@@ -1177,73 +1414,71 @@ export async function updateAllQuestProgress(userId) {
           case 'chicken_gifts_collected':
             currentTotalValue = user.achievements?.progress?.chickenGiftsCollected || 0
             break
-          case 'team_stat_req':
-            // Vérifier une statistique d'équipe selon les critères
-            const statValueUAQ = computeTeamCharisme(user)
-            const { req: reqUAQ, stat: statUAQ, num: numUAQ } = challenge
-            let conditionMetUAQ = false
-            if (reqUAQ === 'below') {
-              conditionMetUAQ = statValueUAQ < numUAQ
-            } else if (reqUAQ === 'above') {
-              conditionMetUAQ = statValueUAQ > numUAQ
-            } else if (reqUAQ === 'equals') {
-              conditionMetUAQ = statValueUAQ === numUAQ
-            }
-            currentTotalValue = conditionMetUAQ ? 1 : 0
-            break
-          case 'production_req':
-            // Vérifier la production par seconde selon les critères
-            const incomeResultUAQ = runTalentIncome(user, user.resources?.stockageMax || 1000)
-            const { req: prodReqUAQ, num: prodNumUAQ } = challenge
-            let prodConditionMetUAQ = false
-            if (prodReqUAQ === 'below') {
-              prodConditionMetUAQ = incomeResultUAQ.bonusPerSecond < prodNumUAQ
-            } else if (prodReqUAQ === 'above') {
-              prodConditionMetUAQ = incomeResultUAQ.bonusPerSecond > prodNumUAQ
-            } else if (prodReqUAQ === 'equals') {
-              prodConditionMetUAQ = incomeResultUAQ.bonusPerSecond === prodNumUAQ
-            }
-            currentTotalValue = prodConditionMetUAQ ? 1 : 0
-            break
-          case 'chicken_rarity_found':
-            // Pour les challenges de rareté, on utilise une clé unique par rareté
+          case 'chicken_rarity_found': {
             const targetRarity = challenge.rarity
-            const rarityKey = `chicken_rarity_found_${targetRarity}`
             const chickensFound = (user.poulesPossedees || [])
-              .filter(poule => {
-                const chickenData = especeData[poule.especeId]
+              .filter(p => {
+                const chickenData = especeData[p.especeId]
                 return chickenData && chickenData.rarete === targetRarity
               })
-              .reduce((sum, poule) => sum + (poule.quantite || 0), 0)
+              .reduce((s, p) => s + (p.quantite || 0), 0)
             currentTotalValue = chickensFound
-            // Calculer le progrès depuis l'acceptation de la quête
-            const initialValue = initialValues[rarityKey] || 0
-            const progressValue = Math.max(0, currentTotalValue - initialValue)
-            // Mettre à jour si la valeur a changé
-            if (stepProgress[rarityKey] !== progressValue) {
-              stepProgress[rarityKey] = progressValue
-              progressUpdated = true
-            }
             break
+          }
+          case 'team_stat_req': {
+            const statValue = computeTeamCharisme(user)
+            const { req, num } = challenge
+            let conditionMet = false
+            if (req === 'below') conditionMet = statValue < num
+            else if (req === 'above') conditionMet = statValue > num
+            else if (req === 'equals') conditionMet = statValue === num
+            currentTotalValue = conditionMet ? 1 : 0
+            break
+          }
+          case 'production_req': {
+            const storageBonus = runTalentStorage(user)
+            const buffMultipliers = computeActiveBuffMultipliers(user)
+            const baseMaxIncome = Number(user.clickableEgg?.maxIncome || 0) + Number(storageBonus.storageBonus || 0)
+            const effectiveMaxIncome = Math.max(0, baseMaxIncome * (storageBonus.storageMultiplier || 1) * (buffMultipliers.storage || 1))
+            const incomeResult = runTalentIncome(user, effectiveMaxIncome)
+            const baseIncome = Number(user.clickableEgg?.income || 0)
+            const effectiveProduction = (baseIncome + Number(incomeResult.bonusPerSecond || 0)) * (buffMultipliers.income || 1)
+            const { req: prodReq, num: prodNum } = challenge
+            let prodConditionMet = false
+            if (prodReq === 'below') prodConditionMet = effectiveProduction < prodNum
+            else if (prodReq === 'above') prodConditionMet = effectiveProduction > prodNum
+            else if (prodReq === 'equals') prodConditionMet = effectiveProduction === prodNum
+            currentTotalValue = prodConditionMet ? 1 : 0
+            break
+          }
+          default:
+            currentTotalValue = 0
         }
 
-        // Pour les challenges qui n'ont pas de logique spécifique, appliquer la logique générale
-        if (challenge.type !== 'chicken_rarity_found') {
-          // Calculer le progrès depuis l'acceptation de la quête
-          // Pour les challenges de condition (0/1), utiliser directement la valeur actuelle
-          const isConditionChallenge = ['team_stat_req', 'production_req'].includes(challenge.type)
-          const progressValue = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[challenge.type] || 0))
-
-          // Mettre à jour si la valeur a changé
-          if (stepProgress[challenge.type] !== progressValue) {
-            stepProgress[challenge.type] = progressValue
+        if (challenge.type === 'chicken_rarity_found') {
+          const rarityKey = `chicken_rarity_found_${challenge.rarity}`
+          const initVal = initialValues[rarityKey] || 0
+          const computed = Math.max(0, currentTotalValue - initVal)
+          const prev = stepProgress[rarityKey] || 0
+          const newVal = Math.max(prev, computed)
+          if (newVal !== prev) {
+            stepProgress[rarityKey] = newVal
+            progressUpdated = true
+          }
+        } else {
+          const key = challenge.type
+          const computed = isConditionChallenge ? currentTotalValue : Math.max(0, currentTotalValue - (initialValues[key] || 0))
+          const prev = stepProgress[key] || 0
+          const newVal = Math.max(prev, computed)
+          if (newVal !== prev) {
+            stepProgress[key] = newVal
             progressUpdated = true
           }
         }
       })
 
       questProgress[step.id] = stepProgress
-    })
+    }
 
     // Vérifier si la quête est terminée
     let questCompleted = false
@@ -1266,70 +1501,41 @@ export async function updateAllQuestProgress(userId) {
               // Les poules possédées ne sont pas remises à zéro
               break
             case 'boxes_opened':
-              if (user.achievements?.progress) {
-                user.achievements.progress.totalBoxesOpened = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.totalBoxesOpened = 0
               break
-            case 'talent_level_reached':
-              // Le niveau de talent max ne peut pas être remis à zéro
-              break
+            case 'talent_level_reached': break
             case 'mining_games_played':
-              if (user.achievements?.progress) {
-                user.achievements.progress.miningGamesPlayed = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.miningGamesPlayed = 0
               break
             case 'mining_cells_broken':
-              if (user.achievements?.progress) {
-                user.achievements.progress.miningCellsBroken = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.miningCellsBroken = 0
               break
             case 'mining_artifacts_found':
-              if (user.achievements?.progress) {
-                user.achievements.progress.miningArtifactsFound = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.miningArtifactsFound = 0
               break
             case 'max_eggs_in_click':
-              if (user.achievements?.progress) {
-                user.achievements.progress.maxEggsInOneClick = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.maxEggsInOneClick = 0
               break
             case 'spawnables_clicked':
-              if (user.achievements?.progress) {
-                user.achievements.progress.spawnablesClicked = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.spawnablesClicked = 0
               break
             case 'chicken_abilities_used':
-              if (user.achievements?.progress) {
-                user.achievements.progress.chickenAbilitiesUsed = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.chickenAbilitiesUsed = 0
               break
             case 'chicken_gifts_collected':
-              if (user.achievements?.progress) {
-                user.achievements.progress.chickenGiftsCollected = 0
-              }
+              if (user.achievements?.progress) user.achievements.progress.chickenGiftsCollected = 0
               break
-            case 'chicken_rarity_found':
-              // Pour les raretés, on ne remet pas à zéro car c'est le nombre de poules possédées
-              break
+            case 'chicken_rarity_found': break
           }
         })
       })
 
       user.quests.completedQuests = user.quests.completedQuests || []
-      if (!user.quests.completedQuests.includes(questId)) {
-        user.quests.completedQuests.push(questId)
-      }
+      if (!user.quests.completedQuests.includes(questId)) user.quests.completedQuests.push(questId)
       user.quests.activeQuest = null
 
-      // Nettoyer le progrès
-      if (user.quests.questProgress && user.quests.questProgress[questId]) {
-        delete user.quests.questProgress[questId]
-      }
-
-      // Nettoyer les valeurs initiales
-      if (user.quests.initialValues && user.quests.initialValues[questId]) {
-        delete user.quests.initialValues[questId]
-      }
+      if (user.quests.questProgress && user.quests.questProgress[questId]) delete user.quests.questProgress[questId]
+      if (user.quests.initialValues && user.quests.initialValues[questId]) delete user.quests.initialValues[questId]
     }
 
     if (progressUpdated || questCompleted) {
@@ -1339,9 +1545,13 @@ export async function updateAllQuestProgress(userId) {
       user.markModified('achievements')
       await user.save()
     }
-
-    return { updated: progressUpdated || questCompleted, questCompleted }
   } catch (error) {
     console.error('Erreur updateAllQuestProgress:', error)
   }
+}
+
+// --- NOUVEAU: exporter explicitement les utilitaires pour assurer la visibilité aux imports ---
+export {
+  updateQuestProgress,
+  updateAllQuestProgress
 }

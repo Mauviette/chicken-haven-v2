@@ -175,10 +175,10 @@ export const especeData = {
     nom: 'Poule\'taro',
     description: "Une poule mystérieuse capable de manipuler le temps pour maximiser la production. De mieux en mieux...",
     image: 'chickens/pouletaro/basic.png',
-    talent: 'Temporelle',
+    talent: 'Le Monde',
     groupe: 'discret',
     categorie: 'eclosion',
-    rarete: 'legendaire',
+    rarete: 'unique',
     stats: { intelligence: 5, energie: 2, charisme: 3 }
   },
   'barbarian': {
@@ -263,7 +263,7 @@ export const talentsData = {
   },
   'Vive': {
     description: "Augmente les revenus en fonction de l'intelligence ou de l'énergie de l'équipe.",
-    effet: "{niveau*0.1} de revenu par seconde pour chaque point d'énergie et/ou d'intelligence dans l'équipe.",
+    effet: "+{niveau*0.25} de revenu par seconde pour chaque point d'énergie et/ou d'intelligence dans l'équipe.",
     icon: '🏃',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -325,7 +325,7 @@ export const talentsData = {
   },
   'Gourmande': {
     description: "Des chocolats apparaissent sur l'écran qui augmentent la production et le stockage lorsque cliqués.",
-    effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {25+niveau*05}% pendant 15s.",
+    effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {25+niveau*5}% pendant 15s.",
     icon: '🍫',
     calculation: {
       combine: 'not_linear',
@@ -342,8 +342,8 @@ export const talentsData = {
             type: 'buff',
             buff_type: 'income_storage_multiplier',
             duration: 15000,
-            income_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.05 ] } ] },
-            storage_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.05 ] } ] }
+            income_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] },
+            storage_multiplier: { op: 'add', args: [ 1.25, { op: 'mul', args: [ { var: 'niveau' }, 0.5 ] } ] }
           }
         }
       ]
@@ -467,7 +467,7 @@ export const talentsData = {
   },
   'Canard': {
     description: "Augmente le revenu par seconde en fonction de TOUTES les stats d'équipe.",
-    effet: "+{0.1+0.1*niveau} de revenu par seconde par point de stat (Intelligence + Énergie + Charisme)",
+    effet: "+{1*niveau} de revenu par seconde par point de stat (Intelligence + Énergie + Charisme)",
     icon: '🦆',
     calculation: {
       triggers: [ { type: 'passive' } ],
@@ -489,7 +489,7 @@ export const talentsData = {
   },
   'Captivante': {
     description: "Des poussins roses apparaissent sur l'écran.",
-    effet: "Des poussins roses apparaissent régulièrement, en cliquer un donne votre charisme actuel x{2+niveau*1.5} œufs.",
+    effet: "Des poussins roses apparaissent régulièrement, en cliquer un donne votre charisme actuel x{3+niveau*2} œufs.",
     icon: '🕶️',
     calculation: {
       combine: 'not_linear',
@@ -505,7 +505,7 @@ export const talentsData = {
           reward: {
             type: 'resource',
             resource: 'eggs',
-            amount: { op: 'mul', args: [ { var: 'teamCharisme' }, { op: 'add', args: [ 2, { op: 'mul', args: [ { var: 'niveau' }, 1.5 ] } ] } ] } }
+            amount: { op: 'mul', args: [ { var: 'teamCharisme' }, { op: 'add', args: [ 3, { op: 'mul', args: [ { var: 'niveau' }, 2 ] } ] } ] } }
         }
       ]
     }
@@ -531,9 +531,9 @@ export const talentsData = {
       ]
     }
   },
-  'Temporelle': {
+  'Le Monde': {
     description: "Arrête le temps pendant 5s, chaque clic sur l'oeuf produit un pourcentage de la production/s.",
-    effet: "Arrête le temps et la production pendant 5s. Pendant ce temps, chaque clic sur l'oeuf produit {20 + niveau*2.5}% de la production/s en oeufs. Cooldown 1 min",
+    effet: "Arrête le temps et la production pendant 5s. Pendant ce temps, chaque clic sur l'oeuf produit 25% de la production/s en oeufs. Cooldown 1 min",
     icon: '⏰',
     calculation: {
       triggers: [ { type: 'active' } ],
@@ -542,13 +542,13 @@ export const talentsData = {
         {
           type: 'time_stop_buff',
           duration: 5000,
-          click_multiplier_base: { op: 'add', args: [ 0.20, { op: 'mul', args: [ { var: 'niveau' }, 0.025 ] } ] },
+          click_multiplier_base: 0.025,
           click_penalty_per_click: 0.001
         }
       ]
     }
   },
-  'Barbare': {
+  'AAAAAAAAAAAAAAARGH': {
     description: "Sacrifie l'intelligence et le charisme de l'équipe pour renforcer son énergie.",
     effet: "Met le charisme et l'intelligence de l'équipe à zéro, puis ajoute leur somme à l'énergie de l'équipe.",
     icon: '⚔️',
@@ -579,7 +579,7 @@ export const groupes = [
   { 
     name: 'fondamental', 
     description: 'Poule du groupe fondamental', 
-    rarityDropChance: [75, 25, 0, 1]
+    rarityDropChance: [75, 24.5, 0, 0.5]
   },
   { 
     name: 'brillant', 
@@ -589,7 +589,7 @@ export const groupes = [
   { 
     name: 'discret', 
     description: 'Poule du groupe discret', 
-    rarityDropChance: [65, 25, 10, 1]
+    rarityDropChance: [65, 25, 10, 0]
   },
   { 
     name: 'chic', 
@@ -1349,17 +1349,6 @@ export const questsData = {
           type: 'mining_token',
           quantite: 2
         }
-      },
-      {
-        id: 'mining_explorer',
-        description: 'Brisez 500 cases.',
-        challenges: [
-          { type: 'mining_cells_broken', objectif: 100 }
-        ],
-        reward: {
-          type: 'mining_token',
-          quantite: 2
-        }
       }
     ]
   },
@@ -1386,6 +1375,7 @@ export const questsData = {
         id: 'prod_and_leg',
         description: 'Trouver 10 poules légendaires et avoir au minimum 300 de production pourrait nous aider à la débusquer.',
         challenges: [
+          { type: 'eggs_collected', objectif: 500000 },
           { type: 'chicken_rarity_found', rarity: 'legendaire', objectif: 10 },
           { type: 'production_req', req: 'above', num: 300, objectif: 1 }
         ],
@@ -1399,7 +1389,7 @@ export const questsData = {
         description: 'Vous entendez des cris de rage pouléenne venant d\'un buisson, récoltez encore quelques oeufs et ayez assez d\'énergie pour la faire venir!',
         challenges: [
           { type: 'eggs_collected', objectif: 2000000 },
-          { type: 'team_stat_req', req: 'above', stat: 'charisme', num: 50, objectif: 1 }
+          { type: 'team_stat_req', req: 'above', stat: 'energie', num: 50, objectif: 1 }
         ],
         reward: {
           type: 'chicken',
