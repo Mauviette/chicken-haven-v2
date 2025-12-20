@@ -11,7 +11,7 @@ import { questsData, especeData } from '../../data/sharedGameData.js'
  * @returns {number} La valeur actuelle du challenge
  */
 export function computeChallengeValue(user, challenge, eggHelpers = {}) {
-  const { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = eggHelpers
+  const { computeTeamCharisme, computeTeamEnergy, computeTeamIntelligence, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = eggHelpers
   
   switch (challenge.type) {
     case 'eggs_collected':
@@ -60,8 +60,20 @@ export function computeChallengeValue(user, challenge, eggHelpers = {}) {
     }
     
     case 'team_stat_req': {
-      if (!computeTeamCharisme) return 0
-      const statValue = computeTeamCharisme(user)
+      // Déterminer quelle stat vérifier selon challenge.stat
+      const statType = challenge.stat || 'charisme'
+      let statValue = 0
+      
+      if (statType === 'energie' && computeTeamEnergy) {
+        statValue = computeTeamEnergy(user)
+      } else if (statType === 'intelligence' && computeTeamIntelligence) {
+        statValue = computeTeamIntelligence(user)
+      } else if (statType === 'charisme' && computeTeamCharisme) {
+        statValue = computeTeamCharisme(user)
+      } else {
+        return 0 // Fonction non disponible
+      }
+      
       const { req, num } = challenge
       let conditionMet = false
       if (req === 'below') conditionMet = statValue < num
@@ -243,6 +255,6 @@ export function cleanupInvalidQuest(user, questId) {
  * @returns {Promise<Object>}
  */
 export async function loadEggHelpers() {
-  const { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = await import('../egg.controller.js')
-  return { computeTeamCharisme, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage }
+  const { computeTeamCharisme, computeTeamEnergy, computeTeamIntelligence, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage } = await import('../egg.controller.js')
+  return { computeTeamCharisme, computeTeamEnergy, computeTeamIntelligence, runTalentIncome, computeActiveBuffMultipliers, runTalentStorage }
 }

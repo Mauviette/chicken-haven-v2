@@ -51,12 +51,8 @@
           stroke-width="1.5" 
           stroke="currentColor" 
           class="eye-icon"
-          @mousedown="showPassword = true"
-          @mouseup="showPassword = false"
-          @mouseleave="showPassword = false"
-          @touchstart="showPassword = true"
-          @touchend="showPassword = false"
-          title="Maintenir pour afficher le mot de passe"
+          @click="showPassword = true"
+          title="Afficher le mot de passe"
         >
           <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -70,12 +66,8 @@
           stroke-width="1.5" 
           stroke="currentColor" 
           class="eye-icon"
-          @mousedown="showPassword = true"
-          @mouseup="showPassword = false"
-          @mouseleave="showPassword = false"
-          @touchstart="showPassword = true"
-          @touchend="showPassword = false"
-          title="Maintenir pour afficher le mot de passe"
+          @click="showPassword = false"
+          title="Masquer le mot de passe"
         >
           <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
         </svg>
@@ -103,12 +95,8 @@
           stroke-width="1.5" 
           stroke="currentColor" 
           class="eye-icon"
-          @mousedown="showConfirmPassword = true"
-          @mouseup="showConfirmPassword = false"
-          @mouseleave="showConfirmPassword = false"
-          @touchstart="showConfirmPassword = true"
-          @touchend="showConfirmPassword = false"
-          title="Maintenir pour afficher le mot de passe"
+          @click="showConfirmPassword = true"
+          title="Afficher le mot de passe"
         >
           <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -122,12 +110,8 @@
           stroke-width="1.5" 
           stroke="currentColor" 
           class="eye-icon"
-          @mousedown="showConfirmPassword = true"
-          @mouseup="showConfirmPassword = false"
-          @mouseleave="showConfirmPassword = false"
-          @touchstart="showConfirmPassword = true"
-          @touchend="showConfirmPassword = false"
-          title="Maintenir pour afficher le mot de passe"
+          @click="showConfirmPassword = false"
+          title="Masquer le mot de passe"
         >
           <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
         </svg>
@@ -149,8 +133,8 @@
           <span class="checkbox-label">Activer le mode APOCALYPSE</span>
         </label>
         <div class="apocalypse-warning" v-if="apocalypseMode">
-          ⚠️ <strong>ATTENTION :</strong> Le mode Apocalypse est un mode de jeu alternatif avec des règles plus difficiles. 
-          Une fois activé, ce choix est <strong>irréversible</strong> et ne peut pas être modifié après la création du compte.
+          ⚠️ <strong>ATTENTION :</strong> Le mode Apocalypse est un mode de jeu alternatif avec des règles BEAUCOUP plus difficiles. 
+          Une fois activé, ce choix est <strong>irréversible</strong> et ne peut pas être modifié après la création du compte.<br>Si vous n'aimez pas vous amuser, ce mode est fait pour vous.
         </div>
       </div>
       

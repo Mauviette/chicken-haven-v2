@@ -4,6 +4,16 @@
       <div class="achievements-header">
         <h2>{{ isApocalypseMode ? '🏆 Succès' : '🏆 Succès' }}</h2>
         <div class="header-actions">
+          <Tooltip :text="prioritizeClaimable ? 'D\'abord les succès à récupérer' : 'Ordre par défaut'" position="bottom">
+            <button 
+              class="priority-btn" 
+              :class="{ 'active': prioritizeClaimable }"
+              @click="prioritizeClaimable = !prioritizeClaimable"
+              title="Prioriser les succès à récupérer"
+            >
+              🎁
+            </button>
+          </Tooltip>
           <button 
             class="refresh-btn" 
             @click="handleRefresh" 
@@ -36,7 +46,7 @@
 
         <div class="achievements-list">
           <div 
-            v-for="achievement in achievements" 
+            v-for="achievement in sortedAchievements" 
             :key="achievement.id"
             class="achievement-item"
             :class="{ 'completed': achievement.completed }"
@@ -132,6 +142,27 @@ const isApocalypseMode = computed(() => {
 })
 
 const refreshing = ref(false)
+const prioritizeClaimable = ref(false)
+
+// Succès triés avec priorité optionnelle aux succès à réclamer
+const sortedAchievements = computed(() => {
+  if (!prioritizeClaimable.value) return achievements.value
+  
+  // Copier le tableau pour ne pas modifier l'original
+  const sorted = [...(achievements.value || [])]
+  
+  // Trier: succès complétés non réclamés en premier
+  sorted.sort((a, b) => {
+    const aClaimable = a.completed && !a.rewardClaimed
+    const bClaimable = b.completed && !b.rewardClaimed
+    
+    if (aClaimable && !bClaimable) return -1
+    if (!aClaimable && bClaimable) return 1
+    return 0
+  })
+  
+  return sorted
+})
 
 // Charger les succès au montage du composant
 onMounted(async () => {
@@ -352,6 +383,34 @@ const getRewardDescription = (reward) => {
   cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
 }
 
+.priority-btn {
+  background: #8B4513;
+  border: 2px solid #654321;
+  border-radius: 5px;
+  color: white;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.priority-btn:hover {
+  background: #a0592a;
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.priority-btn.active {
+  background: #FFD700;
+  border-color: #8B4513;
+  opacity: 1;
+}
+
 .refresh-icon {
   width: 16px;
   height: 16px;
@@ -503,7 +562,7 @@ const getRewardDescription = (reward) => {
   padding: 8px;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   transition: all 0.2s ease;
-  font-family: inherit;
+  font-family: 'Fredoka', sans-serif;
   min-width: 80px;
   box-shadow: 0 2px 4px rgba(139, 69, 19, 0.3);
 }

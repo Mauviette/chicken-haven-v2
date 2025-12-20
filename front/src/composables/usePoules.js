@@ -93,6 +93,10 @@ function getTalentDisplayNameSync(poule) {
     const talentName = espece?.talent
     const talentInfo = talentsData[talentName]
     const icon = talentInfo?.icon || ''
+    // Ne pas afficher le niveau pour les poules uniques
+    if (espece?.rarete === 'unique') {
+      return `${icon} ${talentName}`
+    }
     return `${icon} ${talentName} ${getTalentLevelRoman(poule)}`
   } catch (error) {
     console.error('Erreur getTalentDisplayNameSync:', error)

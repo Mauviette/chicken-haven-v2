@@ -17,6 +17,7 @@ export {
   getDugRewardTooltip,
   getGroupedRewardTooltip,
   getContinueTooltip,
+  getDropsTooltip,
 } from './miningRewardHelpers'
 
 // Helpers d'outils

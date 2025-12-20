@@ -14,13 +14,16 @@ const MINING_CONFIG = miningData
  * @param {Array} newRewards - Tableau des nouvelles récompenses à remplir
  * @param {Array} rewards - Tableau global des récompenses
  * @param {Set} processedCells - Ensemble des cellules déjà traitées
+ * @returns {number} - Nombre de cases cassées par la réaction en chaîne
  */
 export function applyChainDamage(cells, row, col, chainDamage, newRewards, rewards, processedCells = new Set()) {
   const cellKey = `${row}-${col}`
   
   // Éviter de retraiter la même case
-  if (processedCells.has(cellKey)) return
+  if (processedCells.has(cellKey)) return 0
   processedCells.add(cellKey)
+  
+  let chainBroken = 0
   
   const directions = [
     [-1, 0], [1, 0], [0, -1], [0, 1] // haut, bas, gauche, droite
@@ -39,17 +42,21 @@ export function applyChainDamage(cells, row, col, chainDamage, newRewards, rewar
         
         // Si cette case adjacente est détruite par la réaction en chaîne
         if (adjacentCell.hp === 0) {
+          chainBroken++
+          
           if (adjacentCell.reward) {
             newRewards.push(adjacentCell.reward)
             rewards.push(adjacentCell.reward)
           }
           
           // Propagation récursive de la réaction en chaîne
-          applyChainDamage(cells, newRow, newCol, chainDamage, newRewards, rewards, processedCells)
+          chainBroken += applyChainDamage(cells, newRow, newCol, chainDamage, newRewards, rewards, processedCells)
         }
       }
     }
   }
+  
+  return chainBroken
 }
 
 /**

@@ -24,16 +24,25 @@
             </template>
           </div>
         </div>
-        <div class="tokens">
-          🪨 {{ miningTokens }}
-          <!-- Debug rapide: nombre de cases révélées (hint) -->
-          <!--span v-if="hintCount > 0" class="hint-counter" title="Cases révélées"> ❓ {{ hintCount }}</span-->
+        <div class="header-right">
+          <!-- Info drops possibles -->
+          <Tooltip :text="getDropsTooltip(isApocalypse)" position="bottom">
+            <div class="drops-info-header">
+              <span>🎁</span>
+            </div>
+          </Tooltip>
+          <div class="tokens">
+            🪨 {{ miningTokens }}
+            <!-- Debug rapide: nombre de cases révélées (hint) -->
+            <!--span v-if="hintCount > 0" class="hint-counter" title="Cases révélées"> ❓ {{ hintCount }}</span-->
+          </div>
         </div>
       </div>
 
       <!-- Écran de démarrage -->
       <div v-if="!gameActive && !gameOver" class="start-screen">
         <p>Creusez pour découvrir des récompenses cachées !</p>
+        
         <ActionButton 
           :onClick="startGame" 
           :disabled="miningTokens < 1"
@@ -48,6 +57,7 @@
           Voir mes Artefacts
         </ActionButton>
       </div>
+      
 
       <!-- Jeu actif -->
       <div v-else-if="gameActive && !showResults" class="game-area fixed-height">
@@ -183,6 +193,7 @@ import { apiPost } from '@/utils/api'
 import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
 import { useRouter } from 'vue-router'
+import { usePlayer } from '@/composables/usePlayer'
 
 // Import des helpers de minage (curseurs, outils, artefacts, récompenses)
 import {
@@ -211,6 +222,7 @@ import {
   getDugRewardTooltip,
   getGroupedRewardTooltip,
   getContinueTooltip,
+  getDropsTooltip,
 } from './mining'
 
 const emit = defineEmits(['close', 'game-over'])
@@ -236,7 +248,12 @@ const { miningBasic, miningExplosion, miningContinue } = useSound()
 
 const { getItemInfo } = useGameData()
 
+const { apocalypse } = usePlayer()
+
 const router = useRouter()
+
+// Mode apocalypse
+const isApocalypse = computed(() => Boolean(apocalypse?.value))
 
 // Copie locale pour forcer la réactivité
 const localEquippedArtifacts = ref([])
@@ -593,6 +610,30 @@ function goToArtifacts() {
   align-items: center;
   gap: 12px;
   flex: 1;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drops-info-header {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: rgba(139, 69, 19, 0.4);
+  border: 2px solid #8B4513;
+  border-radius: 6px;
+  cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+  transition: all 0.2s ease;
+}
+
+.drops-info-header:hover {
+  background: rgba(139, 69, 19, 0.7);
 }
 
 .header h2 {

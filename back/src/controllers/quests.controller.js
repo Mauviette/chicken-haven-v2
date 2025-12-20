@@ -244,12 +244,42 @@ export async function claimStepReward(req, res) {
     // Marquer la récompense comme réclamée
     user.quests.questProgress[questId][stepId].rewardClaimed = true
 
-    // Charger les helpers pour la prochaine étape
-    const eggHelpers = await loadEggHelpers()
+    // Vérifier si c'est la dernière étape (quête terminée)
+    const isLastStep = stepIndex === quest.steps.length - 1
+    let questCompleted = false
 
-    // Initialiser les valeurs pour l'étape suivante
-    const nextStepIndex = stepIndex + 1
-    if (nextStepIndex < quest.steps.length) {
+    if (isLastStep) {
+      // Marquer la quête comme terminée
+      questCompleted = true
+      
+      // Remettre à zéro les compteurs d'achievements liés à la quête
+      resetQuestAchievementCounters(user, quest)
+      
+      // Ajouter à la liste des quêtes terminées
+      user.quests.completedQuests = user.quests.completedQuests || []
+      if (!user.quests.completedQuests.includes(questId)) {
+        user.quests.completedQuests.push(questId)
+      }
+      
+      // Désactiver la quête
+      user.quests.activeQuest = null
+      
+      // Nettoyer le progrès et les valeurs initiales
+      delete user.quests.questProgress[questId]
+      if (user.quests.initialValues?.[questId]) {
+        delete user.quests.initialValues[questId]
+      }
+      
+      // Supprimer des quêtes abandonnées si présent
+      if (user.quests.abandonedQuests?.[questId]) {
+        delete user.quests.abandonedQuests[questId]
+      }
+    } else {
+      // Charger les helpers pour la prochaine étape
+      const eggHelpers = await loadEggHelpers()
+
+      // Initialiser les valeurs pour l'étape suivante
+      const nextStepIndex = stepIndex + 1
       const nextStep = quest.steps[nextStepIndex]
       if (!user.quests.initialValues) user.quests.initialValues = {}
       if (!user.quests.initialValues[questId]) user.quests.initialValues[questId] = {}
@@ -260,6 +290,7 @@ export async function claimStepReward(req, res) {
     user.markModified('resources')
     user.markModified('experience')
     user.markModified('poulesPossedees')
+    user.markModified('achievements')
     await user.save()
 
     res.json({
@@ -268,7 +299,9 @@ export async function claimStepReward(req, res) {
       levelUp: rewardResult.levelUp,
       levelUpFrom: rewardResult.levelUpFrom,
       levelUpTo: rewardResult.levelUpTo,
-      newChicken: rewardResult.newChicken
+      newChicken: rewardResult.newChicken,
+      questCompleted,
+      completedQuest: questCompleted ? questId : null
     })
   } catch (error) {
     console.error('Erreur claimStepReward:', error)

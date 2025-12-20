@@ -55,7 +55,7 @@
       </div>
 
       <div class="actions" style="justify-content: space-between; align-items:center;">
-            <div>
+            <div v-if="espece.rarete !== 'unique'">
               <!-- Toujours utiliser la Tooltip custom: affiche ressources manquantes et/ou effet du prochain niveau -->
               <Tooltip v-if="!maxed && nextCost" :text="upgradeTooltipText" :followMouse="true">
                 <BuyButton

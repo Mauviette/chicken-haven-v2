@@ -100,7 +100,7 @@ export function handleQuestCompleted(quest) {
   try {
     const message = `Quête complétée: ${quest.nom}`
     if (typeof window !== 'undefined' && window.$toast) {
-      window.$toast(message, 'quest')
+      window.$toast(message, 'success')
     }
   } catch (_) {}
 

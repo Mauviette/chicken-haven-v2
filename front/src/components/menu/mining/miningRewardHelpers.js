@@ -238,3 +238,59 @@ export function getContinueTooltip(gameOver, showResults, groupedRewards) {
     </div>
   `
 }
+
+/**
+ * Génère le tooltip des drops possibles avec probabilités
+ * @param {boolean} isApocalypse - Si le joueur est en mode apocalypse
+ * @returns {string} HTML
+ */
+export function getDropsTooltip(isApocalypse = false) {
+  const rewardPool = MINING_CONFIG?.rewardPool || []
+  const rewardTypes = MINING_CONFIG?.rewardTypes || {}
+  
+  if (rewardPool.length === 0) {
+    return '<div style="text-align: center;">Chargement...</div>'
+  }
+  
+  // Calculer le total des poids
+  const totalWeight = rewardPool.reduce((sum, r) => sum + (r.weight || 0), 0)
+  
+  // Grouper les récompenses par type et calculer les probabilités
+  const lines = rewardPool.map((reward) => {
+    const typeData = rewardTypes[reward.type] || {}
+    const icon = typeData.icon || DEFAULT_ICONS[reward.type] || '❓'
+    const name = typeData.name || reward.type
+    const proba = totalWeight > 0 ? ((reward.weight / totalWeight) * 100).toFixed(1) : '0'
+    const amountStr = reward.amount > 1 ? ` x${reward.amount}` : ''
+    const rareTag = reward.rare ? ' <span style="color: #9370db; font-weight: bold;">★</span>' : ''
+    
+    return `<div style="display: flex; justify-content: space-between; gap: 12px;">
+      <span>${icon} ${name}${amountStr}${rareTag}</span>
+      <span style="opacity: 0.8;">${proba}%</span>
+    </div>`
+  })
+  
+  // Ajouter l'avertissement tomates pourries en mode apocalypse
+  const apocalypseWarning = isApocalypse ? `
+    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
+      <div style="display: flex; justify-content: space-between; gap: 12px; color: #ff6b6b;">
+        <span>🍅 Tomate pourrie</span>
+        <span style="opacity: 0.8;">25%*</span>
+      </div>
+      <div style="font-size: 10px; opacity: 0.6; margin-top: 4px; color: #ff6b6b;">
+        *Remplace une récompense aléatoirement
+      </div>
+    </div>
+  ` : ''
+  
+  return `
+    <div style="min-width: 180px;">
+      <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">Drops possibles</div>
+      ${lines.join('')}
+      <div style="margin-top: 8px; font-size: 11px; opacity: 0.7; text-align: center;">
+        40% de chance d'avoir une récompense par case
+      </div>
+      ${apocalypseWarning}
+    </div>
+  `
+}

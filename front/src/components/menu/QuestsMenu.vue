@@ -35,9 +35,13 @@
         </div>
 
         <!-- Quête active -->
-        <div v-if="activeQuest" class="active-quest-section">
+        <div class="active-quest-section">
           <h3>Quête Active</h3>
-          <div class="active-quest-card">
+          <div v-if="!activeQuest" class="empty-container-message">
+            <span class="empty-icon"></span>
+            <span class="empty-text">Aucune quête en cours. Acceptez-en une ci-dessous!</span>
+          </div>
+          <div v-else class="active-quest-card">
             <div class="quest-header">
               <div class="quest-icon">{{ activeQuest?.icon || '📜' }}</div>
               <div class="quest-info">
@@ -134,7 +138,11 @@
         <!-- Quêtes disponibles -->
         <div class="available-quests-section">
           <h3>Quêtes Disponibles</h3>
-          <div class="available-quests-list">
+          <div v-if="!availableQuests || availableQuests.length === 0" class="empty-container-message">
+            <span class="empty-icon"></span>
+            <span class="empty-text">Toutes les quêtes disponibles ont été acceptées ou complétées. Attendez une mise à jour!</span>
+          </div>
+          <div v-else class="available-quests-list">
             <div
               v-for="quest in availableQuests || []"
               :key="quest.id"
@@ -196,9 +204,13 @@
         </div>
 
         <!-- Quêtes terminées -->
-        <div class="completed-quests-section" v-if="completedQuests && completedQuests.length > 0">
+        <div class="completed-quests-section">
           <h3>Quêtes Terminées</h3>
-          <div class="completed-quests-list">
+          <div v-if="!completedQuests || completedQuests.length === 0" class="empty-container-message">
+            <span class="empty-icon"></span>
+            <span class="empty-text">Aucune quête terminée pour l'instant. Complétez des quêtes pour les voir ici!</span>
+          </div>
+          <div v-else class="completed-quests-list">
             <div
               v-for="quest in completedQuests || []"
               :key="quest.id"
@@ -208,7 +220,20 @@
               <div class="quest-details">
                 <div class="quest-name">{{ quest.nom || 'Chargement...' }}</div>
                 <div class="quest-description">{{ quest.description || '' }}</div>
-                <div class="quest-completed-badge">✓ Terminée</div>
+                <div class="quest-completed-row">
+                  <div class="quest-completed-badge">✓ Terminée</div>
+                  <div class="quest-final-reward-badge" v-if="getFinalReward(quest)">
+                    <Tooltip :text="getRewardDescription(getFinalReward(quest))">
+                      <span class="reward-display-small">
+                        <span class="reward-icon">
+                          <img v-if="getFinalReward(quest).type === 'chicken'" :src="getRewardIcon(getFinalReward(quest))" :alt="formatReward(getFinalReward(quest))" class="reward-chicken-image-small" />
+                          <span v-else>{{ getRewardIcon(getFinalReward(quest)) }}</span>
+                        </span>
+                        <span class="reward-amount">{{ formatReward(getFinalReward(quest)) }}</span>
+                      </span>
+                    </Tooltip>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -718,6 +743,30 @@ const getStepProgressText = (step) => {
   font-weight: bold;
 }
 
+/* Message pour conteneurs vides */
+.empty-container-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  background: rgba(139, 69, 19, 0.05);
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  color: #888;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.empty-container-message .empty-icon {
+  font-size: 20px;
+  opacity: 0.6;
+}
+
+.empty-container-message .empty-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
 .completed-quests-list {
   display: flex;
   flex-direction: column;
@@ -758,6 +807,13 @@ const getStepProgressText = (step) => {
   line-height: 1.3;
 }
 
+.quest-completed-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .quest-completed-badge {
   font-size: 9px;
   color: #28a745;
@@ -766,6 +822,32 @@ const getStepProgressText = (step) => {
   padding: 2px 6px;
   border-radius: 8px;
   border: 1px solid #28a745;
+}
+
+.quest-final-reward-badge {
+  display: flex;
+  align-items: center;
+}
+
+.quest-final-reward-badge .reward-display-small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid #FFD700;
+  border-radius: 8px;
+  font-size: 10px;
+  color: #8B4513;
+  cursor: url('@/assets/ui/cursor/mark_question.png') 0 0, auto;
+}
+
+.quest-final-reward-badge .reward-icon {
+  font-size: 12px;
+}
+
+.quest-final-reward-badge .reward-amount {
+  font-weight: bold;
 }
 
 /* Section Quête Active */
@@ -966,6 +1048,7 @@ const getStepProgressText = (step) => {
   padding: 8px 12px;
   font-size: 12px;
   font-weight: bold;
+  font-family: 'Fredoka', sans-serif;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   transition: all 0.2s ease;
   display: flex;

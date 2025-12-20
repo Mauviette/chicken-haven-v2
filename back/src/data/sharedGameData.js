@@ -185,7 +185,7 @@ export const especeData = {
     nom: 'Poule barbare',
     description: "Une poule guerrière qui sacrifie l'intelligence de l'équipe pour renforcer son charisme.",
     image: 'chickens/barbarian/basic.png',
-    talent: 'AAAAAAAAAAAAAAARGH',
+    talent: 'AAAAAAAAAARGH',
     groupe: null,
     categorie: 'eclosion',
     rarete: 'unique',
@@ -548,7 +548,7 @@ export const talentsData = {
       ]
     }
   },
-  'AAAAAAAAAAAAAAARGH': {
+  'AAAAAAAAAARGH': {
     description: "Sacrifie l'intelligence et le charisme de l'équipe pour renforcer son énergie.",
     effet: "Met le charisme et l'intelligence de l'équipe à zéro, puis ajoute leur somme à l'énergie de l'équipe.",
     icon: '⚔️',
@@ -1686,9 +1686,9 @@ export const artifactsData = {
     id: 'ancient-compass',
     name: 'Boussole Antique',
     icon: '🧭',
-    description: "Chaque case avec récompense a 50% de chance d'être révelée.",
+    description: "Chaque case avec récompense a 75% de chance d'être révelée.",
     rarete: 'legendaire',
-    effect: { type: 'reveal_rewards', chance: 0.5 }
+    effect: { type: 'reveal_rewards', chance: 0.75 }
   },
   'explosive-fan': {
     id: 'explosive-fan',
@@ -1735,7 +1735,7 @@ export const artifactsData = {
     name: 'Réaction en Chaîne',
     icon: '💥',
     description: "Briser une case inflige 1 dégât aux 4 cases autour. Peut provoquer des réactions en chaîne.",
-    rarete: 'epique',
+    rarete: 'legendaire',
     effect: { type: 'chain_damage', amount: 1 }
   },
   'crack-reveal': {

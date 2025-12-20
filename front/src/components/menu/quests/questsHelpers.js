@@ -2,8 +2,6 @@
  * Helpers pour le formatage des récompenses dans QuestsMenu
  */
 
-import { formatNumber } from '@/utils/format.js'
-
 /**
  * Formate une récompense pour l'affichage
  * @param {Object} reward - Récompense à formater
@@ -111,26 +109,9 @@ export function getQuestFinalReward(quest, ownedPoules) {
  * @returns {string}
  */
 export function formatChallengeWithProgress(challenge, progress, formatChallengeFn) {
-  const currentProgress = progress || 0
-  const isCondition = ['team_stat_req', 'production_req'].includes(challenge.type)
-
-  if (challenge.type === 'eggs_collected') {
-    const target = formatNumber(challenge.objectif || 0, true)
-    return `Récolter ${target} œufs (${currentProgress}/${challenge.objectif})`
-  }
-
-  if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
-    const target = formatNumber(challenge.objectif || 0, true)
-    const current = formatNumber(currentProgress || 0, true)
-    return `Trouver ${target} poule(s) de rareté ${challenge.rarity} (${current}/${target})`
-  }
-
-  if (!isCondition && typeof challenge.objectif === 'number') {
-    const base = formatChallengeFn(challenge, currentProgress)
-    return `${base} (${currentProgress}/${challenge.objectif})`
-  }
-
-  return formatChallengeFn(challenge, currentProgress)
+  // formatChallengeFn inclut déjà la progression dans le format "(X/Y)"
+  // On l'appelle directement sans ajouter de doublon
+  return formatChallengeFn(challenge, progress || 0)
 }
 
 /**

@@ -334,6 +334,10 @@ function openOptions() {
 function toggleAchievementsWithSound() {
   const opening = !showAchievements.value
   showAchievements.value = !showAchievements.value
+  // Fermer le menu des quêtes si on ouvre les succès
+  if (opening) {
+    showQuests.value = false
+  }
   opening ? sndOpen() : sndClose()
 }
 function closeAchievements() {
@@ -350,6 +354,10 @@ function toggleQuestsWithSound() {
   
   const opening = !showQuests.value
   showQuests.value = !showQuests.value
+  // Fermer le menu des succès si on ouvre les quêtes
+  if (opening) {
+    showAchievements.value = false
+  }
   opening ? sndOpen() : sndClose()
 }
 function closeQuests() {

@@ -258,7 +258,8 @@ export async function digCell(req, res) {
           
           // Appliquer l'effet chain_damage si activé
           if (artifactMods.chainDamage && artifactMods.chainDamage > 0) {
-            applyChainDamage(user.miningGame.cells, cell.row, cell.col, artifactMods.chainDamage, newRewards, user.miningGame.rewards)
+            const chainBroken = applyChainDamage(user.miningGame.cells, cell.row, cell.col, artifactMods.chainDamage, newRewards, user.miningGame.rewards)
+            cellsBroken += chainBroken
           }
           
           // Si la case a une récompense
