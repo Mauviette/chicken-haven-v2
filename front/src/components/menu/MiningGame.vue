@@ -25,13 +25,7 @@
           </div>
         </div>
         <div class="header-right">
-          <!-- Info drops possibles -->
-          <Tooltip :text="getDropsTooltip(isApocalypse)" position="bottom">
-            <div class="drops-info-header">
-              <span>🎁</span>
-            </div>
-          </Tooltip>
-          <div class="tokens">
+            <div class="tokens">
             🪨 {{ miningTokens }}
             <!-- Debug rapide: nombre de cases révélées (hint) -->
             <!--span v-if="hintCount > 0" class="hint-counter" title="Cases révélées"> ❓ {{ hintCount }}</span-->
@@ -42,12 +36,42 @@
       <!-- Écran de démarrage -->
       <div v-if="!gameActive && !gameOver" class="start-screen">
         <p>Creusez pour découvrir des récompenses cachées !</p>
-        
+
+        <!-- Sélection de l'espace -->
+        <div class="space-select">
+          <div 
+            v-for="s in spaces" :key="s.id" 
+            class="space-item" 
+            :class="{ locked: !s.unlocked, selected: selectedSpace === s.id }"
+            @click="() => { if (s.unlocked) selectedSpace = s.id }"
+          >
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px">
+              <div style="display:flex; align-items:center; gap:8px">
+                <div class="space-icon" aria-hidden="true">{{ s.icon || (s.id === 'dirt' ? '🌱' : s.id === 'hard_rock' ? '🪨' : '🎯') }}</div>
+                <div>
+                  <div class="space-name">{{ s.name }}</div>
+                  <div class="space-info">{{ s.gridSize }}x{{ s.gridSize }} • {{ s.defaultHP }} PV • {{ s.cost }} 🪨</div>
+                  <div v-if="!s.unlocked" class="space-locked">Niveau {{ s.requiredLevel }} requis</div>
+                </div>
+              </div>
+
+              <div v-if="s.unlocked">
+                <Tooltip :text="getDropsTooltip(isApocalypse, s.rewardPool, s.dropChance)" position="left">
+                  <div class="drops-info-small">🎁</div>
+                </Tooltip>
+              </div>
+              <div v-else>
+                <div class="drops-info-small drops-disabled" title="Espace verrouillé">🎁</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <ActionButton 
           :onClick="startGame" 
-          :disabled="miningTokens < 1"
+          :disabled="!selectedSpaceObj || !selectedSpaceObj.unlocked || miningTokens < (selectedSpaceObj?.cost || 1)"
         >
-          {{ miningTokens >= 1 ? 'Démarrer (1 🪨)' : 'Pas assez de jetons' }}
+          {{ selectedSpaceObj ? (miningTokens >= (selectedSpaceObj.cost || 1) ? `Démarrer (${selectedSpaceObj.cost} 🪨)` : 'Pas assez de jetons') : 'Chargement...' }}
         </ActionButton>
         <br><br>
         <ActionButton 
@@ -82,6 +106,15 @@
                 @mouseenter="hoveredCell = { row: cell.row, col: cell.col }"
                 @click="digAt(cell.row, cell.col)"
               >
+                <!-- Overlay PNG de fissure (stages 0..9) -->
+                <img
+                  v-if="getCrackStage(cell) >= 0"
+                  :src="getCrackSrc(getCrackStage(cell))"
+                  class="crack-overlay"
+                  alt=""
+                  aria-hidden="true"
+                />
+
                 <!-- Indicateur reveal_rewards : point d'interrogation si le backend a marqué la cellule -->
                 <div v-if="hasHint(cell) && cell.hp > 0" class="cell-hint" aria-hidden="true">❓</div>
 
@@ -91,7 +124,7 @@
                   class="reward"
                   :class="{ 'large-emoji': isLargeReward(cell.reward), 'rare-reward': isRareReward(cell.reward) }"
                 >
-                  <Tooltip :text="getDugRewardTooltip(cell.reward)" position="top">
+                  <Tooltip :text="_getDugRewardTooltip(cell.reward)" position="top">
                     {{ formatReward(cell.reward, true) }}
                   </Tooltip>
                 </div>
@@ -103,7 +136,7 @@
                   :class="{ 'large-emoji': isLargeReward(cell.reward) }"
                   :style="getMarkQuestionCursorStyle()"
                 >
-                  <Tooltip :text="getDugRewardTooltip(cell.reward)" position="top">
+                  <Tooltip :text="_getDugRewardTooltip(cell.reward)" position="top">
                     {{ formatReward(cell.reward, true) }}
                   </Tooltip>
                 </div>
@@ -156,15 +189,15 @@
             <p><strong>Récompenses obtenues :</strong></p>
             <ul>
               <li v-for="(reward, idx) in groupedRewards" :key="idx">
-                <Tooltip :text="getGroupedRewardTooltip(reward)" position="top">
+                <Tooltip :text="_getGroupedRewardTooltip(reward)" position="top">
                   {{ formatGroupedReward(reward) }}
                 </Tooltip>
               </li>
             </ul>
           </div>
         </div>
-        <ActionButton :onClick="resetGame" :disabled="miningTokens < 1">
-          {{ miningTokens >= 1 ? 'Rejouer (1 🪨)' : 'Pas assez de jetons' }}
+        <ActionButton :onClick="continueToSelection">
+          Continuer
         </ActionButton>
         
           <br>
@@ -241,14 +274,48 @@ const {
   fetchState,
   startGame: startMiningGame,
   dig,
-  artifactModifiers
+  artifactModifiers,
+  spaces,
+  currentSpaceId
 } = useMining()
 
+const selectedSpace = ref(null)
+
+const selectedSpaceObj = computed(() => (spaces.value || []).find(s => s.id === selectedSpace.value) || null)
+const currentSpaceObj = computed(() => (spaces.value || []).find(s => s.id === currentSpaceId.value) || selectedSpaceObj.value || null)
+
+// Initialiser l'espace sélectionné sur l'espace par défaut/unlocked au montage
+watch(spaces, (list) => {
+  if (!selectedSpace.value && Array.isArray(list) && list.length > 0) {
+    // Choisir le premier espace unlocked sinon le premier
+    const unlocked = list.find(s => s.unlocked)
+    selectedSpace.value = unlocked ? unlocked.id : list[0].id
+  }
+}, { immediate: true })
 const { miningBasic, miningExplosion, miningContinue } = useSound()
 
 const { getItemInfo } = useGameData()
 
 const { apocalypse } = usePlayer()
+
+// Charger les images de fissures via Vite (glob eager) pour garantir des URLs valides
+const crackImages = (() => {
+  try {
+    const modules = import.meta.glob('../../assets/mine/cracks/destroy_stage_*.png', { eager: true, as: 'url' })
+    const map = {}
+    for (const p in modules) {
+      const url = modules[p]
+      const m = p.match(/destroy_stage_(\d+)\.png$/)
+      if (m) {
+        map[Number(m[1])] = url
+      }
+    }
+    return map
+  } catch (err) {
+    console.warn('[MiningGame] crack images not found via glob', err)
+    return {}
+  }
+})()
 
 const router = useRouter()
 
@@ -340,14 +407,25 @@ function getCellClass(cell) {
   const classes = []
   const cellKey = `${cell.row}-${cell.col}`
   
-  if (cell.hp === 0) {
+  // Déterminer le baseHP depuis l'espace courant
+  const baseHP = Number(currentSpaceObj?.value?.defaultHP || MINING_CONFIG.defaultHP)
+  const hp = Number(cell.hp != null ? cell.hp : baseHP)
+
+  if (hp === 0) {
+    // Case complètement creusée
     classes.push('dug')
-  } else if (cell.hp === 1) {
-    classes.push('cracked-heavy')
-  } else if (cell.hp === 2) {
-    classes.push('cracked-light')
   } else {
-    classes.push('intact')
+    // Calculer le nombre de PV manquants (1 dégât = 1 fissure)
+    const missingRaw = baseHP - hp
+    const missing = Math.max(0, Math.min(Math.floor(missingRaw), Math.max(1, baseHP - 1)))
+
+    if (missing === 0) {
+      classes.push('intact')
+    } else {
+      classes.push('cracked')
+      // Ajouter un modificateur numéroté (cracked-1, cracked-2, ...)
+      classes.push(`cracked-${Math.min(missing, 4)}`)
+    }
   }
 
   // Animation de creusage classique
@@ -365,7 +443,7 @@ function getCellClass(cell) {
     const damage = getDamageAt(cell.row, cell.col)
     
     // Si le coup va détruire complètement la case, la faire briller entièrement
-    if (damage >= cell.hp && cell.hp > 0) {
+    if (damage >= (cell.hp || baseHP) && cell.hp > 0) {
       classes.push('preview-destroy')
     } else {
       classes.push('preview')
@@ -379,7 +457,44 @@ function getCellClass(cell) {
 }
 
 function getCellStyle(cell) {
+  // Colorer les cases selon l'espace actif si disponible
+  try {
+    const sp = currentSpaceObj.value
+    if (sp && sp.cellColor) {
+      return { background: sp.cellColor }
+    }
+  } catch (_) {}
   return {}
+}
+
+// Calculer le stage de fissure basé sur les PV actuels et le PV max (baseHP)
+function getCrackStage(cell) {
+  try {
+    const baseHP = Number(currentSpaceObj?.value?.defaultHP || MINING_CONFIG.defaultHP)
+    const hp = Number(cell.hp != null ? cell.hp : baseHP)
+    // Pas de dégâts → ne pas afficher d'overlay
+    // Masquer aussi pour les cases complètement cassées (hp <= 0)
+    if (hp >= baseHP || hp <= 0) return -1
+
+    // Formula proposée : stage = 9 - ((PV / PV_MAX) * 10 - 1)
+    // Convertir en entier et clamp
+    const raw = 9 - ((hp / baseHP) * 10 - 1)
+    let stage = Math.round(raw)
+    if (stage < 0) stage = 0
+    if (stage > 9) stage = 9
+    return stage
+  } catch (_) {
+    return -1
+  }
+}
+
+// Renvoyer le src de l'image de fissure en utilisant la map chargée par import.meta.glob
+function getCrackSrc(stage) {
+  try {
+    return crackImages[Number(stage)] || ''
+  } catch (_) {
+    return ''
+  }
 }
 
 // Wrappers pour les fonctions de helpers avec le contexte local
@@ -483,13 +598,16 @@ async function startGame() {
   gameOver.value = false
   showResults.value = false
   finalRewards.value = []
-  await startMiningGame()
+  // Conserver le nombre de jetons avant le démarrage (pour calculs de secours)
+  tokensBeforeGameOver.value = miningTokens.value
+  await startMiningGame(selectedSpace.value)
 }
 
-function resetGame() {
-  gameOver.value = false
+async function continueToSelection() {
+  // Affiche l'écran de sélection d'espace
   showResults.value = false
-  startGame()
+  gameOver.value = false
+  try { await fetchState() } catch (_) {}
 }
 
 // Fonction pour forcer la mise à jour des jetons après attribution des récompenses
@@ -596,6 +714,36 @@ function goToArtifacts() {
   overflow: hidden !important;
 }
 
+/* Space selector prominence */
+.space-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 14px 16px;
+  border-radius: 10px;
+  min-width: 200px;  
+  cursor: url('@/assets/ui/cursor/hand_point.png') 0 0, auto;
+  text-align: left;
+}
+.space-item .space-name { font-size: 16px; font-weight: 800 }
+.space-item .space-info { font-size: 13px }
+.drops-info-small {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255,215,0,0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(255,215,0,0.12);
+  font-weight: 700;
+}
+.drops-disabled {
+  opacity: 0.45;  
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+  background: rgba(255,215,0,0.03);
+  border-color: rgba(255,215,0,0.06);
+}
+.space-item.locked { opacity: 0.55; cursor: not-allowed; }
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -698,6 +846,58 @@ function goToArtifacts() {
   font-size: 16px;
 }
 
+/* Space selector */
+.space-select {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0 18px;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: stretch; /* ensure children have same height */
+}
+.space-item {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 12px;
+  border-radius: 8px;
+  min-width: 160px;
+  cursor: url('@/assets/ui/cursor/hand_point.png') 0 0, auto;
+  text-align: left; /* left-align content for consistency */
+  flex: 1 1 220px; /* allow items to stretch equally */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 68px; /* fixed min height for uniform look */
+}
+.space-item.locked {
+  opacity: 0.5;
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+
+}
+.space-item.selected {
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.08);
+  border-color: #ffd700;
+} 
+.space-icon {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+}
+.space-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+.space-info {
+  font-size: 12px;
+  color: #ffeaa7;
+}
+.space-locked { color: #ffb3b3; font-size: 12px; margin-top: 6px }
+
 .continue-screen h3 {
   margin-bottom: 12px;
 }
@@ -774,52 +974,70 @@ function goToArtifacts() {
   pointer-events: none;
 }
 
-.cell.cracked-light {
-  background: #6d4e2d;
-  border: 2px solid #4a3018;
-  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.3);
+.cell.cracked {
+  /* placeholder to keep layout consistent (overlay image used instead) */
   position: relative;
+  border: 2px solid rgba(0,0,0,0.18);
+  overflow: hidden;
 }
 
-.cell.cracked-light::before {
-  content: '';
+/* Crack overlay image fills the cell */
+.crack-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    linear-gradient(125deg, transparent 0%, transparent 35%, rgba(0,0,0,0.5) 37%, rgba(0,0,0,0.6) 39%, rgba(0,0,0,0.5) 41%, transparent 43%, transparent 100%),
-    radial-gradient(ellipse at 35% 40%, rgba(0, 0, 0, 0.3) 0%, transparent 25%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   pointer-events: none;
+  z-index: 1;
+  transition: opacity 240ms ease;
+  opacity: 1;
 }
 
-.cell.cracked-heavy {
-  background: #6d4e2d;
-  border: 2px solid #4a3018;
-  box-shadow: inset 2px 2px 3px rgba(0, 0, 0, 0.4);
+/* During results view, make cracks half-transparent */
+.game-over .crack-overlay {
+  opacity: 0.5;
+}
+
+/* Ensure rewards sit above the overlay */
+.reward, .cell-hint {
   position: relative;
-}
-
-.cell.cracked-heavy::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    linear-gradient(125deg, transparent 0%, transparent 30%, rgba(0,0,0,0.6) 33%, rgba(0,0,0,0.7) 36%, rgba(0,0,0,0.6) 39%, transparent 42%, transparent 100%),
-    linear-gradient(55deg, transparent 0%, transparent 32%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.6) 38%, rgba(0,0,0,0.5) 41%, transparent 44%, transparent 100%),
-    radial-gradient(ellipse at 35% 40%, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 20%, transparent 30%),
-    radial-gradient(ellipse at 60% 65%, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.15) 18%, transparent 28%);
-  pointer-events: none;
-}
+  z-index: 2;
+}  
 
 .cell.dug {
-  background: #4a3a2a;
-  border: 2px solid #2d1f12;
-  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.7);
+  background: #2b2622; /* noticeably lighter to be less shadowy */
+  border: 1px solid rgba(0,0,0,0.55);
+  box-shadow: inset 1px 1px 6px rgba(0, 0, 0, 0.6);
+  color: #fff;
+  position: relative;
+  overflow: visible;
+}
+
+/* soften the vignette overlay for dug cells */
+.cell.dug::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 2px 2px 8px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  border-radius: 2px;
+} 
+
+/* Removed previous rubble icon and vignette: using PNG overlays instead */
+/* Keep a subtle inner shadow to preserve depth */
+.cell.dug::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 4px 4px 12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+.cell.dug .reward {
+  text-shadow: 0 2px 0 rgba(0,0,0,0.95);
+  font-weight: 700;
 }
 
 .cell.preview {
@@ -842,25 +1060,25 @@ function goToArtifacts() {
   transform: scale(1.05);
 }
 
-/* Animation de creusage */
+/* Animation de creusage (sans rotation) */
 .cell.digging {
-  animation: digShake 0.3s ease;
+  animation: digShake 0.28s ease;
 }
 
 @keyframes digShake {
   0%, 100% {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1);
   }
   25% {
-    transform: scale(0.95) rotate(-3deg);
+    transform: scale(0.97);
   }
   50% {
-    transform: scale(0.9) rotate(3deg);
+    transform: scale(0.94);
   }
   75% {
-    transform: scale(0.95) rotate(-2deg);
+    transform: scale(0.97);
   }
-}
+} 
 
 /* Effet de particules lors du creusage - Fond lumineux */
 .cell.digging::before {
@@ -924,17 +1142,17 @@ function goToArtifacts() {
 @keyframes dirtParticles {
   0% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+    transform: translate(-50%, -50%) scale(0.4);
   }
   50% {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(1) rotate(180deg);
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.95);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(1.8) rotate(360deg);
+    transform: translate(-50%, -50%) scale(1.2);
   }
-}
+} 
 
 .reward {
   position: absolute;
@@ -1256,8 +1474,7 @@ function goToArtifacts() {
     border-width: 1px; /* Bordures plus fines pour plus de cases */
   }
 
-  .cell.cracked-light,
-  .cell.cracked-heavy,
+  .cell.cracked,
   .cell.dug {
     border-width: 1px;
   }
@@ -1407,13 +1624,13 @@ function goToArtifacts() {
   }
 }
 
-/* Ajout : style pour les cases affectées par une explosion */
+/* Ajout : style pour les cases affectées par une explosion (animation désactivée) */
 .cell.explosion {
-  /* flash + glow plus prononcé */
-  box-shadow: 0 0 18px rgba(255, 150, 50, 0.9), inset 0 0 10px rgba(255,200,120,0.15);
-  transform: scale(1.06);
+  /* static glow only (no animation) */
+  box-shadow: 0 0 14px rgba(255, 150, 50, 0.9), inset 0 0 8px rgba(255,200,120,0.12);
+  transform: none;
   z-index: 5;
-  animation: explosionFlash 550ms ease-out;
+  animation: none !important;
 }
 
 @keyframes explosionFlash {
@@ -1521,11 +1738,11 @@ function goToArtifacts() {
   background: #331111;
 }
 
-.apocalypse-mode .cell.cracked-light {
+.apocalypse-mode .cell.cracked-2 {
   background: #2a0f0f;
 }
 
-.apocalypse-mode .cell.cracked-heavy {
+.apocalypse-mode .cell.cracked-3 {
   background: #220a0a;
 }
 

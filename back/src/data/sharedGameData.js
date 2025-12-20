@@ -745,7 +745,8 @@ export const expansionsData = [
     costs: [
       [{ type: 'eggs', count: 50 }],
       [{ type: 'eggs', count: 200 }],
-      [{ type: 'eggs', count: 1000000 }, { type: 'precious_stone', count: 10 }]
+      [{ type: 'eggs', count: 1000000 }, { type: 'precious_stone', count: 10 }],
+      [{ type: 'eggs', count: 10000000 }, { type: 'precious_stone', count: 10 },{ type: 'ancient_urn', count: 5 }]
     ],
     rewards: [2, 3, 4],
     effectTemplate: '{reward} emplacements d\'équipe',
@@ -760,9 +761,11 @@ export const expansionsData = [
     category: 'artifacts',
     costs: [
       [{ type: 'precious_stone', count: 1 }],
-      [{ type: 'precious_stone', count: 10 }]
+      [{ type: 'precious_stone', count: 10 }],
+      [{ type: 'precious_stone', count: 10 },{ type: 'ancient_urn', count: 1 }],
+      [{ type: 'precious_stone', count: 10 },{ type: 'ancient_urn', count: 3 }]
     ],
-    rewards: [2, 3],
+    rewards: [2, 3, 4, 5],
     effectTemplate: '{reward} emplacements d\'artéfact',
     maxLevel: null,
     unlock_level: 5
@@ -1458,6 +1461,20 @@ export const itemsData = {
     icon: '💎',
     description: 'Pierre rare obtenue en minant, permet de trouver de nouvelles poules et d\'améliorer son équipe.'
   },
+  'strange_root': {
+    id: 'strange_root',
+    nom: 'racines bizarres',
+    nom_singulier: 'racine bizarre',
+    icon: '🫚',
+    description: 'Une racine étrange trouvée dans la roche dure. Utilisée pour la fabrication dans de futurs contenus.'
+  },
+  'ancient_urn': {
+    id: 'ancient_urn',
+    nom: 'urnes antiques',
+    nom_singulier: 'urne antique',
+    icon: '🏺',
+    description: 'Un petit artefact ancien trouvé dans la roche dure. Sert pour la fabrication et améliorations avancées.'
+  },
   'rotten_tomato': {
     id: 'rotten_tomato',
     nom: 'tomates pourries',
@@ -1644,8 +1661,12 @@ export const miningData = {
     production_token: { name: 'Jeton de production', icon: '⚙️', color: '#ffc66e' },
     chest_key: { name: 'Clé à coffre', icon: '🗝️', color: '#b8860b' },
     precious_stone: { name: 'Pierre précieuse', icon: '💎', color: '#9370db' },
-    rotten_tomato: { name: 'Tomate pourrie', icon: '🍅', color: '#8b0000' }
+    rotten_tomato: { name: 'Tomate pourrie', icon: '🍅', color: '#8b0000' },
+    strange_root: { name: 'Racine bizarre', icon: '🫚', color: '#8fbf3a' },
+    ancient_urn: { name: 'Urne antique', icon: '🏺', color: '#b97a2f' }
   },
+
+  // Pool générique (vieux comportement) - utilisé pour l'espace par défaut si aucun override
   rewardPool: [
     { type: 'eggs', amount: 25, weight: 29 },
     { type: 'eggs', amount: 50, weight: 20 },
@@ -1657,6 +1678,45 @@ export const miningData = {
     { type: 'production_token', amount: 1, weight: 3 },
     { type: 'chest_key', amount: 1, weight: 10 },
     { type: 'precious_stone', amount: 1, weight: 3, rare:true }
+  ],
+
+  // Espaces de minage disponibles (débloqués par niveau)
+  spaces: [
+    {
+      id: 'dirt',
+      name: 'Morceau de terre',
+      icon: '🌱',
+      requiredLevel: 5,
+      cost: 1, // jetons de minage
+      gridSize: 5,
+      defaultHP: 3,
+      cellColor: '#634425ff',
+      dropChance: 0.4, // probabilité par case (40%)
+      // Utilise le rewardPool par défaut
+    },
+    {
+      id: 'hard_rock',
+      name: 'Roche dure',
+      icon: '🪨',
+      requiredLevel: 10,
+      cost: 3,
+      gridSize: 6,
+      defaultHP: 4,
+      cellColor: '#9b8f7b',
+      dropChance: 0.6,
+      rewardPool: [
+        { type: 'eggs', amount: 1000, weight: 6 },
+        { type: 'eggs', amount: 10000, weight: 1 },
+        { type: 'eggs', amount: 100000, weight: 0.1 },
+        { type: 'mining_token', amount: 1, weight: 4 },
+        { type: 'stock_token', amount: 1, weight: 4 },
+        { type: 'production_token', amount: 1, weight: 4 },
+        { type: 'chest_key', amount: 1, weight: 8 },
+        { type: 'precious_stone', amount: 1, weight: 8, rare:true },
+        { type: 'strange_root', amount: 1, weight: 3, rare:true },
+        { type: 'ancient_urn', amount: 1, weight: 2, rare:true }
+      ]
+    }
   ],
   toolPool: [
     { type: 'shovel', weight: 33 },

@@ -12,6 +12,8 @@ const equippedArtifacts = ref([])
 const artifactSlotsCount = ref(0)
 const loading = ref(false)
 const artifactModifiers = ref({}) // <-- nouveau état pour modifs d'artefacts
+const spaces = ref([]) // available mining spaces (from server)
+const currentSpaceId = ref(null) // id of the space for the active game (if any)
 
 // Normalise les cellules reçues du serveur : assure que cell.hint soit un booléen
 function normalizeCells(arr) {
@@ -43,8 +45,10 @@ export function useMining() {
       gameActive.value = data.active || false
       equippedArtifacts.value = data.equippedArtifacts || []
       artifactSlotsCount.value = data.artifactSlotsCount || 0
+      spaces.value = data.spaces || []
       
       if (data.game) {
+        currentSpaceId.value = data.game.spaceId || null
         gridSize.value = data.game.gridSize
         cells.value = normalizeCells(data.game.cells || [])
         // debug
@@ -71,16 +75,17 @@ export function useMining() {
   }
 
   // Démarre une nouvelle partie
-  async function startGame() {
+  async function startGame(spaceId = null) {
     loading.value = true
     try {
-      const data = await apiPost('/api/mining/start')
+      const data = await apiPost('/api/mining/start', { spaceId })
       // DEBUG: log réponse brute du serveur avant toute transformation
       try { console.debug('[useMining] startGame raw response:', data) } catch (_) {}
       
       if (data.success) {
         miningTokens.value = data.miningTokens
         gameActive.value = true
+        currentSpaceId.value = data.game.spaceId || null
         gridSize.value = data.game.gridSize
         cells.value = normalizeCells(data.game.cells || [])
         try { console.debug('[useMining] startGame: hintCount=', cells.value.filter(c=>c.hint).length) } catch(_) {}
@@ -161,6 +166,8 @@ export function useMining() {
     artifactSlotsCount,
     loading,
     artifactModifiers,
+    spaces,
+    currentSpaceId,
     fetchState,
     startGame,
     dig

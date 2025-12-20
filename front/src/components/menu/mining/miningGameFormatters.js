@@ -103,6 +103,8 @@ export function getRewardEmoji(type) {
     artifact: '🔮',
     chest: '📦',
     nothing: '❌',
+    strange_root: '🫚',
+    ancient_urn: '🏺'
   }
   return emojiMap[type] || '❓'
 }
@@ -148,8 +150,11 @@ export function getCellTooltip(cell, options = {}) {
   // État de la cellule
   const stateMap = {
     intact: 'Intacte',
-    'cracked-light': 'Fissurée',
-    'cracked-heavy': 'Très fissurée',
+    cracked: 'Fissurée',
+    'cracked-1': 'Fissurée (1)',
+    'cracked-2': 'Fissurée (2)',
+    'cracked-3': 'Fissurée (3)',
+    'cracked-4': 'Très fissurée',
     dug: 'Creusée',
   }
 

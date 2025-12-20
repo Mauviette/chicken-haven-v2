@@ -5,6 +5,7 @@
 // `/api/game-data/mining` afin d'initialiser le cache côté client.
 
 import { apiGet } from '@/utils/api'
+import { formatNumber } from '@/utils/format.js'
 
 const fallback = {
   gridSize: 5,
@@ -39,7 +40,9 @@ const fallback = {
     production_token: { name: 'Jeton de production', icon: '⚙️', color: '#ffc66e' },
     chest_key: { name: 'Clé à coffre', icon: '🗝️', color: '#b8860b' },
     precious_stone: { name: 'Pierre précieuse', icon: '💎', color: '#9370db' },
-    rotten_tomato: { name: 'Tomate pourrie', icon: '🍅', color: '#8b0000' }
+    rotten_tomato: { name: 'Tomate pourrie', icon: '🍅', color: '#8b0000' },
+    strange_root: { name: 'Racine bizarre', icon: '🫚', color: '#8fbf3a' },
+    ancient_urn: { name: 'Urne antique', icon: '🏺', color: '#b97a2f' }
   },
   cellStates: {
     intact: { hp: 3, backgroundColor: '#8b6914', borderColor: '#a17e1a', description: 'Case intacte' },
@@ -98,8 +101,8 @@ export function formatReward(reward) {
   if (!reward) return ''
   const [type, amount] = reward.split(':')
   const config = MINING_CONFIG.rewardTypes[type]
-  if (!config) return `❓ ${amount}`
-  return `${config.icon} ${amount}`
+  if (!config) return `❓ ${formatNumber(amount)}`
+  return `${config.icon} ${formatNumber(amount)}`
 }
 
 // Fonction utilitaire pour obtenir l'icône d'un outil

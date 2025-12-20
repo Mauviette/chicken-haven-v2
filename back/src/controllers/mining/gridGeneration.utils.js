@@ -11,17 +11,18 @@ const MINING_CONFIG = miningData
  * @param {boolean} isApocalypse - Mode apocalypse actif
  * @returns {string|null} - Récompense au format "type:amount"
  */
-export function generateReward(rewardAmountPercent = 0, isApocalypse = false) {
+export function generateReward(rewardAmountPercent = 0, isApocalypse = false, rewardPool = null) {
   // En mode apocalypse, 25% de chance d'obtenir une tomate pourrie
   if (isApocalypse && Math.random() < 0.25) {
     return 'rotten_tomato:1'
   }
   
-  const total = MINING_CONFIG.rewardPool.reduce((sum, r) => sum + r.weight, 0)
+  const pool = Array.isArray(rewardPool) && rewardPool.length > 0 ? rewardPool : MINING_CONFIG.rewardPool
+  const total = pool.reduce((sum, r) => sum + (r.weight || 0), 0)
   let rand = Math.random() * total
   
-  for (const reward of MINING_CONFIG.rewardPool) {
-    rand -= reward.weight
+  for (const reward of pool) {
+    rand -= (reward.weight || 0)
     if (rand <= 0) {
       // Appliquer multiplicateur de quantité si demandé
       const base = reward.amount || 0
@@ -41,12 +42,13 @@ export function generateReward(rewardAmountPercent = 0, isApocalypse = false) {
  * @param {Object} fragileGrid - Configuration de fragilité { chance, damage }
  * @returns {Array} - Tableau des cellules de la grille
  */
-export function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0, isApocalypse = false, fragileGrid = { chance: 0, damage: 0 }) {
+export function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0, isApocalypse = false, fragileGrid = { chance: 0, damage: 0 }, defaultHP = null, rewardPool = null) {
   const cells = []
   
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
-      let hp = MINING_CONFIG.defaultHP
+      // HP: priorité au paramètre defaultHP sinon fallback à la config globale
+      let hp = defaultHP !== null ? Number(defaultHP) : MINING_CONFIG.defaultHP
       
       // Appliquer l'effet fragile_grid : réduire les HP initiaux
       if (fragileGrid.chance > 0 && Math.random() < fragileGrid.chance) {
@@ -57,7 +59,7 @@ export function generateGrid(size, rewardChance = 0.4, rewardAmountPercent = 0, 
         row,
         col,
         hp,
-        reward: Math.random() < rewardChance ? generateReward(rewardAmountPercent, isApocalypse) : null,
+        reward: Math.random() < rewardChance ? generateReward(rewardAmountPercent, isApocalypse, rewardPool) : null,
         hint: false // <- explicit default so front-side normalization / debug shows presence
       })
     }

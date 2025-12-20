@@ -41,7 +41,7 @@ export async function getMiningState(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
-    // Vérifier que l'utilisateur a le niveau requis pour le minage
+    // Vérifier que l'utilisateur a le niveau requis pour le minage (au moins pour l'espace par défaut)
     const playerLevel = user.experience?.level || 1
     if (playerLevel < 5) {
       return res.status(403).json({ error: 'Niveau 5 requis pour accéder au minage' })
@@ -55,13 +55,30 @@ export async function getMiningState(req, res) {
     while (equipped.length < slotsCount) {
       equipped.push(null)
     }
+
+    // Fournir la liste des espaces disponibles côté client avec indication d'accès
+    const spaces = (MINING_CONFIG.spaces || []).map(s => ({
+      id: s.id,
+      name: s.name,
+      icon: s.icon || null,
+      requiredLevel: s.requiredLevel || 5,
+      cost: s.cost || 1,
+      gridSize: s.gridSize || MINING_CONFIG.gridSize,
+      defaultHP: s.defaultHP || MINING_CONFIG.defaultHP,
+      cellColor: s.cellColor || null,
+      dropChance: typeof s.dropChance === 'number' ? Number(s.dropChance) : 0.4,
+      rewardPool: Array.isArray(s.rewardPool) ? s.rewardPool : null,
+      unlocked: (playerLevel >= (s.requiredLevel || 5))
+    }))
     
     res.json({
       miningTokens: user.resources.mining_token || 0,
       active: user.miningGame?.active || false,
       equippedArtifacts: equipped,
       artifactSlotsCount: slotsCount,
+      spaces,
       game: user.miningGame?.active ? {
+        spaceId: user.miningGame.spaceId || null,
         gridSize: user.miningGame.gridSize,
         cells: user.miningGame.cells,
         tools: user.miningGame.tools,
@@ -95,13 +112,25 @@ export async function startMining(req, res) {
       return res.status(400).json({ error: 'Une partie est déjà en cours' })
     }
 
-    // Vérifier les jetons
-    if ((user.resources.mining_token || 0) < 1) {
+    // Lire l'espace demandé (optionnel)
+    const { spaceId } = req.body || {}
+    const availableSpaces = MINING_CONFIG.spaces || []
+    // Choisir l'espace : demandé -> vérifier existence / sinon espace par défaut (dirt)
+    let chosenSpace = availableSpaces.find(s => s.id === spaceId) || availableSpaces.find(s => s.id === 'dirt') || availableSpaces[0]
+
+    // Valider le niveau requis pour l'espace choisi
+    if (playerLevel < (chosenSpace.requiredLevel || 5)) {
+      return res.status(403).json({ error: `Niveau ${chosenSpace.requiredLevel || 5} requis pour accéder à cet espace` })
+    }
+
+    // Vérifier les jetons selon le coût de l'espace
+    const cost = Number(chosenSpace.cost || 1)
+    if ((user.resources.mining_token || 0) < cost) {
       return res.status(400).json({ error: 'Pas assez de jetons de minage' })
     }
 
-    // Consommer un jeton
-    user.resources.mining_token -= 1
+    // Consommer les jetons
+    user.resources.mining_token -= cost
 
     // S'assurer que artifactSlots existe et est initialisé
     if (!user.artifactSlots) {
@@ -127,14 +156,23 @@ export async function startMining(req, res) {
     try {
       console.debug('[mining] startMining - equippedArtifacts:', equipped)
       console.debug('[mining] startMining - computed modifiers:', mods)
+      console.debug('[mining] startMining - chosenSpace:', chosenSpace && chosenSpace.id)
     } catch (_) {}
     
     // Générer une nouvelle partie en appliquant les modificateurs
-    const gridSize = MINING_CONFIG.gridSize
-    const rewardChanceBase = 0.4
+    const gridSize = Number(chosenSpace.gridSize || MINING_CONFIG.gridSize)
+    const rewardChanceBase = typeof chosenSpace.dropChance === 'number' ? Number(chosenSpace.dropChance) : 0.4
     const rewardChance = Math.max(0, rewardChanceBase + (mods.extraRewardChance || 0))
     const isApocalypse = !!user.apocalypse
-    const cells = generateGrid(gridSize, rewardChance, mods.rewardAmountPercent, isApocalypse, mods.fragileGrid)
+    const cells = generateGrid(
+      gridSize,
+      rewardChance,
+      mods.rewardAmountPercent,
+      isApocalypse,
+      mods.fragileGrid,
+      Number(chosenSpace.defaultHP || MINING_CONFIG.defaultHP),
+      Array.isArray(chosenSpace.rewardPool) ? chosenSpace.rewardPool : null
+    )
 
     // DEBUG: combien de cellules ont une reward avant reveal
     try {
@@ -145,8 +183,9 @@ export async function startMining(req, res) {
     // Appliquer reveal_cracked_rewards : marquer les cases avec récompenses fissurées
     if (mods.revealCrackedRewards) {
       let crackedRevealed = 0
+      const baseHP = Number(chosenSpace.defaultHP || MINING_CONFIG.defaultHP)
       for (const cell of cells) {
-        if (cell.reward && cell.hp < MINING_CONFIG.defaultHP) {
+        if (cell.reward && cell.hp < baseHP) {
           cell.hint = true
           crackedRevealed++
         }
@@ -160,6 +199,7 @@ export async function startMining(req, res) {
 
     user.miningGame = {
       active: true,
+      spaceId: chosenSpace.id,
       gridSize,
       cells,
       tools,
@@ -384,7 +424,8 @@ export async function finishMining(req, res) {
 
     // Mettre à jour les progrès des succès pour la fin de partie
     const totalCellsBroken = user.miningGame.cells.filter(c => c.hp === 0).length
-    if (totalCellsBroken === 25) {
+    const totalCells = (user.miningGame && user.miningGame.gridSize) ? (user.miningGame.gridSize * user.miningGame.gridSize) : 25
+    if (totalCellsBroken === totalCells) {
       await updateAchievementProgress(req.userId, 'max', { miningFullGridBroken: 1 })
     }
     if ((user.miningGame.rewards || []).length === 0) {

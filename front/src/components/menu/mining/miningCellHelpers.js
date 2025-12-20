@@ -26,15 +26,21 @@ export function getCellClasses(cell, options = {}) {
   const classes = []
   const cellKey = `${cell.row}-${cell.col}`
 
-  // État de la cellule
-  if (cell.hp === 0) {
+  // État de la cellule (1 dégât = 1 fissure). On accepte un baseHP dans options pour tests.
+  const baseHP = Number(options.baseHP || 3)
+  const hpVal = Number(cell.hp != null ? cell.hp : baseHP)
+
+  if (hpVal === 0) {
     classes.push('dug')
-  } else if (cell.hp === 1) {
-    classes.push('cracked-heavy')
-  } else if (cell.hp === 2) {
-    classes.push('cracked-light')
   } else {
-    classes.push('intact')
+    const missingRaw = baseHP - hpVal
+    const missing = Math.max(0, Math.min(Math.floor(missingRaw), Math.max(1, baseHP - 1)))
+    if (missing === 0) {
+      classes.push('intact')
+    } else {
+      classes.push('cracked')
+      classes.push(`cracked-${Math.min(missing, 4)}`)
+    }
   }
 
   // Animation de creusage classique

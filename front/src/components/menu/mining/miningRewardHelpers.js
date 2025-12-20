@@ -4,6 +4,7 @@
  */
 
 import { MINING_CONFIG } from '@/data/mining'
+import { formatNumber } from '@/utils/format.js'
 
 /**
  * Normalise la détection du hint
@@ -82,7 +83,7 @@ export function formatReward(reward, inCell = false) {
   if (inCell && amount === 1) return icon
   if (amount === undefined || isNaN(amount)) return icon
   
-  return `${icon} ${amount}`
+  return `${icon} ${formatNumber(amount)}`
 }
 
 /**
@@ -93,7 +94,7 @@ export function formatReward(reward, inCell = false) {
 export function formatGroupedReward(reward) {
   if (!reward?.type) return ''
   const icon = getRewardIcon(reward.type)
-  return `${icon} ${reward.amount}`
+  return `${icon} ${formatNumber(reward.amount)}`
 }
 
 /**
@@ -163,7 +164,7 @@ export function getRewardTooltip(reward, getItemInfo) {
   return `
     <div style="text-align: center;">
       <div style="font-size: 18px; margin-bottom: 4px;">${icon}</div>
-      <div style="font-weight: bold;">${qty} ${type.replace('_', ' ')}</div>
+      <div style="font-weight: bold;">${formatNumber(qty)} ${type.replace('_', ' ')}</div>
       <div style="font-size: 12px; opacity: 0.8;">${desc}</div>
     </div>
   `
@@ -188,7 +189,7 @@ export function getDugRewardTooltip(reward, getItemInfo) {
   
   return `
     <div style="text-align: center;">
-      <div style="font-weight: bold;">${qty} ${typeName}</div>
+      <div style="font-weight: bold;">${formatNumber(qty)} ${typeName}</div>
       <div>${desc}</div>
     </div>
   `
@@ -209,7 +210,7 @@ export function getGroupedRewardTooltip(reward, getItemInfo) {
   
   return `
     <div style="text-align: center;">
-      <div style="font-weight: bold;">${reward.amount} ${typeName}</div>
+      <div style="font-weight: bold;">${formatNumber(reward.amount)} ${typeName}</div>
       <div>${desc}</div>
     </div>
   `
@@ -244,24 +245,24 @@ export function getContinueTooltip(gameOver, showResults, groupedRewards) {
  * @param {boolean} isApocalypse - Si le joueur est en mode apocalypse
  * @returns {string} HTML
  */
-export function getDropsTooltip(isApocalypse = false) {
-  const rewardPool = MINING_CONFIG?.rewardPool || []
+export function getDropsTooltip(isApocalypse = false, rewardPool = null, dropChance = 0.4) {
+  const pool = Array.isArray(rewardPool) && rewardPool.length > 0 ? rewardPool : (MINING_CONFIG?.rewardPool || [])
   const rewardTypes = MINING_CONFIG?.rewardTypes || {}
   
-  if (rewardPool.length === 0) {
+  if (pool.length === 0) {
     return '<div style="text-align: center;">Chargement...</div>'
   }
   
   // Calculer le total des poids
-  const totalWeight = rewardPool.reduce((sum, r) => sum + (r.weight || 0), 0)
+  const totalWeight = pool.reduce((sum, r) => sum + (r.weight || 0), 0)
   
   // Grouper les récompenses par type et calculer les probabilités
-  const lines = rewardPool.map((reward) => {
+  const lines = pool.map((reward) => {
     const typeData = rewardTypes[reward.type] || {}
     const icon = typeData.icon || DEFAULT_ICONS[reward.type] || '❓'
     const name = typeData.name || reward.type
     const proba = totalWeight > 0 ? ((reward.weight / totalWeight) * 100).toFixed(1) : '0'
-    const amountStr = reward.amount > 1 ? ` x${reward.amount}` : ''
+    const amountStr = reward.amount > 1 ? ` x${formatNumber(reward.amount)}` : ''
     const rareTag = reward.rare ? ' <span style="color: #9370db; font-weight: bold;">★</span>' : ''
     
     return `<div style="display: flex; justify-content: space-between; gap: 12px;">
@@ -283,12 +284,14 @@ export function getDropsTooltip(isApocalypse = false) {
     </div>
   ` : ''
   
+  const chancePercent = (typeof dropChance === 'number' ? Math.round(dropChance * 100) : 40)
+
   return `
     <div style="min-width: 180px;">
       <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">Drops possibles</div>
       ${lines.join('')}
       <div style="margin-top: 8px; font-size: 11px; opacity: 0.7; text-align: center;">
-        40% de chance d'avoir une récompense par case
+        ${chancePercent}% de chance d'avoir une récompense par case
       </div>
       ${apocalypseWarning}
     </div>

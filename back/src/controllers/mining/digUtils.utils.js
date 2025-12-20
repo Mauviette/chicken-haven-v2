@@ -33,8 +33,11 @@ export function applyChainDamage(cells, row, col, chainDamage, newRewards, rewar
     const newRow = row + dr
     const newCol = col + dc
     
-    // Vérifier que la case est dans les limites de la grille (5x5)
-    if (newRow >= 0 && newRow < 5 && newCol >= 0 && newCol < 5) {
+    // Déterminer la taille de la grille depuis la longueur du tableau (suppose une grille carrée)
+    const gridSize = Math.max(1, Math.round(Math.sqrt(cells.length)))
+
+    // Vérifier que la case est dans les limites de la grille
+    if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize) {
       const adjacentCell = cells.find(c => c.row === newRow && c.col === newCol)
       
       if (adjacentCell && adjacentCell.hp > 0) {
@@ -115,7 +118,8 @@ export function getToolConfig(toolType) {
 export function applyRewardsToResources(userResources, rewards) {
   const resourceTypes = [
     'eggs', 'mining_token', 'stock_token', 'production_token', 
-    'chest_key', 'precious_stone', 'rotten_tomato'
+    'chest_key', 'precious_stone', 'rotten_tomato',
+    'strange_root', 'ancient_urn'
   ]
   
   for (const reward of rewards) {
