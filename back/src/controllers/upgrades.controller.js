@@ -42,6 +42,14 @@ export async function buyUpgrade(req, res) {
 
     user.upgrades = user.upgrades || {}
     const currentLevel = Number(user.upgrades[uId] || 0)
+
+    // Vérifier la limite (si définie)
+    if (serverUpgrade.limit && Number.isFinite(serverUpgrade.limit)) {
+      if (currentLevel >= Number(serverUpgrade.limit)) {
+        return res.status(400).json({ error: 'Niveau maximal atteint' })
+      }
+    }
+
     let price = getCurrentCostForLevel(serverUpgrade, currentLevel)
 
     // Mode Apocalypse : multiplier les prix par 2

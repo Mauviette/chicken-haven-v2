@@ -711,7 +711,8 @@ export const upgradesData = [
     effectTemplate: '+{reward} œufs de stockage maximum',
     maxLevel: null,
     // Effet appliqué côté serveur à l'achat: ajoute reward au maxIncome
-    effect: { target: 'clickableEgg.maxIncome', op: 'add' }
+    effect: { target: 'clickableEgg.maxIncome', op: 'add' },
+    limit: 50
   },
   {
     id: 2,
@@ -724,7 +725,8 @@ export const upgradesData = [
     effectTemplate: '+{reward} œuf(s) produit(s) par seconde',
     maxLevel: null,
     // Effet appliqué côté serveur à l'achat: ajoute reward à income de base
-    effect: { target: 'clickableEgg.income', op: 'add' }
+    effect: { target: 'clickableEgg.income', op: 'add' },
+    limit: 50
   }
 ]
 
@@ -783,9 +785,14 @@ export const levelUnlocks = {
     { id: 'noble_box', label: 'Coffret chic débloqué', icon: '💎' }
   ],
   5: [
-    { id: 'mining', label: 'Mini-jeu de minage débloqué', icon: '🪨' }
+    { id: 'mining', label: 'Mini-jeu de minage débloqué', icon: '🪨' },
+    { id: 'minig_level_dirt', label: 'Espace de minage 1 : Morceau de terre', icon: '🟫' }
   ],
   10: [
+    { id: 'hundred_opening', label: 'Ouvertures de boites x100', icon: '📦' },
+    { id: 'minig_level_rock', label: 'Espace de minage 2 : Roche dure', icon: '⬛' }
+  ],
+  15: [
     { id: 'hundred_opening', label: 'Ouvertures de boites x100', icon: '📦' }
   ]
 }

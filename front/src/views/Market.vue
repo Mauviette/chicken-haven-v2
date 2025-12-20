@@ -218,9 +218,9 @@
               <BuyButton
                 :price="upgrade.price"
                 :onClick="() => buyUpgrade(upgrade)"
-                :disabled="!canAfford(upgrade.price)"
+                :disabled="!upgrade.canBuy"
               >
-                Acheter
+                {{ upgrade.isMaxed ? 'MAX' : 'Acheter' }}
               </BuyButton>
             </div>
           </div>
@@ -668,16 +668,27 @@ const upgradeOffers = computed(() => {
   const list = serverUpgrades?.value || []
   return list.map(upgrade => {
     const currentLevel = Number(upgradeLevels.value?.[upgrade.id] || 0)
-    // Les améliorations de ferme n'ont pas de niveau max - elles peuvent être améliorées à l'infini
+    const maxLevel = (typeof upgrade.limit === 'number') ? Number(upgrade.limit) : null
+
+    // Calcul du coût et du prix
     const cost = getCurrentCostForLevel(upgrade.costs, currentLevel)
     const price = { type: upgrade.priceType, count: Number(cost) || 0 }
-    const canBuy = Number(price.count) > 0 && canAfford(price)
-    const displayLevel = `Niveau ${currentLevel}`
+
+    // Vérifier si la limite est atteinte
+    const isMaxed = maxLevel !== null && currentLevel >= maxLevel
+
+    const canBuy = !isMaxed && Number(price.count) > 0 && canAfford(price)
+
+    // Affichage du niveau (MAX si atteint)
+    const displayLevel = getDisplayLevel(currentLevel, maxLevel)
+
     const effect = upgrade.effectTemplate?.replace('{reward}', getCurrentRewardForLevel(upgrade.rewards, currentLevel)) || 'Effet inconnu'
-    
+
     return {
       ...upgrade,
       currentLevel,
+      maxLevel,
+      isMaxed,
       displayLevel,
       price,
       canBuy,
@@ -979,6 +990,11 @@ async function buyUpgrade(upgrade) {
     const token = localStorage.getItem('token')
     if (!token) {
       window.$toast && window.$toast('Vous devez être connecté(e)', 'error')
+      return
+    }
+
+    if (upgrade.isMaxed) {
+      window.$toast && window.$toast('Amélioration déjà au niveau maximal', 'error')
       return
     }
 
