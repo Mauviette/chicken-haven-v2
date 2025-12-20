@@ -72,6 +72,10 @@ export async function apiCall(endpoint, options = {}) {
         if (response.status === 401) {
           console.warn('⚠️ Authentication error detected, clearing token')
           localStorage.removeItem('token')
+          // Émettre un événement global pour rediriger vers la page d'auth
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('auth-required'))
+          }
         }
         return response
       })
@@ -89,6 +93,10 @@ export async function apiCall(endpoint, options = {}) {
     if (response.status === 401) {
       console.warn('⚠️ Authentication error detected, clearing token')
       localStorage.removeItem('token')
+      // Émettre un événement global pour rediriger vers la page d'auth
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth-required'))
+      }
     }
     return response
   })

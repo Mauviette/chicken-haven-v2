@@ -251,7 +251,7 @@ router.patch('/settings', verifyToken, async (req, res) => {
     }
 
     // Liste blanche des propriétés autorisées
-    const allowedKeys = ['sound', 'animations', 'volume', 'buffsEverywhere', 'darkMode', 'collectionSort']
+    const allowedKeys = ['sound', 'animations', 'volume', 'buffsEverywhere', 'darkMode', 'emailNotifications', 'collectionSort']
     const sanitizedSettings = {}
 
     for (const key of allowedKeys) {

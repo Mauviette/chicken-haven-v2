@@ -19,6 +19,7 @@ const UserSchema = new mongoose.Schema({
     volume: { type: Number, default: 100 },
     buffsEverywhere: { type: Boolean, default: false },
     darkMode: { type: Boolean, default: false },
+    emailNotifications: { type: Boolean, default: false },
     collectionSort: {
       key: { type: String, default: 'quantite' },
       order: { type: String, default: 'desc' }

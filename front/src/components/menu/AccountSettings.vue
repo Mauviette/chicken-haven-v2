@@ -122,6 +122,18 @@
             {{ showEmail ? 'Masquer' : 'Afficher' }}
           </ActionButton>
         </div>
+
+        <!-- Option notifications par email -->
+        <div class="email-notifications-option">
+          <label for="email-notifications-toggle" class="notifications-label">
+            <input
+              id="email-notifications-toggle"
+              type="checkbox"
+              v-model="settings.emailNotifications"
+            />
+            <span>Recevoir les annonces et mises à jour par email</span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -344,6 +356,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
+import { useSettings } from '@/composables/useSettings'
 import { useAccountSecurity } from '@/composables/useAccountSecurity'
 import Popup from '@/components/menu/Popup.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
@@ -356,6 +369,7 @@ const emit = defineEmits(['close', 'accountDeleted'])
 
 const { logout } = useAuth()
 const { player, refreshPlayer } = usePlayer()
+const { settings } = useSettings()
 const router = useRouter()
 
 // Utilisation du composable de sécurité
@@ -476,6 +490,34 @@ async function confirmDeleteWithPassword() {
   font-size: 14px;
   margin-bottom: 15px;
   line-height: 1.4;
+}
+
+.email-notifications-option {
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+}
+
+.notifications-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+  color: #fff9e5;
+  font-size: 14px;
+}
+
+.notifications-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #ffd700;
+  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
+}
+
+.notifications-label span {
+  flex: 1;
 }
 
 .delete-button {

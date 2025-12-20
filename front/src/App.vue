@@ -147,8 +147,19 @@ function syncThemeClasses() {
 // Watcher pour synchroniser les classes sur le body
 watch([isApocalypseMode, () => settings.value?.darkMode, isAnnouncementsPage, isAuthPage, settingsLoaded], syncThemeClasses, { immediate: true })
 
+// Gérer la redirection vers /auth quand le token est invalide
+function onAuthRequired() {
+  // Ne rediriger que si on n'est pas déjà sur la page d'auth
+  if (route.name !== 'Auth') {
+    router.push('/auth')
+  }
+}
+
 onMounted(async () => {
   window.$toast = toast
+  
+  // Écouter l'événement de redirection d'authentification
+  window.addEventListener('auth-required', onAuthRequired)
   
   // Enregistrer l'instance du ToastManager pour usage global
   if (toastManager.value) {
@@ -177,6 +188,11 @@ onMounted(async () => {
     } catch (error) {
       console.error('Erreur chargement données utilisateur:', error)
       setUserDataLoading(false)
+      
+      // Si erreur d'authentification, rediriger vers la page d'auth
+      if (error.message?.includes('authentifié') || error.message?.includes('Authentication')) {
+        router.push('/auth')
+      }
     }
     
     // Charger les paramètres
@@ -209,6 +225,7 @@ onBeforeUnmount(() => {
   try {
     window.removeEventListener('level-up', onLevelUp)
     window.removeEventListener('show-update-popup', onShowUpdatePopup)
+    window.removeEventListener('auth-required', onAuthRequired)
   } catch (_) {}
 })
 

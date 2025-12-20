@@ -10,6 +10,7 @@ const settings = ref({
   volume: 100,
   buffsEverywhere: false, // Option pour afficher les buffs sur toutes les pages
   darkMode: false, // Mode sombre pour une meilleure visibilité de nuit
+  emailNotifications: false, // Recevoir des notifications par email (mises à jour, annonces)
   collectionSort: {
     key: 'quantite',
     order: 'desc'
@@ -38,6 +39,7 @@ export function useSettings() {
         volume: 100,
         buffsEverywhere: false,
         darkMode: false,
+        emailNotifications: false,
         collectionSort: {
           key: 'quantite',
           order: 'desc'
@@ -74,6 +76,7 @@ export function useSettings() {
           volume: Math.max(0, Math.min(100, Number(settings.value?.volume ?? 100))),
           buffsEverywhere: Boolean(settings.value?.buffsEverywhere),
           darkMode: Boolean(settings.value?.darkMode),
+          emailNotifications: Boolean(settings.value?.emailNotifications),
           collectionSort: {
             key: settings.value?.collectionSort?.key || 'quantite',
             order: settings.value?.collectionSort?.order || 'desc'
