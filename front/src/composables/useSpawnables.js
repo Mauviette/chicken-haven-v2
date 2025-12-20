@@ -99,8 +99,8 @@ export function useSpawnables() {
           if (index !== -1) {
             spawnedObjects.value.splice(index, 1)
           }
-          // Puisque l'objet a été collecté côté backend, créer les effets visuels par défaut
-          return { type: 'resource', resource: 'eggs', amount: 50 } // Valeur par défaut
+          // L'objet a déjà été collecté ou a expiré, pas de récompense
+          return null
         }
       }
     }

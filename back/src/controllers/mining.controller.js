@@ -302,7 +302,8 @@ export async function digCell(req, res) {
     const progressUpdates = { miningCellsBroken: cellsBroken }
     if (gameOver) {
       const totalCellsBroken = user.miningGame.cells.filter(c => c.hp === 0).length
-      if (totalCellsBroken === 25) {
+      const totalCells = user.miningGame.gridSize * user.miningGame.gridSize
+      if (totalCellsBroken === totalCells) {
         await updateAchievementProgress(req.userId, 'max', { miningFullGridBroken: 1 })
       }
       if (user.miningGame.rewards.length === 0) {

@@ -245,9 +245,45 @@ router.get('/me', verifyToken, async (req, res) => {
 // ⚙️ Modifier les paramètres utilisateur
 router.patch('/settings', verifyToken, async (req, res) => {
   try {
+    const inputSettings = req.body.settings
+    if (!inputSettings || typeof inputSettings !== 'object') {
+      return res.status(400).json({ error: 'Paramètres invalides' })
+    }
+
+    // Liste blanche des propriétés autorisées
+    const allowedKeys = ['sound', 'animations', 'volume', 'buffsEverywhere', 'darkMode', 'collectionSort']
+    const sanitizedSettings = {}
+
+    for (const key of allowedKeys) {
+      if (key in inputSettings) {
+        // Validation des types
+        if (key === 'volume') {
+          const vol = Number(inputSettings[key])
+          if (!isNaN(vol) && vol >= 0 && vol <= 100) {
+            sanitizedSettings[`settings.${key}`] = vol
+          }
+        } else if (key === 'collectionSort') {
+          const sort = inputSettings[key]
+          if (sort && typeof sort === 'object') {
+            const validKeys = ['quantite', 'nom', 'rarete', 'date']
+            const validOrders = ['asc', 'desc']
+            if (validKeys.includes(sort.key) && validOrders.includes(sort.order)) {
+              sanitizedSettings['settings.collectionSort'] = { key: sort.key, order: sort.order }
+            }
+          }
+        } else if (typeof inputSettings[key] === 'boolean') {
+          sanitizedSettings[`settings.${key}`] = inputSettings[key]
+        }
+      }
+    }
+
+    if (Object.keys(sanitizedSettings).length === 0) {
+      return res.status(400).json({ error: 'Aucun paramètre valide fourni' })
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       req.userId,
-      { settings: req.body.settings },
+      { $set: sanitizedSettings },
       { new: true }
     ).select('settings')
 

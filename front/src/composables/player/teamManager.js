@@ -2,8 +2,16 @@
  * Gestion de l'équipe du joueur
  */
 import { apiGet, apiPut } from '@/utils/api.js'
-import { especeData } from '../../data/sharedGameData.js'
 import { team, player, apocalypse } from './playerState.js'
+
+/**
+ * Récupère les données des espèces depuis le cache global
+ * @returns {Object} - Données des espèces
+ */
+function getEspeceData() {
+  // Utilise le cache global alimenté par useGameData
+  return window.__gameDataCache?.especies || {}
+}
 
 /**
  * Récupère l'équipe depuis le serveur
@@ -68,6 +76,7 @@ export function isInTeam(especeId) {
 function hasCooldownActive(especeId) {
   if (!apocalypse.value) return false
   
+  const especeData = getEspeceData()
   const talentName = especeData[especeId]?.talent
   const activableTalents = ['Maligne', 'Joyeuse', 'Rapide']
   

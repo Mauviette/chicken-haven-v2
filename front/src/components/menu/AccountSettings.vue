@@ -340,14 +340,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
-import { apiDelete, apiPost } from '@/utils/api.js'
+import { useAccountSecurity } from '@/composables/useAccountSecurity'
 import Popup from '@/components/menu/Popup.vue'
 import ActionButton from '@/components/menu/ActionButton.vue'
-import ToastManager from '@/components/menu/ToastManager.vue'
 
 defineProps({
   visible: Boolean
@@ -359,306 +358,97 @@ const { logout } = useAuth()
 const { player, refreshPlayer } = usePlayer()
 const router = useRouter()
 
+// Utilisation du composable de sécurité
+const {
+  // États email
+  showAddEmailForm,
+  newEmail,
+  emailPassword,
+  isAddingEmail,
+  showEmail,
+  showEmailCodeInput,
+  emailVerificationCode,
+  isVerifyingEmail,
+  // États mot de passe
+  showPasswordChangeForm,
+  currentPassword,
+  newPassword,
+  passwordVerificationCode,
+  isInitiatingPasswordChange,
+  isChangingPassword,
+  showPasswordCodeInput,
+  // États suppression
+  showDeleteConfirmation,
+  deletePassword,
+  deleteVerificationCode,
+  isDeleting,
+  isInitiatingDelete,
+  showDeleteCodeInput,
+  // Méthodes
+  maskEmail,
+  addEmail: addEmailApi,
+  verifyEmail: verifyEmailApi,
+  resetEmailForm,
+  initiatePasswordChange: initiatePasswordChangeApi,
+  confirmPasswordChange: confirmPasswordChangeApi,
+  resetPasswordForm,
+  initiateDeleteWithEmail: initiateDeleteApi,
+  confirmDeleteWithCode: confirmDeleteCodeApi,
+  confirmDeleteWithPassword: confirmDeletePasswordApi,
+  resetDeleteForm,
+} = useAccountSecurity()
+
 // Données utilisateur
 const userEmail = computed(() => player.value?.email || null)
 
-// États pour la suppression de compte
-const showDeleteConfirmation = ref(false)
-const deletePassword = ref('')
-const deleteVerificationCode = ref('')
-const isDeleting = ref(false)
-const isInitiatingDelete = ref(false)
-const showDeleteCodeInput = ref(false)
-
-// États pour la gestion de l'email
-const showAddEmailForm = ref(false)
-const newEmail = ref('')
-const emailPassword = ref('')
-const isAddingEmail = ref(false)
-const showEmail = ref(false)
-const showEmailCodeInput = ref(false)
-const emailVerificationCode = ref('')
-const isVerifyingEmail = ref(false)
-
-// États pour le changement de mot de passe
-const showPasswordChangeForm = ref(false)
-const currentPassword = ref('')
-const newPassword = ref('')
-const passwordVerificationCode = ref('')
-const isInitiatingPasswordChange = ref(false)
-const isChangingPassword = ref(false)
-const showPasswordCodeInput = ref(false)
-
-// Fonction pour masquer l'email
-function maskEmail(email) {
-  if (!email) return ''
-  const [localPart, domain] = email.split('@')
-  if (localPart.length <= 2) return '*'.repeat(localPart.length) + '@' + domain
-  return localPart[0] + '*'.repeat(localPart.length - 2) + localPart[localPart.length - 1] + '@' + domain
-}
-
-// Fonction pour ajouter un email
-async function addEmail() {
-  if (!newEmail.value.trim() || !emailPassword.value.trim() || isAddingEmail.value) return
-
-  try {
-    isAddingEmail.value = true
-
-    const result = await apiPost('/api/auth/user/add-email', {
-      email: newEmail.value.trim(),
-      password: emailPassword.value
-    })
-
-    if (result.requiresVerification) {
-      // Afficher le champ de saisie du code
-      showEmailCodeInput.value = true
-
-      if (window.$toast) {
-        window.$toast('Un code de vérification a été envoyé à votre email', 'info')
-      }
-    } else {
-      if (window.$toast) {
-        window.$toast('Erreur lors de l\'ajout de l\'email : ' + (result.error || 'Erreur inconnue'), 'error')
-      }
-    }
-  } catch (error) {
-    console.error('Erreur ajout email:', error)
-    if (window.$toast) {
-      window.$toast('Erreur lors de l\'ajout de l\'email. Vérifiez vos informations.', 'error')
-    }
-  } finally {
-    isAddingEmail.value = false
-  }
-}
-
-// Fonction pour vérifier le code d'email
+// Wrapper pour verifyEmail avec refreshPlayer
 async function verifyEmail() {
-  if (!emailVerificationCode.value.trim() || emailVerificationCode.value.length !== 6) return
-
-  try {
-    isVerifyingEmail.value = true
-
-    const result = await apiPost('/api/auth/user/verify-email-change', {
-      email: newEmail.value.trim(),
-      verificationCode: emailVerificationCode.value.trim()
-    })
-
-    if (result.success) {
-      // Rafraîchir les données utilisateur pour mettre à jour l'email
-      await refreshPlayer()
-
-      // Réinitialiser le formulaire
-      showAddEmailForm.value = false
-      showEmailCodeInput.value = false
-      newEmail.value = ''
-      emailPassword.value = ''
-      emailVerificationCode.value = ''
-
-      if (window.$toast) {
-        window.$toast('Votre email a été ajouté avec succès', 'success')
-      }
-    } else {
-      if (window.$toast) {
-        window.$toast('Erreur lors de la vérification : ' + (result.error || 'Erreur inconnue'), 'error')
-      }
-    }
-  } catch (error) {
-    console.error('Erreur vérification email:', error)
-    if (window.$toast) {
-      window.$toast('Code de vérification invalide ou expiré', 'error')
-    }
-  } finally {
-    isVerifyingEmail.value = false
-  }
+  await verifyEmailApi(refreshPlayer)
 }
 
-// Fonction pour initier la suppression avec confirmation email
-async function initiateDeleteWithEmail() {
-  try {
-    isInitiatingDelete.value = true
-
-    const result = await apiPost('/api/user/initiate-delete-account')
-
-    if (result.success) {
-      // Afficher le champ de saisie du code
-      showDeleteCodeInput.value = true
-
-      if (window.$toast) {
-        window.$toast('Un code de confirmation a été envoyé à votre email', 'info')
-      }
-    } else {
-      if (window.$toast) {
-        window.$toast('Erreur lors de l\'envoi du code : ' + (result.error || 'Erreur inconnue'), 'error')
-      }
-    }
-  } catch (error) {
-    console.error('Erreur initiation suppression:', error)
-    if (window.$toast) {
-      window.$toast('Erreur lors de l\'envoi du code de confirmation', 'error')
-    }
-  } finally {
-    isInitiatingDelete.value = false
-  }
+// Wrapper pour addEmail
+async function addEmail() {
+  await addEmailApi()
 }
 
-// Fonction de suppression avec code de confirmation email
-async function confirmDeleteWithCode() {
-  if (!deleteVerificationCode.value.trim() || deleteVerificationCode.value.length !== 6) return
-
-  try {
-    isDeleting.value = true
-
-    const result = await apiPost('/api/user/confirm-delete-account', {
-      verificationCode: deleteVerificationCode.value.trim()
-    })
-
-    if (result.success) {
-      // Afficher un toast de succès
-      if (window.$toast) {
-        window.$toast('Votre compte a été supprimé avec succès', 'success')
-      }
-
-      // Fermer la popup et déconnexion
-      emit('close')
-      emit('accountDeleted')
-      
-      // Déconnexion et redirection vers Auth
-      await logout()
-      
-      // Petite pause pour que le toast soit visible avant la redirection
-      setTimeout(() => {
-        router.push('/auth')
-      }, 1000)
-    } else {
-      // Afficher un toast d'erreur
-      if (window.$toast) {
-        window.$toast('Erreur lors de la suppression : ' + (result.error || 'Erreur inconnue'), 'error')
-      }
-    }
-  } catch (error) {
-    console.error('Erreur confirmation suppression:', error)
-    // Afficher un toast d'erreur
-    if (window.$toast) {
-      window.$toast('Code de vérification invalide ou expiré', 'error')
-    }
-  } finally {
-    isDeleting.value = false
-  }
-}
-
-// Fonction de suppression avec mot de passe (pour utilisateurs sans email)
-async function confirmDeleteWithPassword() {
-  if (!deletePassword.value.trim()) return
-
-  try {
-    isDeleting.value = true
-
-    const result = await apiPost('/api/user/delete-account', {
-      password: deletePassword.value.trim()
-    })
-
-    if (result.success) {
-      // Afficher un toast de succès
-      if (window.$toast) {
-        window.$toast('Votre compte a été supprimé avec succès', 'success')
-      }
-
-      // Fermer la popup et déconnexion
-      emit('close')
-      emit('accountDeleted')
-      
-      // Déconnexion et redirection vers Auth
-      await logout()
-      
-      // Petite pause pour que le toast soit visible avant la redirection
-      setTimeout(() => {
-        router.push('/auth')
-      }, 1000)
-    } else {
-      // Afficher un toast d'erreur
-      if (window.$toast) {
-        window.$toast('Erreur lors de la suppression : ' + (result.error || 'Erreur inconnue'), 'error')
-      }
-    }
-  } catch (error) {
-    console.error('Erreur suppression avec mot de passe:', error)
-    // Afficher un toast d'erreur
-    if (window.$toast) {
-      window.$toast('Mot de passe incorrect ou erreur lors de la suppression', 'error')
-    }
-  } finally {
-    isDeleting.value = false
-  }
-}
-
-// Fonction pour initier le changement de mot de passe
+// Wrapper pour initiatePasswordChange
 async function initiatePasswordChange() {
-  if (!currentPassword.value.trim() || !newPassword.value.trim()) return
+  await initiatePasswordChangeApi()
+}
 
-  try {
-    isInitiatingPasswordChange.value = true
+// Wrapper pour confirmPasswordChange
+async function confirmPasswordChange() {
+  await confirmPasswordChangeApi()
+}
 
-    const result = await apiPost('/api/user/initiate-password-change', {
-      currentPassword: currentPassword.value.trim(),
-      newPassword: newPassword.value.trim()
-    })
+// Wrapper pour initiateDeleteWithEmail
+async function initiateDeleteWithEmail() {
+  await initiateDeleteApi()
+}
 
-    if (result.success) {
-      // Afficher le champ de saisie du code
-      showPasswordCodeInput.value = true
-
-      if (window.$toast) {
-        window.$toast('Un code de confirmation a été envoyé à votre email', 'info')
-      }
-    } else {
-      if (window.$toast) {
-        window.$toast('Erreur lors de l\'envoi du code : ' + (result.error || 'Erreur inconnue'), 'error')
-      }
-    }
-  } catch (error) {
-    console.error('Erreur initiation changement mot de passe:', error)
-    if (window.$toast) {
-      window.$toast('Erreur lors de l\'envoi du code de confirmation', 'error')
-    }
-  } finally {
-    isInitiatingPasswordChange.value = false
+// Wrapper pour confirmDeleteWithCode avec logout
+async function confirmDeleteWithCode() {
+  const success = await confirmDeleteCodeApi()
+  if (success) {
+    emit('close')
+    emit('accountDeleted')
+    await logout()
+    setTimeout(() => {
+      router.push('/auth')
+    }, 1000)
   }
 }
 
-// Fonction pour confirmer le changement de mot de passe
-async function confirmPasswordChange() {
-  if (!passwordVerificationCode.value.trim() || passwordVerificationCode.value.length !== 6) return
-
-  try {
-    isChangingPassword.value = true
-
-    const result = await apiPost('/api/user/confirm-password-change', {
-      verificationCode: passwordVerificationCode.value.trim()
-    })
-
-    if (result.success) {
-      // Réinitialiser le formulaire
-      showPasswordChangeForm.value = false
-      showPasswordCodeInput.value = false
-      currentPassword.value = ''
-      newPassword.value = ''
-      passwordVerificationCode.value = ''
-
-      if (window.$toast) {
-        window.$toast('Votre mot de passe a été changé avec succès', 'success')
-      }
-    } else {
-      if (window.$toast) {
-        window.$toast('Erreur lors du changement : ' + (result.error || 'Erreur inconnue'), 'error')
-      }
-    }
-  } catch (error) {
-    console.error('Erreur confirmation changement mot de passe:', error)
-    if (window.$toast) {
-      window.$toast('Code de vérification invalide ou expiré', 'error')
-    }
-  } finally {
-    isChangingPassword.value = false
+// Wrapper pour confirmDeleteWithPassword avec logout
+async function confirmDeleteWithPassword() {
+  const success = await confirmDeletePasswordApi()
+  if (success) {
+    emit('close')
+    emit('accountDeleted')
+    await logout()
+    setTimeout(() => {
+      router.push('/auth')
+    }, 1000)
   }
 }
 </script>

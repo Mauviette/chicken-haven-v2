@@ -230,7 +230,14 @@ import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
 import { useRoute } from 'vue-router'
 import { usePoules } from '@/composables/usePoules'
-import { formatNumber } from '@/utils/format.js'
+import {
+  formatQuestReward,
+  getQuestRewardIcon,
+  getQuestRewardDescription,
+  getQuestFinalReward,
+  formatChallengeWithProgress,
+  getCurrentQuestStep,
+} from './quests/questsHelpers'
 
 const props = defineProps({
   visible: {
@@ -279,30 +286,13 @@ const isApocalypseMode = computed(() => {
   return val
 })
 
-// Étape actuelle de la quête active
+// Étape actuelle de la quête active (utilise le helper)
 const currentStep = computed(() => {
-  if (!activeQuest.value || !activeQuest.value.steps) return null
-  
-  const quest = activeQuest.value
-  
-  // Trouver la première étape qui n'a pas eu sa récompense réclamée
-  for (let i = 0; i < quest.steps.length; i++) {
-    const step = quest.steps[i]
-    const stepProgress = userQuests.value?.questProgress?.[quest.id]?.[step.id] || {}
-    
-    // Si la récompense n'a pas été réclamée, c'est l'étape actuelle
-    if (!stepProgress.rewardClaimed) {
-      return {
-        ...step,
-        stepNumber: i + 1,
-        totalSteps: quest.steps.length,
-        completed: getStepProgress(step) === 100
-      }
-    }
-  }
-  
-  // Si toutes les étapes ont été réclamées, la quête est terminée
-  return null
+  return getCurrentQuestStep(
+    activeQuest.value,
+    userQuests.value?.questProgress,
+    getStepProgress
+  )
 })
 
 const refreshing = ref(false)
@@ -404,58 +394,14 @@ const handleRefresh = async () => {
   }
 }
 
-const formatReward = (reward) => {
-  if (!reward) return ''
-  
-  if (reward.type === 'chicken') {
-    // Pour les récompenses secrètes, afficher un texte mystère
-    if (reward.secret) {
-      return 'Poule ???'
-    }
-    // Pour les récompenses de poules, on affiche le nom de l'espèce
-    const especiesData = especies.value?.[reward.especeId]
-    const chickenName = especiesData?.nom || reward.especeId
-    return `${reward.quantite}x ${chickenName}`
-  }
-
-  const itemData = itemsData.value?.[reward.type]
-  if (!itemData || typeof reward.quantite !== 'number') return 'Valeur invalide'
-  return `${reward.quantite} ${reward.quantite === 1 ? itemData.nom_singulier : itemData.nom}`
-}
-
-const getRewardIcon = (reward) => {
-  if (!reward) return '❓'
-
-  if (reward.type === 'chicken') {
-    // Pour les récompenses secrètes, utiliser l'image cachée
-    if (reward.secret) {
-      return hiddenImage
-    }
-    return getImage(reward.especeId)
-  }
-
-  const itemData = itemsData.value?.[reward.type]
-  return itemData ? itemData.icon : '❓'
-}
-
-const getRewardDescription = (reward) => {
-  if (!reward) return 'Aucune récompense'
-
-  if (reward.type === 'chicken') {
-    // Pour les récompenses secrètes, afficher une description mystère
-    if (reward.secret) {
-      return `<strong>Poule ???</strong><br>Une poule mystérieuse que vous n'avez pas encore découverte.`
-    }
-    const especiesData = especies.value?.[reward.especeId]
-    const chickenName = especiesData?.nom || reward.especeId
-    const description = especiesData?.description || 'Une nouvelle poule à ajouter à votre équipe.'
-    return `<strong>${formatReward(reward)}</strong><br>${description}`
-  }
-
-  const itemData = itemsData.value?.[reward.type]
-  if (!itemData) return 'Récompense inconnue'
-
-  return `<strong>${formatReward(reward)}</strong><br>${itemData.description}`
+// Wrappers pour les helpers avec les données locales
+const formatReward = (reward) => formatQuestReward(reward, itemsData.value, especies.value)
+const getRewardIcon = (reward) => getQuestRewardIcon(reward, itemsData.value, getImage, hiddenImage)
+const getRewardDescription = (reward) => getQuestRewardDescription(reward, itemsData.value, especies.value)
+const getFinalReward = (quest) => getQuestFinalReward(quest, poules.value)
+const formatChallengeDisplay = (challenge) => {
+  const progress = getChallengeProgress(currentStep.value, challenge.type) || 0
+  return formatChallengeWithProgress(challenge, progress, formatChallenge)
 }
 
 const getStepProgressWidth = (step) => {
@@ -465,51 +411,6 @@ const getStepProgressWidth = (step) => {
 const getStepProgressText = (step) => {
   const progress = getStepProgress(step)
   return `${progress}%`
-}
-
-const getFinalReward = (quest) => {
-  if (!quest || !quest.steps || quest.steps.length === 0) return null
-  // Retourner la récompense de la dernière étape
-  const finalReward = quest.steps[quest.steps.length - 1]?.reward || null
-
-  // Appliquer la logique de récompense secrète comme dans le backend
-  if (finalReward && finalReward.type === 'chicken' && !poules.value?.some(p => p.especeId === finalReward.especeId && p.owned)) {
-    return { ...finalReward, secret: true }
-  }
-
-  return finalReward
-}
-
-// Formatage des textes de défis avec formatNumber pour objectifs et valeurs courantes
-const formatChallengeDisplay = (challenge) => {
-  const progress = getChallengeProgress(currentStep.value, challenge.type) || 0
-  // Challenges de condition (0/1) — on laisse formatChallenge gérer le texte
-  const isCondition = ['team_stat_req', 'production_req'].includes(challenge.type)
-
-  if (challenge.type === 'eggs_collected') {
-    // Exemple : "Récolter 1M œufs (972K/1M)"
-    const target = formatNumber(challenge.objectif || 0, true)
-    const current = formatNumber(progress || 0, true)
-    return `Récolter ${target} œufs (${progress}/${challenge.objectif})`
-  }
-
-  // Pour les challenges de rareté, afficher rareté + counts si objectif numérique
-  if (challenge.type === 'chicken_rarity_found' && challenge.rarity) {
-    const target = formatNumber(challenge.objectif || 0, true)
-    const current = formatNumber(progress || 0, true)
-    return `Trouver ${target} poule(s) de rareté ${challenge.rarity} (${current}/${target})`
-  }
-
-  // Pour les autres défis numériques, utiliser formatChallenge mais ajouter fraction formatée
-  if (!isCondition && typeof challenge.objectif === 'number') {
-    const base = formatChallenge(challenge, progress)
-    const current = formatNumber(progress || 0, true)
-    const target = formatNumber(challenge.objectif || 0, true)
-    return `${base} (${progress}/${challenge.objectif})`
-  }
-
-  // Par défaut, déléguer à formatChallenge (ex: conditions binaires)
-  return formatChallenge(challenge, progress)
 }
 </script>
 

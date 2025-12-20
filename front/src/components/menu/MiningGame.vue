@@ -179,26 +179,39 @@ import ActionButton from '@/components/menu/ActionButton.vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { useMining } from '@/composables/useMining'
 import { MINING_CONFIG } from '@/data/mining'
-import { apiPost } from '@/utils/api' // <-- nouveau import
+import { apiPost } from '@/utils/api'
 import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
 import { useRouter } from 'vue-router'
-// Import des curseurs d'outils (résolus par le bundler)
-import cursor_hand from '@/assets/ui/cursor/hand_point.png'
-import cursor_shovel from '@/assets/ui/cursor/tool_shovel.png'
-import cursor_pickaxe from '@/assets/ui/cursor/tool_pickaxe.png'
-import cursor_hammer from '@/assets/ui/cursor/tool_hammer.png'
-import cursor_axe from '@/assets/ui/cursor/tool_axe.png'
-import cursor_axe_single from '@/assets/ui/cursor/tool_axe_single.png'
-import cursor_bomb from '@/assets/ui/cursor/tool_bomb.png'
-import cursor_dynamite from '@/assets/ui/cursor/tool_dynamite.png'
-import cursor_bow from '@/assets/ui/cursor/tool_bow.png'
-import cursor_hoe from '@/assets/ui/cursor/tool_hoe.png'
-import cursor_torch from '@/assets/ui/cursor/tool_torch.png'
-import cursor_wrench from '@/assets/ui/cursor/tool_wrench.png'
-import cursor_watering_can from '@/assets/ui/cursor/tool_watering_can.png'
-import cursor_shovel_alt from '@/assets/ui/cursor/tool_shovel.png'
-import cursor_mark_question from '@/assets/ui/cursor/mark_question.png'
+
+// Import des helpers de minage (curseurs, outils, artefacts, récompenses)
+import {
+  cursor_hand,
+  cursor_mark_question,
+  getToolConfig,
+  getToolIcon,
+  getToolName,
+  getToolTooltip,
+  getToolCursorStyle as _getToolCursorStyle,
+  getMarkQuestionCursorStyle,
+  computeCurrentCursor,
+  willBeAffected as _willBeAffected,
+  getDamageAt as _getDamageAt,
+  getArtifactIcon,
+  getArtifactName,
+  getArtifactTooltip,
+  getArtifactBadgeStyle,
+  hasHint,
+  formatReward,
+  formatGroupedReward,
+  groupRewards,
+  isLargeReward,
+  isRareReward,
+  getRewardTooltip,
+  getDugRewardTooltip,
+  getGroupedRewardTooltip,
+  getContinueTooltip,
+} from './mining'
 
 const emit = defineEmits(['close', 'game-over'])
 
@@ -255,18 +268,6 @@ const animatingCells = ref(new Set())
 const toolUsed = ref(false)
 const tokensBeforeGameOver = ref(0) // Stocker les jetons avant gameOver
 
-// Normaliser la détection du hint (peut être boolean, string "true", number 1, etc.)
-function hasHint(cell) {
-  if (!cell) return false
-  const v = cell.hint
-  if (v === true) return true
-  if (v === 'true') return true
-  if (v === 1) return true
-  if (v === '1') return true
-  // parfois backend peut renvoyer 'yes' ou autre, tolérer toute valeur truthy non vide
-  return !!v
-}
-
 // computed: nombre de cases marquées "hint" (non creusées)
 const hintCount = computed(() => {
   try {
@@ -284,184 +285,21 @@ const visibleTools = computed(() => {
   return tools.value.slice(currentToolIndex.value)
 })
 
-// Tooltip pour le bouton continuer
+// Tooltip pour le bouton continuer (utilise le helper avec computed locale)
 const continueTooltip = computed(() => {
-  if (!gameOver.value || showResults.value) return ''
-  
-  const rewards = groupedRewards.value
-  if (!rewards || rewards.length === 0) {
-    return '<div style="text-align: center;">Aucune récompense trouvée</div>'
-  }
-  
-  const rewardLines = rewards.map(reward => {
-    return `${formatGroupedReward(reward)}`
-  })
-  
-  return `
-    <div style="text-align: center;">
-      <div style="font-weight: bold; margin-bottom: 8px;">Récompenses obtenues :</div>
-      <div>${rewardLines.join('<br>')}</div>
-    </div>
-  `
+  return getContinueTooltip(gameOver.value, showResults.value, groupedRewards.value)
 })
 
-// Tooltip pour les récompenses individuelles
-function getRewardTooltip(reward) {
-  if (!reward) return ''
-  
-  let type, amount
-  if (typeof reward === 'string') {
-    const parts = reward.split(':')
-    type = parts[0]
-    amount = parts[1]
-  } else if (typeof reward === 'object') {
-    type = reward.type
-    amount = reward.amount != null ? String(reward.amount) : undefined
-  }
-  
-  if (!type) return ''
-  
-  const icons = {
-    eggs: '🥚',
-    mining_token: '🪨',
-    stock_token: '🧺',
-    production_token: '⚙️'
-  }
-  
-  const descriptions = {
-    eggs: 'Œufs - Ressource de base',
-    mining_token: 'Jeton de minage - Pour creuser',
-    stock_token: 'Jeton de stockage - Augmente la capacité',
-    production_token: 'Jeton de production - Booste la production'
-  }
-  
-  const icon = icons[type] || '❓'
-  const desc = descriptions[type] || 'Récompense inconnue'
-  const qty = amount ? parseInt(amount) : 1
-  
-  return `
-    <div style="text-align: center;">
-      <div style="font-size: 18px; margin-bottom: 4px;">${icon}</div>
-      <div style="font-weight: bold;">${qty} ${type.replace('_', ' ')}</div>
-      <div style="font-size: 12px; opacity: 0.8;">${desc}</div>
-    </div>
-  `
-}
-
-// Tooltip pour les récompenses récupérées (format spécial)
-function getDugRewardTooltip(reward) {
-  if (!reward) return ''
-  
-  let type, amount
-  if (typeof reward === 'string') {
-    const parts = reward.split(':')
-    type = parts[0]
-    amount = parts[1]
-  } else if (typeof reward === 'object') {
-    type = reward.type
-    amount = reward.amount != null ? String(reward.amount) : undefined
-  }
-  
-  if (!type) return ''
-  
-  const itemData = getItemInfo(type)
-  const desc = itemData?.description || 'Récompense inconnue'
-  const qty = amount ? parseInt(amount) : 1
-  const typeName = itemData?.nom || type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
-  
-  return `
-    <div style="text-align: center;">
-      <div style="font-weight: bold;">${qty} ${typeName}</div>
-      <div>${desc}</div>
-    </div>
-  `
-}
-
-// Tooltip pour les récompenses groupées
-function getGroupedRewardTooltip(reward) {
-  if (!reward || !reward.type) return ''
-  
-  const itemData = getItemInfo(reward.type)
-  const desc = itemData?.description || 'Récompense inconnue'
-  const typeName = itemData?.nom || reward.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
-  
-  return `
-    <div style="text-align: center;">
-      <div style="font-weight: bold;">${reward.amount} ${typeName}</div>
-      <div>${desc}</div>
-    </div>
-  `
-}
+// Wrappers de tooltips pour passer getItemInfo
+const _getRewardTooltip = (reward) => getRewardTooltip(reward, getItemInfo)
+const _getDugRewardTooltip = (reward) => getDugRewardTooltip(reward, getItemInfo)
+const _getGroupedRewardTooltip = (reward) => getGroupedRewardTooltip(reward, getItemInfo)
 
 // Grouper les récompenses par type pour les afficher stackées
-const groupedRewards = computed(() => {
-  const grouped = {}
-  finalRewards.value.forEach(reward => {
-    let type, amount
-    if (typeof reward === 'string') {
-      const parts = reward.split(':')
-      type = parts[0]
-      amount = parts[1]
-    } else if (typeof reward === 'object') {
-      type = reward.type
-      amount = reward.amount != null ? String(reward.amount) : undefined
-    }
-    
-    if (type) {
-      const qty = amount ? parseInt(amount) : 1
-      if (grouped[type]) {
-        grouped[type] += qty
-      } else {
-        grouped[type] = qty
-      }
-    }
-  })
-  
-  // Convertir en tableau d'objets pour l'affichage
-  return Object.entries(grouped).map(([type, amount]) => ({
-    type,
-    amount
-  }))
-})
+const groupedRewards = computed(() => groupRewards(finalRewards.value))
 
-// Construire dynamiquement la config des outils à partir des données synchronisées
-// Map des curseurs importés résolus par le bundler
-const cursorMap = {
-  shovel: cursor_shovel,
-  pickaxe: cursor_pickaxe,
-  hammer: cursor_hammer,
-  axe: cursor_axe,
-  axe_single: cursor_axe_single,
-  bomb: cursor_bomb,
-  dynamite: cursor_dynamite,
-  bow: cursor_bow,
-  hoe: cursor_hoe,
-  torch: cursor_torch,
-  wrench: cursor_wrench,
-  watering_can: cursor_watering_can,
-  hand: cursor_hand
-}
-
-const toolConfig = (() => {
-  const cfg = {}
-  const shared = MINING_CONFIG && MINING_CONFIG.tools ? MINING_CONFIG.tools : {}
-  Object.entries(shared).forEach(([key, v]) => {
-    cfg[key] = {
-      damage: v.damage,
-      pattern: v.pattern,
-      icon: v.icon || '🔧',
-      name: v.name || key,
-      description: v.desc || v.description || '',
-      // utiliser les imports résolus si disponibles, sinon fallback vers cursor_hand
-      cursorPath: cursorMap[key] || cursor_hand,
-      // inclure secondary_damage (fallback 1) pour que la preview utilise la bonne valeur
-      secondaryDamage: (typeof v.secondary_damage === 'number') ? v.secondary_damage : 1,
-      // exposer le type d'animation (mining | explosion | null)
-      animation: v.animation || null
-    }
-  })
-  return cfg
-})()
+// Configuration des outils (utilise le helper)
+const toolConfig = getToolConfig()
 
 onMounted(async () => {
   await fetchState()
@@ -473,28 +311,12 @@ onMounted(async () => {
 
 // Curseur actuel basé sur l'outil
 const currentCursor = computed(() => {
-  // utiliser les imports résolus pour les curseurs afin que ça fonctionne en production
-  if (!gameActive.value || currentToolIndex.value >= tools.value.length) {
-    return `url("${cursor_hand}") 0 0, pointer`
-  }
-  const tool = tools.value[currentToolIndex.value]
-  const config = toolConfig[tool]
-  if (config?.cursorPath) {
-    return `url("${config.cursorPath}") 0 0, pointer`
-  }
-  return `url("${cursor_hand}") 0 0, pointer`
+  return computeCurrentCursor(gameActive.value, currentToolIndex.value, tools.value)
 })
 
 // Retourne un style pour le curseur d'un outil (utilisé par les éléments de la pile d'outils)
 function getToolCursorStyle(tool, idx) {
-  // outil courant (idx === 0) : utiliser le curseur d'outil actif (currentCursor)
-  if (idx === 0) return { cursor: currentCursor.value }
-  // autres outils : curseur d'aide / question
-  return { cursor: `url("${cursor_mark_question}") 0 0, help` }
-}
-
-function getMarkQuestionCursorStyle() {
-  return { cursor: `url("${cursor_mark_question}") 0 0, help` }
+  return _getToolCursorStyle(tool, idx, currentCursor.value)
 }
 
 function getCellClass(cell) {
@@ -543,57 +365,18 @@ function getCellStyle(cell) {
   return {}
 }
 
+// Wrappers pour les fonctions de helpers avec le contexte local
 function willBeAffected(row, col) {
   if (!hoveredCell.value || currentToolIndex.value >= tools.value.length) return false
   const tool = tools.value[currentToolIndex.value]
-  const config = toolConfig[tool]
-  
-  if (!config) return false
-  
-  const { row: hRow, col: hCol } = hoveredCell.value
-  
-  if (config.pattern === 'single') {
-    return row === hRow && col === hCol
-  } else if (config.pattern === 'cross') {
-    if (row === hRow && col === hCol) return true
-    if (row === hRow - 1 && col === hCol) return true
-    if (row === hRow + 1 && col === hCol) return true
-    if (row === hRow && col === hCol - 1) return true
-    if (row === hRow && col === hCol + 1) return true
-  }
-  else if (config.pattern === 'square') {
-    return Math.abs(row - hRow) <= 1 && Math.abs(col - hCol) <= 1
-  }
-  
-  return false
+  return _willBeAffected(row, col, hoveredCell.value, tool)
 }
 
 function getDamageAt(row, col) {
   if (!hoveredCell.value || currentToolIndex.value >= tools.value.length) return 0
   const tool = tools.value[currentToolIndex.value]
-  const config = toolConfig[tool]
-  
-  if (!config) return 0
-  
-  const { row: hRow, col: hCol } = hoveredCell.value
-  const sec = Number(config.secondaryDamage || 1)
-  // Prendre en compte le bonus de dégâts central provenant des artefacts
-  const centralBonus = Number(artifactModifiers.value?.toolDamageAdd || 0)
-  const centerDamage = Number(config.damage || 0) + centralBonus
-
-  if (config.pattern === 'single') {
-    return (row === hRow && col === hCol) ? centerDamage : 0
-  } else if (config.pattern === 'cross') {
-    if (row === hRow && col === hCol) return centerDamage
-    return sec
-  }
-  else if (config.pattern === 'square') {
-    if (row === hRow && col === hCol) return centerDamage
-    if (Math.abs(row - hRow) <= 1 && Math.abs(col - hCol) <= 1) return sec
-    return 0
-  }
-
-  return 0
+  const toolDamageAdd = Number(artifactModifiers.value?.toolDamageAdd || 0)
+  return _getDamageAt(row, col, hoveredCell.value, tool, toolDamageAdd)
 }
 
 async function digAt(row, col) {
@@ -768,167 +551,10 @@ function goToArtifacts() {
   router.push('/collection?tab=artifacts')
 }
 
-function getToolIcon(tool) {
-  return toolConfig[tool]?.icon || '🔧'
-}
-
-function getToolName(tool) {
-  return toolConfig[tool]?.name || 'Outil'
-}
-
-function getToolTooltip(tool) {
-  const config = toolConfig[tool]
-  if (!config) return 'Outil inconnu'
-  return `<div><strong>${config.name}</strong></div><div style="margin-top:4px;">${config.description}</div>`
-}
-
-// Helpers pour les artefacts — lire depuis window.__gameDataCache.artifacts
-function getArtifactData(artifactId) {
-  try {
-    // Les artefacts sont dans window.__gameDataCache.artifacts (pas .mining.artifacts)
-    const server = (typeof window !== 'undefined' && window.__gameDataCache && window.__gameDataCache.artifacts) ? window.__gameDataCache.artifacts : null
-    if (server && artifactId) return server[artifactId] || null
-  } catch (_) {}
-  // fallback: chercher dans MINING_CONFIG si disponible
-  try {
-    if (MINING_CONFIG && MINING_CONFIG.artifacts && artifactId) return MINING_CONFIG.artifacts[artifactId] || null
-  } catch (_) {}
-  return null
-}
-
-function getArtifactIcon(aid) {
-  const d = getArtifactData(aid)
-  return d ? (d.icon || '❖') : '❖'
-}
-
-function getArtifactName(aid) {
-  const d = getArtifactData(aid)
-  return d ? (d.name || aid) : aid || 'Vide'
-}
-
-function getArtifactTooltip(aid) {
-  if (!aid) return '<div style="opacity:0.7;">Emplacement vide</div>'
-  
-  const d = getArtifactData(aid)
-  if (!d) return '<div>Artefact inconnu</div>'
-  
-  return `
-    <div style="max-width: 250px;">
-      <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">
-        ${d.icon || '❖'} ${d.name}
-      </div>
-      <div style="font-size: 13px; line-height: 1.4; opacity: 0.95;">
-        ${d.description || 'Aucune description'}
-      </div>
-    </div>
-  `
-}
-
-function formatReward(reward, inCell = false) {
-  if (!reward) return ''
-
-  // support string 'type:amount' or object { type, amount }
-  let type, amount
-  if (typeof reward === 'string') {
-    const parts = reward.split(':')
-    type = parts[0]
-    amount = parts[1]
-  } else if (typeof reward === 'object') {
-    type = reward.type
-    amount = reward.amount != null ? String(reward.amount) : undefined
-  }
-
-  if (!type) return ''
-
-  const icons = {
-    eggs: '🥚',
-    mining_token: '🪨',
-    stock_token: '🧺',
-    production_token: '⚙️',
-    rotten_tomato: '🍅'
-  }
-  const icon = (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[type]?.icon) || icons[type] || '❓'
-  const qty = amount ? parseInt(amount) : NaN
-
-  if (inCell && !isNaN(qty) && qty === 1) return icon
-
-  // fallback when amount missing
-  if (!amount) return icon
-
-  return `${icon} ${amount}`
-}
-
-function formatGroupedReward(reward) {
-  if (!reward || !reward.type) return ''
-  
-  const icon = (MINING_CONFIG.rewardTypes && MINING_CONFIG.rewardTypes[reward.type]?.icon) || '❓'
-  
-  return `${icon} ${reward.amount}`
-}
-
-function isLargeReward(reward) {
-  if (!reward) return false
-  let amount
-  if (typeof reward === 'string') {
-    amount = reward.split(':')[1]
-  } else if (typeof reward === 'object') {
-    amount = reward.amount
-  }
-  return parseInt(amount) === 1
-}
-
-function isRareReward(reward) {
-  if (!reward) return false
-  
-  let type
-  if (typeof reward === 'string') {
-    type = reward.split(':')[0]
-  } else if (typeof reward === 'object') {
-    type = reward.type
-  }
-  
-  if (!type) return false
-  
-  // Vérifier si cette récompense est marquée comme rare dans les données de minage
-  try {
-    const miningData = MINING_CONFIG.rewardPool || []
-    const rewardData = miningData.find(r => r.type === type)
-    return rewardData && rewardData.rare === true
-  } catch (e) {
-    return false
-  }
-}
-
-// NOUVEAU : style dynamique en fonction de la rareté
-function getArtifactBadgeStyle(aid) {
-  const d = getArtifactData(aid)
-  const rarity = d?.rarete || 'commune'
-  const borderColors = {
-    commune: 'rgba(194,194,194,0.55)',
-    rare: 'rgba(123,192,255,0.45)',
-    epique: 'rgba(201,139,255,0.44)',
-    legendaire: 'rgba(212,175,55,0.7)'
-  }
-  const textColors = {
-    commune: '#5c2c08',
-    rare: '#0b4a66',
-    epique: '#4b1e5a',
-    legendaire: '#5c2c08'
-  }
-  const bgMap = {
-    commune: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(194,194,194,0.08))',
-    rare: 'linear-gradient(180deg, rgba(123,192,255,0.10), rgba(255,255,255,0.02))',
-    epique: 'linear-gradient(180deg, rgba(201,139,255,0.10), rgba(255,255,255,0.02))',
-    legendaire: 'linear-gradient(180deg, rgba(212,175,55,0.10), rgba(255,255,255,0.03))'
-  }
-
-  return {
-    background: bgMap[rarity] || bgMap.commune,
-    color: textColors[rarity] || textColors.commune,
-    border: `2.5px solid ${borderColors[rarity] || borderColors.commune}`,
-    boxShadow: 'inset 0 0 6px rgba(0,0,0,0.04)'
-  }
-}
+// Les fonctions sont importées depuis ./mining:
+// - getToolIcon, getToolName, getToolTooltip
+// - getArtifactIcon, getArtifactName, getArtifactTooltip
+// - formatReward, formatGroupedReward, isLargeReward, isRareReward
 </script>
 
 <style scoped>
