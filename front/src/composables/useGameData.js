@@ -1,6 +1,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { apiGet } from '@/utils/api.js'
 import { useAuth } from './useAuth'
+import { useAppLoading } from './useAppLoading'
 
 const gameData = ref(null)
 const dataVersion = ref(null)
@@ -116,23 +117,14 @@ export function useGameData() {
   }
 
   async function initialize() {
+    const { setGameDataLoading } = useAppLoading()
     try {
       await fetchGameData()
       startPeriodicSync()
-      
-      try {
-        const { useAppLoading } = await import('./useAppLoading')
-        const { setGameDataLoading } = useAppLoading()
-        setGameDataLoading(false)
-      } catch (_) {}
+      setGameDataLoading(false)
     } catch (err) {
       console.error('Erreur lors de l\'initialisation des données de jeu:', err)
-      
-      try {
-        const { useAppLoading } = await import('./useAppLoading')
-        const { setGameDataLoading } = useAppLoading()
-        setGameDataLoading(false)
-      } catch (_) {}
+      setGameDataLoading(false)
     }
   }
 

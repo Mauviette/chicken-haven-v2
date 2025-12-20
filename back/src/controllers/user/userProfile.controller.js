@@ -1,0 +1,264 @@
+// user/userProfile.controller.js
+// Gestion du profil utilisateur (avatar, displayName, etc.)
+import User from '../../models/User.js'
+import { updateAchievementProgress, triggerAchievementCheck } from '../achievements.controller.js'
+import { containsForbiddenWords } from '../../utils/forbiddenWords.js'
+import crypto from 'crypto'
+
+/**
+ * Génère un ID de profil unique (6 caractères hex)
+ */
+function makeProfileId() {
+  return [...crypto.randomBytes(3)].map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase()
+}
+
+/**
+ * Assure qu'un utilisateur a un profileId, le génère si nécessaire
+ */
+export async function ensureProfileId(user) {
+  if (user.profileId) return user.profileId
+  
+  // Try a few times to avoid collisions
+  for (let i = 0; i < 5; i++) {
+    const pid = makeProfileId()
+    const exists = await User.findOne({ profileId: pid }).lean()
+    if (!exists) {
+      user.profileId = pid
+      await user.save()
+      return pid
+    }
+  }
+  
+  // Fallback deterministic from ObjectId (last 6 hex upper)
+  const fallback = String(user._id).slice(-6).toUpperCase()
+  user.profileId = fallback
+  await user.save()
+  return fallback
+}
+
+// GET /api/user/buffs - Récupère les buffs actifs de l'utilisateur
+export async function getBuffs(req, res) {
+  try {
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    // Filtrer les buffs actifs (non expirés)
+    const now = new Date()
+    const activeBuffs = (user.buffs || []).filter(buff => {
+      if (!buff.lasts_until) return true // Buff permanent
+      return new Date(buff.lasts_until) > now
+    })
+
+    // Nettoyer les buffs expirés de la base de données
+    const expiredBuffs = (user.buffs || []).filter(buff => {
+      if (!buff.lasts_until) return false
+      return new Date(buff.lasts_until) <= now
+    })
+
+    if (expiredBuffs.length > 0) {
+      user.buffs = activeBuffs
+      await user.save()
+    }
+
+    res.json({ buffs: activeBuffs })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// PATCH /api/user/me/avatar - Met à jour l'avatar de l'utilisateur connecté
+export async function updateAvatar(req, res) {
+  try {
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    const { avatar } = req.body || {}
+    if (!avatar || typeof avatar !== 'string') {
+      return res.status(400).json({ error: 'Paramètre avatar invalide' })
+    }
+
+    if (avatar !== 'hidden') {
+      // Vérifier que l'utilisateur a débloqué cette poule
+      const owned = Array.isArray(user.poulesPossedees) 
+        ? user.poulesPossedees.find(p => p.especeId === avatar) 
+        : null
+      if (!owned) {
+        return res.status(400).json({ error: 'Avatar non disponible: poule non débloquée' })
+      }
+      user.avatar = avatar
+    } else {
+      user.avatar = ''
+    }
+
+    await user.save()
+
+    // Mettre à jour les succès
+    try {
+      await updateAchievementProgress(req.userId, 'increment', { avatarChanged: 1 })
+      await triggerAchievementCheck(req.userId)
+    } catch (achievementError) {
+      console.warn('Erreur mise à jour succès avatar:', achievementError)
+    }
+
+    res.json({ success: true, avatar: user.avatar })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// GET /api/user/me - Récupère les informations essentielles de l'utilisateur
+export async function getMe(req, res) {
+  try {
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    const { experience, username, displayName, resources, upgrades } = user
+    const profileId = await ensureProfileId(user)
+    
+    // Update lastSeen
+    try { 
+      user.lastSeen = new Date()
+      await user.save() 
+    } catch (_) {}
+    
+    res.json({
+      username,
+      displayName: displayName || username,
+      profileId,
+      avatar: user.avatar || '',
+      lastSeen: user.lastSeen,
+      apocalypse: user.apocalypse || false,
+      email: user.email || null,
+      experience: {
+        level: experience?.level ?? 1,
+        points: experience?.points ?? 0,
+        required_points: experience?.required_points ?? 2,
+      },
+      resources: {
+        eggs: resources?.eggs ?? 0,
+        stock_token: resources?.stock_token ?? 0,
+        production_token: resources?.production_token ?? 0,
+        wild_token: resources?.wild_token ?? 0,
+        chest_key: resources?.chest_key ?? 0,
+        mining_token: resources?.mining_token ?? 0,
+        precious_stone: resources?.precious_stone ?? 0,
+      },
+      cooldowns: user.cooldowns || {},
+      upgrades: upgrades || {}
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// GET /api/user/profile/:profileId - Public profile by 6-hex ID
+export async function getPublicProfile(req, res) {
+  try {
+    const { profileId } = req.params
+    if (!profileId || !/^[0-9A-F]{6}$/.test(profileId)) {
+      return res.status(400).json({ error: 'profileId invalide' })
+    }
+    
+    const user = await User.findOne({ profileId }).lean()
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+
+    // Compute derived stats
+    const progress = user.achievements?.progress || {}
+    const poules = Array.isArray(user.poulesPossedees) ? user.poulesPossedees : []
+    const chickenFound = poules.length
+
+    // Enrichir les slots d'équipe
+    const levelByEspece = new Map()
+    for (const p of poules) {
+      if (p?.especeId) levelByEspece.set(p.especeId, Number(p.niveauTalent || 0) || 1)
+    }
+    
+    const rawTeam = user.team || { maxSlots: 0, slots: [] }
+    const enrichedSlots = Array.isArray(rawTeam.slots)
+      ? rawTeam.slots.map(s => {
+          if (!s || !s.especeId) return { especeId: null }
+          const lvl = levelByEspece.get(s.especeId)
+          return { especeId: s.especeId, niveauTalent: (typeof lvl === 'number' ? lvl : 0) }
+        })
+      : []
+
+    const achievementsCompleted = (user.achievements?.completed || []).length
+
+    res.json({
+      username: user.username,
+      displayName: user.displayName || user.username,
+      profileId: user.profileId,
+      avatar: user.avatar || '',
+      createdAt: user.createdAt,
+      lastSeen: user.lastSeen,
+      apocalypse: user.apocalypse || false,
+      dev: user.dev || false,
+      experience: user.experience || { level: 1, points: 0, required_points: 2 },
+      team: { maxSlots: rawTeam.maxSlots || 0, slots: enrichedSlots },
+      resources: { eggs: user.resources?.eggs ?? 0 },
+      stats: {
+        totalEggsCollected: progress.totalEggsCollected || 0,
+        totalChickensOwned: progress.totalChickensOwned || 0,
+        totalProductionCompleted: progress.totalProductionCompleted || 0,
+        totalBoxesOpened: progress.totalBoxesOpened || 0,
+        maxEggsInOneClick: progress.maxEggsInOneClick || 0,
+        chickenFound,
+        achievementsCompleted
+      },
+      achievements: { progress }
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+// PATCH /api/user/me/displayName - Mettre à jour le nom d'affichage
+export async function updateDisplayName(req, res) {
+  try {
+    const { displayName } = req.body
+    
+    if (!displayName || typeof displayName !== 'string') {
+      return res.status(400).json({ error: 'Nom d\'affichage requis' })
+    }
+    
+    const trimmed = displayName.trim()
+    
+    if (trimmed.length < 2) {
+      return res.status(400).json({ error: 'Minimum 2 caractères' })
+    }
+    
+    if (trimmed.length > 30) {
+      return res.status(400).json({ error: 'Maximum 30 caractères' })
+    }
+    
+    if (!/^[a-zA-Z0-9À-ÿ\s_.,:;!?()[\]{}+\-*\/@#$%^&'"`~|\\]+$/.test(trimmed)) {
+      return res.status(400).json({ error: 'Caractères alphanumériques uniquement' })
+    }
+    
+    if (containsForbiddenWords(trimmed)) {
+      return res.status(400).json({ error: 'Nom d\'affichage non autorisé' })
+    }
+    
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
+    
+    user.displayName = trimmed
+    await user.save()
+
+    try {
+      await updateAchievementProgress(req.userId, 'increment', { nameChanged: 1 })
+      await triggerAchievementCheck(req.userId)
+    } catch (achievementError) {
+      console.warn('Erreur mise à jour succès nom:', achievementError)
+    }
+    
+    res.json({ success: true, displayName: user.displayName })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}

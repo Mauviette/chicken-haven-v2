@@ -1,43 +1,33 @@
-import { ref, computed, watch } from 'vue'
+// composables/useAchievements.js
+// Composable pour la gestion des succès
+
+import { computed } from 'vue'
 import { useGameData } from '@/composables/useGameData'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
 import { usePoules } from '@/composables/usePoules'
-import { apiGet, apiPost } from '@/utils/api'
 
-const userAchievements = ref({
-  progress: {
-    totalEggsCollected: 0,
-    totalChickensOwned: 0,
-    totalProductionCompleted: 0,
-    totalBoxesOpened: 0,
-    maxEggsInOneClick: 0,
-    avatarChanged: 0,
-    nameChanged: 0,
-    maxTeamStat: 0,
-    maxMegaClick: 0,
-    miningGamesPlayed: 0,
-    miningArtifactsFound: 0,
-    miningCellsBroken: 0,
-    miningNoRewardGame: false,
-    miningFullGridBroken: false,
-    miningBestCellsInGame: 0,
-    chickenGiftsCollected: 0,
-    chickenAbilitiesUsed: 0
-  },
-  completed: [],
-  lastChecked: new Date()
-})
-
-let updateInterval = null
-// Dédoublonnage des notifications d'unlock pendant la session
-const notifiedAchievements = new Set()
+// Import des modules utilitaires
+import { userAchievements } from './achievements/achievementsState.js'
+import {
+  getCurrentProgress as getProgressForAchievement,
+  getProgressWidth as getWidthForAchievement,
+  updateProgress,
+  incrementProgress
+} from './achievements/achievementsProgress.js'
+import {
+  fetchAchievements as fetchAchievementsApi,
+  checkAchievements as checkAchievementsApi,
+  claimReward as claimRewardApi,
+  handleNewAchievements
+} from './achievements/achievementsActions.js'
+import { startAutoCheck as startAutoCheckFn, stopAutoCheck } from './achievements/achievementsAutoCheck.js'
 
 export function useAchievements() {
   const { token } = useAuth()
   const { eggs, refreshPlayerData } = usePlayer()
   const { poules } = usePoules()
-    const { achievements: gameAchievements, fetchGameData, items } = useGameData()
+  const { achievements: gameAchievements, fetchGameData, items } = useGameData()
 
   // Fonction utilitaire pour formater les récompenses
   function formatString(type, count) {
@@ -55,7 +45,7 @@ export function useAchievements() {
       )
       const isCompleted = !!completedEntry
       const isRewardClaimed = completedEntry?.rewardClaimed === true
-      
+
       return {
         ...achievement,
         completed: isCompleted,
@@ -79,330 +69,39 @@ export function useAchievements() {
     return Math.round((completedCount.value / totalCount.value) * 100)
   })
 
-  // Helpers pour calculer le progrès
+  // Wrappers pour les helpers de progrès
   function getCurrentProgress(achievement) {
-    switch (achievement.type) {
-      case 'eggs':
-        return Math.min(userAchievements.value.progress.totalEggsCollected, achievement.objectif)
-      case 'chickens':
-        return Math.min(userAchievements.value.progress.totalChickensOwned, achievement.objectif)
-      case 'production':
-        return Math.min(userAchievements.value.progress.totalProductionCompleted, achievement.objectif)
-      case 'boxes':
-      case 'boxes_opened':
-        return Math.min(userAchievements.value.progress.totalBoxesOpened, achievement.objectif)
-      case 'talent_level':
-        // Calculer le niveau maximum atteint par n'importe quelle poule
-        const maxTalentLevel = poules.value.reduce((max, poule) => {
-          return Math.max(max, poule.niveauTalent || 1)
-        }, 1)
-        return Math.min(maxTalentLevel, achievement.objectif)
-      case 'avatar_change':
-        return Math.min(userAchievements.value.progress.avatarChanged, achievement.objectif)
-      case 'name_change':
-        return Math.min(userAchievements.value.progress.nameChanged, achievement.objectif)
-      case 'team_stats':
-        return Math.min(userAchievements.value.progress.maxTeamStat, achievement.objectif)
-      case 'mega_click':
-        return Math.min(userAchievements.value.progress.maxMegaClick, achievement.objectif)
-      case 'mining_artifacts':
-        return Math.min(userAchievements.value.progress.miningArtifactsFound, achievement.objectif)
-      case 'mining_cells':
-        return Math.min(userAchievements.value.progress.miningCellsBroken, achievement.objectif)
-      case 'mining_no_reward':
-        const noRewardCompleted = userAchievements.value.completed.find(
-          c => c.achievementId === achievement.id
-        )
-        return noRewardCompleted ? achievement.objectif : 0
-      case 'mining_full_grid':
-        const fullGridCompleted = userAchievements.value.completed.find(
-          c => c.achievementId === achievement.id
-        )
-        return fullGridCompleted ? achievement.objectif : 0
-      case 'mining_best_cells_in_game':
-        return Math.min(userAchievements.value.progress.miningBestCellsInGame, achievement.objectif)
-      case 'chickenGiftsCollected':
-        return Math.min(userAchievements.value.progress.chickenGiftsCollected, achievement.objectif)
-      case 'chickenAbilitiesUsed':
-        return Math.min(userAchievements.value.progress.chickenAbilitiesUsed, achievement.objectif)
-      default:
-        return 0
-    }
+    return getProgressForAchievement(achievement, poules.value)
   }
 
   function getProgressWidth(achievement) {
-    const current = getCurrentProgress(achievement)
-    return Math.min((current / achievement.objectif) * 100, 100)
+    return getWidthForAchievement(achievement, poules.value)
   }
 
-  // API calls
+  // Wrappers pour les API calls
   async function fetchAchievements() {
-    if (!token.value) return
-
-    try {
-      const data = await apiGet('/api/achievements/status')
-      userAchievements.value = {
-        progress: {
-          // Fusionner les données existantes avec les nouvelles pour éviter de perdre des champs
-          ...userAchievements.value.progress,
-          ...(data.progress || {})
-        },
-        completed: data.completed || [],
-        lastChecked: new Date(data.lastChecked || Date.now())
-      }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des succès:', error)
-    }
+    return fetchAchievementsApi(token.value)
   }
 
   async function checkAchievements() {
-    if (!token.value) return
-
-    try {
-      const data = await apiPost('/api/achievements/check')
-      
-      // Mettre à jour les données utilisateur
-      if (data.updated) {
-        userAchievements.value = data.achievements
-      }
-
-      // Gérer les nouveaux succès débloqués
-      if (data.newAchievements && data.newAchievements.length > 0) {
-        handleNewAchievements(data.newAchievements)
-      }
-
-      return data.newAchievements || []
-    } catch (error) {
-      console.error('Erreur lors de la vérification des succès:', error)
-    }
-    
-    return []
+    return checkAchievementsApi(token.value, (newAchievements) => {
+      handleNewAchievements(newAchievements, gameAchievements.value, formatString)
+    })
   }
 
   async function claimReward(achievementId) {
-    if (!token.value) return false
-
-    try {
-      const data = await apiPost(`/api/achievements/claim/${achievementId}`)
-      
-      // Marquer la récompense comme réclamée
-      if (data.achievements) {
-        userAchievements.value = data.achievements
-      } else {
-        const completedAchievement = userAchievements.value.completed.find(
-          a => a.achievementId === achievementId
-        )
-        if (completedAchievement) {
-          completedAchievement.rewardClaimed = true
-        }
-      }
-
-      // Rafraîchir les ressources du joueur (œufs, jetons, niveau)
-      try { await refreshPlayerData() } catch (_) {}
-      return data.reward
-    } catch (error) {
-      console.error('Erreur lors de la réclamation de récompense:', error)
-    }
-    
-    return false
+    return claimRewardApi(token.value, achievementId, refreshPlayerData)
   }
 
-  // Gestion des nouveaux succès
-  function handleNewAchievements(newAchievements) {
-    newAchievements.forEach(achievement => {
-      // Éviter les doubles toasts pour le même succès dans la session
-      if (notifiedAchievements.has(achievement.achievementId)) return
-      notifiedAchievements.add(achievement.achievementId)
-
-      const achievementData = gameAchievements.value[achievement.achievementId]
-      if (achievementData) {
-        // Ici vous pouvez ajouter des notifications, animations, etc.
-
-        // Afficher un toast global si disponible
-        try {
-          const reward = achievementData.reward
-          const rewardText = reward ? ` — Récompense: ${formatString(reward.type, reward.quantite)}` : ''
-          const message = `Succès débloqué: ${achievementData.nom}`
-          if (typeof window !== 'undefined' && window.$toast) {
-            window.$toast(message, 'achievement')
-          }
-        } catch (_) { /* noop */ }
-        
-        // Déclencher un événement personnalisé pour les notifications
-        window.dispatchEvent(new CustomEvent('achievement-unlocked', {
-          detail: {
-            achievement: achievementData,
-            reward: achievementData.reward
-          }
-        }))
-      }
-    })
-  }
-
-  // Méthodes pour mettre à jour le progrès localement (optimisation UI)
-  function updateProgress(type, value) {
-    if (userAchievements.value.progress.hasOwnProperty(type)) {
-      userAchievements.value.progress[type] = Math.max(
-        userAchievements.value.progress[type], 
-        value
-      )
-    }
-  }
-
-  function incrementProgress(type, amount = 1) {
-    if (userAchievements.value.progress.hasOwnProperty(type)) {
-      userAchievements.value.progress[type] += amount
-    }
-  }
-
-  // Surveillance automatique des changements
+  // Wrapper pour l'auto-check
   function startAutoCheck() {
-    if (updateInterval) return
-
-    // Vérifier les succès toutes les 30 secondes
-    updateInterval = setInterval(async () => {
-      await checkAchievements()
-    }, 30000)
-
-    // Vérifier aussi quand les œufs changent significativement
-    watch(eggs, (newValue, oldValue) => {
-      if (newValue > oldValue + 10) { // Si gain significatif d'œufs
-        setTimeout(checkAchievements, 1000) // Petite attente pour éviter spam
-      }
-    })
-
-    // Rafraîchir lors d'événements clés (achat poule, clic œuf)
-    if (typeof window !== 'undefined') {
-      const onChickenBought = () => setTimeout(checkAchievements, 250)
-      const onEggClicked = () => setTimeout(checkAchievements, 250)
-      const onAvatarUpdated = () => setTimeout(checkAchievements, 250)
-      const onNameChanged = () => setTimeout(checkAchievements, 250)
-      const onChickenUpgraded = () => setTimeout(checkAchievements, 250)
-      const onMiningAction = () => setTimeout(checkAchievements, 500) // Délai plus long pour le minage
-      const onChestOpened = () => setTimeout(checkAchievements, 250) // Pour les artéfacts obtenus
-      const onAuthLogin = async () => {
-        // Réinitialiser puis recharger les succès pour le nouveau compte
-        try { notifiedAchievements.clear() } catch (_) {}
-        userAchievements.value = {
-          progress: {
-            totalEggsCollected: 0,
-            totalChickensOwned: 0,
-            totalProductionCompleted: 0,
-            totalBoxesOpened: 0,
-            maxEggsInOneClick: 0,
-            avatarChanged: 0,
-            nameChanged: 0,
-            maxTeamStat: 0,
-            maxMegaClick: 0,
-            miningGamesPlayed: 0,
-            miningArtifactsFound: 0,
-            miningCellsBroken: 0,
-            miningNoRewardGame: false,
-            miningFullGridBroken: false,
-            miningBestCellsInGame: 0,
-            chickenGiftsCollected: 0,
-            chickenAbilitiesUsed: 0
-          },
-          completed: [],
-          lastChecked: new Date()
-        }
-        try {
-          await fetchAchievements()
-          await checkAchievements()
-        } catch (_) {}
-      }
-      const onAuthLogout = () => {
-        // Nettoyer l'état local pour éviter un affichage d'un autre compte
-        try { notifiedAchievements.clear() } catch (_) {}
-        userAchievements.value = {
-          progress: {
-            totalEggsCollected: 0,
-            totalChickensOwned: 0,
-            totalProductionCompleted: 0,
-            totalBoxesOpened: 0,
-            maxEggsInOneClick: 0,
-            avatarChanged: 0,
-            nameChanged: 0,
-            maxTeamStat: 0,
-            maxMegaClick: 0,
-            miningGamesPlayed: 0,
-            miningArtifactsFound: 0,
-            miningCellsBroken: 0,
-            miningNoRewardGame: false,
-            miningFullGridBroken: false,
-            miningBestCellsInGame: 0,
-            chickenGiftsCollected: 0,
-            chickenAbilitiesUsed: 0
-          },
-          completed: [],
-          lastChecked: new Date()
-        }
-      }
-      window.addEventListener('chicken-bought', onChickenBought)
-      window.addEventListener('egg-clicked', onEggClicked)
-      window.addEventListener('avatar-updated', onAvatarUpdated)
-      window.addEventListener('name-changed', onNameChanged)
-      window.addEventListener('chicken-upgraded', onChickenUpgraded)
-      window.addEventListener('mining-action', onMiningAction)
-      window.addEventListener('chest-opened', onChestOpened)
-      window.addEventListener('auth-login', onAuthLogin)
-      window.addEventListener('auth-logout', onAuthLogout)
-      // Stocker les handlers pour pouvoir les retirer si besoin
-      startAutoCheck._onChickenBought = onChickenBought
-      startAutoCheck._onEggClicked = onEggClicked
-      startAutoCheck._onAvatarUpdated = onAvatarUpdated
-      startAutoCheck._onNameChanged = onNameChanged
-      startAutoCheck._onChickenUpgraded = onChickenUpgraded
-      startAutoCheck._onMiningAction = onMiningAction
-      startAutoCheck._onChestOpened = onChestOpened
-      startAutoCheck._onAuthLogin = onAuthLogin
-      startAutoCheck._onAuthLogout = onAuthLogout
-    }
-  }
-
-  function stopAutoCheck() {
-    if (updateInterval) {
-      clearInterval(updateInterval)
-      updateInterval = null
-    }
-    if (typeof window !== 'undefined') {
-      if (startAutoCheck._onChickenBought) {
-        window.removeEventListener('chicken-bought', startAutoCheck._onChickenBought)
-        startAutoCheck._onChickenBought = null
-      }
-      if (startAutoCheck._onEggClicked) {
-        window.removeEventListener('egg-clicked', startAutoCheck._onEggClicked)
-        startAutoCheck._onEggClicked = null
-      }
-      if (startAutoCheck._onAvatarUpdated) {
-        window.removeEventListener('avatar-updated', startAutoCheck._onAvatarUpdated)
-        startAutoCheck._onAvatarUpdated = null
-      }
-      if (startAutoCheck._onNameChanged) {
-        window.removeEventListener('name-changed', startAutoCheck._onNameChanged)
-        startAutoCheck._onNameChanged = null
-      }
-      if (startAutoCheck._onChickenUpgraded) {
-        window.removeEventListener('chicken-upgraded', startAutoCheck._onChickenUpgraded)
-        startAutoCheck._onChickenUpgraded = null
-      }
-      if (startAutoCheck._onMiningAction) {
-        window.removeEventListener('mining-action', startAutoCheck._onMiningAction)
-        startAutoCheck._onMiningAction = null
-      }
-      if (startAutoCheck._onChestOpened) {
-        window.removeEventListener('chest-opened', startAutoCheck._onChestOpened)
-        startAutoCheck._onChestOpened = null
-      }
-      if (startAutoCheck._onAuthLogin) {
-        window.removeEventListener('auth-login', startAutoCheck._onAuthLogin)
-        startAutoCheck._onAuthLogin = null
-      }
-      if (startAutoCheck._onAuthLogout) {
-        window.removeEventListener('auth-logout', startAutoCheck._onAuthLogout)
-        startAutoCheck._onAuthLogout = null
-      }
-    }
+    startAutoCheckFn(
+      token.value,
+      eggs,
+      (newAchievements) => handleNewAchievements(newAchievements, gameAchievements.value, formatString),
+      fetchAchievements,
+      checkAchievements
+    )
   }
 
   return {

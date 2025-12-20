@@ -68,7 +68,7 @@ import { getUnlocksBetween } from '@/data/unlocks.js'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
-import { useDataSync } from '@/composables/useDataSync'
+import { useGameData } from '@/composables/useGameData'
 import { useSound } from '@/composables/useSound'
 import { useToast } from '@/composables/useToast'
 import { useAppLoading } from '@/composables/useAppLoading'
@@ -93,8 +93,8 @@ const { logout: performLogout } = useAuth()
 const playerComposable = usePlayer() || {}
 const refreshPlayer = playerComposable.refreshPlayer || (() => Promise.resolve())
 const fetchTeam = playerComposable.fetchTeam || (() => Promise.resolve())
-const dataSyncComposable = useDataSync() || {}
-const syncStatus = dataSyncComposable.syncStatus || 'idle'
+const gameDataComposable = useGameData() || {}
+const syncStatus = gameDataComposable.syncStatus || 'idle'
 const soundComposable = useSound() || {}
 const click = soundComposable.click || (() => {})
 const sndOpen = soundComposable.open || (() => {})
@@ -181,7 +181,6 @@ onMounted(async () => {
     
     // Charger les paramètres
     try {
-      const { useSettings } = await import('@/composables/useSettings')
       const { fetchSettings } = useSettings()
       await fetchSettings()
       setSettingsLoading(false)

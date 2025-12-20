@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useAuth } from './useAuth'
 import { apiGet, apiPatch } from '@/utils/api.js'
+import { useAppLoading } from './useAppLoading'
 
 const settings = ref({
   sound: true,
@@ -19,15 +20,12 @@ const isLoaded = ref(false)
 
 export function useSettings() {
   const { token } = useAuth()
+  const { setSettingsLoading } = useAppLoading()
 
   async function fetchSettings() {
     if (!token.value) {
       // Marquer comme chargées si pas de token
-      try {
-        const { useAppLoading } = await import('./useAppLoading')
-        const { setSettingsLoading } = useAppLoading()
-        setSettingsLoading(false)
-      } catch (_) {}
+      setSettingsLoading(false)
       return
     }
     try {
@@ -58,19 +56,11 @@ export function useSettings() {
       isLoaded.value = true
       
       // Marquer comme chargées
-      try {
-        const { useAppLoading } = await import('./useAppLoading')
-        const { setSettingsLoading } = useAppLoading()
-        setSettingsLoading(false)
-      } catch (_) {}
+      setSettingsLoading(false)
     } catch (err) {
       console.error('Erreur lors du chargement des settings :', err)
       // Marquer comme chargées même en cas d'erreur
-      try {
-        const { useAppLoading } = await import('./useAppLoading')
-        const { setSettingsLoading } = useAppLoading()
-        setSettingsLoading(false)
-      } catch (_) {}
+      setSettingsLoading(false)
     }
   }
 

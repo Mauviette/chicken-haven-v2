@@ -1,48 +1,41 @@
-import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
+/**
+ * Composable principal pour la gestion des poules
+ * Agrège les sous-modules pour une API unifiée
+ */
+import { computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { useGameData } from './useGameData.js'
 import { usePlayer } from './usePlayer.js'
-import { apiGet, apiPost, apiPut } from '@/utils/api.js'
+import { apiPut } from '@/utils/api.js'
 
+// État partagé
+import { rawPoules, loading, fetchPoulesSingleton, clearPoules } from './poules/poulesState.js'
+
+// Utilitaires de talents
+import { 
+  getTalentLevel, 
+  isTalentUnlocked, 
+  getTalentLevelRoman, 
+  evaluateEffectTemplate 
+} from './poules/talentUtils.js'
+
+// Gestion des améliorations
+import { 
+  getTalentNextCost as getTalentNextCostBase, 
+  canUpgradeTalent as canUpgradeTalentBase, 
+  upgradeTalent as upgradeTalentBase 
+} from './poules/talentUpgrade.js'
+
+// Images des poules
 const chickenImages = import.meta.glob('@/assets/chickens/**/basic.png', { eager: true })
 const hiddenImage = chickenImages['/src/assets/chickens/hidden/basic.png']?.default || ''
 
-// NOTE: Toutes les données d'espèces et de talents doivent désormais provenir de useGameData()
+// Fonctions exportées globalement (pour compatibilité)
+export { getTalentLevelRoman }
 
-// Méthodes pour le système de talents (utilise les données synchronisées)
-function getTalentLevel(poule) {
-  if (!poule) return 0
-  // Si la poule est possédée mais que le niveau n'est pas encore connu côté client, assumer niveau 1
-  const missingOrZero = (poule.niveauTalent == null || poule.niveauTalent === 0)
-  if (missingOrZero) {
-    // 1) possédée: niveau 1 par défaut
-    if (poule.owned) return 1
-    // 2) ou bien déjà équipée dans l'équipe (juste après un equip avant refresh poules)
-    try {
-      const slots = Array.isArray(window.__teamSlotsCached) ? window.__teamSlotsCached : []
-      if (slots.some(s => s?.especeId === poule.especeId)) return 1
-    } catch (_) {}
-  }
-  return poule.niveauTalent || 0
-}
-
-function isTalentUnlocked(poule) {
-  // Le talent est débloqué si la poule est possédée (owned: true)
-  return poule && poule.owned
-}
-
-export function getTalentLevelRoman(poule) {
-  const niveau = getTalentLevel(poule)
-  const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV']
-  return romanNumerals[niveau - 1] || '???'
-}
-
-// Fonctions exportées reposant sur les données synchronisées
 export function getTalentEffect(poule) {
-  // Délègue à la version synchronisée
   return getTalentEffectSync(poule)
 }
 
-// Fonction utilitaire pour récupérer l'icône d'un talent depuis les données synchronisées
 export function getIcon(talentName) {
   try {
     const { talents } = useGameData()
@@ -55,59 +48,77 @@ export function getIcon(talentName) {
 }
 
 export function getTalentDisplayName(poule) {
-  // Délègue à la version synchronisée
   return getTalentDisplayNameSync(poule)
 }
 
-// Singleton d'état partagé entre tous les appels à usePoules()
-const rawPoules = ref([])
-const loading = ref(true)
-
-async function fetchPoulesSingleton() {
+// Versions synchrones des fonctions de talent
+function getTalentEffectSync(poule) {
+  if (!poule || !poule.especeId) return '???'
   try {
-    // Ne pas appeler l'API si l'utilisateur n'est pas connecté
-    const token = localStorage.getItem('token')
-    if (!token) {
-      rawPoules.value = []
-      return
+    const { especies, talents } = useGameData()
+    const especiesData = especies.value || {}
+    const talentsData = talents.value || {}
+    const espece = especiesData[poule.especeId]
+    const niveau = getTalentLevel(poule)
+    const talentName = espece?.talent
+    const tInfo = talentsData[talentName]
+    
+    if (tInfo && tInfo.effet) {
+      let effet = tInfo.effet
+      
+      // Si c'est encore une fonction, l'appeler
+      if (typeof effet === 'function') {
+        return effet(niveau)
+      }
+      
+      // Interpréter le template
+      if (typeof effet === 'string') {
+        return evaluateEffectTemplate(effet, niveau)
+      }
     }
-    const data = await apiGet('/api/poules')
-    rawPoules.value = Array.isArray(data) ? data : []
-  } catch (err) {
-    console.error('Erreur chargement poules:', err)
-  } finally {
-    loading.value = false
+    
+    return (tInfo?.description || '???')
+  } catch (error) {
+    console.error('Erreur getTalentEffectSync:', error)
+    return '???'
+  }
+}
+
+function getTalentDisplayNameSync(poule) {
+  try {
+    const { especies, talents } = useGameData()
+    const especiesData = especies.value || {}
+    const talentsData = talents.value || {}
+    const espece = especiesData[poule.especeId]
+    const talentName = espece?.talent
+    const talentInfo = talentsData[talentName]
+    const icon = talentInfo?.icon || ''
+    return `${icon} ${talentName} ${getTalentLevelRoman(poule)}`
+  } catch (error) {
+    console.error('Erreur getTalentDisplayNameSync:', error)
+    return '??? ???'
   }
 }
 
 export function usePoules() {
-  // Utiliser les données synchronisées
-  const { especies, talents, getEspeceInfo, getTalentInfo, talentLevelUpgradeCost } = useGameData()
+  const { especies, talents, talentLevelUpgradeCost } = useGameData()
   const { refreshPlayer } = usePlayer()
-  // Helper local (évite import circulaire avec useAuth)
+  
   const isLoggedIn = () => !!localStorage.getItem('token')
 
-  // Charger une seule fois (les montages suivants ne rechargeront pas si déjà fait)
-  const onLogin = () => {
-    fetchPoulesSingleton()
-  }
-  const onLogout = () => {
-    rawPoules.value = []
-    loading.value = false
-  }
+  // Gestionnaires d'événements
+  const onLogin = () => fetchPoulesSingleton()
+  const onLogout = () => clearPoules()
 
-  // Seulement utiliser les hooks si on est dans un contexte de composant
+  // Hooks de cycle de vie (seulement dans un composant)
   if (typeof getCurrentInstance === 'function' && getCurrentInstance()) {
     onMounted(() => {
-      // Charge seulement si connecté
       if (isLoggedIn() && (!rawPoules.value || rawPoules.value.length === 0)) {
         fetchPoulesSingleton()
       } else if (!isLoggedIn()) {
-        // Pas connecté: pas d'appel réseau et pas d'état de chargement bloqué
         loading.value = false
       }
 
-      // Écoute les événements globaux pour réagir aux changements d'auth
       try {
         window.addEventListener('auth-login', onLogin)
         window.addEventListener('auth-logout', onLogout)
@@ -122,19 +133,14 @@ export function usePoules() {
     })
   }
 
+  // Liste des poules enrichie
   const poules = computed(() => {
-    // Accéder correctement aux données d'espèces
     const especiesData = especies.value || {}
     return Object.keys(especiesData).map((id) => {
       const fromServer = rawPoules.value.find((p) => p.especeId === id)
       if (fromServer) {
-        // Poule possédée : ajouter le flag owned: true
-        return {
-          ...fromServer,
-          owned: true
-        }
+        return { ...fromServer, owned: true }
       } else {
-        // Poule jamais débloquée : créer un objet par défaut avec owned: false
         return {
           especeId: id,
           quantite: 0,
@@ -147,11 +153,11 @@ export function usePoules() {
     })
   })
 
+  // Fonctions d'accès aux données
   function getImage(id) {
     const especiesData = especies.value || {}
     const espece = especiesData[id]
     if (espece?.image) {
-      // Convertir le chemin backend vers le chemin frontend
       const frontendPath = `/src/assets/${espece.image}`
       return chickenImages[frontendPath]?.default || hiddenImage
     }
@@ -159,96 +165,40 @@ export function usePoules() {
   }
 
   function getNom(id) {
-    const especiesData = especies.value || {}
-    const espece = especiesData[id]
-    return espece?.nom || '???'
+    return especies.value?.[id]?.nom || '???'
   }
 
   function getTalent(id) {
-    const especiesData = especies.value || {}
-    const espece = especiesData[id]
-    return espece?.talent || '???'
+    return especies.value?.[id]?.talent || '???'
   }
 
   function getCategorie(id) {
-    const especiesData = especies.value || {}
-    const espece = especiesData[id]
-    return espece?.categorie || '???'
+    return especies.value?.[id]?.categorie || '???'
   }
 
-  // Fonctions locales du composable pour les talents
+  function getDescription(poule) {
+    if (!poule || !poule.especeId) return '???'
+    return especies.value?.[poule.especeId]?.description || '???'
+  }
+
   function getTalentInfoLocal(talentName) {
-    const talentsData = talents.value || {}
-    return talentsData[talentName] || null
+    return talents.value?.[talentName] || null
+  }
+
+  // Fonctions de talent avec contexte
+  function getTalentNextCost(poule) {
+    return getTalentNextCostBase(poule, especies.value, talents.value, talentLevelUpgradeCost.value)
   }
 
   function canUpgradeTalent(poule) {
-    if (!isTalentUnlocked(poule)) return false
-    const cost = getTalentNextCost(poule)
-    if (!cost || cost.maxed) return false
-    return true
-  }
-
-  // Calcule le coût courant côté client selon gameData (pour affichage)
-  function getTalentNextCost(poule) {
-    try {
-      const tName = (especies.value?.[poule.especeId]?.talent) || null
-      const tInfo = talents.value?.[tName] || {}
-      // Utiliser la rareté de la poule au lieu de nivType
-      const rarete = especies.value?.[poule.especeId]?.rarete || 'commune'
-      const table = talentLevelUpgradeCost.value || null
-      if (!table || !table[rarete]) return null
-      const current = Number(poule.niveauTalent || 1)
-      const next = current + 1
-      const limit = Number(table[rarete].limit || 0)
-      if (limit && next > limit) return { maxed: true }
-      const egg_cost = table[rarete].egg_cost?.[current - 1]
-      const chicken_cost = table[rarete].chicken_cost?.[current - 1]
-      if (egg_cost == null || chicken_cost == null) return null
-      return { egg_cost: Number(egg_cost), chicken_cost: Number(chicken_cost) }
-    } catch (_) { return null }
+    return canUpgradeTalentBase(poule, especies.value, talents.value, talentLevelUpgradeCost.value)
   }
 
   async function upgradeTalent(poule) {
-    try {
-      if (!canUpgradeTalent(poule)) return false
-      const data = await apiPost('/api/talent/upgrade', { especeId: poule.especeId })
-      if (!data?.success) {
-        window.$toast?.(data?.error || 'Amélioration impossible', 'error')
-        return false
-      }
-      // appliquer retour serveur
-      const idx = rawPoules.value.findIndex(p => p.especeId === poule.especeId)
-      if (idx !== -1) rawPoules.value[idx] = { ...rawPoules.value[idx], ...data.poule }
-      await refreshPlayer()
-      
-      // Rafraîchir les succès car l'amélioration peut débloquer des succès de niveau
-      try {
-        const { fetchAchievements } = await import('./useAchievements.js')
-        await fetchAchievements()
-      } catch (achievementError) {
-        console.warn('Erreur rafraîchissement succès après upgrade:', achievementError)
-      }
-      
-      // Émettre un événement pour le système d'achievements
-      window.dispatchEvent(new CustomEvent('chicken-upgraded', { detail: { especeId: poule.especeId } }))
-      
-      // Déclencher la vérification automatique des quêtes
-      window.dispatchEvent(new CustomEvent('quest-action'))
-      
-      // Toast avec nom de la poule et niveau
-      const pouleName = getNom(poule.especeId)
-      const newLevel = data.poule?.niveauTalent || (poule.niveauTalent + 1)
-      window.$toast?.(`${pouleName} améliorée au niveau ${getTalentLevelRoman({ niveauTalent: newLevel })} !`, 'upgrade')
-      return true
-    } catch (e) {
-      console.error('upgradeTalent client error:', e)
-      window.$toast?.('Erreur réseau', 'error')
-      return false
-    }
+    return upgradeTalentBase(poule, refreshPlayer, getNom, especies.value, talents.value, talentLevelUpgradeCost.value)
   }
 
-  // Efface le flag "new" pour une espèce donnée (réactif + persistance best-effort)
+  // Efface le flag "new" pour une espèce
   async function clearNew(especeId) {
     if (!especeId) return
     const idx = rawPoules.value.findIndex(p => p.especeId === especeId)
@@ -257,83 +207,7 @@ export function usePoules() {
     }
     try {
       await apiPut(`/api/poules/${encodeURIComponent(especeId)}`, { new: false })
-    } catch (_) { /* best-effort */ }
-  }
-
-  // Versions composable des fonctions de talent (utilisent les données synchronisées)
-  function getTalentEffectSync(poule) {
-    if (!poule || !poule.especeId) return '???'
-    try {
-      const especiesData = especies.value || {}
-      const talentsData = talents.value || {}
-      const espece = especiesData[poule.especeId]
-      const niveau = getTalentLevel(poule)
-      const talentName = espece?.talent
-      const tInfo = talentsData[talentName]
-      
-      // Utiliser le champ 'effet' et interpréter les templates
-      if (tInfo && tInfo.effet) {
-        let effet = tInfo.effet
-        
-        // Si c'est encore une fonction (cas de développement local), l'appeler
-        if (typeof effet === 'function') {
-          return effet(niveau)
-        }
-        
-        // Sinon, interpréter le template de chaîne de caractères
-        if (typeof effet === 'string') {
-          // Remplacer {niveau} par la valeur actuelle
-          effet = effet.replace(/\{niveau\}/g, niveau)
-          
-          // Évaluer les expressions mathématiques simples comme {niveau*0.2}
-          effet = effet.replace(/\{([^}]+)\}/g, (match, expr) => {
-            try {
-              // Remplacer 'niveau' par sa valeur dans l'expression
-              const cleanExpr = expr.replace(/niveau/g, niveau)
-              // Évaluer l'expression mathématique simple (seulement +, -, *, /, parenthèses et nombres)
-              if (/^[\d+\-*/.() ]+$/.test(cleanExpr)) {
-                const result = Function('"use strict"; return (' + cleanExpr + ')')()
-              // Formatter le résultat (garder 2 décimales si nécessaire pour plus de précision)
-              return Number.isInteger(result) ? result.toString() : result.toFixed(2)
-              }
-              return match // Garder l'expression originale si elle ne peut pas être évaluée
-            } catch (e) {
-              return match // Garder l'expression originale en cas d'erreur
-            }
-          })
-          
-          return effet
-        }
-      }
-      
-      // Fallback: utiliser la description si pas d'effet défini
-      return (tInfo?.description || '???')
-    } catch (error) {
-      console.error('Erreur getTalentEffectSync:', error)
-      return '???'
-    }
-  }
-
-  function getTalentDisplayNameSync(poule) {
-    try {
-      const especiesData = especies.value || {}
-      const talentsData = talents.value || {}
-      const espece = especiesData[poule.especeId]
-      const talentName = espece?.talent
-      const talentInfo = talentsData[talentName]
-      const icon = talentInfo?.icon || ''
-      return `${icon} ${talentName} ${getTalentLevelRoman(poule)}`
-    } catch (error) {
-      console.error('Erreur getTalentDisplayNameSync:', error)
-      return '??? ???'
-    }
-  }
-
-  function getDescription(poule) {
-    const especiesData = especies.value || {};
-    if (!poule || !poule.especeId) return '???';
-    const espece = especiesData[poule.especeId];
-    return espece?.description || '???';
+    } catch (_) {}
   }
 
   return {
@@ -346,9 +220,9 @@ export function usePoules() {
     getTalent,
     getCategorie,
     hiddenImage,
-  fetchPoules: fetchPoulesSingleton,
-  refreshPoules: fetchPoulesSingleton, // Alias pour compatibilité
-  clearNew,
+    fetchPoules: fetchPoulesSingleton,
+    refreshPoules: fetchPoulesSingleton,
+    clearNew,
     getTalentInfo: getTalentInfoLocal,
     getTalentLevel,
     canUpgradeTalent,
@@ -357,7 +231,7 @@ export function usePoules() {
     getIcon,
     getTalentDisplayName,
     getTalentLevelRoman,
-  getTalentNextCost,
+    getTalentNextCost,
     getTalentEffectSync,
     getTalentDisplayNameSync,
     getDescription

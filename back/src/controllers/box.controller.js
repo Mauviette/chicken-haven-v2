@@ -1,271 +1,36 @@
-// controllers/box.controller.js
+/**
+ * Contrôleur des boîtes (box)
+ * Gère les endpoints HTTP pour le système de boîtes et tirages
+ */
 import User from '../models/User.js'
-import { especeData, groupes, boxesData, artifactsData } from '../data/sharedGameData.js'
+import { boxesData } from '../data/sharedGameData.js'
 import { updateAchievementProgress } from './achievements.controller.js'
 import { updateQuestProgress, updateAllQuestProgress } from './quests.controller.js'
-import { executeWithRetry } from '../utils/mongoUtils.js'
 
-// Fonction utilitaire pour effectuer une opération atomique avec retry
-async function executeAtomicBoxOperation(userId, boxId, maxRetries = 3) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      // Recharger l'utilisateur à chaque tentative pour avoir la version la plus récente
-      const user = await User.findById(userId)
-      if (!user) throw new Error('Utilisateur introuvable')
+// Imports des utilitaires
+import { executeAtomicBoxOperation } from './box/boxAtomic.utils.js'
+import { 
+  simulateBoxOpening, 
+  calculateAdjustedArtifactChances, 
+  calculateAdjustedBoxChances 
+} from './box/boxSimulation.utils.js'
+import { 
+  groupResults, 
+  processBulkResults, 
+  buildGroupedResponseResults 
+} from './box/boxResults.utils.js'
 
-      const box = boxesData.find(b => b.id === boxId)
-      if (!box) throw new Error('Boîte introuvable')
-
-      // Vérifier le niveau requis
-      const playerLevel = user.experience?.level || 1
-      if ((box.unlock_level || 1) > playerLevel) {
-        throw new Error('Niveau insuffisant pour cette boîte')
-      }
-
-      // Vérification spéciale pour les boîtes d'artefacts (niveau 5 minimum)
-      if (box.category === 'artifacts' && playerLevel < 5) {
-        throw new Error('Vous devez atteindre le niveau 5 pour ouvrir des boîtes d\'artefacts')
-      }
-
-      // Vérifier les ressources
-      const resourceType = box.price.type === 'eggs' ? 'eggs' : 
-                          box.price.type === 'stock_token' ? 'stock_token' : 
-                          box.price.type === 'production_token' ? 'production_token' :
-                          box.price.type === 'chest_key' ? 'chest_key' : null
-
-      if (!resourceType) throw new Error('Type de ressource invalide')
-
-      const playerResources = user.resources || {}
-      const currentAmount = playerResources[resourceType] || 0
-
-      if (currentAmount < box.price.count) {
-        throw new Error(`Ressources insuffisantes (${currentAmount}/${box.price.count})`)
-      }
-
-      // Calculer les poules déjà possédées (toutes les poules dans poulesPossedees, pas seulement celles avec quantité > 0)
-      const ownedChickens = (user.poulesPossedees || [])
-        .map(poule => poule.especeId)
-
-      // Calculer les artefacts déjà possédés si c'est une boîte d'artefacts
-      const ownedArtifacts = box.category === 'artifacts' ? 
-        (user.artifacts || []).map(a => a.artifactId) : []
-      
-      // Vérifier si le joueur est en mode apocalypse
-      const isApocalypse = user.apocalypse || false
-
-      // Simuler l'ouverture de boîte
-      const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts, isApocalypse)
-
-      // Décrémenter le coût d'abord
-      const costUpdate = await User.findByIdAndUpdate(
-        userId,
-        { $inc: { [`resources.${resourceType}`]: -box.price.count } },
-        { new: true }
-      )
-      
-      if (!costUpdate) {
-        throw new Error('Échec de la déduction du coût')
-      }
-
-      // Grouper les résultats pour optimiser les opérations DB
-      const groupedResults = groupResults(results)
-      
-      // Traiter tous les résultats en opérations bulk optimisées
-      await processBulkResults(userId, groupedResults)
-
-      // Préparer les données de réponse groupées
-      const responseResults = buildGroupedResponseResults(groupedResults, ownedChickens, ownedArtifacts)
-
-      // Récupérer l'utilisateur mis à jour pour les nouvelles ressources
-      const updatedUser = await User.findById(userId)
-      const newBalance = updatedUser.resources[resourceType]
-
-      // Retourner le résultat
-      return {
-        box: { id: box.id, name: box.name, cost: box.price },
-        results: responseResults,
-        newBalance: { [resourceType]: newBalance }
-      }
-
-    } catch (error) {
-      // Si c'est un conflit de version et qu'il reste des tentatives
-      if (error.name === 'VersionError' && attempt < maxRetries) {
-        console.log(`⚠️ Conflit de version détecté lors de l'ouverture de boîte (tentative ${attempt}/${maxRetries})`)
-        
-        // Attendre un délai exponentiel avant de retenter
-        await new Promise(resolve => setTimeout(resolve, attempt * 100))
-        continue
-      }
-      
-      // Relancer l'erreur si ce n'est pas un VersionError ou si on a épuisé les tentatives
-      throw error
-    }
-  }
-}
-
-// Fonction pour grouper les résultats par type et identifiant
-function groupResults(results) {
-  const grouped = {
-    chickens: new Map(), // especeId -> { count, groupName, rarity }
-    artifacts: new Set(), // artifactId
-    items: new Map() // itemId -> totalAmount
-  }
-
-  for (const result of results) {
-    if (result.type === 'chicken') {
-      const key = result.chickenId
-      if (!grouped.chickens.has(key)) {
-        grouped.chickens.set(key, {
-          count: 0,
-          groupName: result.groupName,
-          rarity: result.rarity
-        })
-      }
-      grouped.chickens.get(key).count++
-    } else if (result.type === 'artifact') {
-      grouped.artifacts.add(result.artifactId)
-    } else if (result.type === 'item') {
-      const key = result.itemId
-      grouped.items.set(key, (grouped.items.get(key) || 0) + result.amount)
-    }
-  }
-
-  return grouped
-}
-
-// Fonction pour traiter tous les résultats en opérations bulk optimisées
-async function processBulkResults(userId, groupedResults) {
-  const bulkOps = []
-
-  // Traiter les poules : incrémenter les existantes et ajouter les nouvelles
-  if (groupedResults.chickens.size > 0) {
-    // Récupérer l'utilisateur actuel pour connaître l'état des poules
-    const user = await User.findById(userId)
-    const existingChickens = new Map(
-      (user.poulesPossedees || []).map(p => [p.especeId, p])
-    )
-
-    const chickensToIncrement = []
-    const chickensToAdd = []
-
-    for (const [especeId, data] of groupedResults.chickens) {
-      if (existingChickens.has(especeId)) {
-        chickensToIncrement.push({ especeId, increment: data.count })
-      } else {
-        chickensToAdd.push({
-          especeId,
-          quantite: data.count,
-          niveauTalent: 1,
-          new: true
-        })
-      }
-    }
-
-    // Incrémenter les poules existantes
-    for (const { especeId, increment } of chickensToIncrement) {
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: userId, 'poulesPossedees.especeId': especeId },
-          update: { $inc: { 'poulesPossedees.$.quantite': increment } }
-        }
-      })
-    }
-
-    // Ajouter les nouvelles poules
-    if (chickensToAdd.length > 0) {
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: userId },
-          update: { $push: { poulesPossedees: { $each: chickensToAdd } } }
-        }
-      })
-    }
-  }
-
-  // Traiter les artefacts : utiliser $addToSet pour éviter les doublons
-  if (groupedResults.artifacts.size > 0) {
-    const artifactsToAdd = Array.from(groupedResults.artifacts).map(artifactId => ({ artifactId }))
-    bulkOps.push({
-      updateOne: {
-        filter: { _id: userId },
-        update: { $addToSet: { artifacts: { $each: artifactsToAdd } } }
-      }
-    })
-  }
-
-  // Traiter les items : incrémenter les ressources
-  for (const [itemId, amount] of groupedResults.items) {
-    bulkOps.push({
-      updateOne: {
-        filter: { _id: userId },
-        update: { $inc: { [`resources.${itemId}`]: amount } }
-      }
-    })
-  }
-
-  // Exécuter toutes les opérations en bulk si il y en a
-  if (bulkOps.length > 0) {
-    await User.bulkWrite(bulkOps, { ordered: true })
-  }
-}
-
-// Fonction pour construire les résultats de réponse groupés
-function buildGroupedResponseResults(groupedResults, ownedChickens, ownedArtifacts) {
-  const responseResults = []
-
-  // Poules groupées
-  for (const [especeId, data] of groupedResults.chickens) {
-    const chickenData = especeData[especeId]
-    responseResults.push({
-      type: 'chicken',
-      especeId: especeId,
-      nom: chickenData?.nom || especeId,
-      rarete: chickenData?.rarete || 'commune',
-      groupe: data.groupName,
-      count: data.count,
-      isNew: !ownedChickens.includes(especeId)
-    })
-  }
-
-  // Artefacts (toujours uniques)
-  for (const artifactId of groupedResults.artifacts) {
-    const artifactData = artifactsData[artifactId]
-    responseResults.push({
-      type: 'artifact',
-      artifactId: artifactId,
-      name: artifactData?.name || artifactId,
-      icon: artifactData?.icon || '❖',
-      rarete: artifactData?.rarete || 'commune',
-      description: artifactData?.description || '',
-      count: 1,
-      isNew: !ownedArtifacts.includes(artifactId)
-    })
-  }
-
-  // Items groupés
-  for (const [itemId, amount] of groupedResults.items) {
-    responseResults.push({
-      type: 'item',
-      itemId: itemId,
-      amount: amount,
-      count: 1 // Pour cohérence avec l'affichage
-    })
-  }
-
-  return responseResults
-}
-
-// GET /api/boxes - Récupérer les boîtes disponibles
+/**
+ * GET /api/boxes - Récupérer les boîtes disponibles
+ */
 export async function getBoxes(req, res) {
   try {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
-    // Filtrer les boîtes selon le niveau du joueur
     const playerLevel = user.experience?.level || 1
     const availableBoxes = boxesData.filter(box => (box.unlock_level || 1) <= playerLevel)
 
-    // Ajouter les chances ajustées pour les boîtes d'artefacts
     const ownedArtifacts = (user.artifacts || []).map(a => a.artifactId)
     
     const enrichedBoxes = availableBoxes.map(box => {
@@ -287,152 +52,39 @@ export async function getBoxes(req, res) {
   }
 }
 
-// Fonction pour calculer les chances ajustées des artefacts (UNIQUEMENT POUR L'AFFICHAGE)
-// Cette fonction modifie les pourcentages affichés mais n'affecte pas la logique de sélection
-function calculateAdjustedArtifactChances(ownedArtifacts) {
-  const rarityOrder = ['commune', 'rare', 'epique', 'legendaire']
-  const baseRarityWeights = [40, 35, 20, 5]
-
-  // Grouper les artefacts par rareté
-  const artifactsByRarity = {
-    commune: [],
-    rare: [],
-    epique: [],
-    legendaire: []
-  }
-
-  for (const [artifactId, data] of Object.entries(artifactsData)) {
-    const rarity = data.rarete || 'commune'
-    if (artifactsByRarity[rarity]) {
-      artifactsByRarity[rarity].push(artifactId)
-    }
-  }
-
-  // Calculer les artefacts disponibles par rareté
-  const availableByRarity = {}
-  for (const rarity of rarityOrder) {
-    availableByRarity[rarity] = artifactsByRarity[rarity].filter(id => !ownedArtifacts.includes(id))
-  }
-
-  // Calculer les poids ajustés en excluant les raretés vides
-  const adjustedWeights = baseRarityWeights.map((weight, index) => {
-    const rarity = rarityOrder[index]
-    return availableByRarity[rarity].length > 0 ? weight : 0
-  })
-
-  const totalWeight = adjustedWeights.reduce((sum, weight) => sum + weight, 0)
-  
-  // Convertir en pourcentages
-  if (totalWeight === 0) return [0, 0, 0, 0]
-  
-  return adjustedWeights.map(weight => Math.round((weight / totalWeight) * 100))
-}
-
-// Fonction pour ajuster les chances des groupes d'une boîte
-function calculateAdjustedBoxChances(box, ownedArtifacts) {
-  // Trouver le groupe artifacts dans la boîte
-  const artifactsGroupIndex = box.dropGroups.findIndex(group => group.name === 'artifacts')
-  if (artifactsGroupIndex === -1) return box // Pas de groupe artifacts dans cette boîte
-
-  // Calculer la probabilité réelle d'obtenir un artefact disponible
-  const rarityOrder = ['commune', 'rare', 'epique', 'legendaire']
-  const baseRarityWeights = [40, 35, 20, 5] // Poids du groupe artifacts
-
-  // Grouper les artefacts par rareté
-  const artifactsByRarity = {
-    commune: [],
-    rare: [],
-    epique: [],
-    legendaire: []
-  }
-
-  for (const [artifactId, data] of Object.entries(artifactsData)) {
-    const rarity = data.rarete || 'commune'
-    if (artifactsByRarity[rarity]) {
-      artifactsByRarity[rarity].push(artifactId)
-    }
-  }
-
-  // Calculer les artefacts disponibles par rareté
-  const availableByRarity = {}
-  for (const rarity of rarityOrder) {
-    availableByRarity[rarity] = artifactsByRarity[rarity].filter(id => !ownedArtifacts.includes(id))
-  }
-
-  // Calculer la probabilité pondérée d'obtenir un artefact disponible
-  let totalAvailableProbability = 0
-  const totalRarityWeight = baseRarityWeights.reduce((sum, weight) => sum + weight, 0)
-
-  for (let i = 0; i < rarityOrder.length; i++) {
-    const rarity = rarityOrder[i]
-    const weight = baseRarityWeights[i]
-    const hasAvailable = availableByRarity[rarity].length > 0
-
-    if (hasAvailable) {
-      totalAvailableProbability += weight / totalRarityWeight
-    }
-  }
-
-  // Ajuster les chances du groupe artifacts
-  const originalArtifactsChance = box.dropGroups[artifactsGroupIndex].chance
-  const adjustedArtifactsChance = originalArtifactsChance * totalAvailableProbability
-
-  // Calculer les nouvelles chances pour tous les groupes
-  const adjustedGroups = box.dropGroups.map((group, index) => {
-    if (index === artifactsGroupIndex) {
-      return { ...group, chance: adjustedArtifactsChance }
-    } else if (group.name === 'eggs_bonus') {
-      // Redistribuer la différence aux œufs
-      const redistribution = originalArtifactsChance - adjustedArtifactsChance
-      return { ...group, chance: group.chance + redistribution }
-    }
-    return group
-  })
-
-  return { ...box, dropGroups: adjustedGroups }
-}
-
-// POST /api/boxes/:boxId/open - Ouvrir une boîte
+/**
+ * POST /api/boxes/:boxId/open - Ouvrir une boîte
+ */
 export async function openBox(req, res) {
   try {
     const boxId = parseInt(req.params.boxId)
     
-    // Exécuter l'opération atomique avec retry automatique
     const result = await executeAtomicBoxOperation(req.userId, boxId)
 
-      // Mettre à jour le progrès des succès (en dehors de l'opération atomique)
-      try {
-        await updateAchievementProgress(req.userId, 'increment', {
-          totalBoxesOpened: 1
+    // Mettre à jour les succès (en dehors de l'opération atomique)
+    try {
+      await updateAchievementProgress(req.userId, 'increment', { totalBoxesOpened: 1 })
+      await updateQuestProgress(req.userId, 'boxes_opened', 1)
+      
+      const userForAchievements = await User.findById(req.userId)
+      if (userForAchievements) {
+        await updateAchievementProgress(req.userId, 'max', {
+          totalChickensOwned: userForAchievements.poulesPossedees.length
         })
         
-        await updateQuestProgress(req.userId, 'boxes_opened', 1)
-        
-        const userForAchievements = await User.findById(req.userId)
-        if (userForAchievements) {
-          await updateAchievementProgress(req.userId, 'max', {
-            totalChickensOwned: userForAchievements.poulesPossedees.length
-          })
-          
-          // Mettre à jour le progrès des quêtes pour les poules possédées
-          const totalChickens = userForAchievements.poulesPossedees.reduce((sum, p) => sum + p.quantite, 0)
-          await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
-          
-          // Mettre à jour automatiquement tous les progrès de quête
-          await updateAllQuestProgress(req.userId)
-        }
-      } catch (achievementError) {
-        // Les erreurs de succès ne doivent pas faire échouer l'ouverture de boîte
-        console.warn('Erreur lors de la mise à jour des succès:', achievementError)
-      }    res.json({
-      success: true,
-      ...result
-    })
+        const totalChickens = userForAchievements.poulesPossedees.reduce((sum, p) => sum + p.quantite, 0)
+        await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
+        await updateAllQuestProgress(req.userId)
+      }
+    } catch (achievementError) {
+      console.warn('Erreur lors de la mise à jour des succès:', achievementError)
+    }
+
+    res.json({ success: true, ...result })
 
   } catch (err) {
     console.error('Erreur openBox:', err)
     
-    // Gestion d'erreurs spécifiques
     if (err.message.includes('Ressources insuffisantes')) {
       return res.status(400).json({ error: err.message })
     }
@@ -447,7 +99,9 @@ export async function openBox(req, res) {
   }
 }
 
-// POST /api/boxes/:boxId/open-multiple - Ouvrir plusieurs boîtes à la fois
+/**
+ * POST /api/boxes/:boxId/open-multiple - Ouvrir plusieurs boîtes à la fois
+ */
 export async function openBoxMultiple(req, res) {
   try {
     const boxId = parseInt(req.params.boxId)
@@ -462,7 +116,6 @@ export async function openBoxMultiple(req, res) {
       return res.status(404).json({ error: 'Boîte introuvable' })
     }
 
-    // Vérifier le niveau requis
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
@@ -471,17 +124,12 @@ export async function openBoxMultiple(req, res) {
       return res.status(403).json({ error: 'Niveau insuffisant pour cette boîte' })
     }
 
-    // Vérification spéciale pour les boîtes d'artefacts (niveau 5 minimum)
     if (box.category === 'artifacts' && playerLevel < 5) {
       return res.status(403).json({ error: 'Vous devez atteindre le niveau 5 pour ouvrir des boîtes d\'artefacts' })
     }
 
-    // Vérifier les ressources pour toutes les boîtes
-    const resourceType = box.price.type === 'eggs' ? 'eggs' : 
-                        box.price.type === 'stock_token' ? 'stock_token' : 
-                        box.price.type === 'production_token' ? 'production_token' :
-                        box.price.type === 'chest_key' ? 'chest_key' : null
-
+    // Vérifier les ressources
+    const resourceType = getResourceType(box.price.type)
     if (!resourceType) {
       return res.status(400).json({ error: 'Type de ressource invalide' })
     }
@@ -494,25 +142,22 @@ export async function openBoxMultiple(req, res) {
       return res.status(400).json({ error: `Ressources insuffisantes (${currentAmount}/${totalCost})` })
     }
 
-    // Calculer les poules et artefacts déjà possédés
     const ownedChickens = (user.poulesPossedees || []).map(poule => poule.especeId)
-    const ownedArtifacts = box.category === 'artifacts' ? 
-      (user.artifacts || []).map(a => a.artifactId) : []
-    
-    // Vérifier si le joueur est en mode apocalypse
+    const ownedArtifacts = box.category === 'artifacts' 
+      ? (user.artifacts || []).map(a => a.artifactId) 
+      : []
     const isApocalypse = user.apocalypse || false
 
-    // Ouvrir toutes les boîtes et agréger les résultats
+    // Ouvrir toutes les boîtes
     const allResults = []
     for (let i = 0; i < count; i++) {
       const results = simulateBoxOpening(box, ownedChickens, ownedArtifacts, isApocalypse)
       allResults.push(...results)
     }
 
-    // Grouper tous les résultats agrégés
     const groupedResults = groupResults(allResults)
 
-    // Décrémenter le coût total d'abord
+    // Décrémenter le coût
     const costUpdate = await User.findByIdAndUpdate(
       req.userId,
       { $inc: { [`resources.${resourceType}`]: -totalCost } },
@@ -523,37 +168,30 @@ export async function openBoxMultiple(req, res) {
       return res.status(500).json({ error: 'Échec de la déduction du coût' })
     }
 
-    // Traiter tous les résultats agrégés en opérations bulk
     await processBulkResults(req.userId, groupedResults)
 
-    // Construire la réponse groupée
     const responseResults = buildGroupedResponseResults(groupedResults, ownedChickens, ownedArtifacts)
 
-    // Récupérer l'utilisateur mis à jour
     const updatedUser = await User.findById(req.userId)
     const newBalance = updatedUser.resources[resourceType]
 
-      // Mettre à jour les succès
-      try {
-        await updateAchievementProgress(req.userId, 'increment', {
-          totalBoxesOpened: count
-        })
-        
-        await updateQuestProgress(req.userId, 'boxes_opened', count)
-        
-        await updateAchievementProgress(req.userId, 'max', {
-          totalChickensOwned: updatedUser.poulesPossedees.length
-        })
-        
-        // Mettre à jour le progrès des quêtes pour les poules possédées
-        const totalChickens = updatedUser.poulesPossedees.reduce((sum, p) => sum + p.quantite, 0)
-        await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
-        
-        // Mettre à jour automatiquement tous les progrès de quête
-        await updateAllQuestProgress(req.userId)
-      } catch (achievementError) {
-        console.warn('Erreur lors de la mise à jour des succès:', achievementError)
-      }    res.json({
+    // Mettre à jour les succès
+    try {
+      await updateAchievementProgress(req.userId, 'increment', { totalBoxesOpened: count })
+      await updateQuestProgress(req.userId, 'boxes_opened', count)
+      
+      await updateAchievementProgress(req.userId, 'max', {
+        totalChickensOwned: updatedUser.poulesPossedees.length
+      })
+      
+      const totalChickens = updatedUser.poulesPossedees.reduce((sum, p) => sum + p.quantite, 0)
+      await updateQuestProgress(req.userId, 'chickens_owned', totalChickens)
+      await updateAllQuestProgress(req.userId)
+    } catch (achievementError) {
+      console.warn('Erreur lors de la mise à jour des succès:', achievementError)
+    }
+
+    res.json({
       success: true,
       box: { id: box.id, name: box.name, cost: box.price },
       count: count,
@@ -564,7 +202,6 @@ export async function openBoxMultiple(req, res) {
   } catch (err) {
     console.error('Erreur openBoxMultiple:', err)
     
-    // Gestion d'erreurs spécifiques
     if (err.message.includes('Ressources insuffisantes')) {
       return res.status(400).json({ error: err.message })
     }
@@ -579,248 +216,15 @@ export async function openBoxMultiple(req, res) {
   }
 }
 
-// Fonction pour simuler l'ouverture d'une boîte avec probabilités
-function simulateBoxOpening(box, ownedChickens, ownedArtifacts = [], isApocalypse = false) {
-  const groups = Array.isArray(box.dropGroups) ? box.dropGroups : []
-  if (!groups.length) return []
-
-  // Sélectionner UN SEUL groupe en fonction des probabilités (chance)
-  const candidates = groups.filter(g => Number(g.chance) > 0)
-  const totalChance = candidates.reduce((sum, g) => sum + Number(g.chance || 0), 0)
-  if (totalChance <= 0) return []
-
-  function availableForGroup(groupName) {
-    return Object.keys(especeData)
-      .filter(id => especeData[id].groupe === groupName)
-      .filter(id => {
-        // Les poules fondamentales sont toujours disponibles
-        if (especeData[id].groupe === 'fondamental') return true
-        // Les autres groupes nécessitent d'avoir débloqué au moins une poule
-        return ownedChickens.includes(id) || hasUnlockedGroup(groupName, ownedChickens)
-      })
+/**
+ * Convertit un type de prix en clé de ressource
+ */
+function getResourceType(priceType) {
+  const mapping = {
+    'eggs': 'eggs',
+    'stock_token': 'stock_token',
+    'production_token': 'production_token',
+    'chest_key': 'chest_key'
   }
-
-  let selectedGroup = null
-  let r = Math.random() * totalChance
-  let acc = 0
-  for (const g of candidates) {
-    acc += Number(g.chance || 0)
-    if (r <= acc) { selectedGroup = g; break }
-  }
-  if (!selectedGroup) selectedGroup = candidates[0]
-
-  const groupData = groupes.find(g => g.name === selectedGroup.name)
-  const quantity = Math.max(1, Number(selectedGroup.quantity) || 1)
-  const results = []
-
-  // Traitement selon le type de groupe
-  if (selectedGroup.name === 'artifacts') {
-    // Groupe des artefacts - sélection respectant les pourcentages de rareté originaux
-    const artifactResult = selectArtifactRespectingRarity(ownedArtifacts, groupData?.rarityDropChance || [40, 35, 20, 5])
-    
-    if (artifactResult) {
-      results.push({
-        type: 'artifact',
-        artifactId: artifactResult,
-        rarity: artifactsData[artifactResult]?.rarete || 'commune'
-      })
-    } else {
-      // Si aucun artefact disponible (tous obtenus), donner des œufs par défaut
-      results.push({
-        type: 'item',
-        itemId: 'eggs',
-        amount: 200
-      })
-    }
-    
-  } else if (selectedGroup.name === 'eggs_bonus') {
-    // Groupe des œufs bonus - utiliser les items définis dans le groupe
-    if (groupData && groupData.items) {
-      const totalWeight = groupData.items.reduce((sum, item) => sum + (item.weight || 0), 0)
-      if (totalWeight > 0) {
-        let r = Math.random() * totalWeight
-        let acc = 0
-        for (const item of groupData.items) {
-          acc += item.weight || 0
-          if (r <= acc) {
-            results.push({
-              type: 'item',
-              itemId: item.id,
-              amount: item.amount
-            })
-            break
-          }
-        }
-      }
-    }
-    
-    // Fallback
-    if (results.length === 0) {
-      results.push({
-        type: 'item',
-        itemId: 'eggs',
-        amount: 100
-      })
-    }
-    
-  } else {
-    // Groupes de poules traditionnels
-    let availableChickens = availableForGroup(selectedGroup.name)
-    if (!availableChickens.length) {
-      const sorted = [...candidates].sort((a, b) => Number(b.chance || 0) - Number(a.chance || 0))
-      for (const g of sorted) {
-        if (g === selectedGroup) continue
-        const cand = availableForGroup(g.name)
-        if (cand.length) { selectedGroup = g; availableChickens = cand; break }
-      }
-    }
-
-    // Fallback ultime: agréger toutes les dispos si aucune pour les groupes (devrait être rare)
-    if (!availableChickens.length) {
-      const all = []
-      for (const g of candidates) all.push(...availableForGroup(g.name))
-      if (!all.length) return []
-      availableChickens = all
-    }
-
-    const rarityChances = groupData?.rarityDropChance || [100, 0, 0, 0]
-    for (let i = 0; i < quantity; i++) {
-      const selectedChicken = selectChickenByRarity(availableChickens, rarityChances)
-      if (selectedChicken) {
-        results.push({
-          type: 'chicken',
-          chickenId: selectedChicken,
-          groupName: selectedGroup.name,
-          rarity: especeData[selectedChicken]?.rarete || 'commune'
-        })
-      }
-    }
-  }
-
-  // Appliquer la malédiction de l'apocalypse : 20% de chance de remplacer chaque récompense par une tomate pourrie
-  if (isApocalypse) {
-    for (let i = 0; i < results.length; i++) {
-      if (Math.random() < 0.20) { // 20% de chance
-        results[i] = {
-          type: 'item',
-          itemId: 'rotten_tomato',
-          amount: 1
-        }
-      }
-    }
-  }
-
-  return results
-}
-
-// Fonction pour vérifier si un groupe est débloqué
-function hasUnlockedGroup(groupName, ownedChickens) {
-  // Pour simplifier, on considère qu'un groupe est débloqué si le joueur possède au moins une poule
-  // ou si c'est le groupe fondamental
-  if (groupName === 'fondamental') return true
-  
-  // Vérifier si le joueur a au moins une poule de ce groupe ou d'un groupe précédent
-  const groupOrder = ['fondamental', 'brillant', 'discret', 'chic', 'secret']
-  const targetIndex = groupOrder.indexOf(groupName)
-  
-  if (targetIndex === -1) return false
-  
-  // Vérifier les groupes précédents
-  for (let i = 0; i <= targetIndex; i++) {
-    const hasChickenInGroup = ownedChickens.some(chickenId => 
-      especeData[chickenId]?.groupe === groupOrder[i]
-    )
-    if (hasChickenInGroup) return true
-  }
-  
-  return false
-}
-
-// Fonction pour sélectionner une poule basée sur les probabilités de rareté
-function selectChickenByRarity(availableChickens, rarityChances) {
-  // Créer un tableau pondéré par rareté
-  const rarityOrder = ['commune', 'rare', 'epique', 'legendaire']
-  const weightedChickens = []
-
-  for (const chickenId of availableChickens) {
-    const chicken = especeData[chickenId]
-    const rarityIndex = rarityOrder.indexOf(chicken?.rarete || 'commune')
-    const weight = rarityChances[rarityIndex] || 0
-
-    // Ajouter la poule autant de fois que son poids
-    for (let i = 0; i < weight; i++) {
-      weightedChickens.push(chickenId)
-    }
-  }
-
-  if (weightedChickens.length === 0) {
-    // Fallback: sélection aléatoire simple
-    return availableChickens[Math.floor(Math.random() * availableChickens.length)]
-  }
-
-  // Sélection aléatoire pondérée
-  return weightedChickens[Math.floor(Math.random() * weightedChickens.length)]
-}
-
-// Fonction pour sélectionner un artefact en respectant les pourcentages de rareté originaux
-function selectArtifactRespectingRarity(ownedArtifacts, rarityWeights = [40, 35, 20, 5]) {
-
-  
-  const rarityOrder = ['commune', 'rare', 'epique', 'legendaire']
-
-  // Grouper les artefacts par rareté
-  const artifactsByRarity = {
-    commune: [],
-    rare: [],
-    epique: [],
-    legendaire: []
-  }
-
-  for (const [artifactId, data] of Object.entries(artifactsData)) {
-    const rarity = data.rarete || 'commune'
-    if (artifactsByRarity[rarity]) {
-      artifactsByRarity[rarity].push(artifactId)
-    }
-  }
-
-
-
-  // Calculer les artefacts disponibles par rareté
-  const availableByRarity = {}
-  for (const rarity of rarityOrder) {
-    availableByRarity[rarity] = artifactsByRarity[rarity].filter(id => !ownedArtifacts.includes(id))
-  }
-  
-
-
-  // Utiliser les poids originaux (pas d'ajustement) pour respecter les pourcentages
-  const totalWeight = rarityWeights.reduce((sum, weight) => sum + weight, 0)
-  if (totalWeight === 0) return null
-
-  // Roll pour déterminer la rareté avec les poids originaux
-  let random = Math.random() * totalWeight
-  let selectedRarityIndex = 0
-
-  for (let i = 0; i < rarityWeights.length; i++) {
-    random -= rarityWeights[i]
-    if (random <= 0) {
-      selectedRarityIndex = i
-      break
-    }
-  }
-
-  const selectedRarity = rarityOrder[selectedRarityIndex]
-  const availableArtifacts = availableByRarity[selectedRarity]
-
-
-
-  // Si aucun artefact disponible pour cette rareté, retourner null (donnera des œufs)
-  if (availableArtifacts.length === 0) {
-    return null
-  }
-
-  // Sélectionner un artefact aléatoire dans cette rareté
-  const selectedArtifact = availableArtifacts[Math.floor(Math.random() * availableArtifacts.length)]
-  
-  return selectedArtifact
+  return mapping[priceType] || null
 }
