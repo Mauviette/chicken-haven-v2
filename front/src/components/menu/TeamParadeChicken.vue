@@ -236,7 +236,7 @@ function emitOpenDetail() {
 
   if (!props.especeId) return
   const talent = especeDataFor(props.especeId)?.talent
-  if (talent === 'Maligne' || talent === 'Joyeuse' || talent === 'Rapide' || talent === 'Temporelle') {
+  if (talent === 'Maligne' || talent === 'Joyeuse' || talent === 'Rapide' || talent === 'Le Monde') {
     if (isTalentReady.value) {
       triggerActiveTalent(talent)
     } else {
@@ -455,7 +455,7 @@ const talentSubIcon = computed(() => {
     // Cas buff de stockage (ex: Rapide)
     const storage = effs.find(e => e?.type === 'apply_buff' && (e?.buff_type === 'storage' || e?.buff_type === 'storage_multiplier'))
     if (storage) return '🧺'
-    // Cas time_stop (ex: Temporelle)
+    // Cas time_stop (ex: Le Monde)
     const timeStop = effs.find(e => e?.type === 'time_stop_buff')
     if (timeStop) return '⏰'
     return '✨'
@@ -527,7 +527,7 @@ async function triggerActiveTalent(talentName) {
 // État talent activable et cooldown
 const isActivableTalent = computed(() => {
   const t = especeDataFor(props.especeId)?.talent
-  return t === 'Maligne' || t === 'Joyeuse' || t === 'Rapide' || t === 'Temporelle'
+  return t === 'Maligne' || t === 'Joyeuse' || t === 'Rapide' || t === 'Le Monde'
 })
 
 const cooldownKey = computed(() => {

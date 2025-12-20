@@ -234,10 +234,17 @@ const teamStatMult = computed(() => {
 })
 
 const isTimeStopActive = computed(() => {
-  const active = allActiveBuffs.value.some(b => b.buff_type === 'time_stop')
+  const timeStopBuff = allActiveBuffs.value.find(b => b.buff_type === 'time_stop')
+  const active = !!timeStopBuff
   if (active && frozenIncome.value === null) {
-    // Figer le revenu au moment où time_stop devient actif
-    frozenIncome.value = eggState.value.income
+    // Utiliser le frozenEffectiveIncome calculé par le backend (inclut tous les bonus de talents)
+    const frozenFromBuff = Number(timeStopBuff?.buff?.frozenEffectiveIncome || 0)
+    if (frozenFromBuff > 0) {
+      frozenIncome.value = frozenFromBuff
+    } else {
+      // Fallback sur le revenu effectif actuel si le backend n'a pas fourni la valeur
+      frozenIncome.value = eggState.value.income || 1
+    }
   } else if (!active) {
     // Réinitialiser quand time_stop se termine
     frozenIncome.value = null
@@ -245,15 +252,53 @@ const isTimeStopActive = computed(() => {
   return active
 })
 
-const makeStatTooltip = (label, base, extraPerMember, members, mult) => {
+const makeStatTooltip = (label, base, extraPerMember, members, mult, statKey) => {
   const extraTotal = extraPerMember * members
   const subtotal = base + extraTotal
-  const total = subtotal * mult
+  
+  // Calculer les transferts de stats (ex: Barbare)
+  let transferAmount = 0
+  const slots = team.value?.slots || []
+  for (const s of slots) {
+    const id = s?.especeId
+    if (!id) continue
+    const sp = especies.value?.[id]
+    const talentName = sp?.talent
+    if (!talentName) continue
+    const calc = talents.value?.[talentName]?.calculation
+    if (!calc || !Array.isArray(calc.effects)) continue
+    
+    for (const eff of calc.effects) {
+      if (!eff || eff.type !== 'stat_transfer') continue
+      if (eff.operation === 'transfer_all') {
+        // Si cette stat est la source du transfert (on perd tout)
+        if (eff.from_stat === statKey) {
+          transferAmount = -(base + extraTotal) // On perd la valeur totale de cette stat
+        }
+        // Si cette stat est la destination du transfert (on gagne la somme des sources)
+        if (eff.to_stat === statKey) {
+          // Récupérer la valeur de la stat source
+          const fromStatValue = teamStatsBreakdown.value.base[eff.from_stat] + 
+            (teamStatsBreakdown.value.buffsPerMember[eff.from_stat] * teamStatsBreakdown.value.memberCount)
+          transferAmount += fromStatValue
+        }
+      }
+    }
+  }
+  
+  const total = (subtotal + transferAmount) * mult
   const formatValue = (val) => `<strong style="color: ${val < 0 ? '#cc0000' : 'inherit'}">${val < 0 ? '' : (val > 0 ? '+' : '')}${Math.round(val)}</strong>`
+  
+  let transferHtml = ''
+  if (transferAmount !== 0) {
+    transferHtml = `<div>Transfert Barbare: ${formatValue(transferAmount)}</div>`
+  }
+  
   return `<div>
     <div style="font-weight:bold;margin-bottom:4px;">${label}</div>
     <div>Base: ${formatValue(base)}</div>
     <div>Buffs équipe: ${formatValue(extraTotal)}</div>
+    ${transferHtml}
     ${mult > 1 ? `<div>Multiplicateur temporaire: <strong>x${mult.toFixed(2)}</strong></div>` : ''}
     <div style="margin-top:4px;border-top:1px dashed #e3b96a;padding-top:4px;">Total: ${formatValue(total)}</div>
   </div>`
@@ -264,7 +309,8 @@ const intelligenceTooltipHtml = computed(() => makeStatTooltip(
   teamStatsBreakdown.value.base.intelligence,
   teamStatsBreakdown.value.buffsPerMember.intelligence,
   teamStatsBreakdown.value.memberCount,
-  teamStatMult.value.intelligence
+  teamStatMult.value.intelligence,
+  'intelligence'
 ))
 
 const energieTooltipHtml = computed(() => makeStatTooltip(
@@ -272,7 +318,8 @@ const energieTooltipHtml = computed(() => makeStatTooltip(
   teamStatsBreakdown.value.base.energie,
   teamStatsBreakdown.value.buffsPerMember.energie,
   teamStatsBreakdown.value.memberCount,
-  teamStatMult.value.energie
+  teamStatMult.value.energie,
+  'energie'
 ))
 
 const charismeTooltipHtml = computed(() => makeStatTooltip(
@@ -280,7 +327,8 @@ const charismeTooltipHtml = computed(() => makeStatTooltip(
   teamStatsBreakdown.value.base.charisme,
   teamStatsBreakdown.value.buffsPerMember.charisme,
   teamStatsBreakdown.value.memberCount,
-  teamStatMult.value.charisme
+  teamStatMult.value.charisme,
+  'charisme'
 ))
 
 // Breakdown détaillé: base (stats de chaque membre + buffs perso), buffs par membre (target: team), et nombre de membres
@@ -375,10 +423,14 @@ const teamStats = computed(() => {
     
     for (const eff of calc.effects) {
       if (!eff || eff.type !== 'stat_transfer') continue
-      if (eff.operation === 'transfer_all' && eff.from_stat === 'intelligence' && eff.to_stat === 'charisme') {
-        // Transférer toute l'intelligence vers le charisme et mettre intelligence à 0
-        stats.charisme += stats.intelligence
-        stats.intelligence = 0
+      if (eff.operation === 'transfer_all') {
+        // Transférer la stat source vers la stat destination
+        const fromStat = eff.from_stat
+        const toStat = eff.to_stat
+        if (fromStat && toStat && stats[fromStat] !== undefined && stats[toStat] !== undefined) {
+          stats[toStat] += stats[fromStat]
+          stats[fromStat] = 0
+        }
       }
     }
   }
@@ -1305,10 +1357,16 @@ const calculateTimeStopGains = () => {
     return 0
   }
   
-  // Utiliser le revenu figé stocké localement
-  const frozenEffectiveIncome = frozenIncome.value || 0
+  // Récupérer directement le frozenEffectiveIncome depuis le buff time_stop
+  const timeStopBuff = allActiveBuffs.value.find(b => b.buff_type === 'time_stop')
+  let frozenEffectiveIncome = Number(timeStopBuff?.buff?.frozenEffectiveIncome || 0)
   
-  // Calculer le multiplicateur basé sur le talent Temporelle
+  // Fallback si pas de frozenEffectiveIncome du backend
+  if (frozenEffectiveIncome <= 0) {
+    frozenEffectiveIncome = frozenIncome.value || eggState.value.income || 1
+  }
+  
+  // Calculer le multiplicateur basé sur le talent Le Monde
   let multiplier = 0.25 // Valeur par défaut si pas trouvé
   try {
     const slots = team.value?.slots || []
@@ -1317,7 +1375,7 @@ const calculateTimeStopGains = () => {
       if (!id) continue
       const sp = especies.value?.[id]
       const talentName = sp?.talent
-      if (talentName === 'Temporelle') {
+      if (talentName === 'Le Monde') {
         const calc = talents.value?.[talentName]?.calculation
         if (calc && Array.isArray(calc.effects)) {
           const p = poules.value?.find(pp => pp.especeId === id)
@@ -1332,7 +1390,7 @@ const calculateTimeStopGains = () => {
             }
           }
         }
-        break // On prend la première poule Temporelle trouvée
+        break // On prend la première poule Le Monde trouvée
       }
     }
   } catch (e) {

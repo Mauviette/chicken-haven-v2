@@ -185,7 +185,7 @@ export const especeData = {
     nom: 'Poule barbare',
     description: "Une poule guerrière qui sacrifie l'intelligence de l'équipe pour renforcer son charisme.",
     image: 'chickens/barbarian/basic.png',
-    talent: 'Barbare',
+    talent: 'AAAAAAAAAAAAAAARGH',
     groupe: null,
     categorie: 'eclosion',
     rarete: 'unique',
@@ -542,7 +542,7 @@ export const talentsData = {
         {
           type: 'time_stop_buff',
           duration: 5000,
-          click_multiplier_base: 0.025,
+          click_multiplier_base: 0.25,
           click_penalty_per_click: 0.001
         }
       ]

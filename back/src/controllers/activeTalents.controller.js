@@ -244,15 +244,15 @@ export async function activateTalent(req, res) {
       return res.json({ success: true, talent: talentName, applied: { type: 'buff', storage_multiplier: amount, duration }, cooldownMs: cd })
     }
 
-    if (talentName === 'Temporelle') {
-      //console.log('TimeStop backend - activating Temporelle talent')
+    if (talentName === 'Le Monde') {
+      //console.log('TimeStop backend - activating Le Monde talent')
       const calc = talentsData?.[talentName]?.calculation
       const baseCooldown = Number(calc?.cooldown_ms || 60000)
       const cd = getCooldownWithRapide(user, baseCooldown)
 
       const slots2 = user.team?.slots || []
-      const idTemporelle = slots2.find(s => especeData[s?.especeId]?.talent === 'Temporelle')?.especeId
-      const own = owned.find(p => p.especeId === idTemporelle)
+      const idLeMonde = slots2.find(s => especeData[s?.especeId]?.talent === 'Le Monde')?.especeId
+      const own = owned.find(p => p.especeId === idLeMonde)
       const niveau = Math.max(1, Number(own?.niveauTalent) || 1)
       const effect = Array.isArray(calc?.effects) ? calc.effects.find(e => e.type === 'time_stop_buff') : null
       const duration = Number(effect?.duration || 5000)
@@ -287,7 +287,7 @@ export async function activateTalent(req, res) {
       //console.log('TimeStop backend - frozenEffectiveIncome:', frozenEffectiveIncome)
 
       const buffObj = {
-        origin: 'Talent Temporelle',
+        origin: 'Talent Le Monde',
         buff_type: 'time_stop',
         lasts_until: new Date(now + duration),
         hidden: true,
