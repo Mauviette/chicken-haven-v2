@@ -1,6 +1,8 @@
 <template>
   <div
     :class="['poule-card', espece?.rarete || 'commune', { grisee: !poule.owned }, { 'apocalypse-mode': isApocalypseMode }]"
+    @mouseenter="hovered = true"
+    @mouseleave="hovered = false"
   >
     <template v-if="espece && poule.owned">
       <!-- Badges coins en bordure de carte -->
@@ -10,12 +12,14 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
         </svg>
       </div>
-      <div class="image-wrapper">
-        <img :src="image" alt="poule" class="poule-image" draggable="false" />
-        <div v-if="isActivableTalent" class="badge-activable-talent" aria-label="Capacité activable">⚡</div>
-        <!-- Badge NOUVEAU (style Market) -->
-        <div v-if="isNew" class="new-badge">NOUVEAU</div>
-      </div>
+      <Tooltip :text="talentTooltipHtml" position="top" :forceShow="showTalentTooltip" :followMouse="false" :manual="true">
+        <div class="image-wrapper">
+          <img :src="image" alt="poule" class="poule-image" draggable="false" />
+          <div v-if="isActivableTalent" class="badge-activable-talent" aria-label="Capacité activable">⚡</div>
+          <!-- Badge NOUVEAU (style Market) -->
+          <div v-if="isNew" class="new-badge">NOUVEAU</div>
+        </div>
+      </Tooltip>
       <div class="info">
         <div style="display: flex; align-items: center; justify-content: center; gap: 6px;">
           <span class="name">{{ espece.nom }}</span>
@@ -56,10 +60,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { usePlayer } from '@/composables/usePlayer'
-import { usePoules } from '@/composables/usePoules'
+import { usePoules, getTalentEffect } from '@/composables/usePoules'
 import { useGameData } from '@/composables/useGameData'
+import Tooltip from '@/components/menu/Tooltip.vue'
 
 const props = defineProps({
   poule: Object,
@@ -149,6 +154,35 @@ function formatGroupe(especeId) {
   const groupe = especeInfo?.groupe || props.espece?.groupe || 'fondamental'
   return groupe.charAt(0).toUpperCase() + groupe.slice(1)
 }
+
+// SHIFT + hover tooltip state
+const hovered = ref(false)
+const shiftPressed = ref(false)
+const showTalentTooltip = computed(() => hovered.value && shiftPressed.value && props.poule && props.poule.owned)
+const talentTooltipHtml = computed(() => {
+  try {
+    return getTalentEffect(props.poule) || ''
+  } catch (_) {
+    return ''
+  }
+})
+
+function onKeyDown(e) {
+  if (e.key === 'Shift') shiftPressed.value = true
+}
+function onKeyUp(e) {
+  if (e.key === 'Shift') shiftPressed.value = false
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('keyup', onKeyUp)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('keyup', onKeyUp)
+})
 </script>
 
 <style scoped>
@@ -261,11 +295,17 @@ function formatGroupe(especeId) {
   user-select: none;
 }
 
-.poule-card.commune {
-  border-color: #c2c2c2;
+/* Restaurer la taille des images de poules lorsque le composant est enveloppé par Tooltip */
+.poule-card > .tooltip-wrapper {
+  display: block;
+  width: 100%;
 }
-.poule-card.rare {
-  border-color: #7bc0ff;
+.poule-card .tooltip-wrapper .image-wrapper {
+  display: block;
+}
+.poule-card .tooltip-wrapper .poule-image {
+  width: 100%;
+  height: auto;
 }
 .poule-card.epique {
   border-color: #c98bff;

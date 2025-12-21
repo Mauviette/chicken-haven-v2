@@ -28,7 +28,9 @@ const props = defineProps({
   text: String,
   position: { type: String, default: 'top' }, // 'top' | 'bottom' | 'left' | 'right'
   followMouse: { type: Boolean, default: true },
-  forceHide: { type: Boolean, default: false }
+  forceHide: { type: Boolean, default: false },
+  forceShow: { type: Boolean, default: false }, // when true, forces tooltip to be visible programmatically
+  manual: { type: Boolean, default: false } // when true, disable hover/click triggers; show only via forceShow
 })
 
 const wrapper = ref(null)
@@ -119,19 +121,20 @@ function updateMousePosition(event) {
 }
 
 function handleMouseEnter(event) {
-  if (isMobile.value) return // Sur mobile, utiliser le clic
+  if (isMobile.value || props.manual) return // Sur mobile ou mode manuel, ne pas afficher au hover
   show.value = true
   // Attendre que la tooltip soit montée pour mesurer sa taille réelle
   nextTick(() => updateMousePosition(event))
 }
 
 function handleMouseLeave() {
-  if (isMobile.value) return // Sur mobile, garder visible jusqu'au clic suivant
+  if (isMobile.value || props.manual) return // Sur mobile ou mode manuel, ne pas gérer le hover
   show.value = false
 }
 
 function handleClick(event) {
   if (!isMobile.value) return // Sur desktop, utiliser le hover
+  if (props.manual) return // En mode manuel, désactiver le toggle mobile
   show.value = !show.value // Toggle
   if (show.value) {
     nextTick(() => updateMousePosition(event))
@@ -139,6 +142,7 @@ function handleClick(event) {
 }
 
 function handleMouseMove(event) {
+  if (props.manual) return
   if (show.value && props.followMouse) {
     updateMousePosition(event)
   }
@@ -146,6 +150,7 @@ function handleMouseMove(event) {
 
 // Écouter les mouvements de souris globaux pour un suivi plus fluide
 function handleGlobalMouseMove(event) {
+  if (props.manual) return
   if (show.value && props.followMouse) {
     updateMousePosition(event)
   }
@@ -153,7 +158,7 @@ function handleGlobalMouseMove(event) {
 
 // Fermer la tooltip sur mobile quand on clique ailleurs
 function handleGlobalClick(event) {
-  if (!isMobile.value || !show.value) return
+  if (!isMobile.value || !show.value || props.manual) return
   if (wrapper.value && !wrapper.value.contains(event.target)) {
     show.value = false
   }
@@ -184,6 +189,20 @@ watch(() => props.text, () => {
 watch(() => props.forceHide, (newVal) => {
   if (newVal) {
     show.value = false
+  }
+})
+
+// Forcer l'ouverture de la tooltip si forceShow devient true
+watch(() => props.forceShow, (newVal) => {
+  if (newVal && !props.forceHide) {
+    show.value = true
+    // Positionner la tooltip par rapport à l'élément wrapper (fallback to anchored behavior)
+    nextTick(() => {
+      updateMousePosition({ clientX: 0, clientY: 0 })
+    })
+  } else {
+    // si on ne force plus, retourner au comportement par défaut (fermer si pas mobile)
+    if (!isMobile.value) show.value = false
   }
 })
 </script>
