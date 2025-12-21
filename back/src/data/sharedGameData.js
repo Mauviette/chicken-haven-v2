@@ -1038,6 +1038,7 @@ export const achievementsData = {
   },
   'box_enthusiast': {
     id: 'box_enthusiast',
+    
     nom: 'Amateur de Boîtes',
     description: 'Ouvrez 50 boîtes au total',
     icon: '📦',
@@ -1287,7 +1288,47 @@ export const achievementsData = {
       type: 'chest_key',
       quantite: 5
     }
-  }
+  },
+  
+  // --- Achievements: quests completed
+  'quest_finisher_1': {
+    id: 'quest_finisher_1',
+    nom: 'Quête Accomplie I',
+    description: 'Terminez 1 quête',
+    icon: '📜',
+    objectif: 1,
+    type: 'quests_completed',
+    reward: { type: 'blueberry', quantite: 2 }
+  },
+  'quest_finisher_3': {
+    id: 'quest_finisher_3',
+    nom: 'Quête Accomplie II',
+    description: 'Terminez 3 quêtes',
+    icon: '📜',
+    objectif: 3,
+    type: 'quests_completed',
+    reward: { type: 'blueberry', quantite: 4 }
+  },
+
+  // --- Achievements: unique chickens found
+  'unique_chicken_found_1': {
+    id: 'unique_chicken_found_1',
+    nom: 'Découvreur Unique I',
+    description: 'Trouvez 1 poule unique',
+    icon: '🔴',
+    objectif: 1,
+    type: 'unique_chickens',
+    reward: { type: 'blueberry', quantite: 3 }
+  },
+  'unique_chicken_found_2': {
+    id: 'unique_chicken_found_2',
+    nom: 'Découvreur Unique II',
+    description: 'Trouvez 2 poules uniques',
+    icon: '🔴',
+    objectif: 2,
+    type: 'unique_chickens',
+    reward: { type: 'blueberry', quantite: 5 }
+  },
 }
 
 // ========================
@@ -1764,17 +1805,17 @@ export const miningData = {
       icon: '🪨',
       requiredLevel: 10,
       cost: 3,
-      gridSize: 6,
-      defaultHP: 4,
+      gridSize: 5,
+      defaultHP: 5,
       cellColor: '#9b8f7b',
-      dropChance: 0.6,
+      dropChance: 0.5,
       rewardPool: [
         { type: 'eggs', amount: 1000, weight: 6 },
         { type: 'eggs', amount: 10000, weight: 1 },
         { type: 'eggs', amount: 100000, weight: 0.1 },
         { type: 'mining_token', amount: 1, weight: 4 },
-        { type: 'stock_token', amount: 1, weight: 4 },
-        { type: 'production_token', amount: 1, weight: 4 },
+        { type: 'stock_token', amount: 1, weight: 3 },
+        { type: 'production_token', amount: 1, weight: 3 },
         { type: 'chest_key', amount: 1, weight: 8 },
         { type: 'precious_stone', amount: 1, weight: 8, rare:true },
         { type: 'strange_root', amount: 1, weight: 3, rare:true },
