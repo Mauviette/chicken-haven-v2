@@ -224,6 +224,34 @@ const UserSchema = new mongoose.Schema({
     default: new Map()
   },
 
+  // Mini-jeu de farming
+  farming: {
+    level: { type: Number, default: 1 }, // Niveau de la ferme
+    // Graines possédées
+    seeds: {
+      potato: { type: Number, default: 0 },
+      carrot: { type: Number, default: 0 },
+      corn: { type: Number, default: 0 }
+    },
+    // Légumes récoltés
+    vegetables: {
+      potato: { type: Number, default: 0 },
+      carrot: { type: Number, default: 0 },
+      corn: { type: Number, default: 0 }
+    },
+    // Cases débloquées (tableau d'indices 0-8 pour grille 3x3)
+    unlockedSlots: { type: [Number], default: [4] },
+    // Plantations actives
+    plantations: [
+      {
+        slotIndex: { type: Number, required: true }, // 0-8
+        vegetableType: { type: String, required: true }, // 'potato', 'carrot', 'corn'
+        plantedAt: { type: Date, required: true },
+        readyAt: { type: Date, required: true }
+      }
+    ]
+  },
+
 }, { timestamps: true })
 
 const User = mongoose.model('User', UserSchema)

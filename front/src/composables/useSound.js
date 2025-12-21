@@ -46,7 +46,22 @@ const SOUND_MAP = {
   select_004: new URL('../assets/sounds/ui/select_004.ogg', import.meta.url).href,
   pluck_002: new URL('../assets/sounds/ui/pluck_002.ogg', import.meta.url).href,
   time_stop: new URL('../assets/sounds/ui/time_stop.mp3', import.meta.url).href,
-  minimize: new URL('../assets/sounds/ui/minimize_004.ogg', import.meta.url).href
+  minimize: new URL('../assets/sounds/ui/minimize_004.ogg', import.meta.url).href,
+  // Farming
+  plant_seed: new URL('../assets/sounds/ui/drop_003.ogg', import.meta.url).href,
+  harvest_ready: new URL('../assets/sounds/ui/maximize_003.ogg', import.meta.url).href,
+  harvest_collect: new URL('../assets/sounds/ui/pluck_001.ogg', import.meta.url).href,
+  unlock_slot: new URL('../assets/sounds/ui/glass_003.ogg', import.meta.url).href,
+  mine_reveal: new URL('../assets/sounds/ui/click_004.ogg', import.meta.url).href,
+  mine_flag: new URL('../assets/sounds/ui/switch_003.ogg', import.meta.url).href,
+  mine_bomb: new URL('../assets/sounds/ui/error_006.ogg', import.meta.url).href,
+  carrot_pick: new URL('../assets/sounds/ui/pluck_002.ogg', import.meta.url).href,
+  carrot_bomb: new URL('../assets/sounds/ui/error_004.ogg', import.meta.url).href,
+  corn_catch: new URL('../assets/sounds/ui/click_005.ogg', import.meta.url).href,
+  game_win: new URL('../assets/sounds/ui/confirmation_002.ogg', import.meta.url).href,
+  game_start: new URL('../assets/sounds/ui/maximize_005.ogg', import.meta.url).href,
+  tick: new URL('../assets/sounds/ui/tick_001.ogg', import.meta.url).href,
+  shop_buy: new URL('../assets/sounds/ui/glass_004.ogg', import.meta.url).href
 }
 
 function getAudio(key) {
@@ -129,6 +144,21 @@ export function useSound() {
   const miningContinue = () => play('pluck_002', { volume: 0.15 })
   const timeStop = () => play('time_stop', { volume: 0.8 })
   const minimize = () => play('minimize', { volume: 0.8 })
+  // Farming helpers
+  const plantSeed = () => play('plant_seed', { volume: 0.5 })
+  const harvestReady = () => play('harvest_ready', { volume: 0.5 })
+  const harvestCollect = () => play('harvest_collect', { volume: 0.6 })
+  const unlockSlot = () => play('unlock_slot', { volume: 0.5 })
+  const mineReveal = () => play('mine_reveal', { volume: 0.3 })
+  const mineFlag = () => play('mine_flag', { volume: 0.4 })
+  const mineBomb = () => play('mine_bomb', { volume: 0.7 })
+  const carrotPick = () => play('carrot_pick', { volume: 0.5 })
+  const carrotBomb = () => play('carrot_bomb', { volume: 0.7 })
+  const cornCatch = () => play('corn_catch', { volume: 0.35 })
+  const gameWin = () => play('game_win', { volume: 0.6 })
+  const gameStart = () => play('game_start', { volume: 0.5 })
+  const tickSound = () => play('tick', { volume: 0.2 })
+  const shopBuy = () => play('shop_buy', { volume: 0.5 })
 
   return {
     play,
@@ -153,6 +183,21 @@ export function useSound() {
     miningExplosion,
     miningContinue,
     timeStop,
-    minimize
+    minimize,
+    // Farming
+    plantSeed,
+    harvestReady,
+    harvestCollect,
+    unlockSlot,
+    mineReveal,
+    mineFlag,
+    mineBomb,
+    carrotPick,
+    carrotBomb,
+    cornCatch,
+    gameWin,
+    gameStart,
+    tickSound,
+    shopBuy
   }
 }

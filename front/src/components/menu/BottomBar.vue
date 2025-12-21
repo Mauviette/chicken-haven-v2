@@ -23,6 +23,16 @@
           title="Jeton de minage disponible"
         ></span>
       </div>
+      <div class="farming-button badge-wrapper" style="margin-left:8px;">
+          <ActionButton
+            :onClick="() => emit('open-farming')"
+            :disabled="!isFarmingUnlocked"
+            :title="!isFarmingUnlocked ? 'Débloqué au niveau 10' : ''"
+          >
+            <span class="desktop-text">🌾</span>
+            <span class="mobile-text">🌾</span>
+          </ActionButton>
+      </div>
     </div>
 
     <div class="main-buttons">
@@ -129,7 +139,7 @@ import Tooltip from '@/components/menu/Tooltip.vue'
 import { apiGet } from '@/utils/api.js'
 const route = useRoute()
 
-const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements', 'open-mining', 'open-quests'])
+const emit = defineEmits(['open-production', 'open-market', 'open-collection', 'open-social', 'open-help', 'open-options', 'open-achievements', 'open-mining', 'open-quests', 'open-farming'])
 
 // Succès non réclamés -> badge sur le bouton
 const {
@@ -204,6 +214,12 @@ const isMiningUnlocked = computed(() => {
 const isQuestsUnlocked = computed(() => {
   const l = level.value || 1
   if (l >= 3) return true;
+  return false
+})
+
+const isFarmingUnlocked = computed(() => {
+  const l = level.value || 1
+  if (l >= 10) return true;
   return false
 })
 

@@ -76,9 +76,9 @@
     border: 2px solid var(--border-primary);
     border-radius: 16px;
     padding: 24px;
-    width: 360px;
-    max-width: 90vw;
-    max-height: 90vh;
+    width: 480px;
+    max-width: 95vw;
+    max-height: 95vh;
     overflow-y: auto;
     font-family: 'Fredoka', sans-serif;
     color: var(--button-text);

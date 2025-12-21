@@ -1571,7 +1571,7 @@ export const itemsData = {
     nom: 'racines bizarres',
     nom_singulier: 'racine bizarre',
     icon: '🫚',
-    description: 'Une racine étrange trouvée dans la roche dure. Utilisée pour la fabrication dans de futurs contenus.'
+    description: 'Une racine étrange trouvée dans la roche dure. Utilisée pour acheter des graines bizarroïdes.'
   },
   'ancient_urn': {
     id: 'ancient_urn',
@@ -1702,7 +1702,9 @@ export function getAllGameData() {
     items: itemsData,
     categories: achievementCategories,
     mining: miningData,
-    artifacts: artifactsData
+    artifacts: artifactsData,
+    farming: farmingData,
+    farmingItems: farmingItems
   }
 }
 
@@ -1925,6 +1927,193 @@ export const artifactsData = {
     description: "Les cases ont 50% de chance de commencer avec 1 fissure (-1 hp).",
     rarete: 'commune',
     effect: { type: 'fragile_grid', chance: 0.5, damage: 1 }
+  }
+}
+
+// ========================
+// CONFIGURATION DU MINI-JEU DE FARMING
+// ========================
+export const farmingData = {
+  // Niveau requis pour débloquer la ferme
+  requiredLevel: 10,
+
+  // Grille de la ferme (3x3)
+  gridSize: 3,
+  defaultUnlockedSlots: 1, // Une seule case débloquée au début
+
+  // Prix pour débloquer une case (placeholder)
+  slotUnlockPrice: { type: 'eggs', count: 100 },
+
+  // Cycle météo (en millisecondes) - 12h
+  weatherCycleDuration: 12 * 60 * 60 * 1000,
+
+  // Types de météo avec leurs effets sur les légumes
+  weatherTypes: {
+    sunny: {
+      id: 'sunny',
+      name: 'Ensoleillé',
+      icon: '☀️',
+      description: 'Le soleil brille ! Le maïs pousse plus vite, mais les patates souffrent.',
+      effects: {
+        potato: -0.25,  // -25% vitesse
+        carrot: 0,
+        corn: 0.25     // +25% vitesse
+      }
+    },
+    cloudy: {
+      id: 'cloudy',
+      name: 'Nuageux',
+      icon: '☁️',
+      description: 'Un temps couvert idéal pour les carottes, moins pour le maïs.',
+      effects: {
+        potato: 0,
+        carrot: 0.25,   // +25% vitesse
+        corn: -0.25    // -25% vitesse
+      }
+    },
+    rainy: {
+      id: 'rainy',
+      name: 'Pluvieux',
+      icon: '🌧️',
+      description: 'La pluie est parfaite pour les patates, mais les carottes n\'aiment pas ça.',
+      effects: {
+        potato: 0.25,   // +25% vitesse
+        carrot: -0.25, // -25% vitesse
+        corn: 0
+      }
+    }
+  },
+
+  // Définition des légumes
+  vegetables: {
+    potato: {
+      id: 'potato',
+      name: 'Patate',
+      namePlural: 'Patates',
+      icon: '🥔',
+      seedIcon: '🫘',
+      growthTime: 3 * 60 * 60 * 1000, // 3 heures en ms
+      minReward: 1,
+      maxReward: 3,
+      minigame: 'minesweeper',
+      description: 'Une patate bien ronde qui pousse sous terre.'
+    },
+    carrot: {
+      id: 'carrot',
+      name: 'Carotte',
+      namePlural: 'Carottes',
+      icon: '🥕',
+      seedIcon: '🫘',
+      growthTime: 3 * 60 * 60 * 1000, // 3 heures en ms
+      minReward: 0,
+      maxReward: 4,
+      minigame: 'risk',
+      description: 'Une carotte orange et croquante.'
+    },
+    corn: {
+      id: 'corn',
+      name: 'Maïs',
+      namePlural: 'Maïs',
+      icon: '🌽',
+      seedIcon: '🫘',
+      growthTime: 3 * 60 * 60 * 1000, // 3 heures en ms
+      minReward: 1,
+      maxReward: 3,
+      minigame: 'falling',
+      description: 'Un épi de maïs doré et juteux.'
+    }
+  },
+
+  // Prix des graines dans la boutique (en strange_root)
+  seedPrices: {
+    potato: { type: 'strange_root', count: 1, seedsGiven: 2 },
+    carrot: { type: 'strange_root', count: 1, seedsGiven: 2 },
+    corn: { type: 'strange_root', count: 1, seedsGiven: 2 }
+  },
+
+  // Configuration des mini-jeux
+  minigames: {
+    // Démineur pour les patates
+    minesweeper: {
+      gridWidth: 6,
+      gridHeight: 5,
+      minBombs: 3,
+      maxBombs: 5,
+      timeLimit: 60, // secondes
+      // Récompenses: 1 patate par défaut, +1 si terminé à temps, +1 si 0 erreur
+    },
+    // Choix risqué pour les carottes
+    risk: {
+      carrotCount: 5,
+      bombCount: 1,
+      // Le joueur choisit des carottes une à une, peut s'arrêter quand il veut
+      // Si bombe: perd tout
+    },
+    // Grains tombants pour le maïs
+    falling: {
+      duration: 10, // secondes
+      initialSpawnInterval: 750, // ms entre chaque grain au début
+      finalSpawnInterval: 400,   // ms à la fin (accélération)
+      grainVisibleTime: 1750,    // ms qu'un grain reste à l'écran (1.5-2s)
+      // Plus de grains cliqués = plus de maïs récoltés
+    }
+  }
+}
+
+// Items de farming (graines et légumes) pour l'inventaire
+export const farmingItems = {
+  // Graines magiques
+  'potato_seed': {
+    id: 'potato_seed',
+    nom: 'graines de patate',
+    nom_singulier: 'graine de patate',
+    icon: '🥔🫘',
+    vegetableId: 'potato',
+    type: 'seed',
+    description: 'Une graine magique qui fait pousser des patates.'
+  },
+  'carrot_seed': {
+    id: 'carrot_seed',
+    nom: 'graines de carotte',
+    nom_singulier: 'graine de carotte',
+    icon: '🥕🫘',
+    vegetableId: 'carrot',
+    type: 'seed',
+    description: 'Une graine magique qui fait pousser des carottes.'
+  },
+  'corn_seed': {
+    id: 'corn_seed',
+    nom: 'graines de maïs',
+    nom_singulier: 'graine de maïs',
+    icon: '🌽🫘',
+    vegetableId: 'corn',
+    type: 'seed',
+    description: 'Une graine magique qui fait pousser du maïs.'
+  },
+  // Légumes récoltés
+  'potato': {
+    id: 'potato',
+    nom: 'patates',
+    nom_singulier: 'patate',
+    icon: '🥔',
+    type: 'vegetable',
+    description: 'Une délicieuse patate de votre ferme.'
+  },
+  'carrot': {
+    id: 'carrot',
+    nom: 'carottes',
+    nom_singulier: 'carotte',
+    icon: '🥕',
+    type: 'vegetable',
+    description: 'Une belle carotte orange.'
+  },
+  'corn': {
+    id: 'corn',
+    nom: 'maïs',
+    nom_singulier: 'maïs',
+    icon: '🌽',
+    type: 'vegetable',
+    description: 'Un délicieux épi de maïs.'
   }
 }
 

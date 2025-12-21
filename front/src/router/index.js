@@ -7,6 +7,7 @@ import UserProfile from '@/views/UserProfile.vue'
 import Auth from '@/views/AuthView.vue'
 import Announcements from '@/views/Announcements.vue'
 import AnnouncementDetail from '@/views/AnnouncementDetail.vue'
+import Farming from '@/views/Farming.vue'
 
 const routes = [
   {
@@ -62,6 +63,12 @@ const routes = [
     name: 'AnnouncementDetail',
     component: AnnouncementDetail,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/farming',
+    name: 'Farming',
+    component: Farming,
+    meta: { requiresAuth: true }
   },
   {
     path: '/:pathMatch(.*)*',

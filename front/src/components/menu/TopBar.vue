@@ -36,6 +36,9 @@
             <div v-if="isMiningUnlocked" class="mobile-menu-item" @click="isMiningUnlocked ? openMiningFromMenu() : null" :class="{ disabled: !isMiningUnlocked }">
               🪨 Minage 
             </div>
+            <div v-if="isFarmingUnlocked" class="mobile-menu-item" @click="isFarmingUnlocked ? openFarmingFromMenu() : null" :class="{ disabled: !isFarmingUnlocked }">
+              🌾 Potager 
+            </div>
             <div class="mobile-menu-item" @click="openOptions">
               ⚙️ Paramètres
             </div>
@@ -119,7 +122,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['open-profile', 'open-achievements', 'open-options', 'close-achievements', 'open-mining'])
+const emit = defineEmits(['open-profile', 'open-achievements', 'open-options', 'close-achievements', 'open-mining', 'open-farming'])
 
 const showMobileMenu = ref(false)
 const myProfileId = ref('')
@@ -144,6 +147,12 @@ const isMarketUnlocked = computed(() => {
 const isMiningUnlocked = computed(() => {
   const l = level.value || 1
   return l >= 5
+})
+
+// Farming déverrouillé
+const isFarmingUnlocked = computed(() => {
+  const l = level.value || 1
+  return l >= 10
 })
 
 // Succès non réclamés
@@ -257,6 +266,11 @@ function openOptions() {
 
 function openMiningFromMenu() {
   emit('open-mining')
+  showMobileMenu.value = false // Fermer le menu mobile
+}
+
+function openFarmingFromMenu() {
+  emit('open-farming')
   showMobileMenu.value = false // Fermer le menu mobile
 }
 

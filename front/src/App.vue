@@ -7,6 +7,7 @@
       @open-options="openOptions"
       @close-achievements="closeAchievements"
       @open-mining="() => showMiningGame = true"
+      @open-farming="goFarming"
       :achievements-open="showAchievements"
     />
     <div class="main-content">
@@ -38,6 +39,7 @@
       @open-achievements="toggleAchievementsWithSound"
       @open-mining="() => showMiningGame = true"
       @open-quests="toggleQuestsWithSound"
+      @open-farming="goFarming"
     />
     <!-- Mining popup global accessible depuis la BottomBar -->
     <MiningGame v-if="showMiningGame && !isAuthPage" @close="showMiningGame = false" />
@@ -344,6 +346,9 @@ function goCollection() {
 }
 function goSocial() {
   click(); router.push('/social')
+}
+function goFarming() {
+  click(); router.push('/farming')
 }
 function openOptions() {
   sndOpen(); showOptions.value = true
