@@ -2,6 +2,9 @@
  * Fonctions de formatage pour les quêtes
  */
 
+import { formatNumber } from '@/utils/format.js'
+
+
 /**
  * Formate une chaîne de ressource
  * @param {string} type - Type de ressource
@@ -43,21 +46,22 @@ export function formatReward(reward, especies, items) {
 export function formatChallenge(challenge, currentValue) {
   try {
     const objectif = challenge.objectif || 0
+    const formattedObjectif = formatNumber(objectif)
     const progress = Math.min(currentValue || 0, objectif)
 
     const formatters = {
-      'eggs_collected': () => `Récolter ${objectif} œufs (${progress}/${objectif})`,
-      'spawnables_clicked': () => `Cliquer sur ${objectif} objets spawnés (${progress}/${objectif})`,
-      'boxes_opened': () => `Ouvrir ${objectif} boîte${objectif > 1 ? 's' : ''} (${progress}/${objectif})`,
-      'chicken_abilities_used': () => `Utiliser ${objectif} capacité${objectif > 1 ? 's' : ''} de poule${objectif > 1 ? 's' : ''} (${progress}/${objectif})`,
-      'chicken_gifts_collected': () => `Collecter ${objectif} cadeau${objectif > 1 ? 'x' : ''} de poule${objectif > 1 ? 's' : ''} (${progress}/${objectif})`,
-      'mining_games_played': () => `Jouer ${objectif} partie${objectif > 1 ? 's' : ''} de minage (${progress}/${objectif})`,
-      'mining_cells_broken': () => `Briser ${objectif} case${objectif > 1 ? 's' : ''} en minage (${progress}/${objectif})`,
-      'max_eggs_in_click': () => `Récolter ${objectif} œufs en un clic (${progress}/${objectif})`,
+      'eggs_collected': () => `Récolter ${formattedObjectif} œufs (${progress}/${objectif})`,
+      'spawnables_clicked': () => `Cliquer sur ${formattedObjectif} objets spawnés (${progress}/${objectif})`,
+      'boxes_opened': () => `Ouvrir ${formattedObjectif} boîte${objectif > 1 ? 's' : ''} (${progress}/${objectif})`,
+      'chicken_abilities_used': () => `Utiliser ${formattedObjectif} capacité${objectif > 1 ? 's' : ''} de poule${objectif > 1 ? 's' : ''} (${progress}/${objectif})`,
+      'chicken_gifts_collected': () => `Collecter ${formattedObjectif} cadeau${objectif > 1 ? 'x' : ''} de poule${objectif > 1 ? 's' : ''} (${progress}/${objectif})`,
+      'mining_games_played': () => `Jouer ${formattedObjectif} partie${objectif > 1 ? 's' : ''} de minage (${progress}/${objectif})`,
+      'mining_cells_broken': () => `Briser ${formattedObjectif} case${objectif > 1 ? 's' : ''} en minage (${progress}/${objectif})`,
+      'max_eggs_in_click': () => `Récolter ${formattedObjectif} œufs en un clic (${progress}/${objectif})`,
       'chicken_rarity_found': () => {
         const rarityLabels = { 'commune': 'commune', 'rare': 'rare', 'epique': 'épique', 'legendaire': 'légendaire' }
         const rarityLabel = rarityLabels[challenge.rarity] || challenge.rarity
-        return `Trouver ${objectif} poule${objectif > 1 ? 's' : ''} ${rarityLabel}${objectif > 1 ? 's' : ''} (${progress}/${objectif})`
+        return `Trouver ${formattedObjectif} poule${objectif > 1 ? 's' : ''} ${rarityLabel}${objectif > 1 ? 's' : ''} (${progress}/${objectif})`
       },
       'team_stat_req': () => {
         const statLabels = { 'charisme': 'charisme', 'energie': 'énergie', 'intelligence': 'intelligence' }

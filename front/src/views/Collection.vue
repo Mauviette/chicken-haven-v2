@@ -23,6 +23,8 @@
             ⛏️ Artefacts
           </button>
         </div>
+
+
       </div>
       <div class="controls" v-if="activeTab === 'chickens'" style="margin-bottom: 0;">
         <input v-model="searchQuery" type="text" placeholder="Rechercher une poule..." class="search-input" />
@@ -34,25 +36,75 @@
         <button @click="toggleSortOrder" class="sort-order">
           {{ sortOrder === 'asc' ? '⬆️' : '⬇️' }}
         </button>
+
+        <!-- Category filter (moved into controls, compact) -->
+        <div class="category-filter" style="margin-left: 12px; display:flex; align-items:center; gap:8px">
+          <label for="category-select" style="font-size:12px; opacity:0.9; margin-bottom:0;">Catégorie :</label>
+          <select id="category-select" v-model="selectedCategory" class="sort-select" style="min-width:140px">
+            <option value="">Toutes</option>
+            <option v-for="c in categoriesList" :key="c" :value="c">{{ categoriesDisplay[c] || (c.charAt(0).toUpperCase()+c.slice(1)) }}</option>
+          </select>
+          <button v-if="selectedCategory" class="tab-btn" @click="selectedCategory = ''" style="padding:6px 8px; height:36px">✖</button>
+        </div>
       </div>
     </div>
 
     <!-- Grille des poules -->
-    <div v-if="activeTab === 'chickens'" class="poules-grid">
+    <div v-if="activeTab === 'chickens'">
       <div v-if="gameDataLoading" class="loading-message">
         Chargement des données...
       </div>
-      <ChickenCard
-        v-else
-        v-for="poule in filteredPoules"
-        :key="poule.especeId"
-        :poule="poule"
-        :espece="especeData[poule.especeId]"
-        :image="getImage(poule.especeId)"
-        :hiddenImage="hiddenImage"
-        :class="{ 'non-clickable': !poule.owned }"
-        @click="poule.owned ? openDetail(poule) : null"
-      />
+
+      <!-- Si aucune catégorie sélectionnée, affichage normal (recherche + tri) -->
+      <div v-if="!selectedCategory" class="poules-grid">
+        <ChickenCard
+          v-for="poule in filteredPoules"
+          :key="poule.especeId"
+          :poule="poule"
+          :espece="especeData[poule.especeId]"
+          :image="getImage(poule.especeId)"
+          :hiddenImage="hiddenImage"
+          :class="{ 'non-clickable': !poule.owned }"
+          @click="poule.owned ? openDetail(poule) : null"
+        />
+      </div>
+
+      <!-- Si une catégorie est sélectionnée, afficher deux sections -->
+      <div v-else class="category-sections">
+        <div class="category-section">
+          <h3>Se base sur « {{ categoriesDisplay[selectedCategory] || (selectedCategory.charAt(0).toUpperCase()+selectedCategory.slice(1)) }} » <span class="badge">{{ poulesBasedOnCount }}</span></h3>
+          <div class="poules-grid">
+            <ChickenCard
+              v-for="poule in poulesBasedOnCategory"
+              :key="`based-${poule.especeId}`"
+              :poule="poule"
+              :espece="especeData[poule.especeId]"
+              :image="getImage(poule.especeId)"
+              :hiddenImage="hiddenImage"
+              :class="{ 'non-clickable': !poule.owned }"
+              @click="poule.owned ? openDetail(poule) : null"
+            />
+            <div v-if="poulesBasedOnCategory.length === 0" class="info">Aucune poule correspondante</div>
+          </div>
+        </div>
+
+        <div class="category-section">
+          <h3>Donne « {{ categoriesDisplay[selectedCategory] || (selectedCategory.charAt(0).toUpperCase()+selectedCategory.slice(1)) }} » <span class="badge">{{ poulesGivesCount }}</span></h3>
+          <div class="poules-grid">
+            <ChickenCard
+              v-for="poule in poulesGivesCategory"
+              :key="`gives-${poule.especeId}`"
+              :poule="poule"
+              :espece="especeData[poule.especeId]"
+              :image="getImage(poule.especeId)"
+              :hiddenImage="hiddenImage"
+              :class="{ 'non-clickable': !poule.owned }"
+              @click="poule.owned ? openDetail(poule) : null"
+            />
+            <div v-if="poulesGivesCategory.length === 0" class="info">Aucune poule correspondante</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Grille des artefacts -->
@@ -123,12 +175,114 @@ const {
   clearNew
 } = usePoules()
 
-const { especies: especeData, loading: gameDataLoading, artifacts: gameArtifacts } = useGameData()
+const { especies: especeData, loading: gameDataLoading, artifacts: gameArtifacts, talents: talentsData } = useGameData()
 const { team, fetchTeam, artifactSlots, fetchArtifactSlots, level, getLevel } = usePlayer()
 const { artifacts, fetchArtifacts, enrichArtifacts } = useArtifacts()
 const { settings } = useSettings()
 const route = useRoute()
 const router = useRouter()
+
+// Category filter (talent categories)
+const selectedCategory = ref('')
+
+const categoriesList = computed(() => {
+  try {
+    const t = talentsData.value || {}
+    const s = new Set()
+    for (const k of Object.keys(t)) {
+      const c = t[k]?.categories || {}
+      ;(c.based_on || []).forEach(x => s.add(x))
+      ;(c.gives || []).forEach(x => s.add(x))
+    }
+    return [...s].sort()
+  } catch (_) { return [] }
+})
+
+// Helper: sort a list of poules according to current sortKey/sortOrder and team priority
+function sortPoules(list) {
+  if (!Array.isArray(list)) return []
+  const teamSlots = (team.value?.slots || []).map(s => s?.especeId)
+  return [...list].sort((a, b) => {
+    // compute comparable values
+    const especeA = especeData.value?.[a.especeId]
+    const especeB = especeData.value?.[b.especeId]
+    const rareA = rareteOrder[especeA?.rarete] || 0
+    const rareB = rareteOrder[especeB?.rarete] || 0
+
+    let valA, valB
+    if (sortKey.value === 'rarete') {
+      valA = rareA
+      valB = rareB
+    } else if (sortKey.value === 'niveauTalent') {
+      valA = a.niveauTalent || 0
+      valB = b.niveauTalent || 0
+    } else {
+      valA = a[sortKey.value] ?? 0
+      valB = b[sortKey.value] ?? 0
+    }
+
+    const dir = sortOrder.value === 'asc' ? 1 : -1
+    if (valA !== valB) return (valA - valB) * dir
+
+    // fallback: préférer les poules en équipe
+    const aIn = teamSlots.includes(a.especeId)
+    const bIn = teamSlots.includes(b.especeId)
+    if (aIn !== bIn) return aIn ? -1 : 1
+
+    return 0
+  })
+}
+
+// Poules correspondant à la catégorie : se base sur (talent.based_on includes)
+const poulesBasedOnCategory = computed(() => {
+  if (!selectedCategory.value) return []
+  const cat = selectedCategory.value
+  // Seules les poules débloquées sont affichées
+  const list = (poules.value || []).filter(p => p.owned).filter(p => {
+    const espece = especeData.value?.[p.especeId]
+    const talentName = espece?.talent
+    const tinfo = talentsData.value?.[talentName]
+    return Array.isArray(tinfo?.categories?.based_on) && tinfo.categories.based_on.includes(cat)
+  })
+  return sortPoules(list)
+})
+
+// Poules correspondant à la catégorie : donne (talent.gives includes)
+const poulesGivesCategory = computed(() => {
+  if (!selectedCategory.value) return []
+  const cat = selectedCategory.value
+  // Seules les poules débloquées sont affichées
+  const list = (poules.value || []).filter(p => p.owned).filter(p => {
+    const espece = especeData.value?.[p.especeId]
+    const talentName = espece?.talent
+    const tinfo = talentsData.value?.[talentName]
+    return Array.isArray(tinfo?.categories?.gives) && tinfo.categories.gives.includes(cat)
+  })
+  return sortPoules(list)
+})
+
+// Mapping display names for categories (supporte clés FR/EN)
+const categoriesDisplay = {
+  stock: 'Stock',
+  production: 'Production',
+  charisma: '✨ Charisme',
+  charisme: '✨ Charisme',
+  intelligence: '🧠 Intelligence',
+  energie: '⚡ Énergie',
+  energy: '⚡ Énergie',
+  spawnable: 'Spawnable',
+  spawn: 'Spawnable',
+  buff: 'Buff',
+  storage: 'Stockage',
+  storage_bonus: 'Stockage',
+  eggs: 'Œufs',
+  ability: 'Capacité',
+  abilities: 'Capacités'
+}
+
+// counts for badges
+const poulesBasedOnCount = computed(() => poulesBasedOnCategory.value.length)
+const poulesGivesCount = computed(() => poulesGivesCategory.value.length)
 
 // Utiliser les settings pour le tri
 const sortKey = computed({
@@ -455,7 +609,51 @@ watch(
   .search-input {
     display: none;
   }
+  .category-filter {
+    width: 100%;
+    margin-top: 8px;
+  }
 }
+
+/* Category section styles */
+.category-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  color: var(--text-header);
+}
+.category-section .badge {
+  background: var(--border-primary);
+  color: var(--text-primary);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* In dark/apocalypse mode ensure visibility for selects and options */
+.apocalypse-mode .category-section h3,
+.apocalypse-mode .category-filter label,
+.apocalypse-mode .category-filter select,
+.apocalypse-mode .sort-select,
+.apocalypse-mode select,
+.apocalypse-mode .sort-select option,
+.apocalypse-mode select option {
+  color: var(--text-primary) !important;
+  background: rgba(42,10,10,0.8) !important;
+}
+
+/* Also ensure dropdown arrows / native UI has readable color */
+.apocalypse-mode .sort-select {
+  background: rgba(42,10,10,0.8) !important;
+  border-color: #ff6666 !important;
+}
+
+/* Compact the category filter to be less intrusive */
+.category-filter label { margin-right: 6px }
+.category-filter .sort-select { min-width: 130px }
+
 
 
 .search-input {

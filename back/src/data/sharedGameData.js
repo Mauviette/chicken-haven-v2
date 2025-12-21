@@ -202,6 +202,7 @@ export const talentsData = {
     description: "Des œufs blancs apparaissent sur l'écran.",
     effet: "Des œufs blancs apparaissent régulièrement, en cliquer un donne votre stockage max x{1+niveau*0.25} œufs.",
     icon: '🍀',
+    categories : { based_on : ["stock"], gives : ["eggs", "spawnable"]},
     calculation: {
       combine: 'not_linear',
       triggers: [
@@ -226,6 +227,7 @@ export const talentsData = {
     description: "Augmente vos revenus en fonction de l'énergie de l'équipe.",
     effet: "+{niveau*0.2} de revenu par seconde pour chaque point d'énergie dans l'équipe.",
     icon: '⚡',
+    categories : { based_on : ["energy"], gives : ["production"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -247,6 +249,7 @@ export const talentsData = {
     description: "Augmente l'énergie et l'intelligence de l'équipe.",
     effet: "+{niveau} énergie et intelligence à toutes les poules de l'équipe.",
     icon: '🏋️',
+    categories : { based_on : [], gives : ["energy","intelligence"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -265,6 +268,7 @@ export const talentsData = {
     description: "Augmente les revenus en fonction de l'intelligence ou de l'énergie de l'équipe.",
     effet: "+{niveau*0.25} de revenu par seconde pour chaque point d'énergie et/ou d'intelligence dans l'équipe.",
     icon: '🏃',
+    categories : { based_on : ["energy","intelligence"], gives : ["production"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -287,6 +291,7 @@ export const talentsData = {
     effet: "+{niveau*2} de stockage par point de charisme",
     nivType: 'basic',
     icon: '🔎',
+    categories : { based_on : ["charisma"], gives : ["stock"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -309,6 +314,7 @@ export const talentsData = {
     effet: "+{niveau*2} intelligence et -{niveau*1} charisme à toute l'équipe.",
     nivType: 'basic',
     icon: '🕵️',
+    categories : { based_on : [], gives : ["intelligence"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -327,6 +333,7 @@ export const talentsData = {
     description: "Des chocolats apparaissent sur l'écran qui augmentent la production et le stockage lorsque cliqués.",
     effet: "Des chocolats apparaissent, en cliquer un augmente la production et le stockage de {25+niveau*5}% pendant 15s.",
     icon: '🍫',
+    categories : { based_on : [], gives : ["spawnable","buff","production"]},
     calculation: {
       combine: 'not_linear',
       triggers: [
@@ -353,6 +360,7 @@ export const talentsData = {
     description: "Augmente la production et le stockage max en fonction de l'intelligence.",
     effet: "Augmente le stockage de {niveau} et la production de {niveau*0.1} par point d'intelligence dans l'équipe.",
     icon: '🛡️',
+    categories : { based_on : ["intelligence"], gives : ["stock","production"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -384,6 +392,7 @@ export const talentsData = {
   'Maligne': {
     description: "Cliquez-moi pour augmenter l'intelligence temporairement.",
     effet: "Cliquez moi pour augmenter l'intelligence globale de {50+niveau*25}% pendant 20s. Cooldown 1 minute", //Clic se fait sur TeamParadeChicken
+    categories : { based_on : ["ability"], gives : ["intelligence","buff"]},
     icon: '🧠',
     calculation: {
       triggers: [ { type: 'active' } ],
@@ -404,6 +413,7 @@ export const talentsData = {
     description: "Augmente le charisme.",
     effet: "+{niveau*5} charisme à toute l'équipe",
     icon: '👑',
+    categories : { based_on : [], gives : ["charisma"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -421,6 +431,7 @@ export const talentsData = {
     description: "Cliquez-moi pour augmenter le stockage temporairement.",
     effet: "Cliquez moi pour augmenter le stockage de {25+niveau*15}% pendant 15s. Cooldown 1 minute",
     icon: '💨',
+    categories : { based_on : ["ability"], gives : ["stock","buff"]},
     calculation: {
       triggers: [ { type: 'active' } ],
       cooldown_ms: 60000,
@@ -438,6 +449,7 @@ export const talentsData = {
     description: "Cliquez-moi pour augmenter les revenus temporairement.",
     effet: "Cliquez moi pour augmenter le revenu de {100+niveau*50}% pendant 10s. Cooldown 1 minute",
     icon: '🎉',
+    categories : { based_on : ["ability"], gives : ["production","buff"]},
     calculation: {
       triggers: [ { type: 'active' } ],
       cooldown_ms: 60000,
@@ -455,6 +467,7 @@ export const talentsData = {
     description: "Augmente votre stockage maximum de façon multiplicative.",
     effet: "+{15 + niveau*10}% de stockage (multiplicatif, passif)",
     icon: '🪐',
+    categories : { based_on : [], gives : ["stock"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -469,6 +482,7 @@ export const talentsData = {
     description: "Augmente le revenu par seconde en fonction de TOUTES les stats d'équipe.",
     effet: "+{1*niveau} de revenu par seconde par point de stat (Intelligence + Énergie + Charisme)",
     icon: '🦆',
+    categories : { based_on : ["intelligence","energy","charisma"], gives : ["production"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -491,6 +505,7 @@ export const talentsData = {
     description: "Des poussins roses apparaissent sur l'écran.",
     effet: "Des poussins roses apparaissent régulièrement, en cliquer un donne votre charisme actuel x{3+niveau*2} œufs.",
     icon: '🕶️',
+    categories : { based_on : ["charisma"], gives : ["eggs","spawnable"]},
     calculation: {
       combine: 'not_linear',
       triggers: [
@@ -513,7 +528,8 @@ export const talentsData = {
   'Optimisatrice': {
     description: "Augmente la production en fonction du stockage maximum.",
     effet: "+{0.1 + niveau*0.025} de production par point de stockage maximum.",
-    icon: '🦆',
+    icon: '🪿',
+    categories : { based_on : ["stock"], gives : ["production"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -535,6 +551,7 @@ export const talentsData = {
     description: "Arrête le temps pendant 5s, chaque clic sur l'oeuf produit un pourcentage de la production/s.",
     effet: "Arrête le temps et la production pendant 5s. Pendant ce temps, chaque clic sur l'oeuf produit 25% de la production/s en oeufs. Cooldown 1 min",
     icon: '⏰',
+    categories : { based_on : ["ability","production"], gives : ["eggs"]},
     calculation: {
       triggers: [ { type: 'active' } ],
       cooldown_ms: 60000,
@@ -552,6 +569,7 @@ export const talentsData = {
     description: "Sacrifie l'intelligence et le charisme de l'équipe pour renforcer son énergie.",
     effet: "Met le charisme et l'intelligence de l'équipe à zéro, puis ajoute leur somme à l'énergie de l'équipe.",
     icon: '⚔️',
+    categories : { based_on : ["charisma","intelligence"], gives : ["energy"]},
     calculation: {
       triggers: [ { type: 'passive' } ],
       effects: [
@@ -1404,6 +1422,52 @@ export const questsData = {
         reward: {
           type: 'chicken',
           especeId: 'barbarian',
+          quantite: 1
+        }
+      }
+    ]
+  },
+  'bizarre_adventure': {
+    id: 'bizarre_adventure',
+    nom: 'Une aventure bizarre',
+    description: 'Une poule mystérieuse a été aperçue autour du poulailler.',
+    icon: '⏳',
+    unlock_level: 10,
+    steps: [
+      {
+        id: '1',
+        description: 'Récoltez quelques oeufs et atteignez un gros clic en une fois pour prouver votre force.',
+        challenges: [
+          { type: 'eggs_collected', objectif: 1000000 },
+          { type: 'max_eggs_in_click', objectif: 100000 }
+        ],
+        reward: {
+          type: 'mining_token',
+          quantite: 3
+        }
+      },
+      {
+        id: '2',
+        description: 'Trouver 20 poules épiques et avoir au minimum 300 de production pourrait nous aider à la débusquer.',
+        challenges: [
+          { type: 'eggs_collected', objectif: 500000 },
+          { type: 'chicken_rarity_found', rarity: 'epique', objectif: 25 }
+        ],
+        reward: {
+          type: 'production_token',
+          quantite: 10
+        }
+      },
+      {
+        id: '3',
+        description: 'Vous entendez des bruits venant d\'un buisson, récoltez encore quelques oeufs et ayez assez d\'intelligence pour la faire venir!',
+        challenges: [
+          { type: 'eggs_collected', objectif: 2000000 },
+          { type: 'team_stat_req', req: 'above', stat: 'intelligence', num: 50, objectif: 1 }
+        ],
+        reward: {
+          type: 'chicken',
+          especeId: 'pouletaro',
           quantite: 1
         }
       }

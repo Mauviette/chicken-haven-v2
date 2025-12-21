@@ -255,6 +255,7 @@ import { useSound } from '@/composables/useSound'
 import { useGameData } from '@/composables/useGameData'
 import { useRoute } from 'vue-router'
 import { usePoules } from '@/composables/usePoules'
+import { formatNumber } from '@/utils/format.js'
 import {
   formatQuestReward,
   getQuestRewardIcon,
@@ -1461,11 +1462,11 @@ const getStepProgressText = (step) => {
 }
 
 .dark-mode .reward-label {
-  color: #e0e0e0;
+  color: #707070;
 }
 
 .dark-mode .reward-display .reward-amount {
-  color: #e0e0e0;
+  color: #707070;
 }
 
 .dark-mode .accept-quest-btn {
