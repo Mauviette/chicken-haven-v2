@@ -58,15 +58,18 @@ const currentWeatherTooltip = computed(() => {
   
   if (effects.potato !== 0) {
     const sign = effects.potato > 0 ? '+' : ''
-    html += `🥔 Patates: ${sign}${Math.round(effects.potato * 100)}%<br>`
+    const color = effects.potato > 0 ? '#4CAF50' : '#F44336'
+    html += `<span style="color: ${color}">🥔 Patates: ${sign}${Math.round(effects.potato * 100)}%</span><br>`
   }
   if (effects.carrot !== 0) {
     const sign = effects.carrot > 0 ? '+' : ''
-    html += `🥕 Carottes: ${sign}${Math.round(effects.carrot * 100)}%<br>`
+    const color = effects.carrot > 0 ? '#4CAF50' : '#F44336'
+    html += `<span style="color: ${color}">🥕 Carottes: ${sign}${Math.round(effects.carrot * 100)}%</span><br>`
   }
   if (effects.corn !== 0) {
     const sign = effects.corn > 0 ? '+' : ''
-    html += `🌽 Maïs: ${sign}${Math.round(effects.corn * 100)}%<br>`
+    const color = effects.corn > 0 ? '#4CAF50' : '#F44336'
+    html += `<span style="color: ${color}">🌽 Maïs: ${sign}${Math.round(effects.corn * 100)}%</span><br>`
   }
   
   return html
@@ -74,7 +77,28 @@ const currentWeatherTooltip = computed(() => {
 
 const nextWeatherTooltip = computed(() => {
   if (!nextWeather.value) return ''
-  return `<strong>Prochain temps:</strong> ${nextWeather.value.name}<br>${nextWeather.value.description}`
+  const effects = nextWeather.value.effects || {}
+  let html = `<strong>${nextWeather.value.name}</strong><br>`
+  html += `${nextWeather.value.description}<br><br>`
+  html += '<strong>Effets:</strong><br>'
+  
+  if (effects.potato !== 0) {
+    const sign = effects.potato > 0 ? '+' : ''
+    const color = effects.potato > 0 ? '#4CAF50' : '#F44336'
+    html += `<span style="color: ${color}">🥔 Patates: ${sign}${Math.round(effects.potato * 100)}%</span><br>`
+  }
+  if (effects.carrot !== 0) {
+    const sign = effects.carrot > 0 ? '+' : ''
+    const color = effects.carrot > 0 ? '#4CAF50' : '#F44336'
+    html += `<span style="color: ${color}">🥕 Carottes: ${sign}${Math.round(effects.carrot * 100)}%</span><br>`
+  }
+  if (effects.corn !== 0) {
+    const sign = effects.corn > 0 ? '+' : ''
+    const color = effects.corn > 0 ? '#4CAF50' : '#F44336'
+    html += `<span style="color: ${color}">🌽 Maïs: ${sign}${Math.round(effects.corn * 100)}%</span><br>`
+  }
+  
+  return html
 })
 
 // Timer
@@ -153,5 +177,56 @@ onUnmounted(() => {
 
 .next-weather .weather-icon {
   opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .weather-display {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  
+  .weather-icon {
+    font-size: 20px;
+  }
+  
+  .weather-name {
+    font-size: 12px;
+  }
+  
+  .weather-timer {
+    font-size: 10px;
+  }
+  
+  .weather-separator {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .weather-display {
+    padding: 5px 8px;
+    gap: 4px;
+  }
+  
+  .current-weather {
+    gap: 4px;
+  }
+  
+  .weather-icon {
+    font-size: 18px;
+  }
+  
+  .weather-name {
+    font-size: 11px;
+  }
+  
+  .weather-timer {
+    font-size: 9px;
+  }
+  
+  .weather-separator {
+    font-size: 12px;
+  }
 }
 </style>

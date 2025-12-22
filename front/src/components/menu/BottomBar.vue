@@ -23,16 +23,6 @@
           title="Jeton de minage disponible"
         ></span>
       </div>
-      <div class="farming-button badge-wrapper" style="margin-left:8px;">
-          <ActionButton
-            :onClick="() => emit('open-farming')"
-            :disabled="!isFarmingUnlocked"
-            :title="!isFarmingUnlocked ? 'Débloqué au niveau 10' : ''"
-          >
-            <span class="desktop-text">🌾</span>
-            <span class="mobile-text">🌾</span>
-          </ActionButton>
-      </div>
     </div>
 
     <div class="main-buttons">
@@ -92,7 +82,19 @@
         <span class="desktop-text">👥 Social</span>
         <span class="mobile-text">👥</span>
       </ActionButton>
+
+      <ActionButton
+        :onClick="() => emit('open-farming')"
+        :disabled="route.path === '/farming' || !isFarmingUnlocked"
+        :active="route.path === '/farming'"
+        :title="!isFarmingUnlocked ? 'Débloqué au niveau 10' : ''"
+        class="mobile-compact"
+      >
+        <span class="desktop-text">🪴 Potager</span>
+        <span class="mobile-text">🪴</span>
+      </ActionButton>
     </div>
+
 
     <div class="side-buttons right-side">
       <div class="quests-button badge-wrapper" style="margin-right:8px;">

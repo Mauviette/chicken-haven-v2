@@ -67,7 +67,7 @@ const props = defineProps({
   vegetableData: Object
 })
 
-const emit = defineEmits(['complete', 'close'])
+const emit = defineEmits(['complete', 'close', 'save-result'])
 
 // Configuration
 const DURATION = props.config.duration || 10 // secondes
@@ -230,10 +230,10 @@ function endGame() {
         cancelAnimationFrame(animationFrame)
       }
       
-      // Envoyer la récompense immédiatement pour éviter la perte si actualisation
+      // Sauvegarder la récompense immédiatement pour éviter la perte si actualisation
       if (!rewardSent.value) {
         rewardSent.value = true
-        emit('complete', finalReward.value)
+        emit('save-result', finalReward.value)
       }
     }
   }
@@ -243,18 +243,19 @@ function endGame() {
 
 function collectReward() {
   harvestCollect()
-  emit('close')
+  emit('complete')
 }
 
 function onClose() {
   if (!rewardSent.value) {
     rewardSent.value = true
     if (gameStarted.value) {
-      emit('complete', finalReward.value)
+      emit('save-result', finalReward.value)
     } else {
-      emit('complete', 1) // Récompense minimum
+      emit('save-result', 1) // Récompense minimum
     }
   }
+  emit('complete')
 }
 
 onUnmounted(() => {
@@ -424,5 +425,103 @@ onUnmounted(() => {
 .collect-btn:hover {
   background: #A0522D;
   transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .corn-falling-game h2 {
+    font-size: 18px;
+  }
+  
+  .game-desc {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+  
+  .timer-bar {
+    height: 16px;
+    margin-bottom: 8px;
+  }
+  
+  .timer-text {
+    font-size: 10px;
+  }
+  
+  .score-display {
+    margin-bottom: 10px;
+  }
+  
+  .score-icon {
+    font-size: 24px;
+  }
+  
+  .score-value {
+    font-size: 26px;
+  }
+  
+  .game-area {
+    height: 200px;
+    border-width: 2px;
+    border-radius: 10px;
+  }
+  
+  .grain {
+    width: 48px;
+    height: 48px;
+    font-size: 26px;
+    margin: -6px;
+  }
+  
+  .start-btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+  
+  .game-over {
+    padding: 12px;
+    margin-top: 12px;
+  }
+  
+  .game-over h3 {
+    font-size: 16px;
+  }
+  
+  .game-over p {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  
+  .collect-btn {
+    padding: 8px 20px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .game-area {
+    height: 180px;
+  }
+  
+  .grain {
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+    margin: -5px;
+  }
+  
+  .start-btn {
+    padding: 10px 24px;
+    font-size: 14px;
+  }
+}
+
+/* Touch-friendly: augmenter les zones de tap */
+@media (pointer: coarse) {
+  .grain {
+    width: 60px;
+    height: 60px;
+    margin: -10px;
+  }
 }
 </style>

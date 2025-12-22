@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
 import { usePlayer } from '@/composables/usePlayer'
 import { useGameData } from '@/composables/useGameData'
 import { apiGet } from '@/utils/api.js'
@@ -103,9 +103,12 @@ export function useUpgradesAvailability() {
   })
 
   // Optional: also broadcast once mounted in any component using this composable
-  onMounted(() => {
-    broadcast()
-  })
+  const instance = getCurrentInstance()
+  if (instance) {
+    onMounted(() => {
+      broadcast()
+    })
+  }
 
   return {
     hasAvailableUpgrade,

@@ -2,7 +2,7 @@
   <div class="farming-view" :class="weatherClass">
     <!-- En-tête avec météo -->
     <div class="farming-header">
-      <h1>🌾 Ma Ferme</h1>
+      <h1>Mon potager</h1>
       <WeatherDisplay :weather="weather" @refresh="fetchWeather" />
     </div>
 
@@ -19,10 +19,13 @@
           >
             <div 
               class="seed-item"
-              :class="{ 'has-seeds': seeds[type] > 0, 'dragging': draggedSeed === type }"
+              :class="{ 'has-seeds': seeds[type] > 0, 'dragging': draggedSeed === type, 'touch-selected': touchSelectedSeed === type }"
               draggable="true"
               @dragstart="onDragStart($event, type)"
               @dragend="onDragEnd"
+              @touchstart="onTouchStart($event, type)"
+              @touchend="(e) => e.preventDefault()"
+              @click="isMobile ? null : onSeedClick(type)"
             >
               <span class="seed-icon">🫘<span class="mini-icon">{{ seed.vegIcon }}</span></span>
               <span class="seed-count">{{ seeds[type] || 0 }}</span>
@@ -53,6 +56,7 @@
             @dragover="onDragOver($event, slotIndex - 1)"
             @drop="onDrop($event, slotIndex - 1)"
             @click="onSlotClick(slotIndex - 1)"
+            @touchend="onTouchEnd($event, slotIndex - 1)"
           >
             <template v-if="isSlotUnlocked(slotIndex - 1)">
               <div v-if="getPlantation(slotIndex - 1)" class="plantation">
@@ -62,9 +66,19 @@
                   @harvest="onHarvest(slotIndex - 1)"
                 />
               </div>
-              <div v-else class="empty-slot">
+              <div v-else class="empty-slot" :class="{ 'touch-target': touchSelectedSeed }">
                 <span class="empty-icon">🌱</span>
-                <span class="empty-text">Glissez une graine</span>
+                <span class="empty-text">
+                  <span v-if="touchSelectedSeed && isMobile" class="instruction-text">
+                    Tap ici pour planter
+                  </span>
+                  <span v-else-if="isMobile" class="instruction-text">
+                    Tap la graine
+                  </span>
+                  <span v-else class="instruction-text">
+                    Plantez une graine ici
+                  </span>
+                </span>
               </div>
             </template>
             <template v-else>
@@ -78,7 +92,7 @@
       </div>
 
       <!-- Sidebar droite: Légumes récoltés -->
-      <div class="sidebar vegetables-sidebar">
+      <div v-if="!isMobile" class="sidebar vegetables-sidebar">
         <h3 class="sidebar-title">Mes Légumes</h3>
         <div class="vegetables-list">
           <Tooltip 
@@ -93,7 +107,31 @@
           </Tooltip>
         </div>
       </div>
+
+      <!-- Bouton inventaire mobile -->
+      <div v-if="isMobile" class="inventory-button-wrapper">
+        <ActionButton :onClick="() => showInventory = true">
+          Mes légumes
+        </ActionButton>
+      </div>
     </div>
+
+    <!-- Popup inventaire (mobile) -->
+    <Popup v-if="isMobile && showInventory" @close="showInventory = false">
+      <h2 style="margin-top: 0; text-align: center;">Mon Inventaire</h2>
+      <div class="vegetables-list" style="margin-top: 20px;">
+        <div
+          v-for="(veg, type) in vegetablesDisplay" 
+          :key="type"
+          class="vegetable-item large"
+          :class="{ 'has-vegetables': vegetables[type] > 0 }"
+        >
+          <span class="vegetable-icon">{{ veg.icon }}</span>
+          <span class="vegetable-count">{{ vegetables[type] || 0 }}</span>
+          <p class="vegetable-name-inline">{{ veg.name }}</p>
+        </div>
+      </div>
+    </Popup>
 
     <!-- Popup boutique -->
     <SeedShop 
@@ -108,6 +146,7 @@
       v-if="activeMinigame === 'minesweeper'"
       :config="minigameConfig"
       :vegetable-data="minigameVegetable"
+      @save-result="onSaveResult"
       @complete="onMinigameComplete"
       @close="cancelMinigame"
     />
@@ -116,6 +155,7 @@
       v-if="activeMinigame === 'risk'"
       :config="minigameConfig"
       :vegetable-data="minigameVegetable"
+      @save-result="onSaveResult"
       @complete="onMinigameComplete"
       @close="cancelMinigame"
     />
@@ -124,6 +164,7 @@
       v-if="activeMinigame === 'falling'"
       :config="minigameConfig"
       :vegetable-data="minigameVegetable"
+      @save-result="onSaveResult"
       @complete="onMinigameComplete"
       @close="cancelMinigame"
     />
@@ -139,6 +180,8 @@ import Tooltip from '@/components/menu/Tooltip.vue'
 import WeatherDisplay from '@/components/farming/WeatherDisplay.vue'
 import PlantationCell from '@/components/farming/PlantationCell.vue'
 import SeedShop from '@/components/farming/SeedShop.vue'
+import Popup from '@/components/menu/Popup.vue'
+import ActionButton from '@/components/menu/ActionButton.vue'
 import MinesweeperGame from '@/components/farming/MinesweeperGame.vue'
 import CarrotRiskGame from '@/components/farming/CarrotRiskGame.vue'
 import CornFallingGame from '@/components/farming/CornFallingGame.vue'
@@ -167,11 +210,14 @@ const { farming: farmingData } = useGameData()
 
 // État local
 const showShop = ref(false)
+const showInventory = ref(false)
 const draggedSeed = ref(null)
+const touchSelectedSeed = ref(null) // Pour le mode tactile (mobile)
 const activeMinigame = ref(null)
 const minigameConfig = ref(null)
 const minigameVegetable = ref(null)
 const harvestingSlot = ref(null)
+const isMobile = ref(false)
 
 // Données d'affichage des graines avec effet météo
 const seedsDisplay = computed(() => {
@@ -215,14 +261,17 @@ const weatherClass = computed(() => {
 const vegetablesDisplay = computed(() => ({
   potato: {
     icon: '🥔',
+    name: 'Patate',
     tooltip: `<strong>Patates</strong><br>Vous en avez: ${vegetables.value.potato || 0}`
   },
   carrot: {
     icon: '🥕',
+    name: 'Carotte',
     tooltip: `<strong>Carottes</strong><br>Vous en avez: ${vegetables.value.carrot || 0}`
   },
   corn: {
     icon: '🌽',
+    name: 'Maïs',
     tooltip: `<strong>Maïs</strong><br>Vous en avez: ${vegetables.value.corn || 0}`
   }
 }))
@@ -240,6 +289,41 @@ function onDragStart(event, seedType) {
 
 function onDragEnd() {
   draggedSeed.value = null
+}
+
+// Support tactile (mobile) - sélection par tap UNIQUEMENT sur mobile
+function onTouchStart(event, seedType) {
+  // Sélectionner uniquement sur mobile
+  if (!isMobile.value || (seeds.value[seedType] || 0) < 1) return
+  touchSelectedSeed.value = seedType
+}
+
+function onSeedClick(seedType) {
+  if ((seeds.value[seedType] || 0) < 1) return
+  
+  // Sur mobile: toggle la sélection
+  if (isMobile.value) {
+    if (touchSelectedSeed.value === seedType) {
+      touchSelectedSeed.value = null
+    } else {
+      touchSelectedSeed.value = seedType
+    }
+  }
+}
+
+async function onTouchEnd(event, slotIndex) {
+  // Planter seulement sur mobile ET avec une graine sélectionnée
+  if (!isMobile.value || !touchSelectedSeed.value) return
+  if (!isSlotUnlocked(slotIndex)) return
+  if (getPlantation(slotIndex)) return
+  
+  try {
+    await plantSeed(slotIndex, touchSelectedSeed.value)
+    plantSeedSound()
+    touchSelectedSeed.value = null
+  } catch (err) {
+    console.error('Erreur de plantation:', err)
+  }
 }
 
 function onDragOver(event, slotIndex) {
@@ -286,13 +370,17 @@ async function onHarvest(slotIndex) {
   }
 }
 
-async function onMinigameComplete(reward) {
+// Sauvegarde le résultat sans fermer le popup (pour éviter perte si actualisation)
+async function onSaveResult(reward) {
   try {
     await completeHarvest(harvestingSlot.value, reward)
   } catch (err) {
-    console.error('Erreur de finalisation:', err)
+    console.error('Erreur de sauvegarde:', err)
   }
-  
+}
+
+// Ferme le popup après que le joueur ait cliqué sur "Récupérer"
+function onMinigameComplete() {
   activeMinigame.value = null
   minigameConfig.value = null
   minigameVegetable.value = null
@@ -344,7 +432,16 @@ function getSlotClass(slotIndex) {
 // Rafraîchir la météo périodiquement
 let weatherInterval = null
 
+// Déterminer si on est sur mobile
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768 || 'ontouchstart' in window
+}
+
 onMounted(async () => {
+  // Déterminer si mobile
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  
   try {
     await fetchState()
   } catch (err) {
@@ -361,6 +458,7 @@ onUnmounted(() => {
   if (weatherInterval) {
     clearInterval(weatherInterval)
   }
+  window.removeEventListener('resize', checkMobile)
 })
 </script>
 
@@ -372,6 +470,8 @@ onUnmounted(() => {
   background: linear-gradient(180deg, #B8E6B0 0%, #8BC883 50%, #6B9E65 100%);
   cursor: url('@/assets/ui/cursor/hand_point.png') 0 0, auto;
   transition: background 0.5s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Météo ensoleillée */
@@ -505,6 +605,18 @@ onUnmounted(() => {
   transform: scale(0.95);
 }
 
+.seed-item.touch-selected {
+  border-color: #4CAF50;
+  background: #E8F5E9;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3);
+  animation: pulse-selection 1s infinite;
+}
+
+@keyframes pulse-selection {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3); }
+  50% { box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.5); }
+}
+
 .seed-item:not(.has-seeds) {
   opacity: 0.5;  
   cursor: url('@/assets/ui/cursor/disabled.png') 0 0, pointer;
@@ -542,6 +654,43 @@ onUnmounted(() => {
   gap: 2px;
 }
 
+.vegetable-item.large {
+  width: 70px;
+  height: 70px;
+  padding: 12px;
+  position: relative;
+}
+
+.vegetable-item-with-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.vegetable-name {
+  margin: 0;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 12px;
+  color: #5D4037;
+  text-align: center;
+  font-weight: 500;
+}
+
+.vegetable-name-inline {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 10px;
+  color: #5D4037;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1;
+}
+
 .vegetable-item.has-vegetables {
   border-color: #228B22;
   background: #F0FFF0;
@@ -563,6 +712,9 @@ onUnmounted(() => {
   font-size: 14px;
   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer;
   transition: all 0.2s ease;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .shop-button:hover {
@@ -671,6 +823,17 @@ onUnmounted(() => {
   opacity: 0.7;
 }
 
+.empty-slot.touch-target {
+  opacity: 1;
+  color: #4CAF50;
+  animation: pulse-target 1s infinite;
+}
+
+@keyframes pulse-target {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .empty-icon {
   font-size: 32px;
 }
@@ -679,6 +842,11 @@ onUnmounted(() => {
   font-family: 'Fredoka', sans-serif;
   font-size: 11px;
   text-align: center;
+  line-height: 1.2;
+}
+
+.instruction-text {
+  display: block;
 }
 
 .locked-slot {
@@ -706,39 +874,360 @@ onUnmounted(() => {
   height: 100%;
 }
 
+/* Inventaire popup (mobile) */
+.inventory-button-wrapper {
+  margin-top: 8px;
+  margin-bottom: -8px;
+}
+
+.inventory-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.inventory-content {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 12px;
+  border: 3px solid #8B4513;
+  padding: 20px;
+  max-width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #DEB887;
+}
+
+.inventory-header h2 {
+  margin: 0;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 20px;
+  color: #5D4037;
+}
+
+.inventory-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #8B4513;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.inventory-close:hover {
+  color: #5D4037;
+  transform: scale(1.2);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .farming-content {
     flex-direction: column;
     align-items: center;
+    gap: 15px;
   }
   
   .sidebar {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
+    padding: 10px;
+  }
+  
+  .sidebar-title {
+    font-size: 14px;
+    margin-bottom: 8px;
   }
   
   .seeds-list, .vegetables-list {
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
+    gap: 8px;
   }
   
   .seed-item, .vegetable-item {
     flex: 0 0 auto;
+    width: 65px;
+    height: 65px;
+  }
+  
+  .shop-button {
+    margin-top: 10px;
+    width: 100%;
+    max-width: 200px;
   }
 }
 
-@media (max-width: 500px) {
-  .farm-grid {
-    grid-template-columns: repeat(3, 100px);
-    grid-template-rows: repeat(3, 100px);
+@media (max-width: 600px) {
+  .farming-view {
+    padding: 8px;
+    padding-bottom: 80px;
+    overflow-y: auto;
+  }
+  
+  .farming-header {
+    flex-direction: column;
     gap: 8px;
-    padding: 12px;
+    padding: 8px;
+    margin-bottom: 10px;
+    max-width: 100%;
   }
   
   .farming-header h1 {
     font-size: 20px;
+  }
+  
+  .farming-content {
+    width: 100%;
+    max-width: calc(100% - 4px);
+    box-sizing: border-box;
+  }
+  
+  .farm-grid {
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    gap: 6px;
+    padding: 10px;
+  }
+  
+  .farm-slot {
+    border-radius: 6px;
+  }
+  
+  .empty-icon {
+    font-size: 26px;
+  }
+  
+  .empty-text {
+    font-size: 10px;
+  }
+  
+  .lock-icon {
+    font-size: 26px;
+  }
+  
+  .unlock-price {
+    font-size: 11px;
+    padding: 2px 5px;
+  }
+  
+  .sidebar {
+    padding: 8px;
+    width: 100%;
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+  }
+  
+  .sidebar-title {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  
+  .seed-item, .vegetable-item {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .seed-icon, .vegetable-icon {
+    font-size: 22px;
+  }
+  
+  .seed-count, .vegetable-count {
+    font-size: 11px;
+    padding: 2px 4px;
+    min-width: 16px;
+  }
+  
+  .mini-icon {
+    font-size: 10px;
+    right: -3px;
+    bottom: -3px;
+  }
+  
+  .weather-badge {
+    font-size: 10px;
+    width: 16px;
+    height: 16px;
+  }
+  
+  .shop-button {
+    margin-top: 8px;
+    padding: 10px 16px;
+    font-size: 12px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 400px) {
+  .farming-view {
+    padding: 6px;
+    padding-bottom: 70px;
+    overflow-y: auto;
+  }
+  
+  .farming-header {
+    padding: 6px;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  
+  .farming-header h1 {
+    font-size: 18px;
+  }
+  
+  .farming-content {
+    width: 100%;
+    max-width: 100%;
+    gap: 8px;
+  }
+  
+  .farm-grid {
+    grid-template-columns: repeat(3, 85px);
+    grid-template-rows: repeat(3, 85px);
+    gap: 5px;
+    padding: 8px;
+  }
+  
+  .empty-icon {
+    font-size: 22px;
+  }
+  
+  .empty-text {
+    font-size: 8px;
+  }
+  
+  .lock-icon {
+    font-size: 22px;
+  }
+  
+  .unlock-price {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+  
+  .sidebar {
+    padding: 6px;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .sidebar-title {
+    font-size: 12px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+  }
+  
+  .seed-item, .vegetable-item {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .seed-icon, .vegetable-icon {
+    font-size: 20px;
+  }
+  
+  .seed-count, .vegetable-count {
+    font-size: 10px;
+  }
+  
+  .shop-button {
+    padding: 8px 12px;
+    font-size: 11px;
+    margin-top: 6px;
+    width: 100%;
+  }
+}
+
+/* Orientation paysage sur mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .farming-view {
+    padding: 5px;
+    padding-bottom: 60px;
+  }
+  
+  .farming-header {
+    padding: 5px 10px;
+    margin-bottom: 5px;
+  }
+  
+  .farming-header h1 {
+    font-size: 16px;
+  }
+  
+  .farming-content {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .sidebar {
+    max-width: 120px;
+    padding: 5px;
+  }
+  
+  .sidebar-title {
+    font-size: 11px;
+  }
+  
+  .seeds-list, .vegetables-list {
+    gap: 4px;
+  }
+  
+  .seed-item, .vegetable-item {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .seed-icon, .vegetable-icon {
+    font-size: 18px;
+  }
+  
+  .seed-count, .vegetable-count {
+    font-size: 10px;
+    min-width: 14px;
+  }
+  
+  .farm-grid {
+    grid-template-columns: repeat(3, 80px);
+    grid-template-rows: repeat(3, 80px);
+    gap: 5px;
+    padding: 8px;
+  }
+  
+  .empty-icon {
+    font-size: 22px;
+  }
+  
+  .empty-text {
+    font-size: 8px;
+  }
+  
+  .shop-button {
+    padding: 6px 12px;
+    font-size: 11px;
   }
 }
 </style>

@@ -121,7 +121,7 @@ function updateMousePosition(event) {
 }
 
 function handleMouseEnter(event) {
-  if (isMobile.value || props.manual) return // Sur mobile ou mode manuel, ne pas afficher au hover
+  if (isMobile.value || props.manual || props.forceHide) return // Sur mobile / mode manuel / forceHide, ne pas afficher au hover
   show.value = true
   // Attendre que la tooltip soit montée pour mesurer sa taille réelle
   nextTick(() => updateMousePosition(event))
@@ -134,7 +134,7 @@ function handleMouseLeave() {
 
 function handleClick(event) {
   if (!isMobile.value) return // Sur desktop, utiliser le hover
-  if (props.manual) return // En mode manuel, désactiver le toggle mobile
+  if (props.manual || props.forceHide) return // En mode manuel ou forceHide, désactiver le toggle mobile
   show.value = !show.value // Toggle
   if (show.value) {
     nextTick(() => updateMousePosition(event))

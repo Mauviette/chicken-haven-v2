@@ -21,13 +21,15 @@
           <div class="seed-reward">
             Récolte: {{ seed.minReward }}-{{ seed.maxReward }} {{ seed.vegIcon }}
           </div>
-          <BuyButton 
-            :onClick="() => onBuy(type)"
-            :disabled="strangeRoots < 1 || loading"
-            :price="{ type: 'strange_root', count: 1, _iconOverride: '🫚' }"
-          >
-            Acheter 2 graines
-          </BuyButton>
+          <div class="seed-button-wrapper">
+            <BuyButton 
+              :onClick="() => onBuy(type)"
+              :disabled="strangeRoots < 1 || loading"
+              :price="{ type: 'strange_root', count: 1, _iconOverride: '🫚' }"
+            >
+              Acheter 2 graines
+            </BuyButton>
+          </div>
         </div>
       </div>
       
@@ -201,11 +203,111 @@ async function onBuy(vegetableType) {
   margin-bottom: 6px;
 }
 
+.seed-button-wrapper {
+  display: flex;
+}
+
 .shop-hint {
   margin: 10px 0 0 0;
   font-size: 11px;
   color: var(--button-text);
   opacity: 0.7;
   font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .seed-shop h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  
+  .roots-display {
+    padding: 6px 12px;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  
+  .roots-icon {
+    font-size: 18px;
+  }
+  
+  .roots-count {
+    font-size: 16px;
+  }
+  
+  .roots-label {
+    font-size: 10px;
+  }
+  
+  .seeds-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .seed-card {
+    padding: 10px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  
+  .seed-header {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+  }
+  
+  .seed-icon {
+    font-size: 18px;
+  }
+  
+  .seed-name {
+    font-size: 13px;
+  }
+  
+  .seed-info {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+  }
+  
+  .seed-reward {
+    flex: 0 0 100%;
+    margin-bottom: 4px;
+    text-align: left;
+  }
+  
+  .seed-button-wrapper {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+  
+  .shop-hint {
+    font-size: 10px;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .seed-card {
+    padding: 8px;
+  }
+  
+  .seed-icon {
+    font-size: 16px;
+  }
+  
+  .seed-name {
+    font-size: 11px;
+  }
+  
+  .seed-info {
+    font-size: 9px;
+  }
+  
+  .seed-reward {
+    font-size: 10px;
+  }
 }
 </style>

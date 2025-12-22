@@ -42,15 +42,15 @@
       <!-- Bouton pour s'arrêter -->
       <div v-if="!gameOver && carrotsCollected > 0" class="stop-section">
         <button class="stop-btn" @click="stopAndCollect">
-          🛑 S'arrêter et garder {{ carrotsCollected }} carotte(s)
+          S'arrêter et garder {{ carrotsCollected }} carotte(s)
         </button>
       </div>
       
       <!-- Game Over -->
       <div v-if="gameOver" class="game-over">
         <h3 v-if="hitBomb">💥 Boom! Vous avez touché la bombe!</h3>
-        <h3 v-else-if="allCarrotsCollected">🎉 Parfait! Toutes les carottes!</h3>
-        <h3 v-else>✅ Bien joué!</h3>
+        <h3 v-else-if="allCarrotsCollected">Parfait! Toutes les carottes!</h3>
+        <h3 v-else>Bien joué!</h3>
         <p>Vous récoltez <strong>{{ finalReward }}</strong> carotte(s)!</p>
         <button class="collect-btn" @click="collectReward">
           Récupérer 🥕
@@ -75,7 +75,7 @@ const props = defineProps({
   vegetableData: Object
 })
 
-const emit = defineEmits(['complete', 'close'])
+const emit = defineEmits(['complete', 'close', 'save-result'])
 
 // Configuration
 const CARROT_COUNT = props.config.carrotCount || 5
@@ -161,24 +161,25 @@ function stopAndCollect() {
 function endGame() {
   gameOver.value = true
   
-  // Envoyer la récompense immédiatement pour éviter la perte si actualisation
+  // Sauvegarder la récompense immédiatement pour éviter la perte si actualisation
   if (!rewardSent.value) {
     rewardSent.value = true
-    emit('complete', finalReward.value)
+    emit('save-result', finalReward.value)
   }
 }
 
 function collectReward() {
   harvestCollect()
-  emit('close')
+  emit('complete')
 }
 
 function onClose() {
-  // Si le jeu n'est pas fini, envoyer ce qu'on a
-  if (!gameOver.value && !rewardSent.value) {
+  // Si le jeu n'est pas fini, sauvegarder ce qu'on a
+  if (!rewardSent.value) {
     rewardSent.value = true
-    emit('complete', carrotsCollected.value)
+    emit('save-result', carrotsCollected.value)
   }
+  emit('complete')
 }
 
 onMounted(() => {
@@ -370,5 +371,114 @@ onMounted(() => {
 .collect-btn:hover {
   background: #A0522D;
   transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .carrot-risk-game h2 {
+    font-size: 18px;
+  }
+  
+  .game-desc {
+    font-size: 11px;
+    margin-bottom: 15px;
+  }
+  
+  .score-display {
+    padding: 8px 15px;
+  }
+  
+  .score-label {
+    font-size: 12px;
+  }
+  
+  .score-value {
+    font-size: 18px;
+  }
+  
+  .warning-text {
+    font-size: 11px;
+  }
+  
+  .carrots-container {
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+  }
+  
+  .carrot-slot {
+    width: 48px;
+    height: 70px;
+    border-width: 2px;
+    border-radius: 8px;
+  }
+  
+  .carrot-top {
+    font-size: 20px;
+  }
+  
+  .carrot-underground {
+    font-size: 16px;
+  }
+  
+  .carrot-content {
+    font-size: 28px;
+  }
+  
+  .stop-section {
+    margin: 15px 0;
+  }
+  
+  .stop-btn {
+    padding: 10px 18px;
+    font-size: 12px;
+  }
+  
+  .game-over {
+    padding: 15px;
+    margin-top: 15px;
+  }
+  
+  .game-over h3 {
+    font-size: 17px;
+  }
+  
+  .game-over p {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  
+  .collect-btn {
+    padding: 10px 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .carrots-container {
+    gap: 8px;
+  }
+  
+  .carrot-slot {
+    width: 42px;
+    height: 60px;
+  }
+  
+  .carrot-top {
+    font-size: 18px;
+  }
+  
+  .carrot-underground {
+    font-size: 14px;
+  }
+  
+  .carrot-content {
+    font-size: 24px;
+  }
+  
+  .stop-btn {
+    padding: 8px 14px;
+    font-size: 11px;
+  }
 }
 </style>

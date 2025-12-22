@@ -2,7 +2,7 @@
   <Popup @close="onClose">
     <div class="minesweeper-game">
       <h2>🥔 Récolte des Patates</h2>
-      <p class="game-desc">Déterrez la grille sans toucher les bombes! <br><small>Clic droit = poser un drapeau 🚩</small></p>
+      <p class="game-desc">Déterrez la grille sans toucher les bombes! <br><small v-if="!isMobile">Clic droit = poser un drapeau 🚩</small><small v-else>Maintenir = poser un drapeau 🚩</small></p>
       
       <!-- Timer -->
       <div class="timer-bar">
@@ -32,6 +32,9 @@
             :class="getCellClass(cell)"
             @click="revealCell(index)"
             @contextmenu.prevent="toggleFlag(index)"
+            @touchstart="onTouchStart(index)"
+            @touchend="onTouchEnd"
+            @touchmove="onTouchMove"
           >
             <span v-if="cell.flagged && !cell.revealed" class="cell-flag">🚩</span>
             <span v-else-if="cell.revealed" class="cell-content">
@@ -74,7 +77,7 @@ const props = defineProps({
   vegetableData: Object
 })
 
-const emit = defineEmits(['complete', 'close'])
+const emit = defineEmits(['complete', 'close', 'save-result'])
 
 // Configuration
 const GRID_WIDTH = props.config.gridWidth || 6
@@ -95,8 +98,12 @@ const revealedCells = ref(0)
 const firstClick = ref(true)
 const flagsPlaced = ref(0)
 const rewardSent = ref(false)
+const isMobile = ref(false)
 
 let timerInterval = null
+let longPressTimer = null
+let longPressIndex = null
+const LONG_PRESS_DURATION = 400 // ms
 
 // Formater le temps
 const formattedTime = computed(() => {
@@ -259,6 +266,34 @@ function toggleFlag(index) {
   mineFlag()
 }
 
+// Support tactile mobile - long press pour drapeau
+function onTouchStart(index) {
+  if (!isMobile.value || gameOver.value) return
+  longPressIndex = index
+  longPressTimer = setTimeout(() => {
+    if (longPressIndex === index) {
+      toggleFlag(index)
+      longPressIndex = null
+    }
+  }, LONG_PRESS_DURATION)
+}
+
+function onTouchEnd() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
+}
+
+function onTouchMove() {
+  // Annuler le long press si l'utilisateur bouge
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+    longPressIndex = null
+  }
+}
+
 function revealAdjacentCells(index) {
   const row = Math.floor(index / GRID_WIDTH)
   const col = index % GRID_WIDTH
@@ -305,10 +340,10 @@ function endGame() {
     cell.revealed = true
   })
   
-  // Envoyer la récompense immédiatement pour éviter la perte si actualisation
+  // Sauvegarder la récompense immédiatement pour éviter la perte si actualisation
   if (!rewardSent.value) {
     rewardSent.value = true
-    emit('complete', finalReward.value)
+    emit('save-result', finalReward.value)
   }
 }
 
@@ -330,15 +365,16 @@ function getCellContent(cell) {
 
 function collectReward() {
   harvestCollect()
-  emit('close')
+  emit('complete')
 }
 
 function onClose() {
-  // Si le jeu n'est pas fini, envoyer la récompense de base
+  // Si le jeu n'est pas fini, sauvegarder la récompense de base
   if (!rewardSent.value) {
     rewardSent.value = true
-    emit('complete', 1)
+    emit('save-result', 1)
   }
+  emit('complete')
 }
 
 // Timer
@@ -353,6 +389,8 @@ function startTimer() {
 }
 
 onMounted(() => {
+  // Détecter si mobile
+  isMobile.value = window.innerWidth <= 768 || 'ontouchstart' in window
   generateGrid() // Génération initiale sans placement de bombes définitif
   startTimer()
 })
@@ -533,5 +571,94 @@ onUnmounted(() => {
 .collect-btn:hover {
   background: #A0522D;
   transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .minesweeper-game h2 {
+    font-size: 18px;
+    margin-bottom: 3px;
+  }
+  
+  .game-desc {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+  
+  .timer-bar {
+    height: 20px;
+  }
+  
+  .timer-text {
+    font-size: 12px;
+  }
+  
+  .score-display {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  
+  .minesweeper-grid {
+    gap: 3px;
+    padding: 8px;
+  }
+  
+  .cell {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border-width: 1px;
+    border-radius: 4px;
+  }
+  
+  .cell-flag {
+    font-size: 16px;
+  }
+  
+  .cell-content {
+    font-size: 16px;
+  }
+  
+  .cell-hidden {
+    font-size: 14px;
+  }
+  
+  .game-over-content {
+    padding: 20px;
+  }
+  
+  .game-over-content h3 {
+    font-size: 20px;
+  }
+  
+  .result-text {
+    font-size: 14px;
+  }
+  
+  .collect-btn {
+    padding: 10px 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .cell {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+  
+  .cell-flag {
+    font-size: 14px;
+  }
+  
+  .cell-content {
+    font-size: 14px;
+  }
+  
+  .minesweeper-grid {
+    gap: 2px;
+    padding: 6px;
+  }
 }
 </style>

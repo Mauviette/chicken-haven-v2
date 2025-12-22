@@ -1,5 +1,5 @@
 <template>
-  <Tooltip :text="timerTooltip" class="plantation-tooltip">
+  <Tooltip :text="timerTooltip" :forceHide="isReady" class="plantation-tooltip">
     <div class="plantation-cell" @click="onCellClick">
       <!-- Badge légume en haut à gauche -->
       <span v-if="!isReady" class="vegetable-badge">{{ vegetableIcon }}</span>
@@ -34,6 +34,7 @@ const props = defineProps({
 const emit = defineEmits(['harvest'])
 
 const now = ref(Date.now())
+const isMobile = ref(false)
 let timerInterval = null
 
 // Icônes par type de légume
@@ -67,8 +68,9 @@ const growthStage = computed(() => {
 const plantIcon = computed(() => {
   const icons = vegetableIcons[props.plantation.vegetableType] || vegetableIcons.potato
   if (isReady.value) return icons.ready
-  if (progressPercent.value < 50) return icons.seed
-  return icons.growing
+  if (progressPercent.value < 33) return icons.seed
+  if (progressPercent.value < 66) return icons.growing
+  return '🪴' // 3ème stade: afficher le pot au lieu du légume
 })
 
 // Icône du légume final (pour le badge)
@@ -108,13 +110,21 @@ const timerTooltip = computed(() => {
   html += `Progression: ${Math.round(progressPercent.value)}%<br>`
   html += `Temps restant: ${formattedTimeLeft.value}`
   
-  // Ajouter l'effet météo si disponible
-  if (props.weather?.current?.effects) {
-    const effect = props.weather.current.effects[props.plantation.vegetableType]
-    if (effect && effect !== 0) {
-      const sign = effect > 0 ? '+' : ''
-      html += `<br><br>Effet météo: ${sign}${Math.round(effect * 100)}% vitesse`
-    }
+  // Ajouter les effets météo si disponibles
+  const formatWeatherEffect = (weather, type) => {
+    if (!weather?.effects) return ''
+    const effect = weather.effects[type]
+    if (!effect || effect === 0) return ''
+    
+    const icon = weather.icon || '☀️'
+    const sign = effect > 0 ? '+' : ''
+    const effectText = effect > 0 ? 'Croissance accélérée' : 'Croissance ralentie'
+    const color = effect > 0 ? '#4CAF50' : '#F44336'
+    return `<br>${icon} <span style="color: ${color}">${effectText} (${sign}${Math.round(effect * 100)}%)</span>`
+  }
+  
+  if (props.weather?.current) {
+    html += formatWeatherEffect(props.weather.current, props.plantation.vegetableType)
   }
   
   return html
@@ -127,6 +137,7 @@ function onCellClick() {
 }
 
 onMounted(() => {
+  isMobile.value = window.innerWidth <= 768 || 'ontouchstart' in window
   timerInterval = setInterval(() => {
     now.value = Date.now()
   }, 1000)
@@ -255,5 +266,63 @@ onUnmounted(() => {
 @keyframes ready-glow {
   from { text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5), 0 0 5px rgba(255, 215, 0, 0.5); }
   to { text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 215, 0, 0.8); }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .vegetable-badge {
+    font-size: 10px;
+    top: 2px;
+    left: 2px;
+  }
+  
+  .plant-icon {
+    font-size: 28px;
+  }
+  
+  .timer-bar {
+    width: 85%;
+    height: 6px;
+  }
+  
+  .timer-text {
+    font-size: 9px;
+  }
+  
+  .growth-timer {
+    gap: 2px;
+    margin-top: 5px;
+  }
+  
+  .ready-indicator {
+    margin-top: 0;
+  }
+  
+  .ready-text {
+    font-size: 12px;
+    display: none;
+  }
+  
+  .plantation-cell {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .vegetable-badge {
+    font-size: 9px;
+  }
+  
+  .plant-icon {
+    font-size: 24px;
+  }
+  
+  .timer-text {
+    font-size: 8px;
+  }
+  
+  .ready-text {
+    font-size: 11px;
+  }
 }
 </style>

@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, getCurrentInstance } from 'vue'
 import { useAuth } from './useAuth'
 import { useGameData } from './useGameData'
 import { usePlayer } from './usePlayer'
@@ -164,21 +164,24 @@ export function useSpawnables() {
     })
   })
 
-  onMounted(() => {
-    startPolling()
-    try {
-      window.addEventListener('auth-login', startPolling)
-      window.addEventListener('auth-logout', stopPolling)
-    } catch (_) {}
-  })
+  const instance = getCurrentInstance()
+  if (instance) {
+    onMounted(() => {
+      startPolling()
+      try {
+        window.addEventListener('auth-login', startPolling)
+        window.addEventListener('auth-logout', stopPolling)
+      } catch (_) {}
+    })
 
-  onUnmounted(() => {
-    stopPolling()
-    try {
-      window.removeEventListener('auth-login', startPolling)
-      window.removeEventListener('auth-logout', stopPolling)
-    } catch (_) {}
-  })
+    onUnmounted(() => {
+      stopPolling()
+      try {
+        window.removeEventListener('auth-login', startPolling)
+        window.removeEventListener('auth-logout', stopPolling)
+      } catch (_) {}
+    })
+  }
 
   return {
     activeSpawnables,

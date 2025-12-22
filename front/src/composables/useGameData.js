@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import { apiGet } from '@/utils/api.js'
 import { useAuth } from './useAuth'
 import { useAppLoading } from './useAppLoading'
@@ -14,6 +14,7 @@ const lastSyncTime = ref(null)
 let cachedData = null
 let cacheTimestamp = null
 let syncInterval = null
+let isInitialized = false
 const CACHE_DURATION = 5 * 60 * 1000
 const SYNC_INTERVAL = 30000
 
@@ -117,6 +118,9 @@ export function useGameData() {
   }
 
   async function initialize() {
+    if (isInitialized) return
+    isInitialized = true
+    
     const { setGameDataLoading } = useAppLoading()
     try {
       await fetchGameData()
@@ -215,8 +219,17 @@ export function useGameData() {
     return unlocked
   }
 
-  onMounted(initialize)
-  onUnmounted(stopPeriodicSync)
+  // Enregistrer les hooks uniquement si on est dans un contexte de composant Vue
+  const instance = getCurrentInstance()
+  if (instance) {
+    onMounted(initialize)
+    onUnmounted(stopPeriodicSync)
+  } else {
+    // Si utilisé hors d'un composant, initialiser immédiatement si pas encore fait
+    if (!isInitialized) {
+      initialize()
+    }
+  }
 
   return {
     gameData,

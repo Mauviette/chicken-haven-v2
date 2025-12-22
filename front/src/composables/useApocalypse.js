@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, provide, inject } from 'vue'
+import { ref, computed, onMounted, provide, inject, getCurrentInstance } from 'vue'
 import { apiGet } from '@/utils/api'
 
 const APOCALYPSE_KEY = Symbol('apocalypse')
@@ -37,27 +37,30 @@ export function useApocalypse() {
   }
 
   // Initialisation automatique seulement si pas déjà fourni
-  onMounted(() => {
-    if (!isInitialized.value) {
-      syncApocalypseState()
-    }
+  const instance = getCurrentInstance()
+  if (instance) {
+    onMounted(() => {
+      if (!isInitialized.value) {
+        syncApocalypseState()
+      }
 
-    // Écouter les événements d'authentification
-    const handleLogin = () => {
-      // Re-synchroniser après connexion
-      syncApocalypseState()
-    }
+      // Écouter les événements d'authentification
+      const handleLogin = () => {
+        // Re-synchroniser après connexion
+        syncApocalypseState()
+      }
 
-    const handleLogout = () => {
-      // Réinitialiser après déconnexion
-      resetApocalypseState()
-    }
+      const handleLogout = () => {
+        // Réinitialiser après déconnexion
+        resetApocalypseState()
+      }
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('auth-login', handleLogin)
-      window.addEventListener('auth-logout', handleLogout)
-    }
-  })
+      if (typeof window !== 'undefined') {
+        window.addEventListener('auth-login', handleLogin)
+        window.addEventListener('auth-logout', handleLogout)
+      }
+    })
+  }
 
   return {
     isApocalypseMode,
