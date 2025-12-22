@@ -1947,6 +1947,101 @@ export const farmingData = {
   // Cycle météo (en millisecondes) - 12h
   weatherCycleDuration: 12 * 60 * 60 * 1000,
 
+  // ========================
+  // SYSTÈME DE NIVEAU DE FERME
+  // ========================
+  farmLevels: {
+    // XP nécessaire pour chaque niveau (additif: +10 par niveau)
+    xpPerLevel: [0, 15, 25, 35, 45, 55, 65, 75, 85, 95], // index = niveau actuel, valeur = XP pour passer au suivant
+    xpBaseIncrement: 10, // Pour les niveaux > 10, on ajoute 10 par niveau
+    
+    // Récompenses par niveau
+    rewards: {
+      2: { type: 'unlock', value: 'request_slot_info' }, // Info: les demandes sont débloquées
+      // Futurs niveaux: nouveaux légumes, plus de demandes simultanées, etc.
+    },
+    
+    // Nombre max de demandes simultanées par niveau
+    maxRequestsPerLevel: {
+      1: 1,
+      2: 1,
+      3: 1,
+      4: 1,
+      5: 2, // À partir du niveau 5, 2 demandes possibles
+      // etc.
+    }
+  },
+
+  // ========================
+  // SYSTÈME D'INVENTAIRE
+  // ========================
+  inventory: {
+    defaultLimit: 10, // Limite de légumes par défaut (tous légumes confondus)
+    
+    // Upgrades de capacité
+    upgrades: [
+      { from: 10, to: 15, cost: { potathune: 15, ancient_urn: 2 } },
+      { from: 15, to: 20, cost: { potathune: 25, ancient_urn: 3 } },
+      { from: 20, to: 30, cost: { potathune: 40, ancient_urn: 5 } },
+      { from: 30, to: 40, cost: { potathune: 60, ancient_urn: 7 } },
+      { from: 40, to: 50, cost: { potathune: 85, ancient_urn: 10 } },
+    ]
+  },
+
+  // ========================
+  // SYSTÈME DE DEMANDES (REQUESTS)
+  // ========================
+  requests: {
+    // Délai entre les demandes (si le joueur a de la place)
+    spawnDelay: {
+      min: 30 * 60 * 1000,  // 30 minutes minimum
+      max: 2 * 60 * 60 * 1000 // 2 heures maximum
+    },
+    
+    // Temps minimum pour compléter une demande (après première ouverture du dialogue)
+    minCompletionTime: 4 * 60 * 60 * 1000, // 4 heures minimum
+    
+    // Temps par point de difficulté (en ms)
+    timePerDifficulty: 30 * 60 * 1000, // 30 minutes par point
+    
+    // Difficulté des légumes (tous égaux pour l'instant car même durée de pousse)
+    vegetableDifficulty: {
+      potato: 1,
+      carrot: 1,
+      corn: 1
+    },
+    
+    // Récompenses par légume demandé
+    rewardsPerVegetable: {
+      potathune: { base: 2, variance: 0.5 }, // 2 +/- 0.5 arrondi
+      xp: { base: 1, variance: 0 } // 1 XP fixe par légume
+    },
+    
+    // Quantités de légumes par demande selon le niveau
+    quantityRanges: {
+      1: { min: 2, max: 4 },   // Niveau 1: demandes de 2-4 légumes
+      2: { min: 2, max: 5 },
+      3: { min: 3, max: 6 },
+      4: { min: 3, max: 7 },
+      5: { min: 4, max: 8 },
+      // etc. Pour les niveaux supérieurs, on extrapole
+    },
+    
+    // Phrases de dialogue du personnage (aléatoire)
+    dialogues: [
+      "Bonjour !",
+      "Salut l'ami !",
+      "Hey ! T'as des légumes ?",
+      "Coucou !",
+      "Psst ! Par ici !",
+      "J'ai besoin de ton aide !",
+      "Tu peux m'aider ?",
+      "Oh, un fermier !",
+      "J'ai faim...",
+      "Des légumes, s'il te plaît !"
+    ]
+  },
+
   // Types de météo avec leurs effets sur les légumes
   weatherTypes: {
     sunny: {
@@ -2037,8 +2132,8 @@ export const farmingData = {
     minesweeper: {
       gridWidth: 6,
       gridHeight: 5,
-      minBombs: 3,
-      maxBombs: 5,
+      minBombs: 4,
+      maxBombs: 7,
       timeLimit: 60, // secondes
       // Récompenses: 1 patate par défaut, +1 si terminé à temps, +1 si 0 erreur
     },

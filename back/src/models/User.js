@@ -227,6 +227,10 @@ const UserSchema = new mongoose.Schema({
   // Mini-jeu de farming
   farming: {
     level: { type: Number, default: 1 }, // Niveau de la ferme
+    xp: { type: Number, default: 0 }, // XP de ferme accumulé
+    potathune: { type: Number, default: 0 }, // Monnaie de farming 💵
+    inventoryLimit: { type: Number, default: 10 }, // Limite de légumes (tous confondus)
+    
     // Graines possédées
     seeds: {
       potato: { type: Number, default: 0 },
@@ -249,7 +253,30 @@ const UserSchema = new mongoose.Schema({
         plantedAt: { type: Date, required: true },
         readyAt: { type: Date, required: true }
       }
-    ]
+    ],
+    
+    // Demandes actives (personnages qui demandent des légumes)
+    activeRequests: [
+      {
+        id: { type: String, required: true }, // ID unique de la demande
+        createdAt: { type: Date, required: true }, // Date de création
+        expiresAt: { type: Date, required: true }, // Date d'expiration
+        firstOpenedAt: { type: Date, default: null }, // Date de première ouverture du dialogue (pour calcul temps min)
+        seen: { type: Boolean, default: false }, // Si le joueur a vu la demande (pour le "!")
+        dialogue: { type: String, required: true }, // Phrase du personnage
+        requirements: {
+          type: mongoose.Schema.Types.Mixed,
+          default: function () { return {} } // ex: { potato: 2, carrot: 1 }
+        },
+        rewards: {
+          potathune: { type: Number, required: true },
+          xp: { type: Number, required: true }
+        }
+      }
+    ],
+    
+    // Timestamp de la prochaine demande potentielle
+    nextRequestAt: { type: Date, default: null }
   },
 
 }, { timestamps: true })

@@ -46,7 +46,28 @@
         </div>
       </div>
       <div class="top-right">
-        <Tooltip v-if="showTooltips" :text="eggTooltipHtml" position="bottom">
+        <!-- Afficher potathune si sur /farming -->
+        <Tooltip v-if="route.path === '/farming' && showTooltips" text="<strong>Potathunes</strong><br>Monnaie du potager" position="bottom">
+          <div class="egg-counter">
+            <span>💵 {{ potathune }}</span>
+          </div>
+        </Tooltip>
+        <div v-else-if="route.path === '/farming'" class="egg-counter">
+          <span>💵 {{ potathune }}</span>
+        </div>
+
+        <!-- Afficher niveau potager si sur /farming -->
+        <Tooltip v-if="route.path === '/farming' && showTooltips" :text="farmLevelTooltipHtml" position="bottom">
+          <div class="egg-counter farm-level">
+            <span>🌾 Lvl {{ farmLevel }}</span>
+          </div>
+        </Tooltip>
+        <div v-else-if="route.path === '/farming'" class="egg-counter farm-level">
+          <span>🌾 Lvl {{ farmLevel }}</span>
+        </div>
+
+        <!-- Sinon, afficher les œufs normalement -->
+        <Tooltip v-else-if="showTooltips" :text="eggTooltipHtml" position="bottom">
           <div
             class="egg-counter"
             :class="{ clickable: isMarketUnlocked, disabled: !isMarketUnlocked }"
@@ -92,6 +113,7 @@
 
 <script setup>
 import { usePlayer } from '@/composables/usePlayer'
+import { useFarming } from '@/composables/useFarming'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import { useGameData } from '@/composables/useGameData'
 import { useRouter, useRoute } from 'vue-router'
@@ -104,6 +126,7 @@ import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
 import { formatNumber, formatEggs } from '@/utils/format.js'
 
 const { eggs, level, xp, xpRequired } = usePlayer()
+const { potathune, farmLevel, farmXp, farmXpRequired } = useFarming()
 const { levelUnlocks, getLevelRewardsBetween, items } = useGameData()
 const router = useRouter()
 const route = useRoute()
@@ -278,6 +301,12 @@ const eggTooltipHtml = computed(() => {
   const eggsData = itemsData.value?.eggs
   if (!eggsData) return '<strong>🥚 Œufs</strong><br>La monnaie principale de votre ferme.'
   return `<strong>${eggsData.nom.charAt(0).toUpperCase() + eggsData.nom.slice(1)}</strong><br>${eggsData.description}`
+})
+
+const farmLevelTooltipHtml = computed(() => {
+  const curXp = farmXp.value ?? 0
+  const reqXp = farmXpRequired.value ?? 0
+  return `<strong>Niveau Potager ${farmLevel.value}</strong><br>Expérience: ${curXp}/${reqXp} 🫐`
 })
 
 const levelTooltipHtml = () => {
@@ -534,6 +563,11 @@ function openMarketFromEggCounter() {
   color: var(--text-primary);
   white-space: nowrap;
   box-shadow: 0 1px 2px var(--shadow-primary);
+}
+
+.egg-counter.farm-level {
+  background-color: rgba(76, 175, 80, 0.2);
+  border-color: #4CAF50;
 }
 
 .egg-counter.clickable { cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer; }

@@ -50,6 +50,12 @@ function handleClick() {
 
 function getPriceIcon(price = props.price) {
   const itemsData = items.value
+  
+  // Si le prix a une propriété _iconOverride, l'utiliser en premier
+  if (price && typeof price === 'object' && price._iconOverride) {
+    return price._iconOverride
+  }
+  
   if (typeof price === 'number') {
     return itemsData?.eggs?.icon || '🥚'
   }

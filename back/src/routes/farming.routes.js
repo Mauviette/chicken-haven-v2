@@ -6,7 +6,12 @@ import {
   plantSeed, 
   harvestPlant, 
   completeHarvest,
-  unlockSlot 
+  unlockSlot,
+  openRequest,
+  completeRequest,
+  dismissRequest,
+  upgradeInventory,
+  discardVegetables
 } from '../controllers/farming.controller.js'
 import { verifyToken } from '../middleware/auth.middleware.js'
 
@@ -19,6 +24,13 @@ router.post('/plant', verifyToken, plantSeed)
 router.post('/harvest', verifyToken, harvestPlant)
 router.post('/complete-harvest', verifyToken, completeHarvest)
 router.post('/unlock-slot', verifyToken, unlockSlot)
+
+// Routes pour les demandes
+router.post('/open-request', verifyToken, openRequest)
+router.post('/complete-request', verifyToken, completeRequest)
+router.post('/dismiss-request', verifyToken, dismissRequest)
+router.post('/upgrade-inventory', verifyToken, upgradeInventory)
+router.post('/discard-vegetables', verifyToken, discardVegetables)
 
 // Route publique pour la météo
 router.get('/weather', getWeather)

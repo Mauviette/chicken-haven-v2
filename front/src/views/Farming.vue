@@ -1,9 +1,13 @@
 <template>
   <div class="farming-view" :class="weatherClass">
-    <!-- En-tête avec météo -->
+    <!-- En-tête avec météo et stats -->
     <div class="farming-header">
-      <h1>Mon potager</h1>
-      <WeatherDisplay :weather="weather" @refresh="fetchWeather" />
+      <div class="header-left">
+        <h1>Mon potager</h1>
+      </div>
+      <div class="header-right">
+        <WeatherDisplay :weather="weather" @refresh="fetchWeather" />
+      </div>
     </div>
 
     <div class="farming-content">
@@ -93,7 +97,7 @@
 
       <!-- Sidebar droite: Légumes récoltés -->
       <div v-if="!isMobile" class="sidebar vegetables-sidebar">
-        <h3 class="sidebar-title">Mes Légumes</h3>
+        <h3 class="sidebar-title">Mes Légumes <span class="inventory-count">{{ totalVegetables }}/{{ inventoryLimit }}</span></h3>
         <div class="vegetables-list">
           <Tooltip 
             v-for="(veg, type) in vegetablesDisplay" 
@@ -106,6 +110,7 @@
             </div>
           </Tooltip>
         </div>
+        <button class="discard-button" @click="showDiscardPopup = true" title="Jeter des légumes">🗑️ Jeter</button>
       </div>
 
       <!-- Bouton inventaire mobile -->
@@ -118,7 +123,7 @@
 
     <!-- Popup inventaire (mobile) -->
     <Popup v-if="isMobile && showInventory" @close="showInventory = false">
-      <h2 style="margin-top: 0; text-align: center;">Mon Inventaire</h2>
+      <h2 style="margin-top: 0; text-align: center;">Mon Inventaire <span class="inventory-count-popup">{{ totalVegetables }}/{{ inventoryLimit }}</span></h2>
       <div class="vegetables-list" style="margin-top: 20px;">
         <div
           v-for="(veg, type) in vegetablesDisplay" 
@@ -140,6 +145,51 @@
       :strange-roots="strangeRoots"
       @purchase="onPurchase"
     />
+
+    <!-- Popup jettage de légumes -->
+    <Popup v-if="showDiscardPopup" @close="showDiscardPopup = false">
+      <h2 style="margin-top: 0; text-align: center;">Jeter des Légumes 🗑️</h2>
+      
+      <!-- Sélection du légume -->
+      <div style="margin: 20px 0;">
+        <p style="font-weight: bold; margin-bottom: 10px;">Quel légume jeter?</p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <button 
+            v-for="(veg, type) in vegetablesDisplay"
+            :key="type"
+            @click="selectedDiscardType = type"
+            :class="{ selected: selectedDiscardType === type, disabled: vegetables[type] < 1 }"
+            style="padding: 10px; border-radius: 8px; border: 2px solid #DEB887; background: #FFF8DC;  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto; font-size: 24px; transition: all 0.2s ease;"
+            :style="selectedDiscardType === type ? { borderColor: '#8B4513', backgroundColor: '#FFE4B5', boxShadow: '0 0 0 3px rgba(139, 69, 19, 0.3)' } : vegetables[type] < 1 ? { opacity: '0.5', cursor: 'not-allowed' } : {}"
+          >
+            {{ veg.icon }}
+            <div style="font-size: 12px; margin-top: 4px;">{{ vegetables[type] || 0 }}</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quantité à jeter -->
+      <div v-if="selectedDiscardType" style="margin: 20px 0;">
+        <p style="font-weight: bold; margin-bottom: 10px;">Quantité à jeter:</p>
+        <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+          <button @click="discardQuantity = Math.max(1, discardQuantity - 1)" style="padding: 8px 12px; border: 1px solid #DEB887; background: #FFF8DC;  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto; border-radius: 4px;">−</button>
+          <input v-model.number="discardQuantity" type="number" :min="1" :max="vegetables[selectedDiscardType] || 0" style="width: 60px; padding: 8px; border: 1px solid #DEB887; border-radius: 4px; text-align: center;">
+          <button @click="discardQuantity = Math.min(vegetables[selectedDiscardType] || 0, discardQuantity + 1)" style="padding: 8px 12px; border: 1px solid #DEB887; background: #FFF8DC;  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto; border-radius: 4px;">+</button>
+        </div>
+      </div>
+
+      <!-- Boutons d'action -->
+      <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: center;">
+        <button @click="showDiscardPopup = false" style="padding: 8px 16px; border: 2px solid #DEB887; background: #FFF8DC;  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto; border-radius: 6px; font-family: 'Fredoka', sans-serif; font-weight: bold;">Annuler</button>
+        <button 
+          v-if="selectedDiscardType"
+          @click="confirmDiscard"
+          style="padding: 8px 16px; border: 2px solid #8B4513; background: #FFE4B5;  cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto; border-radius: 6px; font-family: 'Fredoka', sans-serif; font-weight: bold; color: #5D4037;"
+        >
+          Jeter {{ discardQuantity }} {{ vegetableNames[selectedDiscardType] || selectedDiscardType }}(s)
+        </button>
+      </div>
+    </Popup>
 
     <!-- Mini-jeux -->
     <MinesweeperGame 
@@ -168,6 +218,9 @@
       @complete="onMinigameComplete"
       @close="cancelMinigame"
     />
+
+    <!-- Personnage demandeur -->
+    <FarmingRequester @completed="onRequestCompleted" />
   </div>
 </template>
 
@@ -185,6 +238,7 @@ import ActionButton from '@/components/menu/ActionButton.vue'
 import MinesweeperGame from '@/components/farming/MinesweeperGame.vue'
 import CarrotRiskGame from '@/components/farming/CarrotRiskGame.vue'
 import CornFallingGame from '@/components/farming/CornFallingGame.vue'
+import FarmingRequester from '@/components/farming/FarmingRequester.vue'
 
 const { plantSeed: plantSeedSound, unlockSlot: unlockSlotSound, harvestReady, open, click } = useSound()
 
@@ -196,6 +250,14 @@ const {
   strangeRoots,
   weather,
   loading,
+  farmLevel,
+  farmXp,
+  farmXpRequired,
+  potathune,
+  inventoryLimit,
+  totalVegetables,
+  isInventoryFull,
+  activeRequests,
   fetchState,
   fetchWeather,
   plantSeed,
@@ -203,7 +265,8 @@ const {
   completeHarvest,
   unlockSlot,
   getPlantation,
-  isSlotUnlocked
+  isSlotUnlocked,
+  discardVegetables
 } = useFarming()
 
 const { farming: farmingData } = useGameData()
@@ -211,6 +274,9 @@ const { farming: farmingData } = useGameData()
 // État local
 const showShop = ref(false)
 const showInventory = ref(false)
+const showDiscardPopup = ref(false)
+const selectedDiscardType = ref(null)
+const discardQuantity = ref(1)
 const draggedSeed = ref(null)
 const touchSelectedSeed = ref(null) // Pour le mode tactile (mobile)
 const activeMinigame = ref(null)
@@ -255,6 +321,12 @@ const weatherClass = computed(() => {
   const weatherId = weather.value?.current?.id
   if (weatherId) return `weather-${weatherId}`
   return ''
+})
+
+// Pourcentage XP pour la barre de progression
+const xpPercentage = computed(() => {
+  if (!farmXpRequired.value || farmXpRequired.value === 0) return 0
+  return Math.min(100, (farmXp.value / farmXpRequired.value) * 100)
 })
 
 // Données d'affichage des légumes
@@ -322,6 +394,8 @@ async function onTouchEnd(event, slotIndex) {
     plantSeedSound()
     touchSelectedSeed.value = null
   } catch (err) {
+    const errorMsg = err.response?.data?.error || err.message || 'Erreur de plantation'
+    window.toast?.(errorMsg, 'error')
     console.error('Erreur de plantation:', err)
   }
 }
@@ -343,6 +417,8 @@ async function onDrop(event, slotIndex) {
     await plantSeed(slotIndex, seedType)
     plantSeedSound()
   } catch (err) {
+    const errorMsg = err.response?.data?.error || err.message || 'Erreur de plantation'
+    window.toast?.(errorMsg, 'error')
     console.error('Erreur de plantation:', err)
   }
   
@@ -366,6 +442,8 @@ async function onHarvest(slotIndex) {
     minigameConfig.value = data.minigameConfig
     minigameVegetable.value = data.vegetableData
   } catch (err) {
+    const errorMsg = err.response?.data?.error || err.message || 'Erreur de récolte'
+    window.toast?.(errorMsg, 'error')
     console.error('Erreur de récolte:', err)
   }
 }
@@ -375,6 +453,14 @@ async function onSaveResult(reward) {
   try {
     await completeHarvest(harvestingSlot.value, reward)
   } catch (err) {
+    const errorMsg = err.response?.data?.error || err.message || 'Erreur lors de la récolte'
+    const isInventoryFull = err.response?.data?.inventoryFull || errorMsg.includes('inventaire') || errorMsg.includes('plein')
+    
+    if (isInventoryFull) {
+      window.toast?.('Inventaire plein ! Jetez ou utilisez des légumes.', 'warning')
+    } else {
+      window.toast?.(errorMsg, 'error')
+    }
     console.error('Erreur de sauvegarde:', err)
   }
 }
@@ -401,6 +487,8 @@ async function onUnlockSlot(slotIndex) {
     await unlockSlot(slotIndex)
     unlockSlotSound()
   } catch (err) {
+    const errorMsg = err.response?.data?.error || err.message || 'Erreur de déblocage'
+    window.toast?.(errorMsg, 'error')
     console.error('Erreur de déblocage:', err)
   }
 }
@@ -408,6 +496,29 @@ async function onUnlockSlot(slotIndex) {
 async function onPurchase() {
   // Rafraîchir après achat
   await fetchState()
+}
+
+// Noms des légumes
+const vegetableNames = {
+  potato: 'Patate',
+  carrot: 'Carotte',
+  corn: 'Maïs'
+}
+
+async function confirmDiscard() {
+  if (!selectedDiscardType.value || discardQuantity.value < 1) return
+  
+  try {
+    await discardVegetables(selectedDiscardType.value, discardQuantity.value)
+    window.toast?.(`${discardQuantity.value} ${vegetableNames[selectedDiscardType.value] || selectedDiscardType.value}(s) jeté(e)s!`, 'info')
+    showDiscardPopup.value = false
+    selectedDiscardType.value = null
+    discardQuantity.value = 1
+  } catch (err) {
+    const errorMsg = err.response?.data?.error || err.message || 'Erreur de jettage'
+    window.toast?.(errorMsg, 'error')
+    console.error('Erreur de jettage:', err)
+  }
 }
 
 function getSlotClass(slotIndex) {
@@ -437,6 +548,14 @@ function checkMobile() {
   isMobile.value = window.innerWidth <= 768 || 'ontouchstart' in window
 }
 
+// Callback quand une demande est complétée
+function onRequestCompleted(result) {
+  // Feedback visuel si nécessaire
+  if (result?.rewards) {
+    console.log(`Demande complétée! +${result.rewards.potathune}💵 +${result.rewards.xp}XP`)
+  }
+}
+
 onMounted(async () => {
   // Déterminer si mobile
   checkMobile()
@@ -445,6 +564,8 @@ onMounted(async () => {
   try {
     await fetchState()
   } catch (err) {
+    const errorMsg = err.response?.data?.error || err.message || 'Erreur de chargement'
+    window.toast?.(errorMsg, 'error')
     console.error('Erreur de chargement:', err)
   }
   
@@ -498,9 +619,16 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.9);
   border-radius: 6px;
   border: 2px solid #8B4513;
-  max-width: 600px;
+  max-width: 700px;
   margin-left: auto;
   margin-right: auto;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
 }
 
 .farming-header h1 {
@@ -508,6 +636,119 @@ onUnmounted(() => {
   font-family: 'Fredoka', sans-serif;
   font-size: 20px;
   color: #5D4037;
+}
+
+/* Header right - météo + potathune */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.potathune-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(145deg, #2e7d32, #1b5e20);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 2px solid #4CAF50;
+  font-family: 'Fredoka', sans-serif;
+}
+
+.potathune-icon {
+  font-size: 16px;
+}
+
+.potathune-val {
+  color: #c8e6c9;
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Stats dans le header */
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(145deg, #8B4513, #5D3A1A);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 2px solid #D4A574;
+}
+
+.header-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Fredoka', sans-serif;
+}
+
+.stat-icon {
+  font-size: 14px;
+}
+
+.stat-val {
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.header-stat.level .stat-val {
+  color: #FFD700;
+}
+
+/* Mini barre XP dans header */
+.header-stat.xp {
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.xp-mini-bar {
+  width: 50px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.xp-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFD700, #FFA500);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.xp-mini-text {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+/* Compteur inventaire dans sidebar */
+.inventory-count {
+  display: inline-block;
+  background: #8B4513;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+.inventory-count-popup {
+  display: inline-block;
+  background: #8B4513;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-left: 8px;
+  font-weight: bold;
 }
 
 .farming-content {
@@ -535,6 +776,33 @@ onUnmounted(() => {
   text-align: center;
   border-bottom: 2px solid #DEB887;
   padding-bottom: 10px;
+}
+
+.discard-button {
+  background: linear-gradient(145deg, #FF6B6B, #FF5252);
+  border: 2px solid #FF4444;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: bold;
+  color: white;
+  cursor: url('@/assets/ui/cursor/hand_point.png') 0 0, auto;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  margin-top: 10px;
+}
+
+.discard-button:hover {
+  background: linear-gradient(145deg, #FF5252, #FF4444);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.discard-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .seeds-list {
@@ -923,7 +1191,7 @@ onUnmounted(() => {
   background: none;
   border: none;
   font-size: 24px;
-  cursor: pointer;
+   cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   color: #8B4513;
   padding: 0;
   width: 32px;

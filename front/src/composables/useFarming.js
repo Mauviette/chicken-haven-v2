@@ -3,12 +3,19 @@ import { apiGet, apiPost } from '@/utils/api'
 
 // État réactif global
 const farmLevel = ref(1)
+const farmXp = ref(0)
+const farmXpRequired = ref(15)
+const potathune = ref(0)
+const inventoryLimit = ref(10)
 const seeds = ref({ potato: 0, carrot: 0, corn: 0 })
 const vegetables = ref({ potato: 0, carrot: 0, corn: 0 })
 const unlockedSlots = ref([0])
 const plantations = ref([])
 const strangeRoots = ref(0)
 const weather = ref(null)
+const activeRequests = ref([])
+const nextRequestAt = ref(null)
+const nextInventoryUpgrade = ref(null)
 const loading = ref(false)
 const error = ref(null)
 
@@ -22,12 +29,19 @@ export function useFarming() {
     try {
       const data = await apiGet('/api/farming/state')
       farmLevel.value = data.level || 1
+      farmXp.value = data.xp || 0
+      farmXpRequired.value = data.xpRequired || 15
+      potathune.value = data.potathune || 0
+      inventoryLimit.value = data.inventoryLimit || 10
       seeds.value = data.seeds || { potato: 0, carrot: 0, corn: 0 }
       vegetables.value = data.vegetables || { potato: 0, carrot: 0, corn: 0 }
       unlockedSlots.value = data.unlockedSlots || [0]
       plantations.value = data.plantations || []
       strangeRoots.value = data.strangeRoots || 0
       weather.value = data.weather || null
+      activeRequests.value = data.activeRequests || []
+      nextRequestAt.value = data.nextRequestAt ? new Date(data.nextRequestAt) : null
+      nextInventoryUpgrade.value = data.nextInventoryUpgrade || null
       return data
     } catch (err) {
       console.error('[useFarming] fetchState error:', err)
@@ -124,6 +138,10 @@ export function useFarming() {
       vegetables.value = data.vegetables
       // Supprimer la plantation de la liste locale
       plantations.value = plantations.value.filter(p => p.slotIndex !== slotIndex)
+      // Mettre à jour XP et niveau
+      if (data.farmXp !== undefined) farmXp.value = data.farmXp
+      if (data.farmLevel !== undefined) farmLevel.value = data.farmLevel
+      if (data.farmXpRequired !== undefined) farmXpRequired.value = data.farmXpRequired
       return data
     } catch (err) {
       console.error('[useFarming] completeHarvest error:', err)
@@ -154,6 +172,121 @@ export function useFarming() {
   }
 
   /**
+   * Ouvre le dialogue d'une demande
+   */
+  async function openRequest(requestId) {
+    loading.value = true
+    error.value = null
+    try {
+      const data = await apiPost('/api/farming/open-request', { requestId })
+      // Mettre à jour la demande dans la liste locale
+      const index = activeRequests.value.findIndex(r => r.id === requestId)
+      if (index !== -1 && data.request) {
+        activeRequests.value[index] = data.request
+      }
+      return data
+    } catch (err) {
+      console.error('[useFarming] openRequest error:', err)
+      error.value = err.response?.data?.error || err.message || 'Erreur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Complète une demande
+   */
+  async function completeRequest(requestId) {
+    loading.value = true
+    error.value = null
+    try {
+      const data = await apiPost('/api/farming/complete-request', { requestId })
+      // Supprimer la demande de la liste locale
+      activeRequests.value = activeRequests.value.filter(r => r.id !== requestId)
+      // Mettre à jour les stats
+      if (data.farming) {
+        vegetables.value = data.farming.vegetables
+        potathune.value = data.farming.potathune
+        farmXp.value = data.farming.xp
+        farmLevel.value = data.farming.level
+        farmXpRequired.value = data.farming.xpRequired
+      }
+      return data
+    } catch (err) {
+      console.error('[useFarming] completeRequest error:', err)
+      error.value = err.response?.data?.error || err.message || 'Erreur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Renvoie/ignore une demande
+   */
+  async function dismissRequest(requestId) {
+    loading.value = true
+    error.value = null
+    try {
+      const data = await apiPost('/api/farming/dismiss-request', { requestId })
+      // Supprimer la demande de la liste locale
+      activeRequests.value = activeRequests.value.filter(r => r.id !== requestId)
+      // Mettre à jour le potathune après déduction (2 potathune)
+      if (data.farming?.potathune !== undefined) {
+        potathune.value = data.farming.potathune
+      }
+      return data
+    } catch (err) {
+      console.error('[useFarming] dismissRequest error:', err)
+      error.value = err.response?.data?.error || err.message || 'Erreur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Améliore la limite d'inventaire
+   */
+  async function upgradeInventory() {
+    loading.value = true
+    error.value = null
+    try {
+      const data = await apiPost('/api/farming/upgrade-inventory', {})
+      inventoryLimit.value = data.newLimit
+      potathune.value = data.potathune
+      nextInventoryUpgrade.value = data.nextUpgrade
+      return data
+    } catch (err) {
+      console.error('[useFarming] upgradeInventory error:', err)
+      error.value = err.response?.data?.error || err.message || 'Erreur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Jette des légumes pour libérer de l'espace
+   */
+  async function discardVegetables(vegetable, quantity) {
+    loading.value = true
+    error.value = null
+    try {
+      const data = await apiPost('/api/farming/discard-vegetables', { vegetable, quantity })
+      vegetables.value = data.vegetables
+      return data
+    } catch (err) {
+      console.error('[useFarming] discardVegetables error:', err)
+      error.value = err.response?.data?.error || err.message || 'Erreur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Récupère la plantation sur une case donnée
    */
   function getPlantation(slotIndex) {
@@ -176,6 +309,30 @@ export function useFarming() {
     return new Date(plantation.readyAt) <= new Date()
   }
 
+  /**
+   * Vérifie si le joueur peut compléter une demande
+   */
+  function canCompleteRequest(request) {
+    if (!request || !request.requirements) return false
+    // Vérifier que toutes les ressources sont disponibles
+    for (const req of request.requirements) {
+      const available = vegetables.value[req.vegetable] || 0
+      if (available < req.quantity) return false
+    }
+    // Vérifier le temps minimum (si firstOpenedAt existe)
+    if (request.firstOpenedAt && request.canCompleteAt) {
+      if (new Date() < new Date(request.canCompleteAt)) return false
+    }
+    return true
+  }
+
+  /**
+   * Vérifie si le joueur a des demandes non vues
+   */
+  function hasUnseenRequests() {
+    return activeRequests.value.some(r => !r.seen)
+  }
+
   // Computed pour le total de graines
   const totalSeeds = computed(() => {
     return (seeds.value.potato || 0) + (seeds.value.carrot || 0) + (seeds.value.corn || 0)
@@ -186,21 +343,40 @@ export function useFarming() {
     return (vegetables.value.potato || 0) + (vegetables.value.carrot || 0) + (vegetables.value.corn || 0)
   })
 
+  // Computed pour vérifier si l'inventaire est plein
+  const isInventoryFull = computed(() => {
+    return totalVegetables.value >= inventoryLimit.value
+  })
+
+  // Computed pour le nombre de demandes non vues
+  const unseenRequestCount = computed(() => {
+    return activeRequests.value.filter(r => !r.seen).length
+  })
+
   return {
     // État
     farmLevel,
+    farmXp,
+    farmXpRequired,
+    potathune,
+    inventoryLimit,
     seeds,
     vegetables,
     unlockedSlots,
     plantations,
     strangeRoots,
     weather,
+    activeRequests,
+    nextRequestAt,
+    nextInventoryUpgrade,
     loading,
     error,
     
     // Computed
     totalSeeds,
     totalVegetables,
+    isInventoryFull,
+    unseenRequestCount,
     
     // Actions
     fetchState,
@@ -210,10 +386,17 @@ export function useFarming() {
     startHarvest,
     completeHarvest,
     unlockSlot,
+    openRequest,
+    completeRequest,
+    dismissRequest,
+    upgradeInventory,
+    discardVegetables,
     
     // Helpers
     getPlantation,
     isSlotUnlocked,
-    isPlantReady
+    isPlantReady,
+    canCompleteRequest,
+    hasUnseenRequests
   }
 }
