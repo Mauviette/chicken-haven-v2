@@ -229,4 +229,22 @@ onUnmounted(() => {
     font-size: 12px;
   }
 }
+
+/* Mode sombre */
+:deep(.farming-view.dark-mode) .weather-display {
+  background: rgba(74, 144, 226, 0.15);
+  border-color: #6B8DB8;
+}
+
+:deep(.farming-view.dark-mode) .weather-name {
+  color: #C0C0C0;
+}
+
+:deep(.farming-view.dark-mode) .weather-timer {
+  color: #A0A0A0;
+}
+
+:deep(.farming-view.dark-mode) .weather-separator {
+  color: #A0A0A0;
+}
 </style>

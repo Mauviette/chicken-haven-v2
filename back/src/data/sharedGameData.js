@@ -1571,14 +1571,14 @@ export const itemsData = {
     nom: 'racines bizarres',
     nom_singulier: 'racine bizarre',
     icon: '🫚',
-    description: 'Une racine étrange trouvée dans la roche dure. Utilisée pour acheter des graines bizarroïdes.'
+    description: 'Une racine étrange trouvée dans la roche dure. Utilisée pour acheter des graines magiques.'
   },
   'ancient_urn': {
     id: 'ancient_urn',
     nom: 'urnes antiques',
     nom_singulier: 'urne antique',
     icon: '🏺',
-    description: 'Un petit artefact ancien trouvé dans la roche dure. Sert pour la fabrication et améliorations avancées.'
+    description: 'Un petit artefact ancien trouvé dans la roche dure. Sert à agrandir des espaces variés.'
   },
   'rotten_tomato': {
     id: 'rotten_tomato',
@@ -1953,11 +1953,28 @@ export const farmingData = {
   farmLevels: {
     // XP nécessaire pour chaque niveau (additif: +10 par niveau)
     xpPerLevel: [0, 15, 25, 35, 45, 55, 65, 75, 85, 95], // index = niveau actuel, valeur = XP pour passer au suivant
-    xpBaseIncrement: 10, // Pour les niveaux > 10, on ajoute 10 par niveau
+    xpBaseIncrement: 15, // Pour les niveaux > 10, on ajoute 15 par niveau
     
     // Récompenses par niveau
     rewards: {
-      2: { type: 'unlock', value: 'request_slot_info' }, // Info: les demandes sont débloquées
+      2: [
+        { type: 'unlock', value: 'vegetable_carrot', icon:'🥕', name:'Carottes' },
+        { type: 'unlock', value: 'new_slots_1', icon:'🔓', name:'Plus de place' },
+      ],
+      3: [
+        { type: 'unlock', value: 'vegetable_corn', icon:'🌽', name:'Maïs' },
+      ],
+      5: [
+        { type: 'unlock', value: 'vegetable_tomato', icon:'🫛', name:'Petits Pois' },
+        { type: 'unlock', value: 'extra_request_slot', icon:'💬', name:'+1 Emplacement de demandes' },
+        { type: 'unlock', value: 'new_slots_2', icon:'🔓', name:'Plus de place' },
+      ],
+      8: [
+        { type: 'unlock', value: 'vegetable_lettuce', icon:'🥬', name:'Laitue' },
+      ],
+      10: [
+        { type: 'unlock', value: 'vegetable_pumpkin', icon:'🥦', name:'Brocoli' },
+      ],
       // Futurs niveaux: nouveaux légumes, plus de demandes simultanées, etc.
     },
     
@@ -1976,15 +1993,15 @@ export const farmingData = {
   // SYSTÈME D'INVENTAIRE
   // ========================
   inventory: {
-    defaultLimit: 10, // Limite de légumes par défaut (tous légumes confondus)
+    defaultLimit: 25, // Limite de légumes par défaut (tous légumes confondus)
     
     // Upgrades de capacité
     upgrades: [
-      { from: 10, to: 15, cost: { potathune: 15, ancient_urn: 2 } },
-      { from: 15, to: 20, cost: { potathune: 25, ancient_urn: 3 } },
-      { from: 20, to: 30, cost: { potathune: 40, ancient_urn: 5 } },
-      { from: 30, to: 40, cost: { potathune: 60, ancient_urn: 7 } },
-      { from: 40, to: 50, cost: { potathune: 85, ancient_urn: 10 } },
+      { from: 25, to: 40, cost: { potathune: 15, ancient_urn: 2 } },
+      { from: 40, to: 55, cost: { potathune: 25, ancient_urn: 3 } },
+      { from: 55, to: 70, cost: { potathune: 40, ancient_urn: 5 } },
+      { from: 70, to: 85, cost: { potathune: 60, ancient_urn: 7 } },
+      { from: 85, to: 100, cost: { potathune: 85, ancient_urn: 10 } },
     ]
   },
 
@@ -2091,6 +2108,7 @@ export const farmingData = {
       minReward: 1,
       maxReward: 3,
       minigame: 'minesweeper',
+      unlock_level: 1,
       description: 'Une patate bien ronde qui pousse sous terre.'
     },
     carrot: {
@@ -2103,6 +2121,7 @@ export const farmingData = {
       minReward: 0,
       maxReward: 4,
       minigame: 'risk',
+      unlock_level: 2,
       description: 'Une carotte orange et croquante.'
     },
     corn: {
@@ -2115,15 +2134,58 @@ export const farmingData = {
       minReward: 1,
       maxReward: 3,
       minigame: 'falling',
+      unlock_level: 3,
       description: 'Un épi de maïs doré et juteux.'
+    },
+    tomato: {
+      id: 'tomato',
+      name: 'Petits Pois',
+      namePlural: 'Petits Pois',
+      icon: '🫛',
+      seedIcon: '🫘',
+      growthTime: 4 * 60 * 60 * 1000, // 4 heures
+      minReward: 1,
+      maxReward: 2,
+      minigame: 'minesweeper',
+      unlock_level: 5,
+      description: 'De délicieux petits pois verts.'
+    },
+    lettuce: {
+      id: 'lettuce',
+      name: 'Laitue',
+      namePlural: 'Laitues',
+      icon: '🥬',
+      seedIcon: '🫘',
+      growthTime: 2 * 60 * 60 * 1000, // 2 heures
+      minReward: 2,
+      maxReward: 5,
+      minigame: 'risk',
+      unlock_level: 8,
+      description: 'Une laitue fraîche et croquante.'
+    },
+    pumpkin: {
+      id: 'pumpkin',
+      name: 'Brocoli',
+      namePlural: 'Brocolis',
+      icon: '🥦',
+      seedIcon: '🫘',
+      growthTime: 6 * 60 * 60 * 1000, // 6 heures
+      minReward: 1,
+      maxReward: 1,
+      minigame: 'falling',
+      unlock_level: 10,
+      description: 'Un brocoli vert et nutritif.'
     }
   },
 
   // Prix des graines dans la boutique (en strange_root)
   seedPrices: {
-    potato: { type: 'strange_root', count: 1, seedsGiven: 2 },
-    carrot: { type: 'strange_root', count: 1, seedsGiven: 2 },
-    corn: { type: 'strange_root', count: 1, seedsGiven: 2 }
+    potato: { type: 'strange_root', count: 1, seedsGiven: 2, unlock_level: 1 },
+    carrot: { type: 'strange_root', count: 1, seedsGiven: 2, unlock_level: 2 },
+    corn: { type: 'strange_root', count: 1, seedsGiven: 2, unlock_level: 3 },
+    tomato: { type: 'strange_root', count: 2, seedsGiven: 1, unlock_level: 5 },
+    lettuce: { type: 'strange_root', count: 2, seedsGiven: 1, unlock_level: 8 },
+    pumpkin: { type: 'strange_root', count: 3, seedsGiven: 1, unlock_level: 10 }
   },
 
   // Configuration des mini-jeux

@@ -10,9 +10,9 @@
       </div>
       
       <!-- Section Graines -->
-      <h3 class="section-title">🌱 Graines</h3>
+      <h3 class="section-title">Graines</h3>
       <div class="seeds-grid">
-        <div v-for="(seed, type) in seedTypes" :key="type" class="seed-card">
+        <div v-for="([type, seed]) in seedsToShow" :key="type" class="seed-card">
           <div class="seed-header">
             <span class="seed-icon">{{ seed.icon }}</span>
             <span class="seed-name">{{ seed.name }}</span>
@@ -26,72 +26,58 @@
           <div class="seed-button-wrapper">
             <BuyButton 
               :onClick="() => onBuy(type)"
-              :disabled="strangeRoots < 1 || loading"
-              :price="{ type: 'strange_root', count: 1, _iconOverride: '🫚' }"
+              :disabled="strangeRoots < seed.price || loading"
+              :price="{ type: 'strange_root', count: seed.price, _iconOverride: '🫚' }"
             >
-              Acheter 2 graines
+              Acheter {{ seed.seedsGiven }} graines
             </BuyButton>
           </div>
         </div>
       </div>
       
+      <!-- Pagination des graines -->
+      <div v-if="totalSeedPages > 1" class="pagination">
+        <button 
+          @click="seedPage = Math.max(0, seedPage - 1)" 
+          :disabled="seedPage === 0"
+          class="page-btn"
+        >
+          ‹ Précédent
+        </button>
+        <span class="page-info">{{ seedPage + 1 }} / {{ totalSeedPages }}</span>
+        <button 
+          @click="seedPage = Math.min(totalSeedPages - 1, seedPage + 1)" 
+          :disabled="seedPage >= totalSeedPages - 1"
+          class="page-btn"
+        >
+          Suivant ›
+        </button>
+      </div>
+      
       <!-- Section Améliorations -->
-      <h3 class="section-title">📦 Stockage ({{ inventoryLimit }} max)</h3>
+      <h3 class="section-title">Place de l'inventaire de légumes ({{ inventoryLimit }} max)</h3>
       <div class="upgrade-section" v-if="nextInventoryUpgrade">
         <div class="upgrade-card">
           <div class="upgrade-info">
-            <span class="upgrade-icon">📦</span>
+            <span class="upgrade-icon">🧺</span>
             <div class="upgrade-details">
               <span class="upgrade-name">Agrandir l'inventaire</span>
               <span class="upgrade-desc">{{ inventoryLimit }} → {{ nextInventoryUpgrade.to }} places</span>
             </div>
           </div>
-          <div class="upgrade-cost">
-            <span>💵 {{ nextInventoryUpgrade.cost.potathune }}</span>
-            <span v-if="nextInventoryUpgrade.cost.ancient_urn">🏺 {{ nextInventoryUpgrade.cost.ancient_urn }}</span>
-          </div>
-          <button 
-            class="upgrade-btn"
+          <BuyButton 
+            :price="getUpgradePrice()"
+            :onClick="onUpgradeInventory"
             :disabled="!canAffordUpgrade || loading"
-            @click="onUpgradeInventory"
           >
             Améliorer
-          </button>
+          </BuyButton>
         </div>
       </div>
       <div v-else class="max-reached">
         ✅ Stockage maximum atteint !
       </div>
       
-      <!-- Section Jeter des légumes -->
-      <h3 class="section-title">🗑️ Jeter des légumes</h3>
-      <div class="discard-section">
-        <div class="discard-info">Sélectionnez un légume à jeter pour libérer de l'espace</div>
-        <div class="discard-grid">
-          <div 
-            v-for="(veg, type) in vegetableTypes" 
-            :key="type"
-            class="discard-item"
-            :class="{ 'selected': selectedDiscard === type, 'disabled': vegetables[type] < 1 }"
-            @click="vegetables[type] > 0 && (selectedDiscard = type)"
-          >
-            <span class="discard-icon">{{ veg.icon }}</span>
-            <span class="discard-count">{{ vegetables[type] || 0 }}</span>
-          </div>
-        </div>
-        <div v-if="selectedDiscard" class="discard-controls">
-          <button class="qty-btn" @click="discardQty = Math.max(1, discardQty - 1)">-</button>
-          <span class="discard-qty">{{ discardQty }}</span>
-          <button class="qty-btn" @click="discardQty = Math.min(vegetables[selectedDiscard], discardQty + 1)">+</button>
-          <button 
-            class="discard-btn"
-            :disabled="loading || discardQty < 1"
-            @click="onDiscard"
-          >
-            Jeter
-          </button>
-        </div>
-      </div>
       
       <p class="shop-hint">
         💡 Les racines bizarres s'obtiennent en minant dans la roche dure!
@@ -106,6 +92,7 @@ import Popup from '@/components/menu/Popup.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
 import { useFarming } from '@/composables/useFarming'
 import { useSound } from '@/composables/useSound'
+import { useGameData } from '@/composables/useGameData'
 
 const { shopBuy } = useSound()
 
@@ -118,6 +105,8 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'purchase'])
 
+const { farming: farmingData } = useGameData()
+
 const { 
   buySeeds, 
   upgradeInventory, 
@@ -126,51 +115,75 @@ const {
   vegetables, 
   potathune, 
   inventoryLimit,
-  nextInventoryUpgrade
+  nextInventoryUpgrade,
+  farmLevel
 } = useFarming()
 
 // État local
 const selectedDiscard = ref(null)
 const discardQty = ref(1)
+const seedPage = ref(0)
+const seedsPerPage = 6
 
-const seedTypes = computed(() => ({
-  potato: {
-    icon: '🥔🫘',
-    vegIcon: '🥔',
-    name: 'Graines de Patate',
-    description: 'Des graines magiques pour faire pousser des patates.',
-    growthTime: '3h',
-    minigame: 'Démineur',
-    minReward: 1,
-    maxReward: 3
-  },
-  carrot: {
-    icon: '🥕🫘',
-    vegIcon: '🥕',
-    name: 'Graines de Carotte',
-    description: 'Des graines magiques pour faire pousser des carottes.',
-    growthTime: '3h',
-    minigame: 'Choix Risqué',
-    minReward: 0,
-    maxReward: 4
-  },
-  corn: {
-    icon: '🌽🫘',
-    vegIcon: '🌽',
-    name: 'Graines de Maïs',
-    description: 'Des graines magiques pour faire pousser du maïs.',
-    growthTime: '3h',
-    minigame: 'Attrape-Grains',
-    minReward: 1,
-    maxReward: 3
+const seedTypes = computed(() => {
+  const result = {}
+  const vegetables = farmingData.value?.vegetables || {}
+  const seedPrices = farmingData.value?.seedPrices || {}
+  
+  for (const [type, vegData] of Object.entries(vegetables)) {
+    // Vérifier si les graines sont débloquées au niveau actuel
+    if (vegData.unlock_level > farmLevel.value) continue
+    
+    const price = seedPrices[type]
+    if (price) {
+      const growthHours = Math.round(vegData.growthTime / (60 * 60 * 1000))
+      const minigameNames = {
+        minesweeper: 'Démineur',
+        risk: 'Choix Risqué',
+        falling: 'Attrape-Grains'
+      }
+      result[type] = {
+        icon: `${vegData.icon}${vegData.seedIcon}`,
+        vegIcon: vegData.icon,
+        name: `Graines de ${vegData.name}`,
+        description: vegData.description,
+        growthTime: `${growthHours}h`,
+        minigame: minigameNames[vegData.minigame] || vegData.minigame,
+        minReward: vegData.minReward,
+        maxReward: vegData.maxReward,
+        price: price.count,
+        seedsGiven: price.seedsGiven
+      }
+    }
   }
-}))
+  
+  return result
+})
 
-const vegetableTypes = {
-  potato: { icon: '🥔', name: 'Patate' },
-  carrot: { icon: '🥕', name: 'Carotte' },
-  corn: { icon: '🌽', name: 'Maïs' }
-}
+const vegetableTypes = computed(() => {
+  const result = {}
+  const vegetables = farmingData.value?.vegetables || {}
+  
+  for (const [type, vegData] of Object.entries(vegetables)) {
+    // Vérifier si le légume est débloqué au niveau actuel
+    if (vegData.unlock_level > farmLevel.value) continue
+    
+    result[type] = {
+      icon: vegData.icon,
+      name: vegData.name
+    }
+  }
+  
+  return result
+})
+
+const seedsToShow = computed(() => {
+  const allSeeds = Object.entries(seedTypes.value)
+  const start = seedPage.value * seedsPerPage
+  return allSeeds.slice(start, start + seedsPerPage)
+})
+
+const totalSeedPages = computed(() => Math.ceil(Object.keys(seedTypes.value).length / seedsPerPage))
 
 const canAffordUpgrade = computed(() => {
   if (!nextInventoryUpgrade.value) return false
@@ -179,6 +192,25 @@ const canAffordUpgrade = computed(() => {
   // Note: ancient_urn check would need resources from somewhere
   return true
 })
+
+function getUpgradePrice() {
+  if (!nextInventoryUpgrade.value) return []
+  const cost = nextInventoryUpgrade.value.cost
+  const prices = []
+  
+  // Ajouter potathune
+  if (cost.potathune) {
+    prices.push({ _iconOverride: '💵', count: cost.potathune })
+  }
+  
+  // Ajouter urne antique si applicable
+  if (cost.ancient_urn) {
+    prices.push({ _iconOverride: '🏺', count: cost.ancient_urn })
+  }
+  
+  // Si pas de coûts, retourner un array vide
+  return prices.length > 0 ? prices : [{ _iconOverride: '💵', count: 0 }]
+}
 
 async function onBuy(vegetableType) {
   try {
@@ -263,6 +295,42 @@ async function onDiscard() {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.page-btn {
+  padding: 6px 12px;
+  background: #7a3e10;
+  border: 2px solid #ffc66e;
+  color: #fff9e5;
+  border-radius: 6px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #8a4a1c;
+}
+
+.page-btn:disabled {
+  background: #5c2c08;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 12px;
+  color: var(--button-text);
 }
 
 .seed-card {
@@ -396,7 +464,8 @@ async function onDiscard() {
 
 .upgrade-btn:disabled {
   background: #ccc;
-  cursor: not-allowed;
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+
 }
 
 .max-reached {
@@ -449,7 +518,8 @@ async function onDiscard() {
 
 .discard-item.disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+      cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+
 }
 
 .discard-icon {
@@ -502,7 +572,8 @@ async function onDiscard() {
 
 .discard-btn:disabled {
   background: #ccc;
-  cursor: not-allowed;
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+
 }
 
 .shop-hint {
@@ -607,5 +678,67 @@ async function onDiscard() {
   .seed-reward {
     font-size: 10px;
   }
+}
+
+/* Mode sombre */
+:deep(.farming-view.dark-mode) .seed-shop {
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .seed-shop h2,
+:deep(.farming-view.dark-mode) .seed-shop h3 {
+  color: #FFD700;
+}
+
+:deep(.farming-view.dark-mode) .roots-display {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: #8B7355;
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .seed-card {
+  background: rgba(100, 100, 100, 0.2);
+  border-color: #8B7355;
+}
+
+:deep(.farming-view.dark-mode) .seed-info {
+  color: #C0C0C0;
+}
+
+:deep(.farming-view.dark-mode) .seed-reward {
+  color: #C0C0C0;
+}
+
+:deep(.farming-view.dark-mode) .upgrade-card {
+  background: rgba(100, 100, 100, 0.2);
+  border-color: #8B7355;
+}
+
+:deep(.farming-view.dark-mode) .upgrade-name {
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .upgrade-desc {
+  color: #B0B0B0;
+}
+
+:deep(.farming-view.dark-mode) .discard-item {
+  background: #3a3a3a;
+  border-color: #8B7355;
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .discard-item.selected {
+  border-color: #ff6b6b;
+  background: #4a2a2a;
+}
+
+:deep(.farming-view.dark-mode) .qty-btn {
+  background: #8B6F47;
+  color: white;
+}
+
+:deep(.farming-view.dark-mode) .shop-hint {
+  color: #B0B0B0;
 }
 </style>

@@ -88,6 +88,19 @@ function getMaxRequestsForLevel(level) {
 /**
  * Génère une nouvelle demande aléatoire pour un joueur
  */
+function getUnlockedVegetables(farmLevel) {
+  const vegetables = farmingData.vegetables || {}
+  const unlocked = []
+  
+  for (const [vegType, vegData] of Object.entries(vegetables)) {
+    if (vegData.unlock_level <= farmLevel) {
+      unlocked.push(vegType)
+    }
+  }
+  
+  return unlocked
+}
+
 function generateRequest(farmLevel, unlockedVegetables = ['potato', 'carrot', 'corn']) {
   const config = farmingData.requests
   
@@ -200,29 +213,61 @@ function addFarmXp(farming, xpToAdd) {
 }
 
 /**
+ * Calcule le coût et le niveau requis pour débloquer un slot
+ */
+function getSlotUnlockCost(slotIndex) {
+  // Cases des côtés (milieu des bords) : 1,3,5,7
+  const sideSlots = [1, 3, 5, 7]
+  // Cases des coins : 0,2,6,8
+  const cornerSlots = [0, 2, 6, 8]
+  
+  if (sideSlots.includes(slotIndex)) {
+    return {
+      requiredLevel: 2,
+      cost: { ancient_urn: 2, potathune: 25 }
+    }
+  } else if (cornerSlots.includes(slotIndex)) {
+    return {
+      requiredLevel: 5,
+      cost: { ancient_urn: 3, potathune: 50 }
+    }
+  } else {
+    // Slot invalide ou centre (déjà débloqué)
+    return null
+  }
+}
+
+/**
  * Initialise les données farming d'un utilisateur si nécessaire
  */
-function initializeFarming(user) {
+async function initializeFarming(user) {
+  let needsSave = false
   if (!user.farming) {
     user.farming = {
       level: 1,
       xp: 0,
       potathune: 0,
+      wateringCans: 1,
       inventoryLimit: farmingData.inventory?.defaultLimit || 10,
-      seeds: { potato: 0, carrot: 0, corn: 0 },
-      vegetables: { potato: 0, carrot: 0, corn: 0 },
+      seeds: { potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 },
+      vegetables: { potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 },
       unlockedSlots: [4],
       plantations: [],
       activeRequests: [],
       nextRequestAt: null
     }
+    needsSave = true
   } else {
     // S'assurer que les nouveaux champs existent
-    if (user.farming.xp === undefined) user.farming.xp = 0
-    if (user.farming.potathune === undefined) user.farming.potathune = 0
-    if (user.farming.inventoryLimit === undefined) user.farming.inventoryLimit = farmingData.inventory?.defaultLimit || 10
-    if (!user.farming.activeRequests) user.farming.activeRequests = []
-    if (user.farming.nextRequestAt === undefined) user.farming.nextRequestAt = null
+    if (user.farming.xp === undefined) { user.farming.xp = 0; needsSave = true }
+    if (user.farming.potathune === undefined) { user.farming.potathune = 0; needsSave = true }
+    if (user.farming.wateringCans === undefined || user.farming.wateringCans === null) { user.farming.wateringCans = 1; needsSave = true }
+    if (user.farming.inventoryLimit === undefined) { user.farming.inventoryLimit = farmingData.inventory?.defaultLimit || 10; needsSave = true }
+    if (!user.farming.activeRequests) { user.farming.activeRequests = []; needsSave = true }
+    if (user.farming.nextRequestAt === undefined) { user.farming.nextRequestAt = null; needsSave = true }
+  }
+  if (needsSave) {
+    await user.save()
   }
 }
 
@@ -249,7 +294,7 @@ export async function getFarmingState(req, res) {
     }
     
     // Initialiser farming si nécessaire
-    initializeFarming(user)
+    await initializeFarming(user)
     
     const now = new Date()
     
@@ -264,7 +309,8 @@ export async function getFarmingState(req, res) {
     
     if (currentRequests < maxRequests) {
       // Générer une nouvelle demande (pas de cooldown)
-      const newRequest = generateRequest(user.farming.level)
+      const unlockedVegetables = getUnlockedVegetables(user.farming.level)
+      const newRequest = generateRequest(user.farming.level, unlockedVegetables)
       user.farming.activeRequests.push(newRequest)
     }
     
@@ -286,6 +332,7 @@ export async function getFarmingState(req, res) {
       xp: user.farming.xp,
       xpRequired: getXpForNextLevel(user.farming.level),
       potathune: user.farming.potathune,
+      wateringCans: user.farming.wateringCans,
       inventoryLimit,
       totalVegetables,
       inventoryFull: totalVegetables >= inventoryLimit,
@@ -362,8 +409,8 @@ export async function buySeeds(req, res) {
     if (!user.farming) {
       user.farming = {
         level: 1,
-        seeds: { potato: 0, carrot: 0, corn: 0 },
-        vegetables: { potato: 0, carrot: 0, corn: 0 },
+        seeds: { potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 },
+        vegetables: { potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 },
         unlockedSlots: [4],
         plantations: []
       }
@@ -423,8 +470,8 @@ export async function plantSeed(req, res) {
     if (!user.farming) {
       user.farming = {
         level: 1,
-        seeds: { potato: 0, carrot: 0, corn: 0 },
-        vegetables: { potato: 0, carrot: 0, corn: 0 },
+        seeds: { potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 },
+        vegetables: { potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 },
         unlockedSlots: [4],
         plantations: []
       }
@@ -494,7 +541,7 @@ export async function harvestPlant(req, res) {
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
     // Initialiser farming si nécessaire
-    initializeFarming(user)
+    await initializeFarming(user)
     
     // Vérifier la limite d'inventaire AVANT de lancer le mini-jeu
     const totalVegetables = getTotalVegetables(user.farming.vegetables)
@@ -558,7 +605,7 @@ export async function completeHarvest(req, res) {
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
     // Initialiser farming si nécessaire
-    initializeFarming(user)
+    await initializeFarming(user)
     
     // Trouver et supprimer la plantation
     const plantationIndex = user.farming.plantations.findIndex(p => p.slotIndex === slotIndex)
@@ -619,28 +666,37 @@ export async function unlockSlot(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
-    // Vérifier le niveau
-    const playerLevel = user.experience?.level || 1
-    if (playerLevel < farmingData.requiredLevel) {
-      return res.status(403).json({ error: `Niveau ${farmingData.requiredLevel} requis` })
-    }
-    
     // Initialiser farming si nécessaire
-    initializeFarming(user)
+    await initializeFarming(user)
     
     // Vérifier que la case n'est pas déjà débloquée
     if (user.farming.unlockedSlots.includes(slotIndex)) {
       return res.status(400).json({ error: 'Cette case est déjà débloquée' })
     }
     
-    // Vérifier le prix
-    const price = farmingData.slotUnlockPrice
-    if (price.type === 'eggs') {
-      if ((user.resources?.eggs || 0) < price.count) {
-        return res.status(400).json({ error: 'Pas assez d\'œufs' })
-      }
-      user.resources.eggs -= price.count
+    // Obtenir le coût et le niveau requis pour ce slot
+    const slotCost = getSlotUnlockCost(slotIndex)
+    if (!slotCost) {
+      return res.status(400).json({ error: 'Cette case ne peut pas être débloquée' })
     }
+    
+    // Vérifier le niveau de farming requis
+    if (user.farming.level < slotCost.requiredLevel) {
+      return res.status(403).json({ error: `Niveau de ferme ${slotCost.requiredLevel} requis` })
+    }
+    
+    // Vérifier les ressources
+    const { cost } = slotCost
+    if ((user.resources?.ancient_urn || 0) < (cost.ancient_urn || 0)) {
+      return res.status(400).json({ error: 'Pas assez d\'urnes antiques' })
+    }
+    if (user.farming.potathune < (cost.potathune || 0)) {
+      return res.status(400).json({ error: 'Pas assez de potathune' })
+    }
+    
+    // Déduire les ressources
+    if (cost.ancient_urn) user.resources.ancient_urn -= cost.ancient_urn
+    if (cost.potathune) user.farming.potathune -= cost.potathune
     
     // Débloquer la case
     user.farming.unlockedSlots.push(slotIndex)
@@ -671,7 +727,7 @@ export async function openRequest(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
-    initializeFarming(user)
+    await initializeFarming(user)
     
     // Trouver la demande
     const requestIndex = user.farming.activeRequests.findIndex(r => r.id === requestId)
@@ -692,7 +748,12 @@ export async function openRequest(req, res) {
     res.json({
       success: true,
       request: {
-        ...request.toObject()
+        ...request.toObject(),
+        // Convertir l'objet requirements en tableau pour le frontend
+        requirements: Object.entries(request.requirements || {}).map(([vegetable, quantity]) => ({
+          vegetable,
+          quantity
+        }))
       }
     })
   } catch (err) {
@@ -715,7 +776,7 @@ export async function completeRequest(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
-    initializeFarming(user)
+    await initializeFarming(user)
     
     // Trouver la demande
     const requestIndex = user.farming.activeRequests.findIndex(r => r.id === requestId)
@@ -790,7 +851,7 @@ export async function dismissRequest(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
-    initializeFarming(user)
+    await initializeFarming(user)
     
     // Vérifier que le joueur a assez de potathune (2)
     const dismissCost = 2
@@ -838,7 +899,7 @@ export async function upgradeInventory(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
-    initializeFarming(user)
+    await initializeFarming(user)
     
     // Trouver le prochain upgrade disponible
     const currentLimit = user.farming.inventoryLimit || 10
@@ -908,7 +969,7 @@ export async function discardVegetables(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
     
-    initializeFarming(user)
+    await initializeFarming(user)
     
     const available = user.farming.vegetables[vegetable] || 0
     if (available < quantity) {
@@ -928,3 +989,62 @@ export async function discardVegetables(req, res) {
     res.status(500).json({ error: 'Erreur serveur' })
   }
 }
+
+/**
+ * POST /api/farming/use-watering-can - Utilise un engrais sur une plantation
+ */
+export async function useWateringCan(req, res) {
+  try {
+    const { slotIndex } = req.body
+    
+    if (typeof slotIndex !== 'number' || slotIndex < 0 || slotIndex > 8) {
+      return res.status(400).json({ error: 'Index de case invalide' })
+    }
+    
+    const user = await User.findById(req.userId)
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' })
+    
+    await initializeFarming(user)
+    
+    // Vérifier que le joueur a des engrais
+    if ((user.farming.wateringCans || 0) <= 0) {
+      return res.status(400).json({ error: 'Pas d\'engrais disponibles' })
+    }
+    
+    // Trouver la plantation
+    const plantationIndex = user.farming.plantations.findIndex(p => p.slotIndex === slotIndex)
+    if (plantationIndex === -1) {
+      return res.status(400).json({ error: 'Aucune plantation sur cette case' })
+    }
+    
+    const plantation = user.farming.plantations[plantationIndex]
+    
+    // Vérifier que la plantation n'est pas déjà prête
+    if (new Date(plantation.readyAt) <= new Date()) {
+      return res.status(400).json({ error: 'Cette plantation est déjà prête' })
+    }
+    
+    // Réduire le temps de 3 heures (3 * 60 * 60 * 1000 ms)
+    const reductionMs = 3 * 60 * 60 * 1000
+    const newReadyAt = new Date(plantation.readyAt.getTime() - reductionMs)
+    
+    // S'assurer qu'on ne va pas dans le passé
+    plantation.readyAt = new Date(Math.max(newReadyAt.getTime(), plantation.plantedAt.getTime()))
+    
+    // Consommer un engrais
+    user.farming.wateringCans -= 1
+    
+    await user.save()
+    
+    res.json({
+      success: true,
+      plantations: user.farming.plantations,
+      wateringCans: user.farming.wateringCans
+    })
+  } catch (err) {
+    console.error('[farming] useWateringCan error:', err)
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+}
+
+export { initializeFarming }

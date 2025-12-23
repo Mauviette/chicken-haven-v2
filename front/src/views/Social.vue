@@ -564,7 +564,7 @@ const getAnnouncementImageUrl = (imageName) => {
 
 .refresh-button .action-button:disabled {
   opacity: 0.6;
-  cursor: not-allowed;
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
 }
 
 .loading-container, .error-container {

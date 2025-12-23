@@ -60,21 +60,23 @@
 
         <!-- Ce qu'il demande -->
         <div class="requirements">
-          <Tooltip 
-            v-for="req in currentRequest.requirements" 
-            :key="req.vegetable"
-            :text="`<strong>${getVegetableName(req.vegetable)}</strong><br>Demandé: ${req.quantity}<br>Vous avez: ${getVegetableCount(req.vegetable)}`"
-          >
-            <div 
-              class="requirement-item"
-              :class="{ 'has-enough': hasEnough(req) }"
+          <template v-if="currentRequest?.requirements && Array.isArray(currentRequest.requirements)">
+            <Tooltip 
+              v-for="(req, idx) in currentRequest.requirements" 
+              :key="`req-${idx}-${req?.vegetable}`"
+              :text="req?.vegetable ? `<strong>${getVegetableName(req.vegetable)}</strong><br>${getVegetableDescription(req.vegetable)}` : 'Légume inconnu'"
             >
-              <span class="req-icon">{{ getVegetableIcon(req.vegetable) }}</span>
-              <span class="req-quantity">
-                {{ getVegetableCount(req.vegetable) }}/{{ req.quantity }}
-              </span>
-            </div>
-          </Tooltip>
+              <div 
+                class="requirement-item"
+                :class="{ 'has-enough': req?.vegetable && hasEnough(req) }"
+              >
+                <span class="req-icon">{{ req?.vegetable ? getVegetableIcon(req.vegetable) : '🥬' }}</span>
+                <span class="req-quantity">
+                  {{ req?.vegetable ? getVegetableCount(req.vegetable) : 0 }}/{{ req?.quantity || 0 }}
+                </span>
+              </div>
+            </Tooltip>
+          </template>
         </div>
 
         <!-- Récompenses -->
@@ -94,13 +96,15 @@
 
         <!-- Boutons d'action -->
         <div class="action-buttons">
-          <BuyButton 
-            :price="{ _iconOverride: '💵', count: 2 }"
-            :onClick="handleDismiss"
-            :disabled="loading"
-          >
-            Renvoyer
-          </BuyButton>
+          <Tooltip text="<strong>Renvoyer</strong><br>Coûte 2 potathunes<br>Il reviendra plus tard avec une nouvelle demande">
+            <BuyButton 
+              :price="{ _iconOverride: '💵', count: 2 }"
+              :onClick="handleDismiss"
+              :disabled="loading || !canDismiss"
+            >
+              Renvoyer
+            </BuyButton>
+          </Tooltip>
           <button 
             class="btn-complete"
             :disabled="!canComplete || loading"
@@ -113,20 +117,29 @@
     </Transition>
 
     <!-- Animation de récompense (superposée sur la bulle) -->
-    <Transition name="fade">
-      <div v-if="showRewardAnimation && currentRequest" class="reward-animation-container">
-        <div class="reward-animation">
-          <div v-if="animatedRewards.potathune > 0" class="animated-reward potathune">
-            <span class="reward-emoji">💵</span>
-            <span class="reward-amount">+{{ animatedRewards.potathune }}</span>
-          </div>
-          <div v-if="animatedRewards.xp > 0" class="animated-reward xp">
-            <span class="reward-emoji">⭐</span>
-            <span class="reward-amount">+{{ animatedRewards.xp }} XP</span>
-          </div>
+    <div v-if="showRewardAnimation" class="reward-animation-container" :style="{
+      top: animationPosition.top + 'px',
+      left: animationPosition.left + 'px'
+    }">
+      <!-- Effet de confettis/particules -->
+      <div 
+        v-for="(particle, i) in particlePositions" 
+        :key="`particle-${i}`" 
+        class="reward-particle"
+        :style="particle"
+      ></div>
+      
+      <div class="reward-animation">
+        <div v-if="animatedRewards.potathune > 0" class="animated-reward potathune">
+          <span class="reward-emoji">💵</span>
+          <span class="reward-amount">+{{ animatedRewards.potathune }}</span>
+        </div>
+        <div v-if="animatedRewards.xp > 0" class="animated-reward xp">
+          <span class="reward-emoji">⭐</span>
+          <span class="reward-amount">+{{ animatedRewards.xp }} XP</span>
         </div>
       </div>
-    </Transition>
+    </div>
 
     <!-- Version mobile fullscreen -->
     <Transition name="slide-up">
@@ -150,15 +163,17 @@
 
         <!-- Ce qu'il demande -->
         <div class="requirements-large">
-          <div 
-            v-for="req in currentRequest.requirements" 
-            :key="req.vegetable"
-            class="requirement-item-large"
-            :class="{ 'has-enough': hasEnough(req) }"
-          >
-            <span class="req-icon-large">{{ getVegetableIcon(req.vegetable) }}</span>
-            <span class="req-quantity-large">{{ getVegetableCount(req.vegetable) }}/{{ req.quantity }}</span>
-          </div>
+          <template v-if="currentRequest?.requirements && Array.isArray(currentRequest.requirements)">
+            <div 
+              v-for="(req, idx) in currentRequest.requirements" 
+              :key="`req-large-${idx}-${req?.vegetable}`"
+              class="requirement-item-large"
+              :class="{ 'has-enough': req?.vegetable && hasEnough(req) }"
+            >
+              <span class="req-icon-large">{{ req?.vegetable ? getVegetableIcon(req.vegetable) : '🥬' }}</span>
+              <span class="req-quantity-large">{{ req?.vegetable ? getVegetableCount(req.vegetable) : 0 }}/{{ req?.quantity || 0 }}</span>
+            </div>
+          </template>
         </div>
 
         <!-- Récompenses -->
@@ -174,13 +189,15 @@
 
         <!-- Boutons -->
         <div class="action-buttons-large">
-          <BuyButton 
-            :price="{ _iconOverride: '💵', count: 2 }"
-            :onClick="handleDismiss"
-            :disabled="loading"
-          >
-            Renvoyer
-          </BuyButton>
+          <Tooltip text="<strong>Renvoyer</strong><br>Coûte 2 potathunes<br>Il reviendra plus tard avec une nouvelle demande">
+            <BuyButton 
+              :price="{ _iconOverride: '💵', count: 2 }"
+              :onClick="handleDismiss"
+              :disabled="loading || !canDismiss"
+            >
+              Renvoyer
+            </BuyButton>
+          </Tooltip>
           <button class="btn-complete-large" :disabled="!canComplete || loading" @click="handleComplete">
             {{ loading ? '...' : 'Donner' }}
           </button>
@@ -189,28 +206,26 @@
     </Transition>
 
     <!-- Popup de confirmation pour renvoyer -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showDismissConfirm" class="dismiss-overlay" @click="cancelDismiss">
-          <div class="dismiss-popup" @click.stop>
-            <p class="dismiss-text">Renvoyer ce visiteur ?</p>
-            <p class="dismiss-warning">Il reviendra plus tard avec une autre demande.</p>
-            <div class="dismiss-buttons">
-              <button class="btn-cancel" @click="cancelDismiss">Annuler</button>
-              <button class="btn-confirm" @click="confirmDismiss">Renvoyer</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <Popup v-if="showDismissConfirm" @close="cancelDismiss">
+      <p class="dismiss-text">Renvoyer ce visiteur ?</p>
+      <p class="dismiss-warning">Il reviendra plus tard avec une autre demande.</p>
+      <div class="dismiss-buttons">
+        <button class="btn-cancel" @click="cancelDismiss">Annuler</button>
+        <button class="btn-confirm" @click="confirmDismiss">Renvoyer</button>
+      </div>
+    </Popup>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useFarming } from '@/composables/useFarming'
+import { useSound } from '@/composables/useSound'
 import Tooltip from '@/components/menu/Tooltip.vue'
 import BuyButton from '@/components/menu/BuyButton.vue'
+import Popup from '@/components/menu/Popup.vue'
+
+const emit = defineEmits(['completed'])
 
 const { 
   activeRequests, 
@@ -218,20 +233,39 @@ const {
   openRequest, 
   completeRequest, 
   dismissRequest,
-  loading
+  fetchState,
+  loading,
+  potathune
 } = useFarming()
+
+const { harvestCollect } = useSound()
 
 // Icônes des légumes (emojis)
 const vegetableIcons = {
   potato: '🥔',
   carrot: '🥕',
-  corn: '🌽'
+  corn: '🌽',
+  tomato: '🫛',
+  lettuce: '🥬',
+  pumpkin: '🥦'
 }
 
 const vegetableNames = {
   potato: 'Patate',
   carrot: 'Carotte',
-  corn: 'Maïs'
+  corn: 'Maïs',
+  tomato: 'Petits Pois',
+  lettuce: 'Laitue',
+  pumpkin: 'Brocoli'
+}
+
+const vegetableDescriptions = {
+  potato: 'Une patate bien ronde qui pousse sous terre.',
+  carrot: 'Une belle carotte orange.',
+  corn: 'Un délicieux épi de maïs.',
+  tomato: 'De délicieux petits pois verts.',
+  lettuce: 'Une laitue fraîche et croquante.',
+  pumpkin: 'Un brocoli vert et nutritif.'
 }
 
 // État local
@@ -242,6 +276,7 @@ const showDismissConfirm = ref(false)
 const timeUntilExpire = ref(0)
 const showRewardAnimation = ref(false)
 const animatedRewards = ref({ potathune: 0, xp: 0 })
+const animationPosition = ref({ top: 0, left: 0 })
 let timerInterval = null
 
 // Détection mobile
@@ -269,21 +304,44 @@ const currentRequest = computed(() => {
 // Vérifie si on peut compléter (juste les ressources)
 const canComplete = computed(() => {
   const req = currentRequest.value
-  if (!req || !req.requirements) return false
+  if (!req || !Array.isArray(req.requirements) || req.requirements.length === 0) return false
   for (const r of req.requirements) {
+    if (!r || !r.vegetable) continue // Ignorer les items invalides
     const available = vegetables.value[r.vegetable] || 0
     if (available < r.quantity) return false
   }
   return true
 })
 
+// Vérifie si on peut renvoyer (2 potathunes minimum)
+const canDismiss = computed(() => {
+  return (potathune.value || 0) >= 2
+})
+
 // Message pour le timer d'expiration
 const waitMessage = computed(() => {
-  if (timeUntilExpire.value > 0 && timeUntilExpire.value < 3600000) {
-    // Affiche l'expiration si < 1h
+  if (timeUntilExpire.value > 0) {
+    // Affiche l'expiration pour tous les visiteurs actifs
     return `⏱️ Part dans ${formatTimeLeft(timeUntilExpire.value)}`
   }
   return null
+})
+
+// Générer les positions des particules
+const particlePositions = computed(() => {
+  const particles = []
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2
+    const distance = 200
+    const x = Math.cos(angle) * distance
+    const y = -Math.sin(angle) * distance - 100
+    particles.push({
+      '--particle-x': `${x}px`,
+      '--particle-y': `${y}px`,
+      '--particle-delay': `${i * 0.05}s`
+    })
+  }
+  return particles
 })
 
 // Watchers
@@ -300,6 +358,10 @@ function getVegetableIcon(type) {
 
 function getVegetableName(type) {
   return vegetableNames[type] || type
+}
+
+function getVegetableDescription(type) {
+  return vegetableDescriptions[type] || 'Un légume mystérieux'
 }
 
 function getVegetableCount(type) {
@@ -341,14 +403,24 @@ function updateTimers() {
 }
 
 // Sélectionner une demande (desktop)
-function selectRequest(index) {
+async function selectRequest(index) {
+  // Si on clique sur la demande actuelle, fermer la bulle
+  if (currentIndex.value === index && showDialogue.value) {
+    showDialogue.value = false
+    return
+  }
   currentIndex.value = index
+  
+  // Marquer comme vu AVANT d'afficher la bulle
+  await markAsSeen()
+  
+  // Afficher seulement après que markAsSeen soit terminé
   showDialogue.value = true
-  markAsSeen()
 }
 
 function openFullscreen() {
   isFullscreen.value = true
+  // markAsSeen sera appelé après, donc on affiche directement
   showDialogue.value = true
   markAsSeen()
 }
@@ -417,6 +489,15 @@ async function confirmDismiss() {
       showDialogue.value = false
       isFullscreen.value = false
     }
+    
+    // Charger le prochain visiteur après 1.5s
+    setTimeout(() => {
+      try {
+        fetchState()
+      } catch (err) {
+        console.error('Erreur lors du chargement des visiteurs:', err)
+      }
+    }, 1500)
   } catch (err) {
     const errorMsg = err.response?.data?.error || err.message || 'Erreur lors du renvoi'
     window.toast?.(errorMsg, 'error')
@@ -431,18 +512,66 @@ async function handleComplete() {
   try {
     const result = await completeRequest(req.id)
     
-    // Déclencher l'animation de récompense
+    // Déclencher l'animation de récompense avec les légumes consommés
     if (result?.rewards) {
+      // Jouer un son de récompense
+      harvestCollect()
+      
       showRewardAnimation.value = true
       animatedRewards.value = {
         potathune: result.rewards.potathune || 0,
         xp: result.rewards.xp || 0
       }
       
-      // Masquer l'animation après 2.5 secondes
+      // Attendre que Vue update le DOM avant de calculer la position
+      await nextTick()
+      
+      console.log('DEBUG: Entrée calcul position')
+      console.log('DEBUG: showDialogue.value:', showDialogue.value)
+      console.log('DEBUG: isFullscreen.value:', isFullscreen.value)
+      console.log('DEBUG: isMobile.value:', isMobile.value)
+      console.log('DEBUG: All .requester-item:', document.querySelectorAll('.requester-item').length)
+      console.log('DEBUG: All .requester-item.active:', document.querySelectorAll('.requester-item.active').length)
+      
+      // Calculer la position du PNJ
+      const pnjElement = isMobile.value 
+        ? document.querySelector('.requester-badge')
+        : document.querySelector('.requester-item.active')
+      
+      console.log('🔍 pnjElement:', pnjElement ? 'TROUVÉ' : 'NOT FOUND')
+      
+      if (pnjElement) {
+        const rect = pnjElement.getBoundingClientRect()
+        animationPosition.value = {
+          top: rect.top + rect.height / 2,
+          left: rect.left + rect.width / 2
+        }
+        console.log('✓ Position SET:', animationPosition.value)
+      } else {
+        console.log('✗ Element not found, keeping default 0,0')
+      }
+      
+      // Créer les animations pour les légumes consommés
+      if (req.requirements && Array.isArray(req.requirements)) {
+        req.requirements.forEach((req, idx) => {
+          if (req?.vegetable && req?.quantity) {
+            setTimeout(() => {
+              createVegetableAnimation(req.vegetable, req.quantity)
+            }, idx * 100) // Décalage pour un effet en cascade
+          }
+        })
+      }
+      
+      // Charger le prochain visiteur après l'animation (3.5s pour laisser le temps à l'animation de finir)
       setTimeout(() => {
         showRewardAnimation.value = false
-      }, 2500)
+        // Charger l'état pour obtenir les nouveaux visiteurs
+        try {
+          fetchState()
+        } catch (err) {
+          console.error('Erreur lors du chargement des visiteurs:', err)
+        }
+      }, 3500)
     }
     
     // Ajuster l'index si nécessaire
@@ -463,7 +592,39 @@ async function handleComplete() {
   }
 }
 
-const emit = defineEmits(['completed'])
+// Fonction pour créer les animations des légumes consommés
+function createVegetableAnimation(vegetableType, quantity) {
+  const icon = getVegetableIcon(vegetableType)
+  const el = document.createElement('div')
+  el.textContent = `-${quantity} ${icon}`
+  
+  // Appliquer les styles inline directement
+  el.style.position = 'fixed'
+  el.style.fontSize = '20px'
+  el.style.fontWeight = 'bold'
+  el.style.color = '#FF6B6B'
+  el.style.textShadow = '0 0 8px rgba(255, 107, 107, 0.8)'
+  el.style.animation = 'floatUpAnimation 2.5s ease-out forwards'
+  el.style.pointerEvents = 'none'
+  el.style.whiteSpace = 'nowrap'
+  el.style.zIndex = '10001'
+  
+  // Placer directement dans le body, pas dans le container Vue
+  const pnjElement = isMobile.value 
+    ? document.querySelector('.requester-badge')
+    : document.querySelector('.requester-item.active')
+  
+  if (pnjElement) {
+    const rect = pnjElement.getBoundingClientRect()
+    el.style.left = (rect.left + rect.width / 2 + (Math.random() * 200 - 100)) + 'px'
+    el.style.top = (rect.top + rect.height / 2) + 'px'
+  }
+  
+  document.body.appendChild(el)
+  
+  // Nettoyer après l'animation
+  setTimeout(() => el.remove(), 2500)
+}
 
 // Lifecycle
 onMounted(() => {
@@ -543,24 +704,26 @@ onUnmounted(() => {
 .requesters-list {
   position: fixed;
   right: 10px;
-  top: 80px;
+  top: 140px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 100;
+  z-index: 50;
 }
 
 .requester-item {
    cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
-  transition: transform 0.2s;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .requester-item:hover {
-  transform: scale(1.05);
+  transform: scale(1.1) translateY(-5px);
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3));
 }
 
 .requester-item.active {
-  transform: scale(1.1);
+  transform: scale(1.15) translateY(-8px);
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4));
 }
 
 .character-wrapper-small {
@@ -633,7 +796,7 @@ onUnmounted(() => {
 .speech-bubble-desktop {
   position: fixed;
   right: 85px;
-  top: 80px;
+  top: 120px;
   background: #FFFEF0;
   border: 3px solid #8B4513;
   border-radius: 15px;
@@ -641,7 +804,8 @@ onUnmounted(() => {
   padding: 15px;
   min-width: 240px;
   max-width: 280px;
-  z-index: 99;
+  z-index: 40;
+  animation: bubbleAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .speech-bubble-desktop::after {
@@ -776,8 +940,10 @@ onUnmounted(() => {
   font-weight: 600;
   font-size: 13px;
    cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-family: 'Fredoka', sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-dismiss {
@@ -794,15 +960,37 @@ onUnmounted(() => {
   background: linear-gradient(145deg, #4CAF50, #388E3C);
   border: none;
   color: white;
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
 }
 
 .btn-complete:hover:not(:disabled) {
   background: linear-gradient(145deg, #66BB6A, #43A047);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
+  animation: buttonPulse 0.6s ease-out;
+}
+
+.btn-complete:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
 }
 
 .btn-complete:disabled {
   background: #ccc;
-  cursor: not-allowed;
+    cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+  opacity: 0.6;
+}
+
+@keyframes buttonPulse {
+  0% {
+    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
+  }
+  50% {
+    box-shadow: 0 6px 24px rgba(76, 175, 80, 0.8);
+  }
+  100% {
+    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
+  }
 }
 
 /* ========== VERSION MOBILE FULLSCREEN ========== */
@@ -817,6 +1005,7 @@ onUnmounted(() => {
   justify-content: center;
   padding: 20px;
   gap: 15px;
+  animation: slideUpFast 0.4s ease-out forwards;
 }
 
 .close-fullscreen {
@@ -958,6 +1147,9 @@ onUnmounted(() => {
   font-size: 16px;
    cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, auto;
   font-family: 'Fredoka', sans-serif;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-dismiss-large {
@@ -970,33 +1162,27 @@ onUnmounted(() => {
   background: linear-gradient(145deg, #4CAF50, #388E3C);
   border: none;
   color: white;
+  box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+}
+
+.btn-complete-large:hover:not(:disabled) {
+  background: linear-gradient(145deg, #66BB6A, #43A047);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.6);
+  animation: buttonPulse 0.6s ease-out;
+}
+
+.btn-complete-large:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 6px rgba(76, 175, 80, 0.4);
 }
 
 .btn-complete-large:disabled {
   background: #ccc;
+  opacity: 0.6;
+  cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
 }
-
-/* Popup confirmation */
-.dismiss-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.dismiss-popup {
-  background: #FFFEF0;
-  border: 3px solid #8B4513;
-  border-radius: 15px;
-  padding: 20px;
-  max-width: 300px;
-  text-align: center;
-  font-family: 'Fredoka', sans-serif;
-}
-
+/* Styles pour les textes du popup de dismiss */
 .dismiss-text {
   font-size: 16px;
   font-weight: 600;
@@ -1006,7 +1192,8 @@ onUnmounted(() => {
 
 .dismiss-warning {
   font-size: 13px;
-  color: #666;
+  color: #555;
+  opacity: 1;
   margin: 0 0 15px 0;
 }
 
@@ -1037,6 +1224,27 @@ onUnmounted(() => {
   color: white;
 }
 
+/* Animation des légumes consommés */
+.floating-vegetable {
+  position: absolute;
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff6b6b;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  animation: floatVegetable 2.5s ease-out forwards;
+}
+
+@keyframes floatVegetable {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-150px) scale(0.8);
+  }
+}
+
 /* Animations */
 .fade-enter-active,
 .fade-leave-active {
@@ -1063,14 +1271,110 @@ onUnmounted(() => {
   opacity: 0;
 }
 
+/* Animation d'apparition de la bulle avec bounce */
+.speech-bubble-desktop {
+  animation: bubbleAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bubbleAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+/* Animation d'apparition du fullscreen */
+.fullscreen-modal {
+  animation: slideUpFast 0.4s ease-out;
+}
+
+@keyframes slideUpFast {
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Animation de récompense */
 .reward-animation-container {
   position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  width: 150px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+}
+
+.reward-animation-container::before {
+  content: '';
+  position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.15), transparent 70%);
+  animation: glowPulse 2.5s ease-out forwards;
   pointer-events: none;
-  z-index: 9999;
+}
+
+@keyframes glowPulse {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+@keyframes containerAppear {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.reward-particle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.8), rgba(255, 107, 107, 0.8));
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  animation: particleFloat 2.5s ease-out forwards;
+  animation-delay: var(--particle-delay);
+  opacity: 0.8;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.6), inset 0 0 4px rgba(255, 255, 255, 0.4);
+}
+
+@keyframes particleFloat {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--particle-x), var(--particle-y)) scale(0);
+  }
 }
 
 .reward-animation {
@@ -1078,37 +1382,113 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 20px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .animated-reward {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 32px;
+  gap: 12px;
+  font-size: 48px;
   font-weight: bold;
-  color: white;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  animation: floatUp 2.5s ease-out forwards;
+  color: #FFD700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 1);
+  animation: simpleFloatUp 3s ease-out forwards;
+  white-space: nowrap;
 }
 
 .animated-reward.potathune {
   color: #FFD700;
-  text-shadow: 2px 2px 8px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 1);
 }
 
 .animated-reward.xp {
   color: #FF6B6B;
-  text-shadow: 2px 2px 8px rgba(255, 107, 107, 0.5);
+  text-shadow: 0 0 10px rgba(255, 107, 107, 1);
 }
 
 .reward-emoji {
-  font-size: 48px;
-  animation: bounce 2.5s ease-out forwards;
+  font-size: 28px;
+  display: inline-block;
 }
 
 .reward-amount {
-  font-size: 24px;
-  animation: slideRight 2.5s ease-out forwards;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+@keyframes simpleFloatUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-200px);
+  }
+}
+
+.floating-vegetable {
+  position: absolute;
+  font-size: 20px;
+  font-weight: bold;
+  color: #FF6B6B;
+  text-shadow: 0 0 8px rgba(255, 107, 107, 0.8);
+  animation: simpleFloatUp 2.5s ease-out forwards;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@keyframes rewardAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes rewardPop {
+  0% {
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes rewardBounce {
+  0% {
+    transform: scale(0) translateY(40px);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fadeInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes floatUp {
@@ -1116,9 +1496,35 @@ onUnmounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+  85% {
+    opacity: 1;
+  }
   100% {
     opacity: 0;
-    transform: translateY(-150px);
+    transform: translateY(-200px);
+  }
+}
+
+@keyframes slideUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-200px);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
 
@@ -1142,6 +1548,103 @@ onUnmounted(() => {
   100% {
     opacity: 0;
     transform: translateX(100px);
+  }
+}
+
+/* Mode sombre pour FarmingRequester */
+:deep(.farming-view.dark-mode) .farming-requester .speech-bubble-desktop {
+  background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+  border-color: #8B7355;
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .farming-requester .speech-title {
+  color: #FFD700;
+}
+
+:deep(.farming-view.dark-mode) .farming-requester .speech-subtitle {
+  color: #C0C0C0;
+}
+
+:deep(.farming-view.dark-mode) .farming-requester .requirement-item {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: #8B7355;
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .farming-requester .reward-item {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: #8B7355;
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .dismiss-text {
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .dismiss-warning {
+  color: #B0B0B0;
+}
+
+:deep(.farming-view.dark-mode) .btn-cancel {
+  background: #4a4a4a;
+  border-color: #8B7355;
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .btn-confirm {
+  background: #c05030;
+}
+
+:deep(.farming-view.dark-mode) .btn-confirm:hover {
+  background: #d06540;
+}
+
+:deep(.farming-view.dark-mode) .btn-complete-large {
+  background: linear-gradient(145deg, #2a5a2a, #1a3a1a);
+  border-color: #4CAF50;
+}
+
+:deep(.farming-view.dark-mode) .discard-popup-container {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: #A0826D;
+}
+
+:deep(.farming-view.dark-mode) .discard-popup-container h2 {
+  color: #FFD700;
+}
+
+:deep(.farming-view.dark-mode) .discard-popup-container label {
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .discard-popup-container input {
+  background: rgba(100, 100, 100, 0.3);
+  border-color: #8B7355;
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .discard-popup-container button {
+  background: linear-gradient(145deg, #5a4a3a, #3a2a1a);
+  border-color: #A0826D;
+  color: #E0E0E0;
+}
+
+:deep(.farming-view.dark-mode) .discard-popup-container button:hover {
+  background: linear-gradient(145deg, #6a5a4a, #4a3a2a);
+}
+</style>
+
+<style>
+/* Animations globales pour les éléments créés dynamiquement */
+@keyframes floatUpAnimation {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-200px);
   }
 }
 </style>

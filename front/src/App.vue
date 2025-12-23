@@ -23,6 +23,12 @@
     :to="levelUpTo"
     @close="levelUpVisible = false"
   />
+  <FarmLevelUpPopup
+    v-if="farmLevelUpVisible && !isAnnouncementsPage"
+    :from="farmLevelFrom"
+    :to="farmLevelTo"
+    @close="farmLevelUpVisible = false"
+  />
     <ToastManager ref="toastManager" :hasBottomBar="!isAuthPage"/>
     <AppLoading />
     <Options :visible="showOptions" @close="showOptions = false" @logout="logout" />
@@ -64,12 +70,14 @@ import SpawnableObjects from '@/components/SpawnableObjects.vue'
 import AchievementsMenu from '@/components/menu/AchievementsMenu.vue'
 import QuestsMenu from '@/components/menu/QuestsMenu.vue'
 import LevelUpPopup from '@/components/menu/LevelUpPopup.vue'
+import FarmLevelUpPopup from '@/components/menu/FarmLevelUpPopup.vue'
 import AppLoading from '@/components/menu/AppLoading.vue'
 import UpdatePopup from '@/components/menu/UpdatePopup.vue'
 import { getUnlocksBetween } from '@/data/unlocks.js'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePlayer } from '@/composables/usePlayer'
+import { useFarming } from '@/composables/useFarming'
 import { useGameData } from '@/composables/useGameData'
 import { useSound } from '@/composables/useSound'
 import { useToast } from '@/composables/useToast'
@@ -92,6 +100,12 @@ const showMiningGame = ref(false)
 const updatePopupVisible = ref(false)
 const currentUpdateAnnouncement = ref(null)
 const { logout: performLogout } = useAuth()
+
+// Farming level popup
+const { farmLevel } = useFarming()
+const farmLevelUpVisible = ref(false)
+const farmLevelFrom = ref(1)
+const farmLevelTo = ref(1)
 const playerComposable = usePlayer() || {}
 const refreshPlayer = playerComposable.refreshPlayer || (() => Promise.resolve())
 const fetchTeam = playerComposable.fetchTeam || (() => Promise.resolve())
@@ -125,6 +139,21 @@ const isTimeStopActive = computed(() => {
 })
 
 const route = useRoute()
+
+// Watch farming level ups to show popup
+watch(farmLevel, (n, o) => {
+  if (typeof o === 'number' && typeof n === 'number' && n > o) {
+    // Check if we've already shown this level up
+    const lastShownLevel = parseInt(localStorage.getItem('lastFarmLevelUpShown') || '0')
+    if (n > lastShownLevel) {
+      farmLevelFrom.value = o
+      farmLevelTo.value = n
+      farmLevelUpVisible.value = true
+      localStorage.setItem('lastFarmLevelUpShown', n.toString())
+      try { sndAchievement && sndAchievement() } catch (_) {}
+    }
+  }
+})
 
 // Vérifie si la route actuelle est la page de connexion ou une page publique
 const isAuthPage = computed(() => route.name === 'Auth' || route.name === 'Announcements' || route.name === 'AnnouncementDetail')

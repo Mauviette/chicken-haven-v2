@@ -6,9 +6,10 @@ const farmLevel = ref(1)
 const farmXp = ref(0)
 const farmXpRequired = ref(15)
 const potathune = ref(0)
+const wateringCans = ref(0)
 const inventoryLimit = ref(10)
-const seeds = ref({ potato: 0, carrot: 0, corn: 0 })
-const vegetables = ref({ potato: 0, carrot: 0, corn: 0 })
+const seeds = ref({ potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 })
+const vegetables = ref({ potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 })
 const unlockedSlots = ref([0])
 const plantations = ref([])
 const strangeRoots = ref(0)
@@ -32,9 +33,10 @@ export function useFarming() {
       farmXp.value = data.xp || 0
       farmXpRequired.value = data.xpRequired || 15
       potathune.value = data.potathune || 0
+      wateringCans.value = data.wateringCans || 0
       inventoryLimit.value = data.inventoryLimit || 10
-      seeds.value = data.seeds || { potato: 0, carrot: 0, corn: 0 }
-      vegetables.value = data.vegetables || { potato: 0, carrot: 0, corn: 0 }
+      seeds.value = data.seeds || { potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 }
+      vegetables.value = data.vegetables || { potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, pumpkin: 0 }
       unlockedSlots.value = data.unlockedSlots || [0]
       plantations.value = data.plantations || []
       strangeRoots.value = data.strangeRoots || 0
@@ -184,6 +186,9 @@ export function useFarming() {
       if (index !== -1 && data.request) {
         activeRequests.value[index] = data.request
       }
+      // Refetch l'état complet pour garantir que tout est à jour
+      // Cela résout les problèmes de synchronisation des données
+      await fetchState()
       return data
     } catch (err) {
       console.error('[useFarming] openRequest error:', err)
@@ -287,6 +292,26 @@ export function useFarming() {
   }
 
   /**
+   * Utilise un engrais sur une plantation pour réduire le temps de croissance de 3h
+   */
+  async function useWateringCan(slotIndex) {
+    loading.value = true
+    error.value = null
+    try {
+      const data = await apiPost('/api/farming/use-watering-can', { slotIndex })
+      plantations.value = data.plantations
+      wateringCans.value = data.wateringCans
+      return data
+    } catch (err) {
+      console.error('[useFarming] useWateringCan error:', err)
+      error.value = err.response?.data?.error || err.message || 'Erreur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Récupère la plantation sur une case donnée
    */
   function getPlantation(slotIndex) {
@@ -335,12 +360,12 @@ export function useFarming() {
 
   // Computed pour le total de graines
   const totalSeeds = computed(() => {
-    return (seeds.value.potato || 0) + (seeds.value.carrot || 0) + (seeds.value.corn || 0)
+    return (seeds.value.potato || 0) + (seeds.value.carrot || 0) + (seeds.value.corn || 0) + (seeds.value.tomato || 0) + (seeds.value.lettuce || 0) + (seeds.value.pumpkin || 0)
   })
 
   // Computed pour le total de légumes
   const totalVegetables = computed(() => {
-    return (vegetables.value.potato || 0) + (vegetables.value.carrot || 0) + (vegetables.value.corn || 0)
+    return (vegetables.value.potato || 0) + (vegetables.value.carrot || 0) + (vegetables.value.corn || 0) + (vegetables.value.tomato || 0) + (vegetables.value.lettuce || 0) + (vegetables.value.pumpkin || 0)
   })
 
   // Computed pour vérifier si l'inventaire est plein
@@ -359,6 +384,7 @@ export function useFarming() {
     farmXp,
     farmXpRequired,
     potathune,
+    wateringCans,
     inventoryLimit,
     seeds,
     vegetables,
@@ -391,6 +417,7 @@ export function useFarming() {
     dismissRequest,
     upgradeInventory,
     discardVegetables,
+    useWateringCan,
     
     // Helpers
     getPlantation,

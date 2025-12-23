@@ -11,7 +11,8 @@ import {
   completeRequest,
   dismissRequest,
   upgradeInventory,
-  discardVegetables
+  discardVegetables,
+  useWateringCan
 } from '../controllers/farming.controller.js'
 import { verifyToken } from '../middleware/auth.middleware.js'
 
@@ -31,6 +32,7 @@ router.post('/complete-request', verifyToken, completeRequest)
 router.post('/dismiss-request', verifyToken, dismissRequest)
 router.post('/upgrade-inventory', verifyToken, upgradeInventory)
 router.post('/discard-vegetables', verifyToken, discardVegetables)
+router.post('/use-watering-can', verifyToken, useWateringCan)
 
 // Route publique pour la météo
 router.get('/weather', getWeather)

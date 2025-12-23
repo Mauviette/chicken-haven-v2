@@ -22,6 +22,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Tooltip from '@/components/menu/Tooltip.vue'
+import { useGameData } from '@/composables/useGameData'
 
 const props = defineProps({
   plantation: {
@@ -33,16 +34,17 @@ const props = defineProps({
 
 const emit = defineEmits(['harvest'])
 
+const { farming: farmingData } = useGameData()
+
 const now = ref(Date.now())
 const isMobile = ref(false)
 let timerInterval = null
 
-// Icônes par type de légume
-const vegetableIcons = {
-  potato: { seed: '🫘', growing: '🌱', ready: '🥔' },
-  carrot: { seed: '🫘', growing: '🥕', ready: '🥕' },
-  corn: { seed: '🫘', growing: '🌽', ready: '🌽' }
-}
+// Icône du légume depuis sharedGameData
+const vegetableIcon = computed(() => {
+  const vegData = farmingData.value?.vegetables?.[props.plantation.vegetableType]
+  return vegData?.icon || '🥔'
+})
 
 const plantedAt = computed(() => new Date(props.plantation.plantedAt).getTime())
 const readyAt = computed(() => new Date(props.plantation.readyAt).getTime())
@@ -66,18 +68,18 @@ const growthStage = computed(() => {
 })
 
 const plantIcon = computed(() => {
-  const icons = vegetableIcons[props.plantation.vegetableType] || vegetableIcons.potato
-  if (isReady.value) return icons.ready
-  if (progressPercent.value < 33) return icons.seed
-  if (progressPercent.value < 66) return icons.growing
-  return '🪴' // 3ème stade: afficher le pot au lieu du légume
+  const vegData = farmingData.value?.vegetables?.[props.plantation.vegetableType]
+  if (isReady.value) return vegData?.icon || '🥔'
+  if (progressPercent.value < 33) return '🫘' // graine
+  if (progressPercent.value < 66) return '🌱' // pousse
+  return '🪴' // pot pour le dernier stade
 })
 
-// Icône du légume final (pour le badge)
-const vegetableIcon = computed(() => {
-  const icons = vegetableIcons[props.plantation.vegetableType] || vegetableIcons.potato
-  return icons.ready
-})
+// Icône du légume final (pour le badge) - maintenant défini plus haut
+// const vegetableIcon = computed(() => {
+//   const icons = vegetableIcons[props.plantation.vegetableType] || vegetableIcons.potato
+//   return icons.ready
+// })
 
 // Formater le temps restant
 const formattedTimeLeft = computed(() => {
@@ -100,11 +102,8 @@ const formattedTimeLeft = computed(() => {
 
 // Tooltip du timer
 const timerTooltip = computed(() => {
-  const vegName = {
-    potato: 'Patate',
-    carrot: 'Carotte',
-    corn: 'Maïs'
-  }[props.plantation.vegetableType] || 'Légume'
+  const vegData = farmingData.value?.vegetables?.[props.plantation.vegetableType]
+  const vegName = vegData?.name || 'Légume'
   
   let html = `<strong>${vegName} en croissance</strong><br>`
   html += `Progression: ${Math.round(progressPercent.value)}%<br>`

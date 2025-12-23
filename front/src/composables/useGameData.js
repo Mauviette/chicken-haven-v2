@@ -146,6 +146,66 @@ export function useGameData() {
   const levelRewards = computed(() => gameData.value?.levelRewards || {})
   const artifacts = computed(() => gameData.value?.artifacts || {})
   const quests = computed(() => gameData.value?.quests || {})
+  const farming = computed(() => gameData.value?.farming || {})
+
+  // Helpers for farm levels
+  const farmUnlockLabels = {
+    request_slot_info: "Informations sur les emplacements de demande",
+    extra_request_slot: "+1 emplacement de demande",
+    special_seeds: "Graines spéciales"
+  }
+
+  function humanizeKey(key) {
+    if (!key || typeof key !== 'string') return String(key)
+    return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  }
+
+  function getFarmLevelRewardsBetween(from, to) {
+    const rewardsArr = []
+    const farmLevels = farming.value?.farmLevels || {}
+    const rewards = farmLevels.rewards || {}
+    for (let lvl = Math.max(1, from + 1); lvl <= to; lvl++) {
+      const r = rewards[lvl]
+      if (r) {
+        // normalize to array
+        if (Array.isArray(r)) {
+          rewardsArr.push(...r)
+        } else if (typeof r === 'object') {
+          rewardsArr.push(r)
+        }
+      }
+    }
+    // Convert to unified format for popup display
+    return rewardsArr.map(r => {
+      if (r.type === 'unlock') {
+        const label = r.name || farmUnlockLabels[r.value] || humanizeKey(r.value)
+        return { type: 'unlock', label, icon: r.icon || '✨' }
+      }
+      if (r.type === 'resource') {
+        const label = `${r.count || 0} ${r.name || r.value || 'Unknown'}`
+        const icon = r.icon || getResourceIcon(r.value)
+        return { type: 'resource', label, icon }
+      }
+      return { type: r.type || 'unknown', label: JSON.stringify(r), icon: r.icon || '✨' }
+    })
+  }
+
+  function getFarmUnlocksBetween(from, to) {
+    const unlocked = []
+    const farmLevels = farming.value?.farmLevels || {}
+    const rewards = farmLevels.rewards || {}
+    for (let lvl = Math.max(1, from + 1); lvl <= to; lvl++) {
+      const r = rewards[lvl]
+      if (r) {
+        if (Array.isArray(r)) {
+          r.forEach(item => { if (item.type === 'unlock') unlocked.push(farmUnlockLabels[item.value] || humanizeKey(item.value)) })
+        } else if (r.type === 'unlock') {
+          unlocked.push(farmUnlockLabels[r.value] || humanizeKey(r.value))
+        }
+      }
+    }
+    return unlocked
+  }
 
   // Fonctions utilitaires
   function getEspeceInfo(especeId) {
@@ -219,16 +279,9 @@ export function useGameData() {
     return unlocked
   }
 
-  // Enregistrer les hooks uniquement si on est dans un contexte de composant Vue
-  const instance = getCurrentInstance()
-  if (instance) {
-    onMounted(initialize)
-    onUnmounted(stopPeriodicSync)
-  } else {
-    // Si utilisé hors d'un composant, initialiser immédiatement si pas encore fait
-    if (!isInitialized) {
-      initialize()
-    }
+  // Initialiser immédiatement sans hooks de cycle de vie
+  if (!isInitialized) {
+    initialize()
   }
 
   return {
@@ -271,6 +324,10 @@ export function useGameData() {
     getResourceIcon,
     formatString,
     getLevelRewardsBetween,
-    getUnlocksBetween
+    getUnlocksBetween,
+    // Farming helpers
+    farming,
+    getFarmLevelRewardsBetween,
+    getFarmUnlocksBetween
   }
 }

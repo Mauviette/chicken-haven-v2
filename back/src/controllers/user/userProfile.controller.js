@@ -1,6 +1,7 @@
 // user/userProfile.controller.js
 // Gestion du profil utilisateur (avatar, displayName, etc.)
 import User from '../../models/User.js'
+import { initializeFarming } from '../farming.controller.js'
 import { updateAchievementProgress, triggerAchievementCheck } from '../achievements.controller.js'
 import { containsForbiddenWords } from '../../utils/forbiddenWords.js'
 import crypto from 'crypto'
@@ -114,6 +115,8 @@ export async function getMe(req, res) {
     const user = await User.findById(req.userId)
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' })
 
+    await initializeFarming(user)
+
     const { experience, username, displayName, resources, upgrades } = user
     const profileId = await ensureProfileId(user)
     
@@ -146,7 +149,8 @@ export async function getMe(req, res) {
         precious_stone: resources?.precious_stone ?? 0,
       },
       cooldowns: user.cooldowns || {},
-      upgrades: upgrades || {}
+      upgrades: upgrades || {},
+      farming: user.farming
     })
   } catch (err) {
     console.error(err)

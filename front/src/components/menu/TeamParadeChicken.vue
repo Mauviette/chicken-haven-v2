@@ -120,6 +120,9 @@ const forceHideTooltip = ref(false)
 // Référence à l'élément poule pour obtenir sa position
 const chickenRef = ref(null)
 
+// Invalider l'affichage toutes les secondes pour le compte à rebours
+let _tick = null
+
 // Détection mobile
 const isMobile = ref(window.innerWidth <= 768)
 
@@ -148,12 +151,16 @@ onMounted(() => {
   initPosition()
   applyImage()
   rafId = requestAnimationFrame(step)
+  
+  // Invalider l'affichage toutes les secondes pour le compte à rebours
+  if (!_tick) _tick = setInterval(() => { /* force computed to update */ x.value = x.value }, 1000)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateMobileState)
   window.removeEventListener('chicken-upgraded', onChickenUpgraded)
   if (rafId) cancelAnimationFrame(rafId)
+  if (_tick) { clearInterval(_tick); _tick = null }
 })
 
 function applyImage() {
@@ -546,15 +553,6 @@ const remainingMs = computed(() => {
 })
 
 const isTalentReady = computed(() => remainingMs.value <= 0)
-
-// Invalider l’affichage toutes les secondes pour le compte à rebours
-let _tick = null
-onMounted(() => {
-  if (!_tick) _tick = setInterval(() => { /* force computed to update */ x.value = x.value }, 1000)
-})
-onUnmounted(() => {
-  if (_tick) { clearInterval(_tick); _tick = null }
-})
 
 // Mini évaluateur d'expressions (aligné avec Production.vue)
 function evalExpr(expr, ctx) {

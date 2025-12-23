@@ -306,7 +306,7 @@ const eggTooltipHtml = computed(() => {
 const farmLevelTooltipHtml = computed(() => {
   const curXp = farmXp.value ?? 0
   const reqXp = farmXpRequired.value ?? 0
-  return `<strong>Niveau Potager ${farmLevel.value}</strong><br>Expérience: ${curXp}/${reqXp} 🫐`
+  return `<strong>Niveau Potager ${farmLevel.value}</strong><br>Expérience: ${curXp}/${reqXp} ⭐`
 })
 
 const levelTooltipHtml = () => {
@@ -571,7 +571,8 @@ function openMarketFromEggCounter() {
 }
 
 .egg-counter.clickable { cursor: url('@/assets/ui/cursor/hand_point_n.png') 0 0, pointer; }
-.egg-counter.disabled { cursor: not-allowed; opacity: 0.85 }
+.egg-counter.disabled {     cursor: url('@/assets/ui/cursor/disabled.png') 0 0, auto;
+ opacity: 0.85 }
 
 .profile-btn {
   background: none;

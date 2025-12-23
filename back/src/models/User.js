@@ -229,19 +229,26 @@ const UserSchema = new mongoose.Schema({
     level: { type: Number, default: 1 }, // Niveau de la ferme
     xp: { type: Number, default: 0 }, // XP de ferme accumulé
     potathune: { type: Number, default: 0 }, // Monnaie de farming 💵
-    inventoryLimit: { type: Number, default: 10 }, // Limite de légumes (tous confondus)
+    wateringCans: { type: Number, default: 1 }, // Engrais pour accélérer la croissance 🌱
+    inventoryLimit: { type: Number, default: 25 }, // Limite de légumes (tous confondus)
     
     // Graines possédées
     seeds: {
       potato: { type: Number, default: 0 },
       carrot: { type: Number, default: 0 },
-      corn: { type: Number, default: 0 }
+      corn: { type: Number, default: 0 },
+      tomato: { type: Number, default: 0 },
+      lettuce: { type: Number, default: 0 },
+      pumpkin: { type: Number, default: 0 }
     },
     // Légumes récoltés
     vegetables: {
       potato: { type: Number, default: 0 },
       carrot: { type: Number, default: 0 },
-      corn: { type: Number, default: 0 }
+      corn: { type: Number, default: 0 },
+      tomato: { type: Number, default: 0 },
+      lettuce: { type: Number, default: 0 },
+      pumpkin: { type: Number, default: 0 }
     },
     // Cases débloquées (tableau d'indices 0-8 pour grille 3x3)
     unlockedSlots: { type: [Number], default: [4] },
