@@ -509,6 +509,35 @@ async function handleComplete() {
   const req = currentRequest.value
   if (!req || !canComplete.value) return
   
+  // Capturer la position du visiteur AVANT de le faire disparaître
+  let visitorPosition = null
+  let rewardPosition = null
+  await nextTick()
+  
+  let pnjElement = null
+  if (isMobile.value && isFullscreen.value) {
+    // Mode fullscreen mobile
+    pnjElement = document.querySelector('.fullscreen-character .character-image-large')
+  } else if (isMobile.value) {
+    // Mode mobile normal
+    pnjElement = document.querySelector('.requester-badge')
+  } else {
+    // Mode desktop
+    pnjElement = document.querySelector('.requester-item.active')
+  }
+  
+  if (pnjElement) {
+    const rect = pnjElement.getBoundingClientRect()
+    visitorPosition = {
+      left: rect.left + rect.width / 2,
+      top: rect.top + rect.height / 2
+    }
+    rewardPosition = {
+      top: rect.top + rect.height / 2,
+      left: rect.left + rect.width / 2
+    }
+  }
+  
   try {
     const result = await completeRequest(req.id)
     
@@ -523,32 +552,9 @@ async function handleComplete() {
         xp: result.rewards.xp || 0
       }
       
-      // Attendre que Vue update le DOM avant de calculer la position
-      await nextTick()
-      
-      console.log('DEBUG: Entrée calcul position')
-      console.log('DEBUG: showDialogue.value:', showDialogue.value)
-      console.log('DEBUG: isFullscreen.value:', isFullscreen.value)
-      console.log('DEBUG: isMobile.value:', isMobile.value)
-      console.log('DEBUG: All .requester-item:', document.querySelectorAll('.requester-item').length)
-      console.log('DEBUG: All .requester-item.active:', document.querySelectorAll('.requester-item.active').length)
-      
-      // Calculer la position du PNJ
-      const pnjElement = isMobile.value 
-        ? document.querySelector('.requester-badge')
-        : document.querySelector('.requester-item.active')
-      
-      console.log('🔍 pnjElement:', pnjElement ? 'TROUVÉ' : 'NOT FOUND')
-      
-      if (pnjElement) {
-        const rect = pnjElement.getBoundingClientRect()
-        animationPosition.value = {
-          top: rect.top + rect.height / 2,
-          left: rect.left + rect.width / 2
-        }
-        console.log('✓ Position SET:', animationPosition.value)
-      } else {
-        console.log('✗ Element not found, keeping default 0,0')
+      // Calculer la position pour l'animation de récompense
+      if (rewardPosition) {
+        animationPosition.value = rewardPosition
       }
       
       // Créer les animations pour les légumes consommés
@@ -556,11 +562,19 @@ async function handleComplete() {
         req.requirements.forEach((req, idx) => {
           if (req?.vegetable && req?.quantity) {
             setTimeout(() => {
-              createVegetableAnimation(req.vegetable, req.quantity)
+              createVegetableAnimation(req.vegetable, req.quantity, visitorPosition)
             }, idx * 100) // Décalage pour un effet en cascade
           }
         })
       }
+      
+      // Créer les animations pour les récompenses
+      if (result.rewards.potathune > 0) {
+        setTimeout(() => {
+          createRewardAnimation('potathune', result.rewards.potathune, visitorPosition)
+        }, 500)
+      }
+      // Animation XP supprimée - elle est déjà affichée dans le template
       
       // Charger le prochain visiteur après l'animation (3.5s pour laisser le temps à l'animation de finir)
       setTimeout(() => {
@@ -593,7 +607,7 @@ async function handleComplete() {
 }
 
 // Fonction pour créer les animations des légumes consommés
-function createVegetableAnimation(vegetableType, quantity) {
+function createVegetableAnimation(vegetableType, quantity, position = null) {
   const icon = getVegetableIcon(vegetableType)
   const el = document.createElement('div')
   el.textContent = `-${quantity} ${icon}`
@@ -602,6 +616,7 @@ function createVegetableAnimation(vegetableType, quantity) {
   el.style.position = 'fixed'
   el.style.fontSize = '20px'
   el.style.fontWeight = 'bold'
+  el.style.fontFamily = "'Fredoka', sans-serif"
   el.style.color = '#FF6B6B'
   el.style.textShadow = '0 0 8px rgba(255, 107, 107, 0.8)'
   el.style.animation = 'floatUpAnimation 2.5s ease-out forwards'
@@ -609,15 +624,68 @@ function createVegetableAnimation(vegetableType, quantity) {
   el.style.whiteSpace = 'nowrap'
   el.style.zIndex = '10001'
   
-  // Placer directement dans le body, pas dans le container Vue
-  const pnjElement = isMobile.value 
-    ? document.querySelector('.requester-badge')
-    : document.querySelector('.requester-item.active')
+  // Utiliser la position fournie ou chercher l'élément
+  if (position) {
+    el.style.left = (position.left + (Math.random() * 200 - 100)) + 'px'
+    el.style.top = position.top + 'px'
+  } else {
+    // Fallback: chercher l'élément (pour compatibilité)
+    const pnjElement = isMobile.value 
+      ? document.querySelector('.requester-badge')
+      : document.querySelector('.requester-item.active')
+    
+    if (pnjElement) {
+      const rect = pnjElement.getBoundingClientRect()
+      el.style.left = (rect.left + rect.width / 2 + (Math.random() * 200 - 100)) + 'px'
+      el.style.top = (rect.top + rect.height / 2) + 'px'
+    }
+  }
   
-  if (pnjElement) {
-    const rect = pnjElement.getBoundingClientRect()
-    el.style.left = (rect.left + rect.width / 2 + (Math.random() * 200 - 100)) + 'px'
-    el.style.top = (rect.top + rect.height / 2) + 'px'
+  document.body.appendChild(el)
+  
+  // Nettoyer après l'animation
+  setTimeout(() => el.remove(), 2500)
+}
+
+// Fonction pour créer les animations des récompenses
+function createRewardAnimation(rewardType, amount, position = null) {
+  const el = document.createElement('div')
+  
+  if (rewardType === 'potathune') {
+    el.textContent = `+${amount} 💵`
+    el.style.color = '#2e7d32'
+    el.style.textShadow = '0 0 8px rgba(46, 125, 50, 0.8)'
+  } else if (rewardType === 'xp') {
+    el.textContent = `+${amount} ⭐`
+    el.style.color = '#f57c00'
+    el.style.textShadow = '0 0 8px rgba(245, 124, 0, 0.8)'
+  }
+  
+  // Appliquer les styles inline directement
+  el.style.position = 'fixed'
+  el.style.fontSize = '22px'
+  el.style.fontWeight = 'bold'
+  el.style.fontFamily = "'Fredoka', sans-serif"
+  el.style.animation = 'floatUpAnimation 2.5s ease-out forwards'
+  el.style.pointerEvents = 'none'
+  el.style.whiteSpace = 'nowrap'
+  el.style.zIndex = '10001'
+  
+  // Utiliser la position fournie ou chercher l'élément
+  if (position) {
+    el.style.left = (position.left + (Math.random() * 150 - 75)) + 'px'
+    el.style.top = (position.top - 20) + 'px'
+  } else {
+    // Fallback: chercher l'élément (pour compatibilité)
+    const pnjElement = isMobile.value 
+      ? document.querySelector('.requester-badge')
+      : document.querySelector('.requester-item.active')
+    
+    if (pnjElement) {
+      const rect = pnjElement.getBoundingClientRect()
+      el.style.left = (rect.left + rect.width / 2 + (Math.random() * 150 - 75)) + 'px'
+      el.style.top = (rect.top + rect.height / 2 - 20) + 'px'
+    }
   }
   
   document.body.appendChild(el)
@@ -1438,6 +1506,7 @@ onUnmounted(() => {
   position: absolute;
   font-size: 20px;
   font-weight: bold;
+  font-family: 'Fredoka', sans-serif;
   color: #FF6B6B;
   text-shadow: 0 0 8px rgba(255, 107, 107, 0.8);
   animation: simpleFloatUp 2.5s ease-out forwards;

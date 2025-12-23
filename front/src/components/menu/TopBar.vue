@@ -46,6 +46,26 @@
         </div>
       </div>
       <div class="top-right">
+        <!-- Afficher racines si sur /farming -->
+        <Tooltip v-if="route.path === '/farming' && showTooltips" text="<strong>Racines étranges</strong><br>Obtenue en minant" position="bottom">
+          <div class="egg-counter">
+            <span>🫚 {{ strangeRoots }}</span>
+          </div>
+        </Tooltip>
+        <div v-else-if="route.path === '/farming'" class="egg-counter">
+          <span>🫚 {{ strangeRoots }}</span>
+        </div>
+
+        <!-- Afficher urnes anciennes si sur /farming -->
+        <Tooltip v-if="route.path === '/farming' && showTooltips" text="<strong>Urnes anciennes</strong><br>Obtenue en minant" position="bottom">
+          <div class="egg-counter">
+            <span>🏺 {{ ancientUrns }}</span>
+          </div>
+        </Tooltip>
+        <div v-else-if="route.path === '/farming'" class="egg-counter">
+          <span>🏺 {{ ancientUrns }}</span>
+        </div>
+
         <!-- Afficher potathune si sur /farming -->
         <Tooltip v-if="route.path === '/farming' && showTooltips" text="<strong>Potathunes</strong><br>Monnaie du potager" position="bottom">
           <div class="egg-counter">
@@ -55,6 +75,7 @@
         <div v-else-if="route.path === '/farming'" class="egg-counter">
           <span>💵 {{ potathune }}</span>
         </div>
+
 
         <!-- Afficher niveau potager si sur /farming -->
         <Tooltip v-if="route.path === '/farming' && showTooltips" :text="farmLevelTooltipHtml" position="bottom">
@@ -126,7 +147,7 @@ import { useUpgradesAvailability } from '@/composables/useUpgradesAvailability'
 import { formatNumber, formatEggs } from '@/utils/format.js'
 
 const { eggs, level, xp, xpRequired } = usePlayer()
-const { potathune, farmLevel, farmXp, farmXpRequired } = useFarming()
+const { potathune, farmLevel, farmXp, farmXpRequired, strangeRoots, ancientUrns } = useFarming()
 const { levelUnlocks, getLevelRewardsBetween, items } = useGameData()
 const router = useRouter()
 const route = useRoute()

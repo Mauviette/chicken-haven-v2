@@ -13,6 +13,7 @@ const vegetables = ref({ potato: 0, carrot: 0, corn: 0, tomato: 0, lettuce: 0, p
 const unlockedSlots = ref([0])
 const plantations = ref([])
 const strangeRoots = ref(0)
+const ancientUrns = ref(0)
 const weather = ref(null)
 const activeRequests = ref([])
 const nextRequestAt = ref(null)
@@ -40,6 +41,7 @@ export function useFarming() {
       unlockedSlots.value = data.unlockedSlots || [0]
       plantations.value = data.plantations || []
       strangeRoots.value = data.strangeRoots || 0
+      ancientUrns.value = data.ancientUrns || 0
       weather.value = data.weather || null
       activeRequests.value = data.activeRequests || []
       nextRequestAt.value = data.nextRequestAt ? new Date(data.nextRequestAt) : null
@@ -391,6 +393,7 @@ export function useFarming() {
     unlockedSlots,
     plantations,
     strangeRoots,
+    ancientUrns,
     weather,
     activeRequests,
     nextRequestAt,
